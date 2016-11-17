@@ -44,17 +44,61 @@ library(ggplot2)
 
 simpletheme <- theme_bw() + theme(panel.grid = element_blank(), strip.background = element_blank())
 
-ggplot(macrodata %>% filter(ncii > 10, grepl('Harvard',Site), !is.na(CII), !is.na(Taxon), Taxon!=''), aes(x = factor(CII), y = Year3_RGR)) + 
+# To plot number of observations
+n_above <- function(x) {
+  ypos <- ifelse(sum(!is.na(x)) == 1, 1.2*max(x, na.rm=TRUE), 1.2*(mean(x, na.rm = TRUE) + sd(x, na.rm = TRUE)/sqrt(sum(!is.na(x)))))
+  data.frame(y = ypos, label = paste('n =', sum(!is.na(x))))
+}
+n_below <- function(x) data.frame(y = -0.1, label = paste('n =', sum(!is.na(x))))
+
+harvardplot <- ggplot(macrodata %>% filter(ncii > 10, grepl('Harvard',Site), !is.na(CII), !is.na(Taxon), Taxon!=''), aes(x = factor(CII), y = Year3_RGR)) + 
   stat_summary(fun.y = 'mean', geom = 'bar') +
   stat_summary(geom = 'errorbar', width=0) +
-  stat_summary(geom = 'text', )
+  stat_summary(geom = 'text', fun.data = n_above, size = 2) +
   facet_wrap(~ Taxon, scales = 'free_y') +
   simpletheme +
-  ggtitle('Harvard Forest')
+  labs(x = 'CII') +
+  ggtitle('Harvard Forest: Year 3 RGR')
+
+# Multiple pages for Barro Colorado
 
 ggplot(macrodata %>% filter(ncii > 10, grepl('Barro',Site), !is.na(CII), !is.na(Taxon), Taxon!=''), aes(x = factor(CII), y = Year3_RGR)) + 
   stat_summary(fun.y = 'mean', geom = 'bar') +
   stat_summary(geom = 'errorbar', width=0) +
+  stat_summary(geom = 'text', fun.data = n_above) +
   facet_wrap(~ Taxon, scales = 'free_y') +
   simpletheme +
-  ggtitle('Barro Colorado Island')
+  labs(x = 'CII') +
+  ggtitle('Barro Colorado Island: Year 3 RGR')
+
+bciplotdat <- macrodata %>% filter(ncii > 10, grepl('Barro',Site), !is.na(CII), !is.na(Taxon), Taxon!='')
+taxonlist <- sort(unique(bciplotdat$Taxon))
+
+xx<-seq(1,51,by=9)
+rowstouse <- cbind(xx, c((xx-1)[-1],51))
+
+pdf('figs/rgrbarplots.pdf', height=9, width=9)
+
+harvardplot
+
+for (i in 1:nrow(rowstouse)) {
+  bciplot_i <- ggplot(bciplotdat %>% filter(Taxon %in% taxonlist[(rowstouse[i,1]):(rowstouse[i,2])]), aes(x = factor(CII), y = Year3_RGR)) + 
+    stat_summary(fun.y = 'mean', geom = 'bar') +
+    stat_summary(geom = 'errorbar', width=0) +
+    stat_summary(geom = 'text', fun.data = n_above, size = 2) +
+    facet_wrap(~ Taxon, scales = 'free_y') +
+    simpletheme +
+    labs(x = 'CII') +
+    ggtitle('Barro Colorado Island: Year 3 RGR')
+  print(bciplot_i)
+}
+
+dev.off()
+
+# Determine how many individuals there are in each diameter bin for each species, then split it by CII.
+
+hist(macrodata$Year3_DBH)
+macrodata <- mutate(macrodata, y3dbhclass = cut(Year3_DBH, breaks = c(0,2.5,5,10,100)))
+
+threewaytable <- with(macrodata, table(y3dbhclass, CII, Taxon))
+
