@@ -4,11 +4,19 @@
 fp <- 'C:/Users/Q/Dropbox/projects/forestlight/'
 
 ma <- read.csv(file.path(fp, 'MA/MA_TREE.csv'), stringsAsFactors = FALSE)
+nh <- read.csv(file.path(fp, 'NH/NH_TREE.csv'), stringsAsFactors = FALSE)
+vt <- read.csv(file.path(fp, 'VT/VT_TREE.csv'), stringsAsFactors = FALSE)
+me <- read.csv(file.path(fp, 'ME/ME_TREE.csv'), stringsAsFactors = FALSE)
+ct <- read.csv(file.path(fp, 'CT/CT_TREE.csv'), stringsAsFactors = FALSE)
+ri <- read.csv(file.path(fp, 'RI/RI_TREE.csv'), stringsAsFactors = FALSE)
+ny <- read.csv(file.path(fp, 'NY/NY_TREE.csv'), stringsAsFactors = FALSE)
+
+fiaall <- rbind(ma, nh, vt, me, ct, ri, ny)
 
 # Summarize number of measurements
 library(dplyr)
 
-nmeas <- ma %>% group_by(PLOT, SUBP, TREE) %>% summarize(ndia = sum(!is.na(DIA)))
+nmeas <- fiaall %>% group_by(STATECD, PLOT, SUBP, TREE) %>% summarize(ndia = sum(!is.na(DIA)))
 
 calcrgr <- function(x) {
   if (sum(!is.na(x$DIA)) > 1) {
@@ -23,5 +31,5 @@ calcrgr <- function(x) {
   
 }
 
-rgrs <- ma %>% group_by(PLOT, SUBP, TREE) %>%
+rgrs <- fiaall %>% group_by(STATECD, PLOT, SUBP, TREE) %>%
   do(rgr = calcrgr(.))
