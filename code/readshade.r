@@ -88,5 +88,28 @@ mergeddf <- mergeddf[with(mergeddf, order(Site, Site_Code, Line, LTER_Tag, ENQ_T
 
 write.csv(mergeddf, file = 'GrowthLightMerged.csv', row.names=FALSE)
 
+
+library(dplyr)
+
+merge2 <- left_join(growthdf[,-88], lightdfsub)
+
 tagnames <- c('Main_Stem','LTER_Tag')
 mergeddf_nolter <- merge(growthdf[, !names(growthdf) %in% c('origidx',tagnames)], lightdfsub[, !names(lightdfsub) %in% tagnames], all.x=T, all.y=F, sort=F)
+
+
+# 20 Dec: merge the lter and the enq tags separately
+
+mergelter <- merge(subset(growthdf[,-88], !is.na(LTER_Tag)), lightdfsub, by = c('Site', 'Site_Code', 'Line', 'Main_Stem', 'LTER_Tag'), all.x=T, all.y=F, sort=F)
+mergeenq <- merge(subset(growthdf[,-88], !is.na(ENQ_Tag)), lightdfsub, by = c('Site', 'Site_Code', 'Line', 'Main_Stem', 'ENQ_Tag'), all.x=T, all.y=F, sort=F)
+
+mergeenq <- subset(mergeenq, is.na(LTER_Tag.x))
+
+mergeenq <- mergeenq[,!names(mergeenq) %in% c('LTER_Tag.x', 'LTER_Tag.y')]
+mergelter <- mergelter[,!names(mergelter) %in% c('ENQ_Tag.x', 'ENQ_Tag.y')]
+
+mergeboth <- merge(mergeenq, mergelter, all=T)
+mergeboth <- mergeboth[with(mergeboth, order(Site, Site_Code, Line, LTER_Tag, ENQ_Tag)), ]
+
+# Reorder columns
+mergeboth <- mergeboth[,c(1:3, 90, 89, 4:88)]
+write.csv(mergeboth, file = 'GrowthLightMerged.csv', row.names=FALSE)
