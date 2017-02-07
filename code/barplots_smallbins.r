@@ -54,7 +54,8 @@ biomass_binby10 <- function(x) {
     mutate(bin10indiv = bin10indiv) %>% 
     group_by(bin10indiv) %>% 
     summarize(production_sum = sum(massprod),                  # Gets raw biomass sum for the bin.
-              median_biomass = median(biomass),                # Find median biomass value in the bin.
+              median_biomass = median(biomass),                # Finds median biomass of bin.
+              mid_biomass = (floor(min(biomass)) + ceiling(max(biomass)))/2, # Find biomass midpoint of the bin.
               n_1kgbins = 1 + max(bin1kg) - min(bin1kg),       # Determines how many 1kg bins are contained within the bin.
               production_perbin = production_sum / n_1kgbins,  # Divides raw sum by number of bins.
               CII_mean = mean(CII),                            # Gets "mean" CII.
@@ -71,33 +72,32 @@ harv_bybin <- biomass_binby10(harvdat)
 library(ggplot2)
 
 sc_y <- scale_y_continuous(limits = c(0,5.5), expand = c(0,0))
-sc_y2 <- scale_y_continuous(name = 'Biomass production (kg/y)', limits = c(0,150), expand = c(0,0))
 sc_x <- scale_x_continuous(name = 'Biomass (kg)')
 sc_xlog <- scale_x_log10(name = 'Biomass (kg)', breaks = c(0,1,10,100,1000))
 th_bar <- theme_bw() + theme(panel.grid = element_blank())
 
 # This involves fakery with averages. Can't really average the ordinal category but did for figure.
 
-ggplot(bci_bybin, aes(x = median_biomass, y = CII_mean, ymin = CII_mean - CII_se, ymax = CII_mean + CII_se)) +
+ggplot(bci_bybin, aes(x = mid_biomass, y = CII_mean, ymin = CII_mean - CII_se, ymax = CII_mean + CII_se)) +
   geom_pointrange() +
   sc_xlog + sc_y + th_bar + ggtitle('BCI')
 
-ggplot(harv_bybin, aes(x = median_biomass, y = CII_mean, ymin = CII_mean - CII_se, ymax = CII_mean + CII_se)) +
+ggplot(harv_bybin, aes(x = mid_biomass, y = CII_mean, ymin = CII_mean - CII_se, ymax = CII_mean + CII_se)) +
   geom_pointrange() +
   sc_xlog + sc_y + th_bar + ggtitle('Harvard Forest')
 
-ggplot(bci_bybin, aes(x = median_biomass, y = production_perbin)) +
+ggplot(bci_bybin, aes(x = mid_biomass, y = production_perbin)) +
   geom_point() +
-  scale_y_continuous(name = 'Biomass production (kg/y)', limits = c(0,150), expand = c(0,0)) +
+  scale_y_log10(name = 'Biomass production (kg/y)', expand = c(0,0), limits = c(0.2, 150)) +
   sc_xlog + th_bar + ggtitle('BCI')
 
-ggplot(harv_bybin, aes(x = median_biomass, y = production_perbin)) +
+ggplot(harv_bybin, aes(x = mid_biomass, y = production_perbin)) +
   geom_point() +
-  scale_y_continuous(name = 'Biomass production (kg/y)', limits = c(0,50), expand = c(0,0)) +
+  scale_y_log10(name = 'Biomass production (kg/y)', limits = c(0.2 ,45), expand = c(0,0)) +
   sc_xlog + th_bar + ggtitle('Harvard Forest')
 
 # Summary info.
 
-print(bci_bybin, n = nrow(bci_bybin))
-print(harv_bybin, n = nrow(harv_bybin))
+print(round(bci_bybin,2), n = nrow(bci_bybin))
+print(round(harv_bybin,2), n = nrow(harv_bybin))
 

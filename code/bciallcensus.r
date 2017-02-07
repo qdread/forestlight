@@ -19,7 +19,7 @@ bcicensusdat <- bci.full7 %>%
   filter(DFstatus == 'alive') %>%
   mutate(agb_bin = cut(agb, breaks = n_bins))
 
-levels(bcidat$agb_bin) <- with(bcidat, binlab2n(agb_bin, islog=F))
+levels(bcicensusdat$agb_bin) <- with(bcicensusdat, binlab2n(agb_bin, islog=F))
 
 # Calculate minimum distance to a larger tree for all the trees
 distance_to_bigger <- rep(0, nrow(bcicensusdat))
