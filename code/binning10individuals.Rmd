@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Modification history
 
-- **7 Feb 2017**: Changed to midpoints of bins instead of medians, changed to log-log plot.
+- **7 Feb 2017**: Changed to midpoints of bins instead of medians, changed to log-log plot. Also added the three different year gaps: 1 to 2, 2 to 3, and 1 to 3 divided by 2.
 
 # Implement the binning algorithm
 
@@ -32,25 +32,38 @@ Combine the biomass estimates from diameter at breast height with the estimates 
 
 ```{r}
 pdat <- dat %>% 
-  mutate(biomass = pmax(BiomassDGH_year3_kg, BiomassDBH_year3_kg, na.rm=TRUE),
+  mutate(biomass3 = pmax(BiomassDGH_year3_kg, BiomassDBH_year3_kg, na.rm=TRUE),
          biomass2 = pmax(BiomassDGH_year2_kg, BiomassDBH_year2_kg, 0, na.rm=TRUE),
-         massprod = pmax(biomass - biomass2, 0, na.rm=TRUE)) %>% 
-  select(Site, biomass, massprod, CII)
-bcidat <- pdat %>% filter(Site == 'Barro_Colorado_Island', !is.na(CII), !is.na(biomass))
-harvdat <- pdat %>% filter(Site == 'Harvard_Forest_LTER', !is.na(CII), !is.na(biomass))
+         biomass1 = pmax(BiomassDGH_year1_kg, BiomassDBH_year1_kg, 0, na.rm=TRUE),
+         massprod23 = pmax(biomass3 - biomass2, 0, na.rm=TRUE),
+         massprod12 = pmax(biomass2 - biomass1, 0, na.rm=TRUE),
+         massprod13 = pmax((biomass3 - biomass1)/2, 0, na.rm=TRUE)) %>% 
+  select(Site, biomass3, biomass2, massprod23, massprod12, massprod13, CII)
+bcidat <- pdat %>% filter(Site == 'Barro_Colorado_Island', !is.na(CII), !is.na(biomass3))
+harvdat <- pdat %>% filter(Site == 'Harvard_Forest_LTER', !is.na(CII), !is.na(biomass3))
 ```
 
 Here is a function that will perform the binning algorithm on a given forest dataset. The individual steps of the function are described in the comments on the code.
 
 ```{r}
-biomass_binby10 <- function(x) {
+biomass_binby10 <- function(x, year) {
+  # Set the right year columns.
+  if (year == 23) {
+    x <- transform(x, biomass=biomass3, massprod=massprod23)
+  } else if (year == 12) {
+    x <- transform(x, biomass=biomass2, massprod=massprod12)
+  } else {
+    x <- transform(x, biomass=biomass3, massprod=massprod13)
+  }
+  
   # First, create 1 kg bins. *bin_width is set to 1*
   biomassrange <- range(x$biomass)
   bin_min <- seq(0, floor(biomassrange[2]), by = bin_width)
   bin_max <- bin_min + bin_width
   bin1kg <- rep(0, nrow(x))
   for (i in 1:nrow(x)) {
-    bin1kg[i] <- which(x$biomass[i] > bin_min & x$biomass[i] <= bin_max)
+    # Note: changed this to have the bottom open, not top
+    bin1kg[i] <- which(x$biomass[i] >= bin_min & x$biomass[i] < bin_max)
   }
   
   x <- x %>% mutate(bin1kg = bin1kg) %>% arrange(biomass)
@@ -97,11 +110,15 @@ biomass_binby10 <- function(x) {
 }
 ```
 
-Evaluate the function with BCI and Harvard as input.
+Evaluate the function with BCI and Harvard as input. Do all the years.
 
 ```{r}
-bci_bybin <- biomass_binby10(bcidat)
-harv_bybin <- biomass_binby10(harvdat)
+bci_bybin23 <- biomass_binby10(bcidat, year=23)
+bci_bybin13 <- biomass_binby10(bcidat, year=13)
+bci_bybin12 <- biomass_binby10(bcidat, year=12)
+harv_bybin23 <- biomass_binby10(harvdat, year=23)
+harv_bybin13 <- biomass_binby10(harvdat, year=13)
+harv_bybin12 <- biomass_binby10(harvdat, year=12)
 ```
 
 \newpage
@@ -110,7 +127,7 @@ harv_bybin <- biomass_binby10(harvdat)
 
 ## CII plots
 
-Below, I set plotting options then create the plots. In this case the x-axis is logarithmic. As before, the CII averages are not correct for analysis purposes but fine for visualization purposes.
+Below, I set plotting options then create the plots. In this case the x-axis is logarithmic. As before, the CII averages are not correct for analysis purposes but fine for visualization purposes. The CII plot shows biomass production in years 2 to 3.
 
 ```{r}
 library(ggplot2)
@@ -120,14 +137,14 @@ sc_y2 <- scale_y_continuous(name = 'Biomass production (kg/y)', limits = c(0,150
 sc_xlog <- scale_x_log10(name = 'Biomass (kg)', breaks = c(0,1,10,100,1000))
 th_bar <- theme_bw() + theme(panel.grid = element_blank())
 
-ggplot(bci_bybin, aes(x = mid_biomass, 
+ggplot(bci_bybin23, aes(x = mid_biomass, 
                       y = CII_mean, 
                       ymin = CII_mean - CII_se, 
                       ymax = CII_mean + CII_se)) +
   geom_pointrange() +
   sc_xlog + sc_y + th_bar + ggtitle('BCI')
 
-ggplot(harv_bybin, aes(x = mid_biomass, 
+ggplot(harv_bybin23, aes(x = mid_biomass, 
                        y = CII_mean, 
                        ymin = CII_mean - CII_se, 
                        ymax = CII_mean + CII_se)) +
@@ -137,29 +154,60 @@ ggplot(harv_bybin, aes(x = mid_biomass,
 
 \newpage
 
-## Production plots
+## Production plots: year 1 to 2
 
 ```{r}
-ggplot(bci_bybin, aes(x = mid_biomass, y = production_perbin)) +
+ggplot(bci_bybin12, aes(x = mid_biomass, y = production_perbin)) +
+  geom_point() +
+  scale_y_log10(name = 'Biomass production (kg/y)', expand = c(0,0), limits = c(0.01, 100)) +
+  sc_xlog + th_bar + ggtitle('BCI, year 1 to 2')
+
+ggplot(harv_bybin12, aes(x = mid_biomass, y = production_perbin)) +
+  geom_point() +
+  scale_y_log10(name = 'Biomass production (kg/y)', limits = c(0.15 ,25), expand = c(0,0)) +
+  sc_xlog + th_bar + ggtitle('Harvard, year 1 to 2')
+```
+
+\newpage
+
+## Production plots: year 2 to 3
+
+```{r}
+ggplot(bci_bybin23, aes(x = mid_biomass, y = production_perbin)) +
   geom_point() +
   scale_y_log10(name = 'Biomass production (kg/y)', expand = c(0,0), limits = c(0.2, 150)) +
-  sc_xlog + th_bar + ggtitle('BCI')
+  sc_xlog + th_bar + ggtitle('BCI, year 2 to 3')
 
-ggplot(harv_bybin, aes(x = mid_biomass, y = production_perbin)) +
+ggplot(harv_bybin23, aes(x = mid_biomass, y = production_perbin)) +
   geom_point() +
   scale_y_log10(name = 'Biomass production (kg/y)', limits = c(0.2 ,45), expand = c(0,0)) +
-  sc_xlog + th_bar + ggtitle('Harvard Forest')
+  sc_xlog + th_bar + ggtitle('Harvard, year 2 to 3')
+```
+\newpage
+
+## Production plots: year 1 to 3
+
+```{r}
+ggplot(bci_bybin13, aes(x = mid_biomass, y = production_perbin)) +
+  geom_point() +
+  scale_y_log10(name = 'Biomass production (kg/y)', expand = c(0,0), limits = c(0.12, 110)) +
+  sc_xlog + th_bar + ggtitle('BCI, year 1 to 3')
+
+ggplot(harv_bybin13, aes(x = mid_biomass, y = production_perbin)) +
+  geom_point() +
+  scale_y_log10(name = 'Biomass production (kg/y)', limits = c(0.15 ,30), expand = c(0,0)) +
+  sc_xlog + th_bar + ggtitle('Harvard Forest, year 1 to 3')
 ```
 
 \newpage
 
-## Data underlying the plots
+## Data underlying the plots: years 2 to 3
 
 ```{r}
-print(bci_bybin[,c(2,4,5,6,9)], n = nrow(bci_bybin))
+print(bci_bybin23[,c(2,4,5,6,9)], n = nrow(bci_bybin23))
 ```
 
 \newpage
 ```{r}
-print(harv_bybin[,c(2,4,5,6,9)], n = nrow(harv_bybin))
+print(harv_bybin23[,c(2,4,5,6,9)], n = nrow(harv_bybin23))
 ```
