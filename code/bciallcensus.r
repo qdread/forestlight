@@ -91,7 +91,7 @@ for (i in 1:nrow(bcicensusdat)) {
   neighbors$d <- distances[distances <= r]
   neighbors <- neighbors[complete.cases(neighbors), ]
   
-  comp_idx[i] <- sum( (neighbors$dbh / bcicensusdat$dbh[i]) * atan(neighbors$dbh / neighbors$d) ) # Rouvinen index.
+  comp_idx[i] <- sum( (neighbors$dbh / bcicensusdat$dbh[i]) * atan(neighbors$dbh / neighbors$d), na.rm=TRUE) # Rouvinen index.
   
   setTxtProgressBar(pb, i)
 }
@@ -102,6 +102,8 @@ close(pb)
 bcicensusdat$raw_comp_idx <- comp_idx
 bcicensusdat <- subset(bcicensusdat, circle_area >= 0.5) # This gets rid of a very few trees at the corners that we don't know a lot about their neighbors.
 bcicensusdat$comp_idx <- bcicensusdat$raw_comp_idx / bcicensusdat$circle_area
+
+write.csv(bcicensusdat, file = file.path(fp, 'bci_compidx.csv'), row.names = FALSE)
 
 ggplot(bcicensusdat, aes(x = agb_bin, y = production67)) +
   stat_summary(geom = 'bar', fun.y = 'sum') 
