@@ -103,17 +103,62 @@ bci_outdf <- do.call('rbind', bci_out)
 harv_outdf <- do.call('rbind', harv_out)
 
 library(ggplot2)
+library(extrafont)
 
 sc_ylog <- scale_y_log10(name = 'Biomass production (kg/y)')
 sc_xlog <- scale_x_log10(name = 'Biomass (kg)', breaks = c(0.1,1,10,100,1000))
 th_scatter <- theme_bw() + theme(panel.grid = element_blank())
 
-ggplot(bci_outdf, aes(x=mid_biomass, y=production_perbin)) +
-  geom_point() +
-  facet_grid(bin_width ~ n_per_bin) +
-  sc_ylog + sc_xlog + th_scatter
+facetCategoryLabels <- function(p, rightlab, toplab, Font = 'Arial') {
+  
+  library(gtable)
+  library(grid)
+  
+  z <- ggplotGrob(p)
+  # add label for right strip
+  z <- gtable_add_cols(z, unit(1.2, 'line'), 13)
+  z <- gtable_add_grob(z, 
+                       list(rectGrob(gp = gpar(col = 'black', fill = gray(0.5))),
+                            textGrob(rightlab, rot = -90, gp = gpar(col = gray(1), fontfamily = Font, fontsize = 16))),
+                       7, 14, 19, name = paste(runif(2)))
+  
+  # add label for top strip
+  z <- gtable_add_rows(z, unit(1.2, 'line'), 2)
+  z <- gtable_add_grob(z, 
+                       list(rectGrob(gp = gpar(col = 'black', fill = gray(0.5))),
+                            textGrob(toplab, gp = gpar(col = gray(1), fontfamily = Font, fontsize = 16))),
+                       3, 4, 3, 12, name = paste(runif(2)))
+  
+  # add margins
+  z <- gtable_add_cols(z, unit(1/8, "line"), 13)
+  z <- gtable_add_rows(z, unit(1/8, "line"), 3)
+  
+  # draw it
+  #grid.newpage()
+  grid.draw(z)
+  
+}
 
-ggplot(harv_outdf, aes(x=mid_biomass, y=production_perbin)) +
+p1 <- ggplot(bci_outdf, aes(x=mid_biomass, y=production_perbin)) +
   geom_point() +
   facet_grid(bin_width ~ n_per_bin) +
-  sc_ylog + sc_xlog + th_scatter
+  sc_ylog + sc_xlog + th_scatter +
+  ggtitle('BCI')
+
+p2 <- ggplot(harv_outdf, aes(x=mid_biomass, y=production_perbin)) +
+  geom_point() +
+  facet_grid(bin_width ~ n_per_bin) +
+  sc_ylog + sc_xlog + th_scatter +
+  ggtitle('Harvard')
+
+pdf('C:/Users/Q/Google Drive/ForestLight/docs/different_binwidths_binnumbers_bci.pdf', height=12, width=12)
+
+facetCategoryLabels(p1, 'Bin width (kg)', 'Individuals per bin', 'Helvetica')
+
+dev.off()
+
+pdf('C:/Users/Q/Google Drive/ForestLight/docs/different_binwidths_binnumbers_harv.pdf', height=12, width=12)
+
+facetCategoryLabels(p2, 'Bin width (kg)', 'Individuals per bin', 'Helvetica')
+
+dev.off()

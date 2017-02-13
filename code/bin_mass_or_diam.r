@@ -92,7 +92,7 @@ harvdat <- pdat %>% filter(Site == 'Harvard_Forest_LTER', !is.na(CII), !is.na(bi
 
 
 massbci <- biomass_diameter_bin(bcidat, year=23, bin_width=1, n_per_bin=10, grp='biomass')
-diambci <- biomass_diameter_bin(bcidat, year=23, bin_width=0.5, n_per_bin=10, grp='diameter')
+diambci <- biomass_diameter_bin(bcidat, year=23, bin_width=0.25, n_per_bin=10, grp='diameter')
 
 library(ggplot2)
 
@@ -101,6 +101,8 @@ sc_ylinear <- scale_y_continuous(name = 'Biomass production (kg/y)', limits = c(
 sc_xbiomass <- scale_x_log10(name = 'Biomass (kg)', breaks = c(0.1,1,10,100,1000))
 sc_xdiam <- scale_x_continuous(name = 'Diameter (cm)')
 th_scatter <- theme_bw() + theme(panel.grid = element_blank())
+
+pdf('C:/Users/Q/Google Drive/ForestLight/docs/diam_and_biomass_bin_figs.pdf', height=6, width=8)
 
 ggplot(massbci, aes(x=mid_grp, y=production_perbin)) +
   geom_point() +
@@ -121,3 +123,5 @@ ggplot(diambci, aes(x=mid_grp, y=production_perbin)) +
   geom_point() +
   sc_ylinear + sc_xdiam + th_scatter +
   ggtitle('BCI, binned by diameter, linear y axis')
+
+dev.off()
