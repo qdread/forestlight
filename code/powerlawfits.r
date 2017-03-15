@@ -72,3 +72,183 @@ plot(pl_bci_gap)
 # Also fit linear function to them.
 # Split them by shade tolerance class.
 
+# LOG BINNING ALGORITHM
+
+# Step 1. Log transform the year 3 biomass data
+# Step 2. Bin into equal width bins (on the logarithmic axis)
+# Step 3. Back transform the bin edges to linear axis.
+# Step 4. Get the midpoint of each bin. This is the X-value on the plot.
+# Step 5. Sum the biomass production of each bin, expressed as (year 3 biomass - year 1 biomass)/2
+# Step 6. Divide each bin's summed production value by the linear width of each bin (this will be the Y-value on the plot).
+
+# Function to implement log binning algorithm.
+# For our purposes, x is biomass, y is production, and n is number of bins
+
+logbin <- function(x, y, n) {
+  logx <- log10(x)                                           # log transform x value (biomass)
+  bin_edges <- seq(min(logx), max(logx), length.out = n + 1) # get edges of bins
+  logxbin <- rep(NA, length(logx))                           # create data structure to assign trees to bins
+  b <- bin_edges                                             # add a little to the biggest bin temporarily
+  b[length(b)] <- b[length(b)] + 1                           # (so that the biggest single tree is put in a bin)
+  for (i in 1:length(logx)) {
+    logxbin[i] <- sum(logx[i] >= b)                          # assign each tree to a bin
+  }
+  bin_midpoints <- numeric(n)
+  for (i in 1:n) {
+    bin_midpoints[i] <- mean(10^(bin_edges[i:(i+1)]))        # backtransform bin edges to linear, and get midpoints
+  }
+  bin_widths <- diff(10^bin_edges)                           # get linear width of each bin
+  bin_factor <- factor(logxbin, levels=1:n)                  # convert bin to factor (required to deal with zeroes if present)
+  rawy <- tapply(y, bin_factor, sum)                         # sum y value (production) in each bin
+  rawy[is.na(rawy)] <- 0                                     # add zeroes back in if present
+  
+  bin_counts <- table(bin_factor)                            # find number of trees in each bin
+  
+  return(data.frame(bin_midpoint = bin_midpoints,            # divide production by width for each bin, and return result!
+                    bin_value = as.numeric(rawy/bin_widths), # also add bin min and max for bar plot purposes
+                    bin_count = as.numeric(bin_counts),
+                    bin_min = 10^bin_edges[1:n],
+                    bin_max = 10^bin_edges[2:(n+1)]))
+  
+}
+
+# Log bins for BCI and for Harvard, with variable numbers of bins. For now do it all as a group.
+bci_logbin <- with(bcidat, logbin(biomass3, massprod13, 20))
+harv_logbin <- with(harvdat, logbin(biomass3, massprod13, 20))
+
+ggplot(bci_logbin, aes(x=bin_midpoint, y=bin_value)) + geom_point() + scale_x_log10() + theme_powerlaw
+ggplot(harv_logbin, aes(x=bin_midpoint, y=bin_value)) + geom_point() + scale_x_log10() + theme_powerlaw
+
+ggplot(bci_logbin, aes(x=bin_midpoint, xend=bin_midpoint, y=0, yend=bin_value)) + geom_segment() + scale_x_log10() + theme_powerlaw
+
+ggplot(bci_logbin, aes(xmin=bin_min, xmax=bin_max, ymin=0, ymax=bin_value)) + geom_rect() + 
+  scale_x_log10(name = 'Biomass (kg)', expand=c(0,0)) + 
+  scale_y_continuous(name = 'Biomass production over bin width', expand=c(0,0), limits=c(0,160)) + 
+  theme_powerlaw
+ggplot(harv_logbin, aes(xmin=bin_min, xmax=bin_max, ymin=0, ymax=bin_value)) + geom_rect() + 
+  scale_x_log10(name = 'Biomass (kg)', expand=c(0,0)) + 
+  scale_y_continuous(name = 'Biomass production over bin width', expand=c(0,0), limits=c(0,40)) + 
+  theme_powerlaw
+
+# Fit Pareto to log bins. Note: this breaks when there are zero count bins, so I made n as high as possible excluding zeroes.
+# BCI
+pl_bci_production <- conpl$new(bci_logbin$bin_value) # Create continuous power law object.
+pl_bci_production$getXmin() # Display xmin parameter.
+pars_bci_production <- estimate_pars(pl_bci_production)
+
+bci_plotdat <- plot(pl_bci_production)
+
+# Harvard
+pl_harv_production <- conpl$new(harv_logbin$bin_value) # Create continuous power law object.
+pl_harv_production$getXmin() # Display xmin parameter.
+pars_harv_production <- estimate_pars(pl_harv_production)
+
+harv_plotdat <- plot(pl_harv_production)
+
+# Plot the empirical Pareto CDF as points, and the maximum-likelihood fit as a line.
+pareto_fn <- function(x, xmin, alpha) (x/xmin)^(1-alpha)
+
+bci_xmin <- pl_bci_production$getXmin()
+bci_alpha <- pars_bci_production$pars
+
+harv_xmin <- pl_harv_production$getXmin()
+harv_alpha <- pars_harv_production$pars
+
+library(ggplot2)
+theme_powerlaw <- theme_bw() + theme(panel.grid = element_blank())
+
+ggplot(bci_plotdat, aes(x = x, y = y)) + 
+  scale_x_log10() +
+  geom_point() +
+  stat_function(geom = 'line', fun = pareto_fn, args = list(xmin = bci_xmin, alpha = bci_alpha)) +
+  theme_powerlaw +
+  labs(x = 'Biomass (kg)', y = 'CDF')
+
+ggplot(harv_plotdat, aes(x = x, y = y)) + 
+  scale_x_log10() +
+  geom_point() +
+  stat_function(geom = 'line', fun = pareto_fn, args = list(xmin = harv_xmin, alpha = harv_alpha)) +
+  theme_powerlaw +
+  labs(x = 'Biomass (kg)', y = 'CDF')
+
+
+# Function to do the entire power law fit and output data.
+# Input is numeric vector, output is list with parameters and the cdf
+powerlawfit <- function(dat) {
+  library(poweRlaw)
+  pl_dat <- conpl$new(dat)
+  xmin_dat <- pl_dat$getXmin()
+  pars_dat <- estimate_pars(pl_dat)
+  alpha_dat <- pars_dat$pars
+  plotdat <- plot(pl_dat)
+  return(list(plotdat = plotdat, xmin = xmin_dat, alpha = alpha_dat))
+}
+
+# Function to plot the power law fit (empirical CDF and function)
+# Input is list from previous function, output is a ggplot
+plotpowerlawfit <- function(pl, xl) {
+  library(ggplot2)
+  th <- theme_bw() + theme(panel.grid = element_blank())
+  pareto_fn <- function(x, xmin, alpha) (x/xmin)^(1-alpha)
+  pareto_pdf <- function(x, xmin, alpha) ((alpha-1)/xmin) * (x/xmin) ^ -alpha
+  
+  p <- ggplot(pl$plotdat, aes(x = x, y = y)) +
+    scale_x_log10() +
+    scale_y_log10() +
+    geom_point() +
+    stat_function(geom = 'line', fun = pareto_pdf, args = list(xmin = pl$xmin, alpha = pl$alpha)) +
+    th +
+    labs(x = xl, y = 'log PDF')
+  return(p)
+}
+
+# Function to plot log bins as rectangles
+plotlogbin <- function(dat, xl, yl, ymax) {
+  library(ggplot2)
+  th <- theme_bw() + theme(panel.grid = element_blank())
+  
+  p <- ggplot(dat, aes(xmin=bin_min, xmax=bin_max, ymin=0, ymax=bin_value)) + geom_rect() +
+    scale_x_log10(name = xl, expand = c(0,0)) +
+    scale_y_continuous(name = yl, expand = c(0,0), limits = c(0,ymax)) +
+    th
+  return(p)
+}
+
+
+###########################################################################
+
+# ALL SCALING RELATIONSHIPS, PLOTTED
+
+# abundance by biomass, bci, all trees
+bci_abund_all <- powerlawfit(bcidat$biomass3)
+plotpowerlawfit(bci_abund_all, 'Biomass (kg)')
+
+# abundance by biomass, bci, shade-tolerant
+
+# abundance by biomass, bci, intermediate
+
+# abundance by biomass, bci, gap species
+
+# abundance by biomass, harvard, all trees
+
+# abundance by biomass, harvard, shade-tolerant
+
+# abundance by biomass, harvard, intermediate
+
+# abundance by biomass, harvard, gap species
+
+# binned production by biomass, bci, all trees
+
+# binned production by biomass, bci, shade-tolerant
+
+# binned production by biomass, bci, intermediate
+
+# binned production by biomass, bci, gap species
+
+# binned production by biomass, harvard, all trees
+
+# binned production by biomass, harvard, shade-tolerant
+
+# binned production by biomass, harvard, intermediate
+
+# binned production by biomass, harvard, gap species
