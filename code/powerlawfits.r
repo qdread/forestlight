@@ -177,40 +177,61 @@ ggplot(harv_plotdat, aes(x = x, y = y)) +
 powerlawfit <- function(dat) {
   library(poweRlaw)
   pl_dat <- conpl$new(dat)
-  xmin_dat <- pl_dat$getXmin()
-  pars_dat <- estimate_pars(pl_dat)
-  alpha_dat <- pars_dat$pars
+  lognorm_dat <- conlnorm$new(dat)
+  xmin_pl <- pl_dat$getXmin()
+  xmin_lognorm <- lognorm_dat$getXmin()
+  pars_pl <- estimate_pars(pl_dat)
+  pars_lognorm <- estimate_pars(lognorm_dat)
+  pl_dat$setPars(pars_pl)
+  lognorm_dat$setPars(pars_lognorm)
   plotdat <- plot(pl_dat)
-  return(list(plotdat = plotdat, xmin = xmin_dat, alpha = alpha_dat))
+  plfit_dat <- lines(pl_dat)
+  lognormfit_dat <- lines(lognorm_dat)
+  
+  return(list(plotdat = plotdat, 
+              plfit = plfit_dat, 
+              lognormfit = lognormfit_dat, 
+              xmin = xmin_pl, 
+              alpha = pars_pl$pars,
+              xmin_lognorm = xmin_lognorm,
+              pars_lognorm = pars_lognorm$pars))
 }
 
 # Function to plot the power law fit (empirical CDF and function)
 # Input is list from previous function, output is a ggplot
-plotpowerlawfit <- function(pl, xl) {
+# Modified to get rid of y=0 entries because they don't plot on log scale
+# Also display parameters on the plot.
+# Used this SO for help: http://stackoverflow.com/questions/7549694/ggplot2-adding-regression-line-equation-and-r2-on-graph
+plotpowerlawfit <- function(pl, xl, title) {
   library(ggplot2)
   th <- theme_bw() + theme(panel.grid = element_blank())
-  pareto_fn <- function(x, xmin, alpha) (x/xmin)^(1-alpha)
-  pareto_pdf <- function(x, xmin, alpha) ((alpha-1)/xmin) * (x/xmin) ^ -alpha
   
+  expr1 <- as.character(as.expression(substitute("Pareto:"~~alpha == a, list(a = round(pl$alpha, 2)))))
+  expr2 <- as.character(as.expression(substitute("Lognormal:"~~mu == m*","~~sigma == s, list(m = round(pl$pars_lognorm[1], 2), s = round(pl$pars_lognorm[2], 2)))))
+
   p <- ggplot(pl$plotdat, aes(x = x, y = y)) +
     scale_x_log10() +
     scale_y_log10() +
     geom_point() +
-    stat_function(geom = 'line', fun = pareto_pdf, args = list(xmin = pl$xmin, alpha = pl$alpha)) +
+    geom_line(data = subset(pl$plfit, y>0), color = 'forestgreen') +
+    geom_line(data = subset(pl$lognormfit, y>0), color = 'indianred') +
+    geom_text(x = 1, y = 0.1, label = expr1, parse = TRUE, hjust = 0) +
+    geom_text(x = 1, y = 0.01, label = expr2, parse = TRUE, hjust = 0) +
     th +
-    labs(x = xl, y = 'log PDF')
+    labs(x = xl, y = 'log CDF') +
+    ggtitle(title)
   return(p)
 }
 
 # Function to plot log bins as rectangles
-plotlogbin <- function(dat, xl, yl, ymax) {
+plotlogbin <- function(dat, xl, yl, title, ymax) {
   library(ggplot2)
   th <- theme_bw() + theme(panel.grid = element_blank())
   
   p <- ggplot(dat, aes(xmin=bin_min, xmax=bin_max, ymin=0, ymax=bin_value)) + geom_rect() +
     scale_x_log10(name = xl, expand = c(0,0)) +
     scale_y_continuous(name = yl, expand = c(0,0), limits = c(0,ymax)) +
-    th
+    th + ggtitle(title)
   return(p)
 }
 
@@ -221,34 +242,83 @@ plotlogbin <- function(dat, xl, yl, ymax) {
 
 # abundance by biomass, bci, all trees
 bci_abund_all <- powerlawfit(bcidat$biomass3)
-plotpowerlawfit(bci_abund_all, 'Biomass (kg)')
+plotpowerlawfit(bci_abund_all, 'Biomass (kg)', 'Density scaling, BCI, all species')
 
 # abundance by biomass, bci, shade-tolerant
+bci_abund_shade <- powerlawfit(subset(bcidat, tolerance == 'S')$biomass3)
+plotpowerlawfit(bci_abund_shade, 'Biomass (kg)', 'Density scaling, BCI, shade-tolerant species')
 
 # abundance by biomass, bci, intermediate
+bci_abund_inter <- powerlawfit(subset(bcidat, tolerance == 'I')$biomass3)
+plotpowerlawfit(bci_abund_inter, 'Biomass (kg)', 'Density scaling, BCI, intermediate species')
 
 # abundance by biomass, bci, gap species
+bci_abund_gap <- powerlawfit(subset(bcidat, tolerance == 'G')$biomass3)
+plotpowerlawfit(bci_abund_gap, 'Biomass (kg)', 'Density scaling, BCI, gap species')
 
 # abundance by biomass, harvard, all trees
+harv_abund_all <- powerlawfit(harvdat$biomass3)
+plotpowerlawfit(harv_abund_all, 'Biomass (kg)', 'Density scaling, Harvard, all species')
 
 # abundance by biomass, harvard, shade-tolerant
+harv_abund_shade <- powerlawfit(subset(harvdat, tolerance == 'S')$biomass3)
+plotpowerlawfit(harv_abund_shade, 'Biomass (kg)', 'Density scaling, Harvard, shade-tolerant species')
 
 # abundance by biomass, harvard, intermediate
+harv_abund_inter <- powerlawfit(subset(harvdat, tolerance == 'I')$biomass3)
+plotpowerlawfit(harv_abund_inter, 'Biomass (kg)', 'Density scaling, Harvard, intermediate species')
 
 # abundance by biomass, harvard, gap species
+harv_abund_gap <- powerlawfit(subset(harvdat, tolerance == 'G')$biomass3)
+plotpowerlawfit(harv_abund_gap, 'Biomass (kg)', 'Density scaling, Harvard, gap species')
+
+### PRODUCTION SCALING
+numbins <- 20
 
 # binned production by biomass, bci, all trees
+bci_logbin <- with(bcidat, logbin(biomass3, massprod13, numbins))
+bci_production_all <- powerlawfit(bci_logbin$bin_value)
+plotpowerlawfit(bci_production_all, 'Biomass production (kg/y)', 'Production scaling, BCI, all species')
+plotlogbin(bci_logbin, 'Biomass (kg)', 'Biomass production (kg/y)', 'Production bins, BCI, all species', 160)
 
 # binned production by biomass, bci, shade-tolerant
+bci_logbin_shade <- with(subset(bcidat, tolerance == 'S'), logbin(biomass3, massprod13, numbins))
+bci_production_shade <- powerlawfit(bci_logbin_shade$bin_value)
+plotpowerlawfit(bci_production_shade, 'Biomass production (kg/y)', 'Production scaling, BCI, shade-tolerant species')
+plotlogbin(bci_logbin_shade, 'Biomass (kg)', 'Biomass production (kg/y)', 'Production bins, BCI, shade-tolerant species', 70)
 
 # binned production by biomass, bci, intermediate
+bci_logbin_inter <- with(subset(bcidat, tolerance == 'I'), logbin(biomass3, massprod13, 15))
+bci_production_inter <- powerlawfit(bci_logbin_inter$bin_value)
+plotpowerlawfit(bci_production_inter, 'Biomass production (kg/y)', 'Production scaling, BCI, intermediate species')
+plotlogbin(bci_logbin_inter, 'Biomass (kg)', 'Biomass production (kg/y)', 'Production bins, BCI, intermediate species', 8)
 
 # binned production by biomass, bci, gap species
+bci_logbin_gap <- with(subset(bcidat, tolerance == 'G'), logbin(biomass3, massprod13, 15))
+bci_production_gap <- powerlawfit(bci_logbin_gap$bin_value)
+plotpowerlawfit(bci_production_gap, 'Biomass production (kg/y)', 'Production scaling, BCI, gap species')
+plotlogbin(bci_logbin_gap, 'Biomass (kg)', 'Biomass production (kg/y)', 'Production bins, BCI, gap species', 4)
 
-# binned production by biomass, harvard, all trees
+# binned production by biomass, Harvard, all trees
+harv_logbin <- with(harvdat, logbin(biomass3, massprod13, numbins))
+harv_production_all <- powerlawfit(harv_logbin$bin_value)
+plotpowerlawfit(harv_production_all, 'Biomass production (kg/y)', 'Production scaling, Harvard, all species')
+plotlogbin(harv_logbin, 'Biomass (kg)', 'Biomass production (kg/y)', 'Production bins, Harvard, all species', 40)
 
-# binned production by biomass, harvard, shade-tolerant
+# binned production by biomass, Harvard, shade-tolerant
+harv_logbin_shade <- with(subset(harvdat, tolerance == 'S'), logbin(biomass3, massprod13, numbins))
+harv_production_shade <- powerlawfit(harv_logbin_shade$bin_value)
+plotpowerlawfit(harv_production_shade, 'Biomass production (kg/y)', 'Production scaling, Harvard, shade-tolerant species')
+plotlogbin(harv_logbin_shade, 'Biomass (kg)', 'Biomass production (kg/y)', 'Production bins, Harvard, shade-tolerant species', 40)
 
-# binned production by biomass, harvard, intermediate
+# binned production by biomass, Harvard, intermediate
+harv_logbin_inter <- with(subset(harvdat, tolerance == 'I'), logbin(biomass3, massprod13, 10))
+harv_production_inter <- powerlawfit(harv_logbin_inter$bin_value)
+plotpowerlawfit(harv_production_inter, 'Biomass production (kg/y)', 'Production scaling, Harvard, intermediate species')
+plotlogbin(harv_logbin_inter, 'Biomass (kg)', 'Biomass production (kg/y)', 'Production bins, Harvard, intermediate species', 2)
 
-# binned production by biomass, harvard, gap species
+# binned production by biomass, Harvard, gap species
+harv_logbin_gap <- with(subset(harvdat, tolerance == 'G'), logbin(biomass3, massprod13, 8))
+harv_production_gap <- powerlawfit(harv_logbin_gap$bin_value)
+plotpowerlawfit(harv_production_gap, 'Biomass production (kg/y)', 'Production scaling, Harvard, gap species')
+plotlogbin(harv_logbin_gap, 'Biomass (kg)', 'Biomass production (kg/y)', 'Production bins, Harvard, gap species', 0.3)
