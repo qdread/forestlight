@@ -1,0 +1,42 @@
+# Stuff removed from markdown
+
+<!--
+  The method here is identical to the density scaling, but is done using individual biomass production as the x data. However, the major caveat to this set of relationships is that the power law cannot be fit to 0 values. The 0 values probably represent trees with very low growth, but it is impossible to say. Therefore, I had to throw them out, but they comprise a pretty big portion of the trees (23% of trees in BCI and 20% of trees in HF).
+
+```{r, results='hide', fig.keep = 'none', warning = FALSE}
+numbins <- 20
+
+bci_prod_all <- powerlawfit(subset(bcidat, massprod13 > 0)$massprod13)
+bci_prod_shade <- powerlawfit(subset(bcidat, massprod13 > 0 & tolerance == 'S')$massprod13)
+bci_prod_inter <- powerlawfit(subset(bcidat, massprod13 > 0 & tolerance == 'I')$massprod13)
+bci_prod_gap <- powerlawfit(subset(bcidat, massprod13 > 0 & tolerance == 'G')$massprod13)
+harv_prod_all <- powerlawfit(subset(harvdat, massprod13 > 0)$massprod13)
+harv_prod_shade <- powerlawfit(subset(harvdat, massprod13 > 0 & tolerance == 'S')$massprod13)
+harv_prod_inter <- powerlawfit(subset(harvdat, massprod13 > 0 & tolerance == 'I')$massprod13)
+harv_prod_gap <- powerlawfit(subset(harvdat, massprod13 > 0 & tolerance == 'G')$massprod13)
+bci_logbin_all <- with(subset(bcidat, massprod13 > 0), logbin(x=massprod13, y=NULL, n = numbins))
+bci_logbin_shade <- with(subset(bcidat, massprod13 > 0 & tolerance == 'S'), logbin(x=massprod13, y=NULL, n = numbins))
+bci_logbin_inter <- with(subset(bcidat, massprod13 > 0 & tolerance == 'I'), logbin(x=massprod13, y=NULL, n = 15))
+bci_logbin_gap <- with(subset(bcidat, massprod13 > 0 & tolerance == 'G'), logbin(x=massprod13, y=NULL, n = 15))
+harv_logbin_all <- with(subset(harvdat, massprod13 > 0), logbin(x=massprod13, y=NULL, n = numbins))
+harv_logbin_shade <- with(subset(harvdat, massprod13 > 0 & tolerance == 'S'), logbin(x=massprod13, y=NULL, n = numbins))
+harv_logbin_inter <- with(subset(harvdat, massprod13 > 0 & tolerance == 'I'), logbin(x=massprod13, y=NULL, n = 10))
+harv_logbin_gap <- with(subset(harvdat, massprod13 > 0 & tolerance == 'G'), logbin(x=massprod13, y=NULL, n = 8))
+
+```
+
+\newpage
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 3.25, fig.height = 3.25}
+label2 <- expression(paste('Total production (kg y'^-1,')', sep = ''))
+
+plotbinsandfits(bci_prod_all, bci_logbin_all, label2, 'log PDF', 'Individual production scaling, BCI', 'all species')
+plotbinsandfits(bci_prod_shade, bci_logbin_shade, label2, 'log PDF', 'Individual production scaling, BCI', 'shade-tolerant species')
+plotbinsandfits(bci_prod_inter, bci_logbin_inter, label2,'log PDF', 'Individual production scaling, BCI', 'intermediate species')
+plotbinsandfits(bci_prod_gap, bci_logbin_gap, label2,'log PDF', 'Individual production scaling, BCI', 'gap species')
+plotbinsandfits(harv_prod_all, harv_logbin_all, label2, 'log PDF', 'Individual production scaling, Harvard', 'all species')
+plotbinsandfits(harv_prod_shade, harv_logbin_shade, label2, 'log PDF', 'Individual production scaling, Harvard', 'shade-tolerant species')
+plotbinsandfits(harv_prod_inter, harv_logbin_inter, label2, 'log PDF', 'Individual production scaling, Harvard', 'intermediate species')
+plotbinsandfits(harv_prod_gap, harv_logbin_gap, label2, 'log PDF', 'Individual production scaling, Harvard', 'gap species')
+```
+-->
