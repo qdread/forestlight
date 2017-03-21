@@ -23,12 +23,13 @@ Overall, it looks like the lognormal is a better fit in almost every case than t
 
 ## What I will do
 
-For now, I only estimated the $\alpha$ parameter for the Pareto distributions, and the $\mu$ and $\sigma$ parameters for the lognormal distributions. Each of them also has an $x_{min}$ parameter that can be estimated from the data, but for now, I just used the minimum value in the data as the $x_{min}$ parameter. I think that is appropriate but I can also try to estimate it from the data.
+For now, I only estimated the $\alpha$ parameter for the Pareto distributions, and the $\mu$ and $\sigma$ parameters for the lognormal distributions. Each of them also has an $x_{min}$ parameter that can be estimated from the data, but for now, I just used the minimum value in the data as the $x_{min}$ parameter. I think that is appropriate but I can also try to estimate it from the data. (We probably will not end up doing this, since the theory does not predict that the power law behavior "kicks in" at a certain size, but that it is present from the very smallest size.)
 
 Also, there are no confidence intervals on the parameter estimates because I have not yet run the bootstraps. They will be added soon.
 
 ## Version history
 
+* 21 March, part 2: added density scaling by diameter in addition to by mass, to check against Enquist's numbers. Also did a separate version of the density scaling with trees that had 0 growth thrown out.
 * 21 March: all relevant plots are changed to histograms, and the individual production scaling is added. There is also a table at the bottom of the document.
 * 20 March: changed plots to PDF instead of CDF, edited axis ticks.
 * 17 March: changed axis labels and made y-axes logarithmic
@@ -46,13 +47,14 @@ The biomass data are year 3. The production data are the increment of biomass be
 source('~/GitHub/forestlight/code/mergeshade.r')
 
 pdat <- dat %>% 
-  mutate(biomass3 = pmax(BiomassDGH_year3_kg, BiomassDBH_year3_kg, na.rm=TRUE),
+  mutate(diameter3 = pmax(Year3_DGH, Year3_DBH, na.rm=TRUE),
+         biomass3 = pmax(BiomassDGH_year3_kg, BiomassDBH_year3_kg, na.rm=TRUE),
          biomass2 = pmax(BiomassDGH_year2_kg, BiomassDBH_year2_kg, 0, na.rm=TRUE),
          biomass1 = pmax(BiomassDGH_year1_kg, BiomassDBH_year1_kg, 0, na.rm=TRUE),
          massprod23 = pmax(biomass3 - biomass2, 0, na.rm=TRUE),
          massprod12 = pmax(biomass2 - biomass1, 0, na.rm=TRUE),
          massprod13 = pmax((biomass3 - biomass1)/2, 0, na.rm=TRUE)) %>% 
-  select(Site, biomass3, biomass2, massprod23, massprod12, massprod13, CII, tolerance)
+  select(Site, diameter3, biomass3, biomass2, massprod23, massprod12, massprod13, CII, tolerance)
 bcidat <- pdat %>% filter(Site == 'Barro_Colorado_Island', !is.na(CII), !is.na(biomass3))
 harvdat <- pdat %>% filter(Site == 'Harvard_Forest_LTER', !is.na(CII), !is.na(biomass3))
 ```
@@ -95,7 +97,7 @@ powerlawfit <- function(dat) {
 ```
 
 \newpage
-This function plots the data in a way that I think is nice.
+This function plots the data in a way that I think is nice. (As of 21 March, no longer used!)
 
 ```{r}
 plotpowerlawfit <- function(pl, xl, title, subtitle) {
@@ -275,7 +277,6 @@ harv_logbin_all <- with(harvdat, logbin(x=biomass3, y=NULL, n = numbins))
 harv_logbin_shade <- with(subset(harvdat, tolerance == 'S'), logbin(x=biomass3, y=NULL, n = numbins))
 harv_logbin_inter <- with(subset(harvdat, tolerance == 'I'), logbin(x=biomass3, y=NULL, n = 10))
 harv_logbin_gap <- with(subset(harvdat, tolerance == 'G'), logbin(x=biomass3, y=NULL, n = 8))
-
 ```
 
 \newpage
@@ -291,6 +292,144 @@ plotbinsandfits(harv_abund_all, harv_logbin_all, label1, 'log PDF', 'Density sca
 plotbinsandfits(harv_abund_shade, harv_logbin_shade, label1, 'log PDF', 'Density scaling, Harvard', 'shade-tolerant species')
 plotbinsandfits(harv_abund_inter, harv_logbin_inter, label1, 'log PDF', 'Density scaling, Harvard', 'intermediate species')
 plotbinsandfits(harv_abund_gap, harv_logbin_gap, label1, 'log PDF', 'Density scaling, Harvard', 'gap species')
+```
+
+[Click to return to table of contents](#top)
+
+\newpage
+
+## Density scaling relationships by diameter
+
+Added 21 March. This is mathematically identical to the density scaling by biomass. The slope for BCI should be around -2 if it matches Enquist's method.
+
+```{r, results='hide', fig.keep = 'none', warning = FALSE}
+numbins <- 20
+
+bci_abund_all <- powerlawfit(bcidat$diameter3)
+bci_abund_shade <- powerlawfit(subset(bcidat, tolerance == 'S')$diameter3)
+bci_abund_inter <- powerlawfit(subset(bcidat, tolerance == 'I')$diameter3)
+bci_abund_gap <- powerlawfit(subset(bcidat, tolerance == 'G')$diameter3)
+harv_abund_all <- powerlawfit(harvdat$diameter3)
+harv_abund_shade <- powerlawfit(subset(harvdat, tolerance == 'S')$diameter3)
+harv_abund_inter <- powerlawfit(subset(harvdat, tolerance == 'I')$diameter3)
+harv_abund_gap <- powerlawfit(subset(harvdat, tolerance == 'G')$diameter3)
+bci_logbin_all <- with(bcidat, logbin(x=diameter3, y=NULL, n = numbins))
+bci_logbin_shade <- with(subset(bcidat, tolerance == 'S'), logbin(x=diameter3, y=NULL, n = numbins))
+bci_logbin_inter <- with(subset(bcidat, tolerance == 'I'), logbin(x=diameter3, y=NULL, n = 15))
+bci_logbin_gap <- with(subset(bcidat, tolerance == 'G'), logbin(x=diameter3, y=NULL, n = 15))
+harv_logbin_all <- with(harvdat, logbin(x=diameter3, y=NULL, n = numbins))
+harv_logbin_shade <- with(subset(harvdat, tolerance == 'S'), logbin(x=diameter3, y=NULL, n = numbins))
+harv_logbin_inter <- with(subset(harvdat, tolerance == 'I'), logbin(x=diameter3, y=NULL, n = 10))
+harv_logbin_gap <- with(subset(harvdat, tolerance == 'G'), logbin(x=diameter3, y=NULL, n = 8))
+```
+
+\newpage
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 3.25, fig.height = 3.25}
+labeld <- 'Diameter (cm)'
+
+plotbinsandfits(bci_abund_all, bci_logbin_all, labeld, 'log PDF', 'Diameter scaling, BCI', 'all species')
+plotbinsandfits(bci_abund_shade, bci_logbin_shade, labeld, 'log PDF', 'Diameter scaling, BCI', 'shade-tolerant species')
+plotbinsandfits(bci_abund_inter, bci_logbin_inter, labeld,'log PDF', 'Diameter scaling, BCI', 'intermediate species')
+plotbinsandfits(bci_abund_gap, bci_logbin_gap, labeld,'log PDF', 'Diameter scaling, BCI', 'gap species')
+plotbinsandfits(harv_abund_all, harv_logbin_all, labeld, 'log PDF', 'Diameter scaling, Harvard', 'all species')
+plotbinsandfits(harv_abund_shade, harv_logbin_shade, labeld, 'log PDF', 'Diameter scaling, Harvard', 'shade-tolerant species')
+plotbinsandfits(harv_abund_inter, harv_logbin_inter, labeld, 'log PDF', 'Diameter scaling, Harvard', 'intermediate species')
+plotbinsandfits(harv_abund_gap, harv_logbin_gap, labeld, 'log PDF', 'Diameter scaling, Harvard', 'gap species')
+```
+
+[Click to return to table of contents](#top)
+
+\newpage
+
+## Density scaling with zero-growth trees excluded
+
+People who previously analyzed this dataset, such as Enquist, probably threw out the trees with zero biomass production recorded (whether it was measurement error or because the tree was dead/dying). Since they must be thrown out for the production scaling fits, it makes sense to also throw them out for the density scaling fits. Here are the fits from above, for both biomass and diameter, repeated with the zero-production trees thrown out before fitting. Note that the presence of zero values for production makes no difference for the *binned* production fits, because the zeroes don't add anything to the bin values. 
+
+### By mass
+
+```{r, results='hide', fig.keep = 'none', warning = FALSE}
+numbins <- 20
+
+# Throw out trees with zeroes in the production column.
+bcisub <- subset(bcidat, massprod13 > 0)
+harvsub <- subset(harvdat, massprod13 > 0)
+
+bci_abund_all <- powerlawfit(bcisub$biomass3)
+bci_abund_shade <- powerlawfit(subset(bcisub, tolerance == 'S')$biomass3)
+bci_abund_inter <- powerlawfit(subset(bcisub, tolerance == 'I')$biomass3)
+bci_abund_gap <- powerlawfit(subset(bcisub, tolerance == 'G')$biomass3)
+harv_abund_all <- powerlawfit(harvsub$biomass3)
+harv_abund_shade <- powerlawfit(subset(harvsub, tolerance == 'S')$biomass3)
+harv_abund_inter <- powerlawfit(subset(harvsub, tolerance == 'I')$biomass3)
+harv_abund_gap <- powerlawfit(subset(harvsub, tolerance == 'G')$biomass3)
+bci_logbin_all <- with(bcisub, logbin(x=biomass3, y=NULL, n = numbins))
+bci_logbin_shade <- with(subset(bcisub, tolerance == 'S'), logbin(x=biomass3, y=NULL, n = numbins))
+bci_logbin_inter <- with(subset(bcisub, tolerance == 'I'), logbin(x=biomass3, y=NULL, n = 15))
+bci_logbin_gap <- with(subset(bcisub, tolerance == 'G'), logbin(x=biomass3, y=NULL, n = 15))
+harv_logbin_all <- with(harvsub, logbin(x=biomass3, y=NULL, n = numbins))
+harv_logbin_shade <- with(subset(harvsub, tolerance == 'S'), logbin(x=biomass3, y=NULL, n = numbins))
+harv_logbin_inter <- with(subset(harvsub, tolerance == 'I'), logbin(x=biomass3, y=NULL, n = 10))
+harv_logbin_gap <- with(subset(harvsub, tolerance == 'G'), logbin(x=biomass3, y=NULL, n = 8))
+```
+
+\newpage
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 3.25, fig.height = 3.25}
+label1 <- 'Individual mass (kg)'
+
+plotbinsandfits(bci_abund_all, bci_logbin_all, label1, 'log PDF', 'Density scaling, BCI', 'all species (no zeroes)')
+plotbinsandfits(bci_abund_shade, bci_logbin_shade, label1, 'log PDF', 'Density scaling, BCI', 'shade-tolerant species (no zeroes)')
+plotbinsandfits(bci_abund_inter, bci_logbin_inter, label1,'log PDF', 'Density scaling, BCI', 'intermediate species (no zeroes)')
+plotbinsandfits(bci_abund_gap, bci_logbin_gap, label1,'log PDF', 'Density scaling, BCI', 'gap species (no zeroes)')
+plotbinsandfits(harv_abund_all, harv_logbin_all, label1, 'log PDF', 'Density scaling, Harvard', 'all species (no zeroes)')
+plotbinsandfits(harv_abund_shade, harv_logbin_shade, label1, 'log PDF', 'Density scaling, Harvard', 'shade-tolerant species (no zeroes)')
+plotbinsandfits(harv_abund_inter, harv_logbin_inter, label1, 'log PDF', 'Density scaling, Harvard', 'intermediate species (no zeroes)')
+plotbinsandfits(harv_abund_gap, harv_logbin_gap, label1, 'log PDF', 'Density scaling, Harvard', 'gap species (no zeroes)')
+```
+
+\newpage
+
+### By diameter
+
+```{r, results='hide', fig.keep = 'none', warning = FALSE}
+numbins <- 20
+
+# Throw out trees with zeroes in the production column.
+bcisub <- subset(bcidat, massprod13 > 0)
+harvsub <- subset(harvdat, massprod13 > 0)
+
+bci_abund_all <- powerlawfit(bcisub$diameter3)
+bci_abund_shade <- powerlawfit(subset(bcisub, tolerance == 'S')$diameter3)
+bci_abund_inter <- powerlawfit(subset(bcisub, tolerance == 'I')$diameter3)
+bci_abund_gap <- powerlawfit(subset(bcisub, tolerance == 'G')$diameter3)
+harv_abund_all <- powerlawfit(harvsub$diameter3)
+harv_abund_shade <- powerlawfit(subset(harvsub, tolerance == 'S')$diameter3)
+harv_abund_inter <- powerlawfit(subset(harvsub, tolerance == 'I')$diameter3)
+harv_abund_gap <- powerlawfit(subset(harvsub, tolerance == 'G')$diameter3)
+bci_logbin_all <- with(bcisub, logbin(x=diameter3, y=NULL, n = numbins))
+bci_logbin_shade <- with(subset(bcisub, tolerance == 'S'), logbin(x=diameter3, y=NULL, n = numbins))
+bci_logbin_inter <- with(subset(bcisub, tolerance == 'I'), logbin(x=diameter3, y=NULL, n = 15))
+bci_logbin_gap <- with(subset(bcisub, tolerance == 'G'), logbin(x=diameter3, y=NULL, n = 15))
+harv_logbin_all <- with(harvsub, logbin(x=diameter3, y=NULL, n = numbins))
+harv_logbin_shade <- with(subset(harvsub, tolerance == 'S'), logbin(x=diameter3, y=NULL, n = numbins))
+harv_logbin_inter <- with(subset(harvsub, tolerance == 'I'), logbin(x=diameter3, y=NULL, n = 10))
+harv_logbin_gap <- with(subset(harvsub, tolerance == 'G'), logbin(x=diameter3, y=NULL, n = 8))
+```
+
+\newpage
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 3.25, fig.height = 3.25}
+labeld <- 'Diameter (cm)'
+
+plotbinsandfits(bci_abund_all, bci_logbin_all, labeld, 'log PDF', 'Diameter scaling, BCI', 'all species (no zeroes)')
+plotbinsandfits(bci_abund_shade, bci_logbin_shade, labeld, 'log PDF', 'Diameter scaling, BCI', 'shade-tolerant species (no zeroes)')
+plotbinsandfits(bci_abund_inter, bci_logbin_inter, labeld,'log PDF', 'Diameter scaling, BCI', 'intermediate species (no zeroes)')
+plotbinsandfits(bci_abund_gap, bci_logbin_gap, labeld,'log PDF', 'Diameter scaling, BCI', 'gap species (no zeroes)')
+plotbinsandfits(harv_abund_all, harv_logbin_all, labeld, 'log PDF', 'Diameter scaling, Harvard', 'all species (no zeroes)')
+plotbinsandfits(harv_abund_shade, harv_logbin_shade, labeld, 'log PDF', 'Diameter scaling, Harvard', 'shade-tolerant species (no zeroes)')
+plotbinsandfits(harv_abund_inter, harv_logbin_inter, labeld, 'log PDF', 'Diameter scaling, Harvard', 'intermediate species (no zeroes)')
+plotbinsandfits(harv_abund_gap, harv_logbin_gap, labeld, 'log PDF', 'Diameter scaling, Harvard', 'gap species (no zeroes)')
 ```
 
 [Click to return to table of contents](#top)
@@ -422,7 +561,9 @@ plotlogbin(harv_logbin_gap, label1, label2, 'Production bins, Harvard', 'gap spe
 
 ## Table of scaling coefficients
 
-The third coefficient column is the sum of the first two. The density column is taken from the Pareto regression, while individual and binned production are from log-linear regressions.
+The third coefficient column is the sum of the first two. The density column is taken from the Pareto regression, while individual and binned production are from log-linear regressions. It looks like including or excluding the zero-growth trees does not make any meaningful difference for the density coefficient.
+
+### Zero-production trees included in density scaling
 
 Site               | Guild            | Density | Indiv. production | Density + indiv. production | Binned production
 ------------------ | ---------------- | ------- | ----------------- | --------------------------- | -----------------
@@ -434,5 +575,18 @@ Harvard Forest     | All trees        | -1.22   | 0.70              | -0.52     
 Harvard Forest     | Shade-tolerant   | -1.25   | 0.70              | -0.55                       | -0.37
 Harvard Forest     | Intermediate     | -1.14   | 0.82              | -0.32                       | 0.20
 Harvard Forest     | Gap/pioneer      | -1.19   | 0.70              | -0.49                       | -0.02
+
+### Zero-production trees excluded from density scaling
+
+Site               | Guild            | Density | Indiv. production | Density + indiv. production | Binned production
+------------------ | ---------------- | ------- | ----------------- | --------------------------- | -----------------
+Barro Colorado     | All trees        | -1.34   | 0.79              | -0.55                       | -0.66
+Barro Colorado     | Shade-tolerant   | -1.31   | 0.86              | -0.45                       | -0.60
+Barro Colorado     | Intermediate     | -1.35   | 0.92              | -0.43                       | -0.37
+Barro Colorado     | Gap/pioneer      | -1.29   | 0.74              | -0.55                       | -0.44
+Harvard Forest     | All trees        | -1.21   | 0.70              | -0.51                       | -0.33
+Harvard Forest     | Shade-tolerant   | -1.24   | 0.70              | -0.54                       | -0.37
+Harvard Forest     | Intermediate     | -1.14   | 0.82              | -0.32                       | 0.20
+Harvard Forest     | Gap/pioneer      | -1.21   | 0.70              | -0.51                       | -0.02
 
 [Click to return to table of contents](#top)
