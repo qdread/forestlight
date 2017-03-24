@@ -25,11 +25,11 @@ Overall, it looks like the lognormal is a better fit in almost every case than t
 
 For now, I only estimated the $\alpha$ parameter for the Pareto distributions, and the $\mu$ and $\sigma$ parameters for the lognormal distributions. Each of them also has an $x_{min}$ parameter that can be estimated from the data, but for now, I just used the minimum value in the data as the $x_{min}$ parameter. I think that is appropriate but I can also try to estimate it from the data. (We probably will not end up doing this, since the theory does not predict that the power law behavior "kicks in" at a certain size, but that it is present from the very smallest size.)
 
-Also, there are no confidence intervals on the parameter estimates because I have not yet run the bootstraps. They will be added soon.
-
 ## Version history
 
-* 21 March, part 2: added density scaling by diameter in addition to by mass, to check against Enquist's numbers. Also did a separate version of the density scaling with trees that had 0 growth thrown out.
+* 22 March: added confidence intervals to the log-linear regression parameters and the Pareto $\alpha$ parameter using bootstrap.
+* 21 March, version 3: added individual and binned production scaling by diameter (in addition to by mass), again to check against Enquist's numbers.
+* 21 March, version 2: added density scaling by diameter in addition to by mass, to check against Enquist's numbers. Also did a separate version of the density scaling with trees that had 0 growth thrown out.
 * 21 March: all relevant plots are changed to histograms, and the individual production scaling is added. There is also a table at the bottom of the document.
 * 20 March: changed plots to PDF instead of CDF, edited axis ticks.
 * 17 March: changed axis labels and made y-axes logarithmic
@@ -65,7 +65,7 @@ harvdat <- pdat %>% filter(Site == 'Harvard_Forest_LTER', !is.na(CII), !is.na(bi
 
 ## Functions needed to run analysis
 
-This function fits both continuous Pareto and continuous lognormal to the data (input as a single vector of values), and returns their parameters plus all data needed to plot them. This returns the pdf as well.
+This function fits both continuous Pareto and continuous lognormal to the data (input as a single vector of values), and returns their parameters plus all data needed to plot them. This returns the pdf as well. Modification on 22 March: add bootstrap confidence intervals. Note that this makes the results document take a really long time to render, because now every call to powerlawfit() requires a long bootstrap to run.
 
 ```{r}
 powerlawfit <- function(dat) {
@@ -84,6 +84,13 @@ powerlawfit <- function(dat) {
   pl_pdf <- dist_pdf(m = pl_dat, q = plfit_dat$x, log = FALSE)
   lognorm_pdf <- dist_pdf(m = lognorm_dat, q = lognormfit_dat$x, log = FALSE)
   
+  # bootstrap confidence interval of Pareto fit
+  # discard 500 burnin iterations
+  n_boot <- 1499
+  n_burn <- 500
+  pl_boot <- bootstrap(m = pl_dat, xmins = pl_dat$getXmin(), no_of_sims = n_boot)
+  boot_ci <- quantile(pl_boot$bootstraps$pars[-(1:n_burn)], probs = c(0.025, 0.975))
+  
   return(list(plotdat = plotdat, 
               plfit = plfit_dat, 
               lognormfit = lognormfit_dat, 
@@ -92,7 +99,8 @@ powerlawfit <- function(dat) {
               xmin = xmin_pl, 
               alpha = pars_pl$pars,
               xmin_lognorm = xmin_lognorm,
-              pars_lognorm = pars_lognorm$pars))
+              pars_lognorm = pars_lognorm$pars,
+              boot_ci = as.numeric(boot_ci)))
 }
 ```
 
@@ -199,7 +207,8 @@ plotlogbin <- function(dat, xl, yl, title, subtitle, reg = FALSE) {
       stat_smooth(method = 'lm', se = FALSE, color = 'black', 
                   aes(x = bin_midpoint, y = bin_value)) +
       geom_text(x = -Inf, y = -Inf, 
-                label = paste('Slope:', round(lm(I(log10(bin_value)) ~ I(log10(bin_midpoint)), data=dat)$coef[2], 2)),
+                label = paste('Slope:', 
+                              round(lm(I(log10(bin_value)) ~ I(log10(bin_midpoint)), data=dat)$coef[2], 2)),
                 hjust = 0, vjust = -0.25)
   }
   return(p)
@@ -258,7 +267,7 @@ plotbinsandfits <- function(pl, bindat, xl, yl = 'log PDF', title, subtitle) {
 
 Below, I fit all the power laws at once, then plot the results. **Note: For all plots below, the green line is the Pareto fit and the red line is the lognormal fit.** Note here that the Pareto $\alpha$ parameter is equivalent to -slope, so, for example, $\alpha = 1.35$ corresponds to a slope of -1.35.
 
-```{r, results='hide', fig.keep = 'none', warning = FALSE}
+```{r, results='hide', fig.keep = 'none', warning = FALSE, message = FALSE}
 numbins <- 20
 
 bci_abund_all <- powerlawfit(bcidat$biomass3)
@@ -284,14 +293,43 @@ harv_logbin_gap <- with(subset(harvdat, tolerance == 'G'), logbin(x=biomass3, y=
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 3.25, fig.height = 3.25}
 label1 <- 'Individual mass (kg)'
 
-plotbinsandfits(bci_abund_all, bci_logbin_all, label1, 'log PDF', 'Density scaling, BCI', 'all species')
-plotbinsandfits(bci_abund_shade, bci_logbin_shade, label1, 'log PDF', 'Density scaling, BCI', 'shade-tolerant species')
-plotbinsandfits(bci_abund_inter, bci_logbin_inter, label1,'log PDF', 'Density scaling, BCI', 'intermediate species')
-plotbinsandfits(bci_abund_gap, bci_logbin_gap, label1,'log PDF', 'Density scaling, BCI', 'gap species')
-plotbinsandfits(harv_abund_all, harv_logbin_all, label1, 'log PDF', 'Density scaling, Harvard', 'all species')
-plotbinsandfits(harv_abund_shade, harv_logbin_shade, label1, 'log PDF', 'Density scaling, Harvard', 'shade-tolerant species')
-plotbinsandfits(harv_abund_inter, harv_logbin_inter, label1, 'log PDF', 'Density scaling, Harvard', 'intermediate species')
-plotbinsandfits(harv_abund_gap, harv_logbin_gap, label1, 'log PDF', 'Density scaling, Harvard', 'gap species')
+plotbinsandfits(bci_abund_all, bci_logbin_all, label1, 
+                'log PDF', 'Density scaling, BCI', 'all species')
+plotbinsandfits(bci_abund_shade, bci_logbin_shade, label1, 
+                'log PDF', 'Density scaling, BCI', 'shade-tolerant species')
+plotbinsandfits(bci_abund_inter, bci_logbin_inter, label1,
+                'log PDF', 'Density scaling, BCI', 'intermediate species')
+plotbinsandfits(bci_abund_gap, bci_logbin_gap, label1,
+                'log PDF', 'Density scaling, BCI', 'gap species')
+plotbinsandfits(harv_abund_all, harv_logbin_all, label1, 
+                'log PDF', 'Density scaling, Harvard', 'all species')
+plotbinsandfits(harv_abund_shade, harv_logbin_shade, label1, 
+                'log PDF', 'Density scaling, Harvard', 'shade-tolerant species')
+plotbinsandfits(harv_abund_inter, harv_logbin_inter, label1, 
+                'log PDF', 'Density scaling, Harvard', 'intermediate species')
+plotbinsandfits(harv_abund_gap, harv_logbin_gap, label1, 
+                'log PDF', 'Density scaling, Harvard', 'gap species')
+```
+
+\newpage
+
+Confidence intervals for the parameter estimates. I used the *bootstrap()* function from the *poweRlaw* package to calculate these, with 1499 iterations and the first 500 discarded as burn-in. The confidence intervals are quite narrow because I set the $x_{min}$ parameter instead of letting the function estimate it from the data. I believe that is correct.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 5, fig.height = 3.25}
+slopedat <- data.frame(site = rep(c('BCI','Harvard'), each=4),
+                       guild = c('all','shade','intermediate','gap'),
+                       slope = c(bci_abund_all$alpha, bci_abund_shade$alpha, bci_abund_inter$alpha, bci_abund_gap$alpha,
+                                 harv_abund_all$alpha, harv_abund_shade$alpha, harv_abund_inter$alpha, harv_abund_gap$alpha),
+                       cimin = c(bci_abund_all$boot_ci[1], bci_abund_shade$boot_ci[1], bci_abund_inter$boot_ci[1], bci_abund_gap$boot_ci[1],
+                                 harv_abund_all$boot_ci[1], harv_abund_shade$boot_ci[1], harv_abund_inter$boot_ci[1], harv_abund_gap$boot_ci[1]),
+                       cimax = c(bci_abund_all$boot_ci[2], bci_abund_shade$boot_ci[2], bci_abund_inter$boot_ci[2], bci_abund_gap$boot_ci[2],
+                                 harv_abund_all$boot_ci[2], harv_abund_shade$boot_ci[2], harv_abund_inter$boot_ci[2], harv_abund_gap$boot_ci[2]))
+
+ggplot(slopedat, aes(x = guild, y = slope, ymin = cimin, ymax = cimax)) +
+  geom_pointrange() +
+  facet_wrap(~ site) +
+  theme_bw() + theme(panel.grid = element_blank()) +
+  ggtitle('Slopes, density scaling by mass','zeroes included')
 ```
 
 [Click to return to table of contents](#top)
@@ -302,7 +340,7 @@ plotbinsandfits(harv_abund_gap, harv_logbin_gap, label1, 'log PDF', 'Density sca
 
 Added 21 March. This is mathematically identical to the density scaling by biomass. The slope for BCI should be around -2 if it matches Enquist's method.
 
-```{r, results='hide', fig.keep = 'none', warning = FALSE}
+```{r, results='hide', fig.keep = 'none', warning = FALSE, message = FALSE}
 numbins <- 20
 
 bci_abund_all <- powerlawfit(bcidat$diameter3)
@@ -313,14 +351,22 @@ harv_abund_all <- powerlawfit(harvdat$diameter3)
 harv_abund_shade <- powerlawfit(subset(harvdat, tolerance == 'S')$diameter3)
 harv_abund_inter <- powerlawfit(subset(harvdat, tolerance == 'I')$diameter3)
 harv_abund_gap <- powerlawfit(subset(harvdat, tolerance == 'G')$diameter3)
-bci_logbin_all <- with(bcidat, logbin(x=diameter3, y=NULL, n = numbins))
-bci_logbin_shade <- with(subset(bcidat, tolerance == 'S'), logbin(x=diameter3, y=NULL, n = numbins))
-bci_logbin_inter <- with(subset(bcidat, tolerance == 'I'), logbin(x=diameter3, y=NULL, n = 15))
-bci_logbin_gap <- with(subset(bcidat, tolerance == 'G'), logbin(x=diameter3, y=NULL, n = 15))
-harv_logbin_all <- with(harvdat, logbin(x=diameter3, y=NULL, n = numbins))
-harv_logbin_shade <- with(subset(harvdat, tolerance == 'S'), logbin(x=diameter3, y=NULL, n = numbins))
-harv_logbin_inter <- with(subset(harvdat, tolerance == 'I'), logbin(x=diameter3, y=NULL, n = 10))
-harv_logbin_gap <- with(subset(harvdat, tolerance == 'G'), logbin(x=diameter3, y=NULL, n = 8))
+bci_logbin_all <- with(bcidat, 
+                       logbin(x=diameter3, y=NULL, n = numbins))
+bci_logbin_shade <- with(subset(bcidat, tolerance == 'S'), 
+                         logbin(x=diameter3, y=NULL, n = numbins))
+bci_logbin_inter <- with(subset(bcidat, tolerance == 'I'), 
+                         logbin(x=diameter3, y=NULL, n = 15))
+bci_logbin_gap <- with(subset(bcidat, tolerance == 'G'), 
+                       logbin(x=diameter3, y=NULL, n = 15))
+harv_logbin_all <- with(harvdat, 
+                        logbin(x=diameter3, y=NULL, n = numbins))
+harv_logbin_shade <- with(subset(harvdat, tolerance == 'S'), 
+                          logbin(x=diameter3, y=NULL, n = numbins))
+harv_logbin_inter <- with(subset(harvdat, tolerance == 'I'), 
+                          logbin(x=diameter3, y=NULL, n = 10))
+harv_logbin_gap <- with(subset(harvdat, tolerance == 'G'), 
+                        logbin(x=diameter3, y=NULL, n = 8))
 ```
 
 \newpage
@@ -328,14 +374,43 @@ harv_logbin_gap <- with(subset(harvdat, tolerance == 'G'), logbin(x=diameter3, y
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 3.25, fig.height = 3.25}
 labeld <- 'Diameter (cm)'
 
-plotbinsandfits(bci_abund_all, bci_logbin_all, labeld, 'log PDF', 'Diameter scaling, BCI', 'all species')
-plotbinsandfits(bci_abund_shade, bci_logbin_shade, labeld, 'log PDF', 'Diameter scaling, BCI', 'shade-tolerant species')
-plotbinsandfits(bci_abund_inter, bci_logbin_inter, labeld,'log PDF', 'Diameter scaling, BCI', 'intermediate species')
-plotbinsandfits(bci_abund_gap, bci_logbin_gap, labeld,'log PDF', 'Diameter scaling, BCI', 'gap species')
-plotbinsandfits(harv_abund_all, harv_logbin_all, labeld, 'log PDF', 'Diameter scaling, Harvard', 'all species')
-plotbinsandfits(harv_abund_shade, harv_logbin_shade, labeld, 'log PDF', 'Diameter scaling, Harvard', 'shade-tolerant species')
-plotbinsandfits(harv_abund_inter, harv_logbin_inter, labeld, 'log PDF', 'Diameter scaling, Harvard', 'intermediate species')
-plotbinsandfits(harv_abund_gap, harv_logbin_gap, labeld, 'log PDF', 'Diameter scaling, Harvard', 'gap species')
+plotbinsandfits(bci_abund_all, bci_logbin_all, labeld, 
+                'log PDF', 'Diameter scaling, BCI', 'all species')
+plotbinsandfits(bci_abund_shade, bci_logbin_shade, labeld, 
+                'log PDF', 'Diameter scaling, BCI', 'shade-tolerant species')
+plotbinsandfits(bci_abund_inter, bci_logbin_inter, labeld,
+                'log PDF', 'Diameter scaling, BCI', 'intermediate species')
+plotbinsandfits(bci_abund_gap, bci_logbin_gap, labeld,
+                'log PDF', 'Diameter scaling, BCI', 'gap species')
+plotbinsandfits(harv_abund_all, harv_logbin_all, labeld, 
+                'log PDF', 'Diameter scaling, Harvard', 'all species')
+plotbinsandfits(harv_abund_shade, harv_logbin_shade, labeld, 
+                'log PDF', 'Diameter scaling, Harvard', 'shade-tolerant species')
+plotbinsandfits(harv_abund_inter, harv_logbin_inter, labeld, 
+                'log PDF', 'Diameter scaling, Harvard', 'intermediate species')
+plotbinsandfits(harv_abund_gap, harv_logbin_gap, labeld, 
+                'log PDF', 'Diameter scaling, Harvard', 'gap species')
+```
+
+\newpage
+
+Confidence intervals for the parameter estimates (see above for details). 
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 5, fig.height = 3.25}
+slopedat <- data.frame(site = rep(c('BCI','Harvard'), each=4),
+                       guild = c('all','shade','intermediate','gap'),
+                       slope = c(bci_abund_all$alpha, bci_abund_shade$alpha, bci_abund_inter$alpha, bci_abund_gap$alpha,
+                                 harv_abund_all$alpha, harv_abund_shade$alpha, harv_abund_inter$alpha, harv_abund_gap$alpha),
+                       cimin = c(bci_abund_all$boot_ci[1], bci_abund_shade$boot_ci[1], bci_abund_inter$boot_ci[1], bci_abund_gap$boot_ci[1],
+                                 harv_abund_all$boot_ci[1], harv_abund_shade$boot_ci[1], harv_abund_inter$boot_ci[1], harv_abund_gap$boot_ci[1]),
+                       cimax = c(bci_abund_all$boot_ci[2], bci_abund_shade$boot_ci[2], bci_abund_inter$boot_ci[2], bci_abund_gap$boot_ci[2],
+                                 harv_abund_all$boot_ci[2], harv_abund_shade$boot_ci[2], harv_abund_inter$boot_ci[2], harv_abund_gap$boot_ci[2]))
+
+ggplot(slopedat, aes(x = guild, y = slope, ymin = cimin, ymax = cimax)) +
+  geom_pointrange() +
+  facet_wrap(~ site) +
+  theme_bw() + theme(panel.grid = element_blank()) +
+  ggtitle('Slopes, density scaling by diameter','zeroes included')
 ```
 
 [Click to return to table of contents](#top)
@@ -348,7 +423,7 @@ People who previously analyzed this dataset, such as Enquist, probably threw out
 
 ### By mass
 
-```{r, results='hide', fig.keep = 'none', warning = FALSE}
+```{r, results='hide', fig.keep = 'none', warning = FALSE, message = FALSE}
 numbins <- 20
 
 # Throw out trees with zeroes in the production column.
@@ -363,14 +438,22 @@ harv_abund_all <- powerlawfit(harvsub$biomass3)
 harv_abund_shade <- powerlawfit(subset(harvsub, tolerance == 'S')$biomass3)
 harv_abund_inter <- powerlawfit(subset(harvsub, tolerance == 'I')$biomass3)
 harv_abund_gap <- powerlawfit(subset(harvsub, tolerance == 'G')$biomass3)
-bci_logbin_all <- with(bcisub, logbin(x=biomass3, y=NULL, n = numbins))
-bci_logbin_shade <- with(subset(bcisub, tolerance == 'S'), logbin(x=biomass3, y=NULL, n = numbins))
-bci_logbin_inter <- with(subset(bcisub, tolerance == 'I'), logbin(x=biomass3, y=NULL, n = 15))
-bci_logbin_gap <- with(subset(bcisub, tolerance == 'G'), logbin(x=biomass3, y=NULL, n = 15))
-harv_logbin_all <- with(harvsub, logbin(x=biomass3, y=NULL, n = numbins))
-harv_logbin_shade <- with(subset(harvsub, tolerance == 'S'), logbin(x=biomass3, y=NULL, n = numbins))
-harv_logbin_inter <- with(subset(harvsub, tolerance == 'I'), logbin(x=biomass3, y=NULL, n = 10))
-harv_logbin_gap <- with(subset(harvsub, tolerance == 'G'), logbin(x=biomass3, y=NULL, n = 8))
+bci_logbin_all <- with(bcisub, 
+                       logbin(x=biomass3, y=NULL, n = numbins))
+bci_logbin_shade <- with(subset(bcisub, tolerance == 'S'), 
+                         logbin(x=biomass3, y=NULL, n = numbins))
+bci_logbin_inter <- with(subset(bcisub, tolerance == 'I'), 
+                         logbin(x=biomass3, y=NULL, n = 15))
+bci_logbin_gap <- with(subset(bcisub, tolerance == 'G'), 
+                       logbin(x=biomass3, y=NULL, n = 15))
+harv_logbin_all <- with(harvsub, 
+                        logbin(x=biomass3, y=NULL, n = numbins))
+harv_logbin_shade <- with(subset(harvsub, tolerance == 'S'), 
+                          logbin(x=biomass3, y=NULL, n = numbins))
+harv_logbin_inter <- with(subset(harvsub, tolerance == 'I'), 
+                          logbin(x=biomass3, y=NULL, n = 10))
+harv_logbin_gap <- with(subset(harvsub, tolerance == 'G'), 
+                        logbin(x=biomass3, y=NULL, n = 8))
 ```
 
 \newpage
@@ -378,21 +461,52 @@ harv_logbin_gap <- with(subset(harvsub, tolerance == 'G'), logbin(x=biomass3, y=
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 3.25, fig.height = 3.25}
 label1 <- 'Individual mass (kg)'
 
-plotbinsandfits(bci_abund_all, bci_logbin_all, label1, 'log PDF', 'Density scaling, BCI', 'all species (no zeroes)')
-plotbinsandfits(bci_abund_shade, bci_logbin_shade, label1, 'log PDF', 'Density scaling, BCI', 'shade-tolerant species (no zeroes)')
-plotbinsandfits(bci_abund_inter, bci_logbin_inter, label1,'log PDF', 'Density scaling, BCI', 'intermediate species (no zeroes)')
-plotbinsandfits(bci_abund_gap, bci_logbin_gap, label1,'log PDF', 'Density scaling, BCI', 'gap species (no zeroes)')
-plotbinsandfits(harv_abund_all, harv_logbin_all, label1, 'log PDF', 'Density scaling, Harvard', 'all species (no zeroes)')
-plotbinsandfits(harv_abund_shade, harv_logbin_shade, label1, 'log PDF', 'Density scaling, Harvard', 'shade-tolerant species (no zeroes)')
-plotbinsandfits(harv_abund_inter, harv_logbin_inter, label1, 'log PDF', 'Density scaling, Harvard', 'intermediate species (no zeroes)')
-plotbinsandfits(harv_abund_gap, harv_logbin_gap, label1, 'log PDF', 'Density scaling, Harvard', 'gap species (no zeroes)')
+plotbinsandfits(bci_abund_all, bci_logbin_all, label1, 
+                'log PDF', 'Density scaling, BCI', 'all species (no zeroes)')
+plotbinsandfits(bci_abund_shade, bci_logbin_shade, label1, 
+                'log PDF', 'Density scaling, BCI', 'shade-tolerant species (no zeroes)')
+plotbinsandfits(bci_abund_inter, bci_logbin_inter, label1,
+                'log PDF', 'Density scaling, BCI', 'intermediate species (no zeroes)')
+plotbinsandfits(bci_abund_gap, bci_logbin_gap, label1,
+                'log PDF', 'Density scaling, BCI', 'gap species (no zeroes)')
+plotbinsandfits(harv_abund_all, harv_logbin_all, label1, 
+                'log PDF', 'Density scaling, Harvard', 'all species (no zeroes)')
+plotbinsandfits(harv_abund_shade, harv_logbin_shade, label1, 
+                'log PDF', 'Density scaling, Harvard', 'shade-tolerant species (no zeroes)')
+plotbinsandfits(harv_abund_inter, harv_logbin_inter, label1, 
+                'log PDF', 'Density scaling, Harvard', 'intermediate species (no zeroes)')
+plotbinsandfits(harv_abund_gap, harv_logbin_gap, label1, 
+                'log PDF', 'Density scaling, Harvard', 'gap species (no zeroes)')
 ```
+
+\newpage
+
+Confidence intervals for the parameter estimates (see above for details). 
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 5, fig.height = 3.25}
+slopedat <- data.frame(site = rep(c('BCI','Harvard'), each=4),
+                       guild = c('all','shade','intermediate','gap'),
+                       slope = c(bci_abund_all$alpha, bci_abund_shade$alpha, bci_abund_inter$alpha, bci_abund_gap$alpha,
+                                 harv_abund_all$alpha, harv_abund_shade$alpha, harv_abund_inter$alpha, harv_abund_gap$alpha),
+                       cimin = c(bci_abund_all$boot_ci[1], bci_abund_shade$boot_ci[1], bci_abund_inter$boot_ci[1], bci_abund_gap$boot_ci[1],
+                                 harv_abund_all$boot_ci[1], harv_abund_shade$boot_ci[1], harv_abund_inter$boot_ci[1], harv_abund_gap$boot_ci[1]),
+                       cimax = c(bci_abund_all$boot_ci[2], bci_abund_shade$boot_ci[2], bci_abund_inter$boot_ci[2], bci_abund_gap$boot_ci[2],
+                                 harv_abund_all$boot_ci[2], harv_abund_shade$boot_ci[2], harv_abund_inter$boot_ci[2], harv_abund_gap$boot_ci[2]))
+
+ggplot(slopedat, aes(x = guild, y = slope, ymin = cimin, ymax = cimax)) +
+  geom_pointrange() +
+  facet_wrap(~ site) +
+  theme_bw() + theme(panel.grid = element_blank()) +
+  ggtitle('Slopes, density scaling by mass','zeroes excluded')
+```
+
+[Click to return to table of contents](#top)
 
 \newpage
 
 ### By diameter
 
-```{r, results='hide', fig.keep = 'none', warning = FALSE}
+```{r, results='hide', fig.keep = 'none', warning = FALSE, message = FALSE}
 numbins <- 20
 
 # Throw out trees with zeroes in the production column.
@@ -407,14 +521,22 @@ harv_abund_all <- powerlawfit(harvsub$diameter3)
 harv_abund_shade <- powerlawfit(subset(harvsub, tolerance == 'S')$diameter3)
 harv_abund_inter <- powerlawfit(subset(harvsub, tolerance == 'I')$diameter3)
 harv_abund_gap <- powerlawfit(subset(harvsub, tolerance == 'G')$diameter3)
-bci_logbin_all <- with(bcisub, logbin(x=diameter3, y=NULL, n = numbins))
-bci_logbin_shade <- with(subset(bcisub, tolerance == 'S'), logbin(x=diameter3, y=NULL, n = numbins))
-bci_logbin_inter <- with(subset(bcisub, tolerance == 'I'), logbin(x=diameter3, y=NULL, n = 15))
-bci_logbin_gap <- with(subset(bcisub, tolerance == 'G'), logbin(x=diameter3, y=NULL, n = 15))
-harv_logbin_all <- with(harvsub, logbin(x=diameter3, y=NULL, n = numbins))
-harv_logbin_shade <- with(subset(harvsub, tolerance == 'S'), logbin(x=diameter3, y=NULL, n = numbins))
-harv_logbin_inter <- with(subset(harvsub, tolerance == 'I'), logbin(x=diameter3, y=NULL, n = 10))
-harv_logbin_gap <- with(subset(harvsub, tolerance == 'G'), logbin(x=diameter3, y=NULL, n = 8))
+bci_logbin_all <- with(bcisub, 
+                       logbin(x=diameter3, y=NULL, n = numbins))
+bci_logbin_shade <- with(subset(bcisub, tolerance == 'S'), 
+                         logbin(x=diameter3, y=NULL, n = numbins))
+bci_logbin_inter <- with(subset(bcisub, tolerance == 'I'), 
+                         logbin(x=diameter3, y=NULL, n = 15))
+bci_logbin_gap <- with(subset(bcisub, tolerance == 'G'), 
+                       logbin(x=diameter3, y=NULL, n = 15))
+harv_logbin_all <- with(harvsub, 
+                        logbin(x=diameter3, y=NULL, n = numbins))
+harv_logbin_shade <- with(subset(harvsub, tolerance == 'S'), 
+                          logbin(x=diameter3, y=NULL, n = numbins))
+harv_logbin_inter <- with(subset(harvsub, tolerance == 'I'), 
+                          logbin(x=diameter3, y=NULL, n = 10))
+harv_logbin_gap <- with(subset(harvsub, tolerance == 'G'), 
+                        logbin(x=diameter3, y=NULL, n = 8))
 ```
 
 \newpage
@@ -422,14 +544,43 @@ harv_logbin_gap <- with(subset(harvsub, tolerance == 'G'), logbin(x=diameter3, y
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 3.25, fig.height = 3.25}
 labeld <- 'Diameter (cm)'
 
-plotbinsandfits(bci_abund_all, bci_logbin_all, labeld, 'log PDF', 'Diameter scaling, BCI', 'all species (no zeroes)')
-plotbinsandfits(bci_abund_shade, bci_logbin_shade, labeld, 'log PDF', 'Diameter scaling, BCI', 'shade-tolerant species (no zeroes)')
-plotbinsandfits(bci_abund_inter, bci_logbin_inter, labeld,'log PDF', 'Diameter scaling, BCI', 'intermediate species (no zeroes)')
-plotbinsandfits(bci_abund_gap, bci_logbin_gap, labeld,'log PDF', 'Diameter scaling, BCI', 'gap species (no zeroes)')
-plotbinsandfits(harv_abund_all, harv_logbin_all, labeld, 'log PDF', 'Diameter scaling, Harvard', 'all species (no zeroes)')
-plotbinsandfits(harv_abund_shade, harv_logbin_shade, labeld, 'log PDF', 'Diameter scaling, Harvard', 'shade-tolerant species (no zeroes)')
-plotbinsandfits(harv_abund_inter, harv_logbin_inter, labeld, 'log PDF', 'Diameter scaling, Harvard', 'intermediate species (no zeroes)')
-plotbinsandfits(harv_abund_gap, harv_logbin_gap, labeld, 'log PDF', 'Diameter scaling, Harvard', 'gap species (no zeroes)')
+plotbinsandfits(bci_abund_all, bci_logbin_all, labeld, 
+                'log PDF', 'Diameter scaling, BCI', 'all species (no zeroes)')
+plotbinsandfits(bci_abund_shade, bci_logbin_shade, labeld, 
+                'log PDF', 'Diameter scaling, BCI', 'shade-tolerant species (no zeroes)')
+plotbinsandfits(bci_abund_inter, bci_logbin_inter, labeld,
+                'log PDF', 'Diameter scaling, BCI', 'intermediate species (no zeroes)')
+plotbinsandfits(bci_abund_gap, bci_logbin_gap, labeld,
+                'log PDF', 'Diameter scaling, BCI', 'gap species (no zeroes)')
+plotbinsandfits(harv_abund_all, harv_logbin_all, labeld, 
+                'log PDF', 'Diameter scaling, Harvard', 'all species (no zeroes)')
+plotbinsandfits(harv_abund_shade, harv_logbin_shade, labeld, 
+                'log PDF', 'Diameter scaling, Harvard', 'shade-tolerant species (no zeroes)')
+plotbinsandfits(harv_abund_inter, harv_logbin_inter, labeld, 
+                'log PDF', 'Diameter scaling, Harvard', 'intermediate species (no zeroes)')
+plotbinsandfits(harv_abund_gap, harv_logbin_gap, labeld, 
+                'log PDF', 'Diameter scaling, Harvard', 'gap species (no zeroes)')
+```
+
+\newpage
+
+Confidence intervals for the parameter estimates (see above for details). 
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 5, fig.height = 3.25}
+slopedat <- data.frame(site = rep(c('BCI','Harvard'), each=4),
+                       guild = c('all','shade','intermediate','gap'),
+                       slope = c(bci_abund_all$alpha, bci_abund_shade$alpha, bci_abund_inter$alpha, bci_abund_gap$alpha,
+                                 harv_abund_all$alpha, harv_abund_shade$alpha, harv_abund_inter$alpha, harv_abund_gap$alpha),
+                       cimin = c(bci_abund_all$boot_ci[1], bci_abund_shade$boot_ci[1], bci_abund_inter$boot_ci[1], bci_abund_gap$boot_ci[1],
+                                 harv_abund_all$boot_ci[1], harv_abund_shade$boot_ci[1], harv_abund_inter$boot_ci[1], harv_abund_gap$boot_ci[1]),
+                       cimax = c(bci_abund_all$boot_ci[2], bci_abund_shade$boot_ci[2], bci_abund_inter$boot_ci[2], bci_abund_gap$boot_ci[2],
+                                 harv_abund_all$boot_ci[2], harv_abund_shade$boot_ci[2], harv_abund_inter$boot_ci[2], harv_abund_gap$boot_ci[2]))
+
+ggplot(slopedat, aes(x = guild, y = slope, ymin = cimin, ymax = cimax)) +
+  geom_pointrange() +
+  facet_wrap(~ site) +
+  theme_bw() + theme(panel.grid = element_blank()) +
+  ggtitle('Slopes, density scaling by diameter','zeroes excluded')
 ```
 
 [Click to return to table of contents](#top)
@@ -440,15 +591,27 @@ plotbinsandfits(harv_abund_gap, harv_logbin_gap, labeld, 'log PDF', 'Diameter sc
 
 This has been modified on 21 March to use the simpler method of fitting a regression to the log-transformed production and biomass values for each tree. However, the major caveat to this set of relationships is that the power law cannot be fit to 0 values. The 0 values probably represent trees with very low growth, but it is impossible to say. Therefore, I had to throw them out, but they comprise a pretty big portion of the trees (23% of trees in BCI and 20% of trees in HF).
 
+This was further modified on 21 March to include both mass and diameter scalings.
+
+### By mass
+
 ```{r}
-bci_prod_all <- lm(log10(massprod13) ~ log10(biomass3), data = bcidat, subset = massprod13 > 0)
-bci_prod_shade <- lm(log10(massprod13) ~ log10(biomass3), data = bcidat, subset = massprod13 > 0 & tolerance == 'S')
-bci_prod_inter <- lm(log10(massprod13) ~ log10(biomass3), data = bcidat, subset = massprod13 > 0 & tolerance == 'I')
-bci_prod_gap <- lm(log10(massprod13) ~ log10(biomass3), data = bcidat, subset = massprod13 > 0 & tolerance == 'G')
-harv_prod_all <- lm(log10(massprod13) ~ log10(biomass3), data = harvdat, subset = massprod13 > 0)
-harv_prod_shade <- lm(log10(massprod13) ~ log10(biomass3), data = harvdat, subset = massprod13 > 0 & tolerance == 'S')
-harv_prod_inter <- lm(log10(massprod13) ~ log10(biomass3), data = harvdat, subset = massprod13 > 0 & tolerance == 'I')
-harv_prod_gap <- lm(log10(massprod13) ~ log10(biomass3), data = harvdat, subset = massprod13 > 0 & tolerance == 'G')
+bci_prod_all <- lm(log10(massprod13) ~ log10(biomass3), 
+                   data = bcidat, subset = massprod13 > 0)
+bci_prod_shade <- lm(log10(massprod13) ~ log10(biomass3), 
+                     data = bcidat, subset = massprod13 > 0 & tolerance == 'S')
+bci_prod_inter <- lm(log10(massprod13) ~ log10(biomass3), 
+                     data = bcidat, subset = massprod13 > 0 & tolerance == 'I')
+bci_prod_gap <- lm(log10(massprod13) ~ log10(biomass3), 
+                   data = bcidat, subset = massprod13 > 0 & tolerance == 'G')
+harv_prod_all <- lm(log10(massprod13) ~ log10(biomass3), 
+                    data = harvdat, subset = massprod13 > 0)
+harv_prod_shade <- lm(log10(massprod13) ~ log10(biomass3), 
+                      data = harvdat, subset = massprod13 > 0 & tolerance == 'S')
+harv_prod_inter <- lm(log10(massprod13) ~ log10(biomass3), 
+                      data = harvdat, subset = massprod13 > 0 & tolerance == 'I')
+harv_prod_gap <- lm(log10(massprod13) ~ log10(biomass3), 
+                    data = harvdat, subset = massprod13 > 0 & tolerance == 'G')
 ```
 
 \newpage
@@ -509,25 +672,157 @@ ggplot(subset(harvdat, massprod13 > 0), aes(x = biomass3, y = massprod13)) +
   ggtitle('Individual production scaling', 'Harvard Forest')
 ```
 
+Confidence intervals around slope estimates for each site and guild. Since this is a simple linear regression, the confidence intervals are based on *t* values.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 5, fig.height = 3.25}
+slopedat <- data.frame(site = rep(c('BCI','Harvard'), each=4),
+                       guild = c('all','shade','intermediate','gap'),
+                       slope = c(bci_prod_all$coef[2], bci_prod_shade$coef[2], bci_prod_inter$coef[2], bci_prod_gap$coef[2],
+                                 harv_prod_all$coef[2], harv_prod_shade$coef[2], harv_prod_inter$coef[2], harv_prod_gap$coef[2]),
+                       cimin = c(confint(bci_prod_all)[2,1], confint(bci_prod_shade)[2,1], confint(bci_prod_inter)[2,1], confint(bci_prod_gap)[2,1],
+                                 confint(harv_prod_all)[2,1], confint(harv_prod_shade)[2,1], confint(harv_prod_inter)[2,1], confint(harv_prod_gap)[2,1]),
+                       cimax = c(confint(bci_prod_all)[2,2], confint(bci_prod_shade)[2,2], confint(bci_prod_inter)[2,2], confint(bci_prod_gap)[2,2],
+                                 confint(harv_prod_all)[2,2], confint(harv_prod_shade)[2,2], confint(harv_prod_inter)[2,2], confint(harv_prod_gap)[2,2]))
+
+ggplot(slopedat, aes(x = guild, y = slope, ymin = cimin, ymax = cimax)) +
+  geom_pointrange() +
+  facet_wrap(~ site) +
+  theme_bw() + theme(panel.grid = element_blank()) +
+  ggtitle('Slopes, individual production by mass')
+
+```
+
+[Click to return to table of contents](#top)
+
+\newpage
+
+### By diameter
+
+```{r}
+bci_prod_all <- lm(log10(massprod13) ~ log10(diameter3), 
+                   data = bcidat, subset = massprod13 > 0)
+bci_prod_shade <- lm(log10(massprod13) ~ log10(diameter3), 
+                     data = bcidat, subset = massprod13 > 0 & tolerance == 'S')
+bci_prod_inter <- lm(log10(massprod13) ~ log10(diameter3),
+                     data = bcidat, subset = massprod13 > 0 & tolerance == 'I')
+bci_prod_gap <- lm(log10(massprod13) ~ log10(diameter3), 
+                   data = bcidat, subset = massprod13 > 0 & tolerance == 'G')
+harv_prod_all <- lm(log10(massprod13) ~ log10(diameter3), 
+                    data = harvdat, subset = massprod13 > 0)
+harv_prod_shade <- lm(log10(massprod13) ~ log10(diameter3), 
+                      data = harvdat, subset = massprod13 > 0 & tolerance == 'S')
+harv_prod_inter <- lm(log10(massprod13) ~ log10(diameter3), 
+                      data = harvdat, subset = massprod13 > 0 & tolerance == 'I')
+harv_prod_gap <- lm(log10(massprod13) ~ log10(diameter3), 
+                    data = harvdat, subset = massprod13 > 0 & tolerance == 'G')
+```
+
+\newpage
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 3.25, fig.height = 3.25}
+bcislopes <- data.frame(diameter3 = -Inf, 
+                        massprod13 = Inf, 
+                        txt = c(paste('All trees:',round(bci_prod_all$coef[2], 2)),
+                                paste('Shade-tolerant:',round(bci_prod_shade$coef[2], 2)),
+                                paste('Intermediate:',round(bci_prod_inter$coef[2], 2)),
+                                paste('Gap:',round(bci_prod_gap$coef[2], 2))
+                                ))
+harslopes <- data.frame(diameter3 = -Inf, 
+                        massprod13 = Inf, 
+                        txt = c(paste('All trees:',round(harv_prod_all$coef[2], 2)),
+                                paste('Shade-tolerant:',round(harv_prod_shade$coef[2], 2)),
+                                paste('Intermediate:',round(harv_prod_inter$coef[2], 2)),
+                                paste('Gap:',round(harv_prod_gap$coef[2], 2))
+                                ))
+
+ggplot(subset(bcidat, massprod13 > 0), aes(x = diameter3, y = massprod13)) +
+  geom_point(aes(color = tolerance), alpha = 0.5, data = subset(bcidat, massprod13 > 0 & !is.na(tolerance))) +
+  stat_smooth(aes(group = tolerance, color = tolerance), method = 'lm', se = FALSE, data = subset(bcidat, massprod13 > 0 & !is.na(tolerance))) +
+  stat_smooth(method = 'lm', se = FALSE, color = 'black') +
+  scale_x_log10(name = 'Diameter (cm)',
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)),
+                expand = c(0,0)) +
+  scale_y_log10(name = expression(paste('Individual production (kg y'^-1,')', sep = '')),
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+  geom_text(x = -Inf, y = Inf, label = bcislopes$txt[1], hjust = 0, vjust = 1) +
+  geom_text(x = -Inf, y = Inf, label = bcislopes$txt[2], hjust = 0, vjust = 2) +
+  geom_text(x = -Inf, y = Inf, label = bcislopes$txt[3], hjust = 0, vjust = 3) +
+  geom_text(x = -Inf, y = Inf, label = bcislopes$txt[4], hjust = 0, vjust = 4) +
+  theme_bw() + theme(panel.grid = element_blank()) +
+  ggtitle('Individual production scaling', 'BCI, by diameter')
+
+ggplot(subset(harvdat, massprod13 > 0), aes(x = diameter3, y = massprod13)) +
+  geom_point(aes(color = tolerance), alpha = 0.5, data = subset(harvdat, massprod13 > 0 & !is.na(tolerance))) +
+  stat_smooth(aes(group = tolerance, color = tolerance), method = 'lm', se = FALSE, data = subset(harvdat, massprod13 > 0 & !is.na(tolerance))) +
+  stat_smooth(method = 'lm', se = FALSE, color = 'black') +
+  scale_x_log10(name = 'Diameter (cm)',
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x)),
+                expand = c(0,0)) +
+  scale_y_log10(name = expression(paste('Individual production (kg y'^-1,')', sep = '')),
+                breaks = scales::trans_breaks("log10", function(x) 10^x),
+                labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+  geom_text(x = -Inf, y = Inf, label = harslopes$txt[1], hjust = 0, vjust = 1) +
+  geom_text(x = -Inf, y = Inf, label = harslopes$txt[2], hjust = 0, vjust = 2) +
+  geom_text(x = -Inf, y = Inf, label = harslopes$txt[3], hjust = 0, vjust = 3) +
+  geom_text(x = -Inf, y = Inf, label = harslopes$txt[4], hjust = 0, vjust = 4) +
+  theme_bw() + theme(panel.grid = element_blank()) +
+  ggtitle('Individual production scaling', 'Harvard Forest, by diameter')
+```
+
+Confidence intervals around slope estimates for each site and guild. Since this is a simple linear regression, the confidence intervals are based on *t* values.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 5, fig.height = 3.25}
+slopedat <- data.frame(site = rep(c('BCI','Harvard'), each=4),
+                       guild = c('all','shade','intermediate','gap'),
+                       slope = c(bci_prod_all$coef[2], bci_prod_shade$coef[2], bci_prod_inter$coef[2], bci_prod_gap$coef[2],
+                                 harv_prod_all$coef[2], harv_prod_shade$coef[2], harv_prod_inter$coef[2], harv_prod_gap$coef[2]),
+                       cimin = c(confint(bci_prod_all)[2,1], confint(bci_prod_shade)[2,1], confint(bci_prod_inter)[2,1], confint(bci_prod_gap)[2,1],
+                                 confint(harv_prod_all)[2,1], confint(harv_prod_shade)[2,1], confint(harv_prod_inter)[2,1], confint(harv_prod_gap)[2,1]),
+                       cimax = c(confint(bci_prod_all)[2,2], confint(bci_prod_shade)[2,2], confint(bci_prod_inter)[2,2], confint(bci_prod_gap)[2,2],
+                                 confint(harv_prod_all)[2,2], confint(harv_prod_shade)[2,2], confint(harv_prod_inter)[2,2], confint(harv_prod_gap)[2,2]))
+
+ggplot(slopedat, aes(x = guild, y = slope, ymin = cimin, ymax = cimax)) +
+  geom_pointrange() +
+  facet_wrap(~ site) +
+  theme_bw() + theme(panel.grid = element_blank()) +
+  ggtitle('Slopes, individual production by diameter')
+
+```
+
 [Click to return to table of contents](#top)
 
 \newpage
 
 ## Total binned production scaling relationships
 
-For binning, I tried to create 20 bins if possible. Then, I simply fit a regression line to the relationship between $\log_{10} production$ and $\log_{10} mass$ which is the slope that we should use to evaluate the predictions of EE. Previously I tried to do a power law fit after binning, but that was dumb because power law fit is only for unbinned data!
+For binning, I tried to create 20 bins if possible, using Ethan White's log-binning algorithm. Then, I simply fit a regression line to the relationship between $\log_{10} production$ and $\log_{10} mass$ which is the slope that we should use to evaluate the predictions of EE. Previously I tried to do a power law fit after binning, but that was dumb because power law fit is only for unbinned data!
+
+This was additionally modified on 21 March to do the binned production scaling by diameter in addition to by mass. This adds the additional wrinkle of doing the log-binning algorithm by diameter instead of by mass.
+
+### By mass
 
 ```{r, results = 'hide', fig.keep = 'none'}
 numbins <- 20
 
-bci_logbin <- with(bcidat, logbin(x=biomass3, y=massprod13, n=numbins))
-bci_logbin_shade <- with(subset(bcidat, tolerance == 'S'), logbin(x=biomass3, y=massprod13, n=numbins))
-bci_logbin_inter <- with(subset(bcidat, tolerance == 'I'), logbin(x=biomass3, y=massprod13, n=15))
-bci_logbin_gap <- with(subset(bcidat, tolerance == 'G'), logbin(x=biomass3, y=massprod13, n=15))
-harv_logbin <- with(harvdat, logbin(x=biomass3, y=massprod13, n=numbins))
-harv_logbin_shade <- with(subset(harvdat, tolerance == 'S'), logbin(x=biomass3, y=massprod13, n=numbins))
-harv_logbin_inter <- with(subset(harvdat, tolerance == 'I'), logbin(x=biomass3, y=massprod13, n=10))
-harv_logbin_gap <- with(subset(harvdat, tolerance == 'G'), logbin(x=biomass3, y=massprod13, n=8))
+bci_logbin <- with(bcidat, 
+                   logbin(x=biomass3, y=massprod13, n=numbins))
+bci_logbin_shade <- with(subset(bcidat, tolerance == 'S'), 
+                         logbin(x=biomass3, y=massprod13, n=numbins))
+bci_logbin_inter <- with(subset(bcidat, tolerance == 'I'), 
+                         logbin(x=biomass3, y=massprod13, n=15))
+bci_logbin_gap <- with(subset(bcidat, tolerance == 'G'), 
+                       logbin(x=biomass3, y=massprod13, n=15))
+harv_logbin <- with(harvdat, 
+                    logbin(x=biomass3, y=massprod13, n=numbins))
+harv_logbin_shade <- with(subset(harvdat, tolerance == 'S'), 
+                          logbin(x=biomass3, y=massprod13, n=numbins))
+harv_logbin_inter <- with(subset(harvdat, tolerance == 'I'), 
+                          logbin(x=biomass3, y=massprod13, n=10))
+harv_logbin_gap <- with(subset(harvdat, tolerance == 'G'), 
+                        logbin(x=biomass3, y=massprod13, n=8))
 
 bci_lm_all <- lm(log10(bin_value) ~ log10(bin_midpoint), data = bci_logbin)
 bci_lm_shade <- lm(log10(bin_value) ~ log10(bin_midpoint), data = bci_logbin_shade)
@@ -545,14 +840,126 @@ harv_lm_gap <- lm(log10(bin_value) ~ log10(bin_midpoint), data = harv_logbin_gap
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 3.25, fig.height = 3.25}
 label2 <- expression(paste('Total production (kg y'^-1,')', sep = ''))
 
-plotlogbin(bci_logbin, label1, label2, 'Production bins, BCI', 'all species', reg = TRUE)
-plotlogbin(bci_logbin_shade, label1, label2, 'Production bins, BCI', 'shade-tolerant species', reg = TRUE)
-plotlogbin(bci_logbin_inter, label1, label2, 'Production bins, BCI', 'intermediate species', reg = TRUE)
-plotlogbin(bci_logbin_gap, label1, label2, 'Production bins, BCI', 'gap species', reg = TRUE)
-plotlogbin(harv_logbin, label1, label2, 'Production bins, Harvard', 'all species', reg = TRUE)
-plotlogbin(harv_logbin_shade, label1, label2, 'Production bins, Harvard', 'shade-tolerant species', reg = TRUE)
-plotlogbin(harv_logbin_inter, label1, label2, 'Production bins, Harvard', 'intermediate species', reg = TRUE)
-plotlogbin(harv_logbin_gap, label1, label2, 'Production bins, Harvard', 'gap species', reg = TRUE)
+plotlogbin(bci_logbin, label1, label2, 
+           'Production bins, BCI', 'all species', reg = TRUE)
+plotlogbin(bci_logbin_shade, label1, label2, 
+           'Production bins, BCI', 'shade-tolerant species', reg = TRUE)
+plotlogbin(bci_logbin_inter, label1, label2, 
+           'Production bins, BCI', 'intermediate species', reg = TRUE)
+plotlogbin(bci_logbin_gap, label1, label2, 
+           'Production bins, BCI', 'gap species', reg = TRUE)
+plotlogbin(harv_logbin, label1, label2, 
+           'Production bins, Harvard', 'all species', reg = TRUE)
+plotlogbin(harv_logbin_shade, label1, label2, 
+           'Production bins, Harvard', 'shade-tolerant species', reg = TRUE)
+plotlogbin(harv_logbin_inter, label1, label2, 
+           'Production bins, Harvard', 'intermediate species', reg = TRUE)
+plotlogbin(harv_logbin_gap, label1, label2, 
+           'Production bins, Harvard', 'gap species', reg = TRUE)
+```
+
+\newpage
+
+Confidence intervals around slope estimates for each site and guild. Since this is a simple linear regression, the confidence intervals are based on *t* values.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 5, fig.height = 3.25}
+slopedat <- data.frame(site = rep(c('BCI','Harvard'), each=4),
+                       guild = c('all','shade','intermediate','gap'),
+                       slope = c(bci_lm_all$coef[2], bci_lm_shade$coef[2], bci_lm_inter$coef[2], bci_lm_gap$coef[2],
+                                 harv_lm_all$coef[2], harv_lm_shade$coef[2], harv_lm_inter$coef[2], harv_lm_gap$coef[2]),
+                       cimin = c(confint(bci_lm_all)[2,1], confint(bci_lm_shade)[2,1], confint(bci_lm_inter)[2,1], confint(bci_lm_gap)[2,1],
+                                 confint(harv_lm_all)[2,1], confint(harv_lm_shade)[2,1], confint(harv_lm_inter)[2,1], confint(harv_lm_gap)[2,1]),
+                       cimax = c(confint(bci_lm_all)[2,2], confint(bci_lm_shade)[2,2], confint(bci_lm_inter)[2,2], confint(bci_lm_gap)[2,2],
+                                 confint(harv_lm_all)[2,2], confint(harv_lm_shade)[2,2], confint(harv_lm_inter)[2,2], confint(harv_lm_gap)[2,2]))
+
+ggplot(slopedat, aes(x = guild, y = slope, ymin = cimin, ymax = cimax)) +
+  geom_pointrange() +
+  facet_wrap(~ site) +
+  theme_bw() + theme(panel.grid = element_blank()) +
+  ggtitle('Slopes, binned production by mass')
+
+```
+
+[Click to return to table of contents](#top)
+
+\newpage
+
+### By diameter
+
+```{r, results = 'hide', fig.keep = 'none'}
+numbins <- 20
+
+bci_logbin <- with(bcidat, 
+                   logbin(x=diameter3, y=massprod13, n=numbins))
+bci_logbin_shade <- with(subset(bcidat, tolerance == 'S'), 
+                         logbin(x=diameter3, y=massprod13, n=numbins))
+bci_logbin_inter <- with(subset(bcidat, tolerance == 'I'), 
+                         logbin(x=diameter3, y=massprod13, n=10))
+bci_logbin_gap <- with(subset(bcidat, tolerance == 'G'), 
+                       logbin(x=diameter3, y=massprod13, n=10))
+harv_logbin <- with(harvdat, 
+                    logbin(x=diameter3, y=massprod13, n=numbins))
+harv_logbin_shade <- with(subset(harvdat, tolerance == 'S'), 
+                          logbin(x=diameter3, y=massprod13, n=numbins))
+harv_logbin_inter <- with(subset(harvdat, tolerance == 'I'), 
+                          logbin(x=diameter3, y=massprod13, n=10))
+harv_logbin_gap <- with(subset(harvdat, tolerance == 'G'), 
+                        logbin(x=diameter3, y=massprod13, n=7))
+
+bci_lm_all <- lm(log10(bin_value) ~ log10(bin_midpoint), data = bci_logbin)
+bci_lm_shade <- lm(log10(bin_value) ~ log10(bin_midpoint), data = bci_logbin_shade)
+bci_lm_inter <- lm(log10(bin_value) ~ log10(bin_midpoint), data = bci_logbin_inter)
+bci_lm_gap <- lm(log10(bin_value) ~ log10(bin_midpoint), data = bci_logbin_gap)
+harv_lm_all <- lm(log10(bin_value) ~ log10(bin_midpoint), data = harv_logbin)
+harv_lm_shade <- lm(log10(bin_value) ~ log10(bin_midpoint), data = harv_logbin_shade)
+harv_lm_inter <- lm(log10(bin_value) ~ log10(bin_midpoint), data = harv_logbin_inter)
+harv_lm_gap <- lm(log10(bin_value) ~ log10(bin_midpoint), data = harv_logbin_gap)
+
+```
+
+\newpage
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 3.25, fig.height = 3.25}
+label2 <- expression(paste('Total production (kg y'^-1,')', sep = ''))
+
+plotlogbin(bci_logbin, labeld, label2, 
+           'Production bins, BCI', 'all species, by diameter', reg = TRUE)
+plotlogbin(bci_logbin_shade, labeld, label2, 
+           'Production bins, BCI', 'shade-tolerant species, by diameter', reg = TRUE)
+plotlogbin(bci_logbin_inter, labeld, label2, 
+           'Production bins, BCI', 'intermediate species, by diameter', reg = TRUE)
+plotlogbin(bci_logbin_gap, labeld, label2, 
+           'Production bins, BCI', 'gap species, by diameter', reg = TRUE)
+plotlogbin(harv_logbin, labeld, label2, 
+           'Production bins, Harvard', 'all species, by diameter', reg = TRUE)
+plotlogbin(harv_logbin_shade, labeld, label2, 
+           'Production bins, Harvard', 'shade-tolerant species, by diameter', reg = TRUE)
+plotlogbin(harv_logbin_inter, labeld, label2, 
+           'Production bins, Harvard', 'intermediate species, by diameter', reg = TRUE)
+plotlogbin(harv_logbin_gap, labeld, label2, 
+           'Production bins, Harvard', 'gap species, by diameter', reg = TRUE)
+```
+
+\newpage
+
+Confidence intervals around slope estimates for each site and guild. Since this is a simple linear regression, the confidence intervals are based on *t* values.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, fig.width = 5, fig.height = 3.25}
+slopedat <- data.frame(site = rep(c('BCI','Harvard'), each=4),
+                       guild = c('all','shade','intermediate','gap'),
+                       slope = c(bci_lm_all$coef[2], bci_lm_shade$coef[2], bci_lm_inter$coef[2], bci_lm_gap$coef[2],
+                                 harv_lm_all$coef[2], harv_lm_shade$coef[2], harv_lm_inter$coef[2], harv_lm_gap$coef[2]),
+                       cimin = c(confint(bci_lm_all)[2,1], confint(bci_lm_shade)[2,1], confint(bci_lm_inter)[2,1], confint(bci_lm_gap)[2,1],
+                                 confint(harv_lm_all)[2,1], confint(harv_lm_shade)[2,1], confint(harv_lm_inter)[2,1], confint(harv_lm_gap)[2,1]),
+                       cimax = c(confint(bci_lm_all)[2,2], confint(bci_lm_shade)[2,2], confint(bci_lm_inter)[2,2], confint(bci_lm_gap)[2,2],
+                                 confint(harv_lm_all)[2,2], confint(harv_lm_shade)[2,2], confint(harv_lm_inter)[2,2], confint(harv_lm_gap)[2,2]))
+
+ggplot(slopedat, aes(x = guild, y = slope, ymin = cimin, ymax = cimax)) +
+  geom_pointrange() +
+  facet_wrap(~ site) +
+  theme_bw() + theme(panel.grid = element_blank()) +
+  ggtitle('Slopes, binned production by diameter')
+
 ```
 
 [Click to return to table of contents](#top)
@@ -563,7 +970,11 @@ plotlogbin(harv_logbin_gap, label1, label2, 'Production bins, Harvard', 'gap spe
 
 The third coefficient column is the sum of the first two. The density column is taken from the Pareto regression, while individual and binned production are from log-linear regressions. It looks like including or excluding the zero-growth trees does not make any meaningful difference for the density coefficient.
 
-### Zero-production trees included in density scaling
+Tables were added on 21 March for the diameter-based scaling, in addition to the mass-based scaling. The results are . . . different, to say the least.
+
+### SCALING BY MASS
+
+#### zero-production trees included
 
 Site               | Guild            | Density | Indiv. production | Density + indiv. production | Binned production
 ------------------ | ---------------- | ------- | ----------------- | --------------------------- | -----------------
@@ -576,7 +987,7 @@ Harvard Forest     | Shade-tolerant   | -1.25   | 0.70              | -0.55     
 Harvard Forest     | Intermediate     | -1.14   | 0.82              | -0.32                       | 0.20
 Harvard Forest     | Gap/pioneer      | -1.19   | 0.70              | -0.49                       | -0.02
 
-### Zero-production trees excluded from density scaling
+#### zero-production trees excluded
 
 Site               | Guild            | Density | Indiv. production | Density + indiv. production | Binned production
 ------------------ | ---------------- | ------- | ----------------- | --------------------------- | -----------------
@@ -588,5 +999,35 @@ Harvard Forest     | All trees        | -1.21   | 0.70              | -0.51     
 Harvard Forest     | Shade-tolerant   | -1.24   | 0.70              | -0.54                       | -0.37
 Harvard Forest     | Intermediate     | -1.14   | 0.82              | -0.32                       | 0.20
 Harvard Forest     | Gap/pioneer      | -1.21   | 0.70              | -0.51                       | -0.02
+
+\newpage
+
+### SCALING BY DIAMETER
+
+#### zero-production trees included
+
+Site               | Guild            | Density | Indiv. production | Density + indiv. production | Binned production
+------------------ | ---------------- | ------- | ----------------- | --------------------------- | -----------------
+Barro Colorado     | All trees        | -2.19   | 2.26              | 0.07                        | -0.22
+Barro Colorado     | Shade-tolerant   | -2.18   | 2.35              | 0.17                        | -0.20
+Barro Colorado     | Intermediate     | -2.19   | 2.53              | 0.34                        | 0.63
+Barro Colorado     | Gap/pioneer      | -1.82   | 1.97              | 0.15                        | 0.06
+Harvard Forest     | All trees        | -1.63   | 1.87              | 0.24                        | 0.62
+Harvard Forest     | Shade-tolerant   | -1.74   | 1.90              | 0.16                        | 0.56
+Harvard Forest     | Intermediate     | -1.37   | 1.84              | 0.47                        | 1.84
+Harvard Forest     | Gap/pioneer      | -1.46   | 1.53              | 0.07                        | 1.29
+
+#### zero-production trees excluded
+
+Site               | Guild            | Density | Indiv. production | Density + indiv. production | Binned production
+------------------ | ---------------- | ------- | ----------------- | --------------------------- | -----------------
+Barro Colorado     | All trees        | -2.16   | 2.26              | 0.10                        | -0.22
+Barro Colorado     | Shade-tolerant   | -2.11   | 2.35              | 0.24                        | -0.20
+Barro Colorado     | Intermediate     | -2.18   | 2.53              | 0.35                        | 0.63
+Barro Colorado     | Gap/pioneer      | -1.80   | 1.97              | 0.17                        | 0.06
+Harvard Forest     | All trees        | -1.60   | 1.87              | 0.27                        | 0.62
+Harvard Forest     | Shade-tolerant   | -1.70   | 1.90              | 0.20                        | 0.56
+Harvard Forest     | Intermediate     | -1.37   | 1.84              | 0.47                        | 1.84
+Harvard Forest     | Gap/pioneer      | -1.50   | 1.53              | 0.03                        | 1.29
 
 [Click to return to table of contents](#top)
