@@ -109,3 +109,22 @@ p <- ggplot(data.frame(m = c(1, 100000)), aes(x=m)) +
 
 p + scale_y_log10(name = 'Total production')
 p + scale_y_continuous(name = 'Total production')
+
+
+############################
+# Further added on 06 April. Plot density scaling relationship with finite bin width.
+
+nm <- function(n0, k, m, deltam) 4 * n0 * k * ( (m+deltam)^(1/4) - m^(1/4) )
+
+p <- ggplot(data.frame(m = c(1, 100000)), aes(x=m)) +
+  scale_x_log10(name = 'Mass') + 
+  theme_bw() +
+  stat_function(geom = 'line', fun = nm, args = list(n0 = 100000, k = 1, deltam = 1), aes(colour = '1')) +
+  stat_function(geom = 'line', fun = nm, args = list(n0 = 100000, k = 1, deltam = 0.1), aes(colour = '0.1')) +
+  stat_function(geom = 'line', fun = nm, args = list(n0 = 100000, k = 1, deltam = 0.01), aes(colour = '0.01')) +
+  stat_function(geom = 'line', fun = nm, args = list(n0 = 100000, k = 1, deltam = 0.001), aes(colour = '0.001')) +
+  stat_function(geom = 'line', fun = nm, args = list(n0 = 100000, k = 1, deltam = 0.0001), aes(colour = '0.0001')) +
+  scale_color_manual(name=expression(Delta*m), values = rainbow(5)) 
+
+p + scale_y_log10(name = 'Density')
+p + scale_y_continuous(name = 'Density')
