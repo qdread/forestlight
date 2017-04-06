@@ -1,0 +1,89 @@
+---
+title: "Energy equivalence equations"
+author: "Quentin D. Read"
+date: "April 4, 2017"
+output: pdf_document
+---
+
+# Solution at the limit where bin width approaches zero
+
+At the limit where bin width approaches zero, it should not matter if we use diameter or mass to bin trees.
+
+Given:
+
+$n = n_{0}r^{-2}$ Relates radius to abundance  
+$b = b_{0}r^{2}$ Relates radius to individual production  
+$r = km^{\frac{-3}{8}}$ Relates individual biomass to radius
+
+Total production in infinitesimally narrow radius size class should be abundance times individual production. It is a constant, hence energy equivalence.
+
+$p(r) = nb$  
+$p(r) = n_{0}r^{-2}b_{0}r^{2}$  
+$p(r) = n_{0}b_{0}$
+
+Total production in infinitesimally narrow mass size class also reduces to the same constant (we get this by substituting the mass expression in for radius). So it should not matter what we use to bin, mass or diameter.
+
+$p(m) = n_{0}(km^{\frac{-3}{8}})^{-2}b_{0}(km^{\frac{-3}{8}})^{2}$  
+$p(m) = n_{0}k^{-2}m^{\frac{3}{4}}b_{0}k^{2}m^{\frac{-3}{4}}$  
+$p(m) = n_{0}b_{0}$
+
+\newpage
+# What about the case of finite bin widths?
+
+We have the equation $r = km^{\frac{3}{8}}$. It can easily be shown that if $n = n_{0}r^{-2}$ and $b = b_{0}r^{2}$, then $p(r) = n_{0}b_{0}$, in other words, the total production at radius $r$ is the same for every radius. However, consider a finite bin width $\Delta r$. A given bin consists of all trees with radius between $r$ and $r + \Delta r$. 
+
+Solving the equation $r = km^{\frac{3}{8}}$ for $m$, we get:
+
+$m(r) = k^{\frac{-8}{3}}r^{\frac{8}{3}}$. 
+
+Therefore, the bin contains all trees with mass between $m(r)$ and $m(r + \Delta r)$. The width of the bin in mass units is therefore $m(r + \Delta r) - m(r)$, which is equal to:
+
+$k^{\frac{-8}{3}}[(r + \Delta r)^{\frac{8}{3}} - r^{\frac{8}{3}}]$. 
+
+The limit of the above expression as $r$ approaches infinity is also infinity. Therefore, the apparent energy equivalence using diameter bins does not correspond to energy equivalence for mass bins, since the mass bins keep getting wider and wider as radius increases. If we bin the same forest using linear units of mass, we would get smaller and smaller values for larger and larger size classes. Therefore, the equations given on line 4 of table 2 in the PNAS paper (which show that energy equivalence holds whether the scaling function is based on radius or mass) do not both hold if there is a finite width of a size class. They only both hold in the limit as the bin width approaches zero. So, the question is, which one is it???
+
+Another way of showing this is if we have the energy-equivalence relationship $p(r) = n_{0}b_{0}$ derived from the radius-based scaling functions. If we bin this by mass with a finite bin width $\Delta m$, we can calculate the total production of an arbitrary mass bin as:
+
+$\int_{km^{\frac{3}{8}}}^{k(m + \Delta m)^{\frac{3}{8}}} n_0 b_0 dr$
+
+This evaluates to:
+
+$n_0b_0k[(m + \Delta m)^{\frac{3}{8}} - m^{\frac{3}{8}}]$
+
+The limit of that expression as m approaches infinity is zero. Therefore, if the size-class production is flat with respect to radius, it will decline if it is rebinned in linear units of mass.
+
+\newpage
+# Plot illustrating the discrepancy by binning method
+
+This is the expression for $p(m)$ if we assume energy equivalence by diameter, $p(r) = n_{0}b_{0}$, and some arbitrarily set constants.
+
+```{r}
+pm <- function(n0, b0, k, m, deltam) n0 * b0 * k * ( (m + deltam)^(3/8) - m^(3/8) )
+
+n0 <- 100000
+b0 <- 0.1
+k <- 1
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+library(ggplot2)
+p <- ggplot(data.frame(m = c(1, 100000)), aes(x=m)) +
+  scale_x_log10(name = 'Mass') + 
+  theme_bw() +
+  stat_function(geom = 'line', fun = pm, args = list(n0 = 100000, b0 = 0.1, k = 1, deltam = 1), aes(colour = '1')) +
+  stat_function(geom = 'line', fun = pm, args = list(n0 = 100000, b0 = 0.1, k = 1, deltam = 0.1), aes(colour = '0.1')) +
+  stat_function(geom = 'line', fun = pm, args = list(n0 = 100000, b0 = 0.1, k = 1, deltam = 0.01), aes(colour = '0.01')) +
+  stat_function(geom = 'line', fun = pm, args = list(n0 = 100000, b0 = 0.1, k = 1, deltam = 0.001), aes(colour = '0.001')) +
+  stat_function(geom = 'line', fun = pm, args = list(n0 = 100000, b0 = 0.1, k = 1, deltam = 0.0001), aes(colour = '0.0001')) +
+  scale_color_manual(name=expression(Delta*m), values = rev(rainbow(5))) 
+
+p + scale_y_log10(name = 'Total production')
+```
+
+**Figure 1.** This plot has a log scale in x and y, with the relationship plotted for different values of $\Delta m$. It illustrates that regardless of bin width, if there is energy equivalence in radius, the energy per linear mass bin must decline as mass increases.
+
+```{r, echo = FALSE}
+p + scale_y_continuous(name = 'Total production')
+```
+
+**Figure 2.** This plot has a log scale in x but a *linear* scale in y, with the same equations plotted as in the previous figure. It illustrates that as bin width declines to zero, we get closer to operational energy equivalence by both mass and radius. However, the flat line is only achieved in the limit as $\Delta m$ goes to zero.
