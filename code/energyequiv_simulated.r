@@ -40,3 +40,12 @@ massbins <- rep(mbfact, n)
 prodbinnedbymass <- tapply(productions, massbins, sum)
 
 plot(m[unique(mb)], prodbinnedbymass, log='xy')
+
+# Added 11 April: density, in addition to production.
+
+pdf('C:/Users/Q/Google Drive/ForestLight/figs/dens_by_rad_and_mass.pdf', height=5, width=5)
+plot(r, n, log='xy', main='Density by radius\n-2 slope line plotted') # Density by radius (exact)
+abline(a=5, b=-2, col='red')
+plot(m, n, log='xy', main='Density by mass\n-3/4 slope line plotted')
+abline(a=5, b=-3/4, col='red')
+dev.off()
