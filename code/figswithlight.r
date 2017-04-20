@@ -137,8 +137,106 @@ bci_prod_gap <- lm(log10(massprod13) ~ log10(diameter3),
 
 # Plot predicted values under each regression
 
+prodppfd <- predict(bci_prod_gap_ppfd)
+prodnoppfd <- predict(bci_prod_gap)
 
+with(subset(pdat, massprod13 > 0 & Site == 'Barro_Colorado_Island' & pooledtolerance == 'G'), 
+     plot(log10(diameter3), log10(massprod13)))
+abline(bci_prod_gap, col='red')
+abline(bci_prod_gap_ppfd, col='blue')
 
+with(subset(pdat, massprod13 > 0 & Site == 'Barro_Colorado_Island' & pooledtolerance == 'S'), 
+     plot(log10(diameter3), log10(massprod13)))
+abline(bci_prod_shade, col='red')
+abline(bci_prod_shade_ppfd, col='blue')
+
+confint(bci_prod_gap)
+confint(bci_prod_gap_ppfd)
+confint(bci_prod_shade)
+confint(bci_prod_shade_ppfd)
+
+# Attempt to do sequentially
+bci_prod_gap_light <- lm(log10(massprod13) ~ log10(PPFD), data=bcigapdat)
+lightresid <- bci_prod_gap_light$residuals
+bci_prod_gap_both <- lm(bci_prod_gap_light$residuals ~ log10(diameter3), data=bcigapdat)
+
+bcigapdat <- subset(pdat, massprod13 > 0 & Site == 'Barro_Colorado_Island' & pooledtolerance == 'G' & !is.na(PPFD))
+bci_prod_gap_ppfd <- lm(log10(massprod13) ~ log10(diameter3) + log10(PPFD), data=bcigapdat)
+bci_prod_gap <- lm(log10(massprod13) ~ log10(diameter3), data=bcigapdat)
+
+bci_prod_gap <- broom::augment(bci_prod_gap)
+bci_prod_gap_ppfd <- broom::augment(bci_prod_gap_ppfd)
+
+gapplotdat <- data.frame(logdiameter = bci_prod_gap$log10.diameter3.,
+                         logproduction = bci_prod_gap$log10.massprod13.,
+                         fitted1 = bci_prod_gap$.fitted,
+                         fitted2 = bci_prod_gap_ppfd$.fitted)
+
+ggplot(gapplotdat, aes(x=logdiameter)) +
+  geom_point(aes(y=logproduction)) +
+  geom_line(aes(y=fitted1), color = 'red') +
+  geom_line(aes(y=fitted2), color = 'blue') +
+  theme_minimal()
+
+with(bcigapdat, plot(log10(diameter3), log10(massprod13)))
+abline(bci_prod_gap, col='red')
+abline(bci_prod_gap_both, col='blue')
+
+# Check order of variables
+bci_prod_gap_ppfd <- lm(log10(massprod13) ~ log10(diameter3) + log10(Openness), data=bcigapdat)
+bci_prod_gap_ppfd2 <- lm(log10(massprod13) ~ log10(Openness) + log10(diameter3), data=bcigapdat)
+
+anova(bci_prod_gap_ppfd)
+anova(bci_prod_gap_ppfd2)
+summary(bci_prod_gap_ppfd)
+summary(bci_prod_gap_ppfd2)
+
+# Mixed model incl species as a random effect
+pdat$sciname <- paste(pdat$Genus,pdat$Species)
+bcigapmixed1 <- lmer(log10(massprod13) ~ log10(biomass3) + (1|sciname), data = pdat,
+                    subset = massprod13 > 0 & Site == 'Barro_Colorado_Island' & tolerance == 'G' & !is.na(PPFD))
+bcigapmixed2 <- lmer(log10(massprod13) ~ log10(biomass3) + log10(Openness) + (1|sciname), data = pdat,
+     subset = massprod13 > 0 & Site == 'Barro_Colorado_Island' & tolerance == 'G' & !is.na(PPFD))
+
+summary(bcigapmixed1)
+confint(bcigapmixed1, method='boot', nsim=999)
+summary(bcigapmixed2)
+confint(bcigapmixed2, method='boot', nsim=999)
+
+pist1 <- lm(log10(massprod13) ~ log10(biomass3), data = pdat,
+                     subset = massprod13 > 0 & sciname=='Pinus strobus' & !is.na(PPFD))
+pist2 <- lm(log10(massprod13) ~ log10(biomass3) + log10(Openness), data = pdat,
+                     subset = massprod13 > 0 & sciname=='Pinus strobus' & !is.na(PPFD))
+
+# t test of slope deltas by species
+
+slope_delta <- function(x) {
+  lm1 <- lm(log10(massprod13) ~ log10(diameter3), data=x)
+  lm2 <- lm(log10(massprod13) ~ log10(diameter3) + log10(Openness), data=x)
+  data.frame(slope1=lm1$coef[2], slope2=lm2$coef[2], delta=lm1$coef[2] - lm2$coef[2], n_indiv = nrow(x))
+}
+
+deltas <- pdat %>%
+  filter(!is.na(PPFD), massprod13 > 0, !is.na(tolerance), sciname != ' ') %>%
+  group_by(Site, tolerance, sciname) %>%
+  do(slope_delta(.)) %>%
+  filter(n_indiv >= 10)
+
+print(deltas,n=40)
+
+ggplot(deltas, aes(x=tolerance, y=delta)) + 
+  geom_boxplot() + facet_wrap(~ Site) + 
+  theme_bw() + theme(panel.grid=element_blank())
+
+########
+# 20 April. Include all trees, and include shade tolerance group as a term in the model.
+
+lmdata <- subset(pdat, massprod13 > 0 & Site == 'Barro_Colorado_Island' & !is.na(pooledtolerance))
+
+bci_prod_all_ppfd <- lm(log10(massprod13) ~ log10(diameter3) + tolerance : log10(PPFD) + log10(PPFD), 
+                        data = pdat, subset = massprod13 > 0 & Site == 'Barro_Colorado_Island' & !is.na(tolerance))
+
+# To do 
 
 
 # Show total and individual production per unit ppfd received.
