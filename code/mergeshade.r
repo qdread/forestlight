@@ -1,5 +1,6 @@
 # Combine the previously merged data frame with additional information on shade tolerance class.
 # Make some figures as in John's schematics
+# Modified 21 April: retain raw score from wright pca in the bci data.
 
 fp <- 'C:/Users/Q/Google Drive/ForestLight/'
 dat <- read.csv(file.path(fp, 'data/Data To Merge/GrowthLightMerged.csv'), stringsAsFactors = FALSE)
@@ -57,7 +58,7 @@ library(dplyr)
 dat <- left_join(dat, comita %>% select(-Family) %>% rename(Taxon = Species, tol_comita = Shade.tolerance.guild))
 dat <- left_join(dat, laselva %>% mutate(sppcode = gsub('_', ' ', sppcode)) %>% rename(Taxon = sppcode, tol_laselva = shadetol))
 dat <- left_join(dat, harv %>% mutate(Species = gsub('_', ' ', Species)) %>% rename(Taxon = Species, tol_harvard = Tolerance) %>% select(-Source))
-dat <- left_join(dat, wright_df %>% select(Taxon, tol_wright))
+dat <- left_join(dat, wright_df %>% select(Taxon, pca_scores, tol_wright))
 
 # Combine into a single shade tolerance score. Wright takes precedence, then Comita, then LaSelva.
 tol_all <- pmin(dat$tol_harvard, dat$tol_wright, na.rm=T)

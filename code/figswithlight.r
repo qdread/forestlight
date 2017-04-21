@@ -236,7 +236,9 @@ lmdata <- subset(pdat, massprod13 > 0 & Site == 'Barro_Colorado_Island' & !is.na
 bci_prod_all_ppfd <- lm(log10(massprod13) ~ log10(diameter3) + tolerance : log10(PPFD) + log10(PPFD), 
                         data = pdat, subset = massprod13 > 0 & Site == 'Barro_Colorado_Island' & !is.na(tolerance))
 
-# To do 
+# 21 April. Use the wright pca score as a continuous predictor.
+bci_prod_all_ppfd <- lm(log10(massprod13) ~ log10(diameter3) + pca_scores : log10(PPFD), 
+                        data = pdat, subset = massprod13 > 0 & Site == 'Barro_Colorado_Island' & !is.na(pca_scores))
 
 
 # Show total and individual production per unit ppfd received.

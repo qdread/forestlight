@@ -36,7 +36,7 @@ pdat <- dat %>%
          massprod12 = pmax(biomass2 - biomass1, 0, na.rm=TRUE),
          massprod23 = pmax(biomass3 - biomass2, 0, na.rm=TRUE),
          massprod13 = pmax((biomass3 - biomass1)/2, 0, na.rm=TRUE)) %>% 
-  select(Site, Genus, Species, diameter1, diameter2, diameter3, biomass1, biomass2, biomass3, massprod12, massprod23, massprod13, CII, tolerance)
+  select(Site, Genus, Species, diameter1, diameter2, diameter3, biomass1, biomass2, biomass3, massprod12, massprod23, massprod13, CII, tolerance, pca_scores)
 
 pdat <- left_join(pdat, canopyclass)
 
