@@ -4,62 +4,9 @@
 library(actuar)
 library(stats4)
 
-# Must constrain parameter space
-nll <- function(shape_par, min_par) {
-  #if (min_par < min(x)) 
-    -sum(dpareto1(x, shape_par, min_par, log = TRUE)) 
-  #else 
-  #  NA
-  
-}
-
-true_shape <- 2
-true_min <- 1
-
-set.seed(30303)
-x <- rpareto1(n=100000, shape=true_shape, min=true_min)
-
-mle(minuslogl=nll, start=list(shape_par=3), fixed = list(min_par = 1), method='BFGS')
-
-
-######################################
-# Now try to do an exponential piecewise function!
-
-
 # Load some of the density data from bci to test.
 source('~/GitHub/forestlight/code/load50ha.r')
 alltreedat <- subset(bcicensusdat, !is.na(dbh) & production67 > 0 & comp_idx > 0)
-x <- alltreedat$dbh
-
-nll <- function(shape_par, min_par) {
-  -sum(dpareto1(x, shape_par-1, min_par, log = TRUE)) 
-}  
-
-# Try to create the pareto manually to make sure it works.
-nll_pareto_manual <- function(shape_par, min_par)
-  -sum(log(shape_par * min_par ^ shape_par / (x ^ (shape_par + 1))))
-
-fit1 <- mle(nll, start=list(shape_par=3), fixed=list(min_par=min(x)), method='BFGS') # this gives the same result as poweRlaw.
-fit1 <- mle(nll_pareto_manual, start=list(shape_par=3), fixed=list(min_par=min(x)), method='BFGS') # this gives the same result as poweRlaw.
-
-
-bigtreedist <- function(x, breakpoint, alpha, beta, min_par) {
-  (exp(-x * beta)/exp(-breakpoint * beta)) * (alpha * min_par ^ alpha * breakpoint ^ -(alpha + 1))
-  #(alpha * min_par ^ alpha / (breakpoint ^ (alpha + 1)))/exp(-breakpoint*beta)) * exp(-x * beta)
-}
-
-bigtreedist <- function(x, breakpoint, alpha, beta, min_par)
-  (x ^ (-alpha - 1)) * (exp(-x * beta)/exp(-breakpoint * beta))
-
-nll_cutoff <- function(alpha, beta, min_par, breakpoint) {
-  if (breakpoint <= min(x) | breakpoint >= max(x) | beta > 0) return(1e9)
-  smalltrees <- x[x < breakpoint]
-  bigtrees <- x[x >= breakpoint]
-  
-  nll_smalltrees <- -sum(log(alpha * min_par ^ alpha / (x ^ (alpha + 1))))
-  nll_bigtrees <- -sum(log(bigtreedist(bigtrees, breakpoint, alpha, beta, min_par)))
-  nll_smalltrees + nll_bigtrees
-}
 
 nll_powerlaw <- function(alpha, xmin) {
   C <- (alpha - 1) * ( xmin ^ (alpha - 1) )
@@ -98,7 +45,6 @@ nll_powerlaw_breakpoint <- function(alpha, xmin, beta, L) {
 
 x <- alltreedat$dbh
 fit1 <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
-#fit2 <- mle(nll_powerlaw_cutoff, start = list(alpha=3, lambda=1), fixed = list(xmin=min(x)), method='BFGS')
 fit2 <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1), fixed = list(xmin=min(x)), method='BFGS')
 fit3 <- mle(nll_powerlaw_breakpoint, start = list(L=2, beta=1), fixed = list(alpha=as.numeric(fit1@coef[1]), xmin=min(x)), method='BFGS')
 
@@ -106,7 +52,6 @@ x <- subset(alltreedat, tol_wright=='S')$dbh
 fit1shade <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
 fit2shade <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1), fixed = list(xmin=min(x)), method='BFGS')
 fit3shade <- mle(nll_powerlaw_breakpoint, start = list(L=2, beta=1), fixed = list(alpha=as.numeric(fit1shade@coef[1]), xmin=min(x)), method='BFGS')
-
 
 x <- subset(alltreedat, tol_wright=='I')$dbh
 fit1int <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
@@ -123,18 +68,62 @@ coefdat <- data.frame(guild = c('all','shade-tolerant','intermediate','gap'),
                       cutoff = c(fit2@coef[2], fit2shade@coef[2], fit2int@coef[2], fit2gap@coef[2]))
 coefdat$logcutoff <- log10(coefdat$cutoff)
 
-##########################################
-# crap? below
-fit1 <- mle(nll_pareto_manual, start=list(shape_par=3), fixed=list(min_par=min(x)), method='BFGS') # this gives the same result as poweRlaw.
-fit2 <- mle(nll_cutoff, start=list(beta=-1, breakpoint = 1.5), fixed=list(alpha=fit1@coef, min_par=min(x)), method='BFGS')
-fit2b <- mle(nll_cutoff2, start=list(beta=-1, alpha=3), fixed = list(min_par=min(x)), method='BFGS')
+# Bootstrap CIs
 
+boot_mle <- function(xboot, nboot) {
+  boot_stats <- list()
+  pb <- txtProgressBar(0, nboot, style = 3)
+  for (i in 1:nboot) {
+    setTxtProgressBar(pb, i)
+    x <<- sample(xboot, size = length(xboot), replace = TRUE) # Sets x in global environment.
+    fit1_i <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
+    fit2_i <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1), fixed = list(xmin=min(x)), method='BFGS')
+    boot_stats[[i]] <- c(slope1=fit1_i@coef[1], slope2=fit2_i@coef[1], cutoff=fit2_i@coef[2])
+  }
+  close(pb)
+  do.call('rbind', boot_stats)
+}
 
-x <- subset(alltreedat, tol_wright=='S')$dbh
-fit1shade <- mle(nll, start=list(shape_par=3), fixed=list(min_par=min(x)), method='BFGS') # this gives the same result as poweRlaw.
-fit2shade <- mle(nll_cutoff, start=list(beta=2, breakpoint = 5), fixed=list(alpha=fit1shade@coef, min_par=1), method='BFGS')
+boot_shade <- boot_mle(xboot = subset(alltreedat, tol_wright=='S')$dbh, nboot = 99)
+boot_int <- boot_mle(xboot = subset(alltreedat, tol_wright=='I')$dbh, nboot = 99)
+boot_gap <- boot_mle(xboot = subset(alltreedat, tol_wright=='G')$dbh, nboot = 99)
+boot_all <- boot_mle(xboot = alltreedat$dbh, nboot = 99)
 
+shade_ci <- apply(boot_shade, 2, quantile, probs = c(0.025, 0.975))
+int_ci <- apply(boot_int, 2, quantile, probs = c(0.025, 0.975))
+gap_ci <- apply(boot_gap, 2, quantile, probs = c(0.025, 0.975))
+all_ci <- apply(boot_all, 2, quantile, probs = c(0.025, 0.975))
 
-x <- subset(alltreedat, tol_wright=='G')$dbh
-fit1gap <- mle(nll, start=list(shape_par=3), fixed=list(min_par=min(x)), method='BFGS') # this gives the same result as poweRlaw.
-fit2gap <- mle(nll_cutoff, start=list(beta=1, breakpoint = 5), fixed=list(alpha=fit1gap@coef, min_par=1), method='BFGS')
+# Make sure confidence interval has converged
+nboot <- 99
+bootgapci <- matrix(0, ncol=2, nrow=length(10:nboot))
+for (i in 10:nboot) {
+  bootgapci[i-9, ] <- quantile(boot_gap[1:i, 3], probs=c(0.025,0.975))
+}
+
+plot(1:90, bootgapci[,2], type='l', ylim=c(0,70))
+lines(1:90, bootgapci[,1]) # it converges.
+
+save(boot_shade, boot_int, boot_gap, boot_all, file = 'C:/Users/Q/Dropbox/projects/forestlight/bootout.r')
+
+# Plot the new slopes.
+slopedat <- expand.grid(parameter = c('slope1','slope2','cutoff'), guild = c('all','shade','intermediate','gap'))
+slopedat$cimin <-  c(all_ci[1,], shade_ci[1,], int_ci[1,], gap_ci[1,])
+slopedat$cimax <-  c(all_ci[2,], shade_ci[2,], int_ci[2,], gap_ci[2,])
+slopedat$est <- c(fit1@coef, fit2@coef, fit1shade@coef, fit2shade@coef, fit1int@coef, fit2int@coef, fit1gap@coef, fit2gap@coef)
+
+library(cowplot)
+
+# Plot parameter estimates and confidence intervals
+dummy <- data.frame(expand.grid(parameter = c('slope1','slope2','cutoff'), guild = c('all','shade','intermediate','gap')),
+                    est=c(0,2),cimin=0,cimax=0)
+
+ggplot(slopedat, aes(x = guild, y = est, ymin = cimin, ymax = cimax)) +
+  geom_pointrange() +
+  geom_blank(data=dummy) +
+  facet_wrap(~ parameter, scales='free_y', nrow=2) +
+  panel_border(colour = 'black') +
+  theme(strip.background = element_blank()) +
+  labs(y = 'parameter estimate')
+
+ggsave('C:/Users/Q/Google Drive/ForestLight/figs/bootstrapci_cutoffs.png', height=7, width=7, dpi=300)

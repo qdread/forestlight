@@ -21,3 +21,11 @@ The columns of the table below are as follows:
 | shade-tolerant | 1.956  | 1.300  | 10.892 | 1.037     |
 | intermediate   | 1.758  | 1.205  | 20.866 | 1.319     |
 | gap            | 1.995  | 1.802  | 55.042 | 1.741     |
+
+## Slope confidence intervals
+
+Added 3 May 2017.
+
+I did bootstrap sampling 99 times on the original datasets and then ran the MLE on each of those datasets to get a confidence interval around the slope estimates. I think it might not be a conservative enough method since the confidence intervals are very small&mdash;they don't even show up on the figure below except for the one around the breakpoint for gap trees. But I think the cutoffs are so different that any method would show that they are significantly different.
+
+![slope figure](file:///C:\\Users\\Q\\Dropbox\\projects\\forestlight\\bootstrapci_cutoffs.png)
