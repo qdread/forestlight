@@ -10,7 +10,7 @@ bcicensusdat <- mutate(bcicensusdat,
                        production67=production67*1000)
 
 library(XLConnect)
-wright <- readWorksheetFromFile(file = 'C:/Users/Q/Google Drive/ForestLight/data/Shade Tolerance/Demographic/Wright et al 2010, growth mortality tradeoffs.xlsx', sheet = 1, startRow = 26) # Get rid of the lines above header.
+wright <- readWorksheetFromFile(file = 'C:/Users/Q/google_drive/ForestLight/data/Shade Tolerance/Demographic/Wright et al 2010, growth mortality tradeoffs.xlsx', sheet = 1, startRow = 26) # Get rid of the lines above header.
 wright[wright == -99] <- NA # Unknown values were given a value of -99
 wright$SPECIES.[109:110] <- c('simplex_var1', 'simplex_var2') # Correct duplicate named subspecies.
 wright$Taxon <- with(wright, paste(GENUS., SPECIES.))

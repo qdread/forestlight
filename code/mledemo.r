@@ -30,28 +30,34 @@ nll_powerlaw_cutoff2 <- function(alpha, xmin, L) {
   -sum(log(px))
 }
 
-nll_powerlaw_breakpoint <- function(alpha, xmin, beta, L) {
-  if (L > max(x) | L < min(x)) return(1e9)
-  smalltrees <- x[x < L]
-  bigtrees <- x[x >= L]
+# Try Farrior's breakpoint analysis. Ignore normalization constant since it is not needed to minimize log likelihood.
+nll_powerlaw_breakpoint <- function(alpha, beta, breakpoint) {
+  if (breakpoint < min(x) | breakpoint > max(x)) return(1e9) # Penalize if breakpoint is invalid.
+  smalltrees <- x[x < breakpoint]
+  bigtrees <- x[x >= breakpoint]
   
   #C <- (alpha - 1) * ( xmin ^ (alpha - 1) )
-  C <- (1/L) / (expint::gammainc(1-alpha, xmin/L))
-  fx_small <- x ^ ( -alpha )
-  fx_big <- ((L^-alpha)/exp(-L*beta)) * exp(-x*beta)
+  #C <- (1/L) / (expint::gammainc(1-alpha, xmin/L))
+  C <- 1
+  fx_small <- smalltrees ^ ( -alpha )
+  fx_big <- (breakpoint ^ -alpha) * (exp(-bigtrees * beta) / exp(-breakpoint * beta))
   px <- C * c(fx_small, fx_big)
   -sum(log(px))
 }
 
+
 x <- alltreedat$dbh
 fit1 <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
 fit2 <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1), fixed = list(xmin=min(x)), method='BFGS')
-fit3 <- mle(nll_powerlaw_breakpoint, start = list(L=2, beta=1), fixed = list(alpha=as.numeric(fit1@coef[1]), xmin=min(x)), method='BFGS')
+# Modify fit3 to let alpha vary.
+fit3 <- mle(nll_powerlaw_breakpoint, start = list(beta=1, breakpoint=10), fixed = list(alpha=as.numeric(fit1@coef[1])), method='BFGS')
+fit3 <- mle(nll_powerlaw_breakpoint, start = list(beta=2, breakpoint=10, alpha=2), method='BFGS')
+
 
 x <- subset(alltreedat, tol_wright=='S')$dbh
 fit1shade <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
 fit2shade <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1), fixed = list(xmin=min(x)), method='BFGS')
-fit3shade <- mle(nll_powerlaw_breakpoint, start = list(L=2, beta=1), fixed = list(alpha=as.numeric(fit1shade@coef[1]), xmin=min(x)), method='BFGS')
+fit3shade <- mle(nll_powerlaw_breakpoint, start = list(beta=1, breakpoint=10), fixed = list(alpha=as.numeric(fit1shade@coef[1])), method='BFGS')
 
 x <- subset(alltreedat, tol_wright=='I')$dbh
 fit1int <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
