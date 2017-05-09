@@ -236,8 +236,77 @@ pslopes <- ggplot(slopedat, aes(x=guild, y=est, ymin=cimin, ymax=cimax)) +
 
 library(gridExtra)
 
-pdf('C:/Users/Q/Google Drive/ForestLight/docs/density_production_plots_cutoffs.pdf', height=9, width=9)
+pdf('C:/Users/Q/google_drive/ForestLight/docs/density_production_plots_cutoffs.pdf', height=9, width=9)
   grid.arrange(pdall, pdshade, pdint, pdgap, nrow=2)
   grid.arrange(ppall, ppshade, ppint, ppgap, nrow=2)
   pslopes
 dev.off()
+
+ggsave('C:/Users/Q/google_drive/ForestLight/figs/density_scaling_shade.png', pdshade, height=4.5, width=4.5, dpi=400)
+ggsave('C:/Users/Q/google_drive/ForestLight/figs/density_scaling_inter.png', pdint, height=4.5, width=4.5, dpi=400)
+ggsave('C:/Users/Q/google_drive/ForestLight/figs/density_scaling_gap.png', pdgap, height=4.5, width=4.5, dpi=400)
+ggsave('C:/Users/Q/google_drive/ForestLight/figs/prod_scaling_shade.png', ppshade, height=4.5, width=4.5, dpi=400)
+ggsave('C:/Users/Q/google_drive/ForestLight/figs/prod_scaling_inter.png', ppint, height=4.5, width=4.5, dpi=400)
+ggsave('C:/Users/Q/google_drive/ForestLight/figs/prod_scaling_gap.png', ppgap, height=4.5, width=4.5, dpi=400)
+
+#################################
+# added 09 May: edit axis labels for the scatter plots as well.
+
+twoslopeplot <- function(dat, plottitle = 'plot title', xl = 'x label', yl = 'y label', binvar='diameter', x_max=141, y_min=1e-4, y_max=1000) {
+  if (binvar == 'mass') dat$xv <- dat$agb else dat$xv <- dat$dbh
+  lmsize <- lm(log10(production67) ~ log10(xv), data=dat)
+  lmsizecomp <- lm(log10(production67) ~ log10(xv) + log10(comp_idx), data=dat)
+  dbh_slope <- lmsizecomp$coefficients[2] # extract slope from full model
+  # refit model, setting slope from full model and estimating intercept
+  adjusted_lm <- lm(log10(production67) ~ 1 + offset(dbh_slope * log10(xv)), data=dat) 
+  adjusted_intercept <- adjusted_lm$coefficients[1]
+  
+  ggplot(dat, aes(x = xv, y = production67)) +
+    geom_point(alpha = 0.6) +
+    geom_abline(slope = lmsize$coefficients[2], intercept = lmsize$coefficients[1], color = 'indianred', size = 2) +
+    geom_abline(slope = dbh_slope, intercept = adjusted_intercept, color = 'steelblue1', size = 2) +
+    scale_x_log10(name = xl,
+                  limits = c(1, x_max),
+                  breaks = c(1,10,100),
+                  labels = c(1,10,100),
+                  expand = c(0,0)) +
+    scale_y_log10(name = yl,
+                  limits = c(y_min, y_max),
+                  breaks = 10^c(-3,-1,1,3),
+                  labels = as.character(10^c(-3,-1,1,3)),
+                  expand = c(0,0)) +
+    ggtitle(plottitle) +
+    panel_border(colour = 'black')
+}
+
+xl1 <- 'Diameter (cm)'
+yl1 <- expression(paste('Individual production (kg y'^-1,' ha'^-1, ')', sep=''))
+
+x_max <- max(shadedat$dbh)
+y_min <- 10^floor(log10(min(shadedat$production67)))
+y_max <- 1000
+y_values <- c(0.001, 0.1, 10, 1000)
+
+twoslopeplot(dat = alltreedat, 
+             plottitle = 'All species', 
+             xl = xl1, 
+             yl =  yl1)
+
+pipshade <- twoslopeplot(dat = shadedat, 
+             plottitle = 'Shade-tolerant species', 
+             xl = xl1, 
+             yl =  yl1)
+
+pipint <- twoslopeplot(dat = intdat, 
+             plottitle = 'Intermediate species', 
+             xl = xl1, 
+             yl =  yl1)
+
+pipgap <- twoslopeplot(dat = gapdat, 
+             plottitle = 'Gap species', 
+             xl = xl1, 
+             yl =  yl1)
+
+ggsave('C:/Users/Q/google_drive/ForestLight/figs/twoslope_shade.png', pipshade, height=4.5, width=4.5, dpi=400)
+ggsave('C:/Users/Q/google_drive/ForestLight/figs/twoslope_inter.png', pipint, height=4.5, width=4.5, dpi=400)
+ggsave('C:/Users/Q/google_drive/ForestLight/figs/twoslope_gap.png', pipgap, height=4.5, width=4.5, dpi=400)
