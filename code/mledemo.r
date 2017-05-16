@@ -45,10 +45,18 @@ nll_powerlaw_breakpoint <- function(alpha, beta, breakpoint) {
   -sum(log(px))
 }
 
+# Added 16 May: AICc.
+AICc <- function(n, k, lhat) {
+  2 * k - 2 * -lhat + ( 2 * k * (k + 1) ) / ( n - k )
+}
+
 
 x <- alltreedat$dbh
 fit1 <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
 fit2 <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1), fixed = list(xmin=min(x)), method='BFGS')
+aicall1 <- AICc(n = length(x), k = 1, lhat = fit1@min)
+aicall2 <- AICc(n = length(x), k = 2, lhat = fit2@min)
+
 # Modify fit3 to let alpha vary.
 fit3 <- mle(nll_powerlaw_breakpoint, start = list(beta=1, breakpoint=10), fixed = list(alpha=as.numeric(fit1@coef[1])), method='BFGS')
 fit3 <- mle(nll_powerlaw_breakpoint, start = list(beta=2, breakpoint=10, alpha=2), method='BFGS')
@@ -57,15 +65,22 @@ fit3 <- mle(nll_powerlaw_breakpoint, start = list(beta=2, breakpoint=10, alpha=2
 x <- subset(alltreedat, tol_wright=='S')$dbh
 fit1shade <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
 fit2shade <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1), fixed = list(xmin=min(x)), method='BFGS')
+aicshade1 <- AICc(n = length(x), k = 1, lhat = fit1shade@min)
+aicshade2 <- AICc(n = length(x), k = 2, lhat = fit2shade@min)
+
 fit3shade <- mle(nll_powerlaw_breakpoint, start = list(beta=1, breakpoint=10), fixed = list(alpha=as.numeric(fit1shade@coef[1])), method='BFGS')
 
 x <- subset(alltreedat, tol_wright=='I')$dbh
 fit1int <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
 fit2int <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1), fixed = list(xmin=min(x)), method='BFGS')
+aicint1 <- AICc(n = length(x), k = 1, lhat = fit1int@min)
+aicint2 <- AICc(n = length(x), k = 2, lhat = fit2int@min)
 
 x <- subset(alltreedat, tol_wright=='G')$dbh
 fit1gap <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
 fit2gap <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1), fixed = list(xmin=min(x)), method='BFGS')
+aicgap1 <- AICc(n = length(x), k = 1, lhat = fit1gap@min)
+aicgap2 <- AICc(n = length(x), k = 2, lhat = fit2gap@min)
 
 # Output coefficients
 coefdat <- data.frame(guild = c('all','shade-tolerant','intermediate','gap'),
@@ -73,6 +88,7 @@ coefdat <- data.frame(guild = c('all','shade-tolerant','intermediate','gap'),
                       slope2 = c(fit2@coef[1], fit2shade@coef[1], fit2int@coef[1], fit2gap@coef[1]),
                       cutoff = c(fit2@coef[2], fit2shade@coef[2], fit2int@coef[2], fit2gap@coef[2]))
 coefdat$logcutoff <- log10(coefdat$cutoff)
+coefdat$deltaaicc <- c(aicall1-aicall2, aicshade1-aicshade2, aicint1-aicint2, aicgap1-aicgap2)
 
 # Bootstrap CIs
 
