@@ -349,84 +349,255 @@ plowgap + th1
 
 # IV. Density scaling with light received as the scaling variable
 
-This corresponds to the plot that has three regression lines in the fourth panel of the mockup that also has stacked bar plots. For now, I opted to plot the full scaling with visualizations of the underlying bars, to see the result, although later the lines could be put on the same plot. This is more closely corresponding to the diameter scaling plots though, since the methodology is the same as for the diameter scaling but with light instead of diameter as the scaling variable. The hypothesis that the gap trees will have a more positive slope seems to be supported (although it is still negative, it is shallower). As before, the three shade groups are plotted with the same axes.
+This corresponds to the plot that has three regression lines in the fourth panel of the mockup. However, the figure in the mockup needs to be done using the same power law method we used to get the other density scalings, but using light received in W by each tree as the scaling variable. It should roughly match up with a power law, or a power law with exponential cutoff, because there should be many trees that receive little light energy, and a few that receive a lot. I fit the power law and the cutoff power law to these data, just like I did for the diameter scaling a long time ago. The binning displayed here is only for visualization purposes, because the maximum-likelihood power law fit is done without binning.
 
 ```{r}
-# We need to bin again, this time using light received as the binning variable. 
-# The density scaling is thus based on light received, not size.
+# Define functions
 
-numbins <- 20 # Only for looks
+nll_powerlaw <- function(alpha, xmin) {
+  C <- (alpha - 1) * ( xmin ^ (alpha - 1) )
+  fx <- x ^ ( -alpha )
+  px <- C * fx
+  -sum(log(px))
+} 
+
+# See: http://www.stat.cmu.edu/~cshalizi/2010-10-18-Meetup.pdf
+nll_powerlaw_cutoff2 <- function(alpha, xmin, L) {
+  C <- (1/L) / (expint::gammainc(1-alpha, xmin/L))
+  fx <- ( (x/L)^ -alpha ) * exp(-x/L)
+  px <- C * fx
+  -sum(log(px))
+}
+
+# Also include the pareto with exponential cutoff fits.
+pareto_cutoff <- function(x, alpha, xmin, L) {
+  C <- (1/L) / (expint::gammainc(1-alpha, xmin/L))
+  fx <- ( (x/L)^ -alpha ) * exp(-x/L)
+  px <- C * fx
+  return(px)
+}
+pareto_cutoff_n <- function(x, alpha, xmin, L, n) {
+  C <- (1/L) / (expint::gammainc(1-alpha, xmin/L))
+  fx <- ( (x/L)^ -alpha ) * exp(-x/L)
+  px <- C * fx
+  return(px*n)
+}
+
+AICc <- function(n, k, lhat) {
+  2 * k - 2 * -lhat + ( 2 * k * (k + 1) ) / ( n - k )
+}
+
+powerlawfit <- function(dat) {
+  library(poweRlaw)
+  pl_dat <- conpl$new(dat)
+  lognorm_dat <- conlnorm$new(dat)
+  xmin_pl <- pl_dat$getXmin()
+  xmin_lognorm <- lognorm_dat$getXmin()
+  pars_pl <- estimate_pars(pl_dat)
+  pars_lognorm <- estimate_pars(lognorm_dat)
+  pl_dat$setPars(pars_pl)
+  lognorm_dat$setPars(pars_lognorm)
+  plotdat <- plot(pl_dat)
+  plfit_dat <- lines(pl_dat)
+  lognormfit_dat <- lines(lognorm_dat)
+  pl_pdf <- dist_pdf(m = pl_dat, q = plfit_dat$x, log = FALSE)
+  lognorm_pdf <- dist_pdf(m = lognorm_dat, q = lognormfit_dat$x, log = FALSE)
+  
+  # bootstrap confidence interval of Pareto fit
+  # discard 500 burnin iterations
+  n_boot <- 1499
+  n_burn <- 500
+  pl_boot <- bootstrap(m = pl_dat, xmins = pl_dat$getXmin(), no_of_sims = n_boot, threads = 3)
+  boot_ci <- quantile(pl_boot$bootstraps$pars[-(1:n_burn)], probs = c(0.025, 0.975))
+  
+  return(list(plotdat = plotdat, 
+              plfit = plfit_dat, 
+              lognormfit = lognormfit_dat, 
+              plpdf = data.frame(x = plfit_dat$x, y = pl_pdf),
+              lognormpdf = data.frame(x = lognormfit_dat$x, y = lognorm_pdf),
+              xmin = xmin_pl, 
+              alpha = pars_pl$pars,
+              xmin_lognorm = xmin_lognorm,
+              pars_lognorm = pars_lognorm$pars,
+              boot_ci = as.numeric(boot_ci)
+  ))
+}
+
+plotbinsandfits_cutoff <- function(pl, plc, bindat, plottitle = 'plot title', xl = 'x label', yl = 'log PDF', plotarea=50, y_min=0.001, y_max=1075, x_min = 1, x_max=141, y_values = c(-3,-1,1,3), x_values = 1:3) {
+  
+  expr1 <- as.character(as.expression(substitute(
+    "Pareto:"~~alpha == a, list(a = round(pl$alpha, 2)))))
+  expr2 <- as.character(as.expression(substitute(
+    "Pareto-cutoff:"~~alpha == a*","~~L == lval, list(a = round(plc@coef[1], 2), 
+                                                      lval = round(plc@coef[2], 2)))))
+  
+  
+  bindat <- transform(bindat, bin_value = bin_value/plotarea) # Trees per hectare.
+  bindat <- subset(bindat, bin_value > 0)
+  #y_min <- 10^floor(log10(min(bindat$bin_value, na.rm = TRUE)))
+  #y_max <- max(bindat$bin_value, na.rm = TRUE) * 1.1
+  
+  n_indivs <- sum(bindat$bin_count)
+  #y_min <- 0.001
+  #y_max <- 1075
+  #x_max <- 141
+  
+  p <- ggplot(bindat) + 
+    scale_x_log10(name = xl,
+                  limits = c(1, x_max),
+                  breaks = 10^x_values,
+                  labels = 10^x_values,
+                  expand = c(0,0)) +
+    scale_y_log10(name = yl,
+                  limits = c(y_min, y_max),
+                  breaks = 10^y_values,
+                  labels = as.character(10^y_values),
+                  expand = c(0,0)) +
+    # scale_y_log10(name = yl,
+    #               limits = c(y_min, y_max),
+    #               breaks = scales::trans_breaks("log10", function(x) 10^x),
+    #               labels = scales::trans_format("log10", scales::math_format(10^.x)),
+    #               expand=c(0,0)) +
+    geom_rect(aes(xmin = bin_min, xmax = bin_max, ymin = 0, ymax = bin_value), alpha = 0.5) +
+    geom_line(data = transform(subset(pl$plpdf, y>0), y=y*n_indivs/plotarea), aes(x,y), color = 'forestgreen', size = 2) +
+    stat_function(fun = pareto_cutoff_n, args = list(alpha=plc@coef[1], xmin = 1, L = plc@coef[2], n = n_indivs/plotarea), color = 'goldenrod', size=2) +
+    geom_text(x = -Inf, y = -Inf, label = expr1, parse = TRUE, hjust = 0, vjust = -1.5) +
+    geom_text(x = -Inf, y = -Inf, label = expr2, parse = TRUE, hjust = 0, vjust = -0.2) +
+    panel_border(colour = 'black') +
+    labs(x = xl, y = yl) +
+    ggtitle(plottitle)
+  return(p)
+}
+
+
+```
+
+```{r, message = FALSE, warning = FALSE,  results = 'hide', fig.keep = 'none'}
+# Pareto fits
+bci_dens_fit_all <- powerlawfit(alltreedat$light_received)
+bci_dens_fit_shade <- powerlawfit(shadedat$light_received)
+bci_dens_fit_inter <- powerlawfit(intdat$light_received)
+bci_dens_fit_gap <- powerlawfit(gapdat$light_received)
+
+# Binning (for visualization only)
+numbins <- 20
 alltree_par_bin <- with(alltreedat, logbin(x=light_received, y=NULL, n = numbins))
 shade_par_bin <-  with(shadedat, logbin(x=light_received, y=NULL, n = numbins))
 int_par_bin <- with(intdat, logbin(x=light_received, y=NULL, n = numbins))
 gap_par_bin <-  with(gapdat, logbin(x=light_received, y=NULL, n = numbins))
+
+library(stats4)
+
+x <- alltreedat$light_received
+fit1 <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
+fit2 <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1000), fixed = list(xmin=min(x)), method='BFGS')
+aicall1 <- AICc(n = length(x), k = 1, lhat = fit1@min)
+aicall2 <- AICc(n = length(x), k = 2, lhat = fit2@min)
+
+
+x <- subset(alltreedat, tol_wright=='S')$light_received
+fit1shade <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
+fit2shade <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1000), fixed = list(xmin=min(x)), method='BFGS')
+aicshade1 <- AICc(n = length(x), k = 1, lhat = fit1shade@min)
+aicshade2 <- AICc(n = length(x), k = 2, lhat = fit2shade@min)
+
+x <- subset(alltreedat, tol_wright=='I')$light_received
+fit1int <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
+fit2int <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1000), fixed = list(xmin=min(x)), method='BFGS')
+aicint1 <- AICc(n = length(x), k = 1, lhat = fit1int@min)
+aicint2 <- AICc(n = length(x), k = 2, lhat = fit2int@min)
+
+x <- subset(alltreedat, tol_wright=='G')$light_received
+fit1gap <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
+fit2gap <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1000), fixed = list(xmin=min(x)), method='BFGS')
+aicgap1 <- AICc(n = length(x), k = 1, lhat = fit1gap@min)
+aicgap2 <- AICc(n = length(x), k = 2, lhat = fit2gap@min)
+
+# Output coefficients
+coefdat <- data.frame(guild = c('all','shade-tolerant','intermediate','gap'),
+                      slope1 = c(fit1@coef, fit1shade@coef, fit1int@coef, fit1gap@coef),
+                      slope2 = c(fit2@coef[1], fit2shade@coef[1], fit2int@coef[1], fit2gap@coef[1]),
+                      cutoff = c(fit2@coef[2], fit2shade@coef[2], fit2int@coef[2], fit2gap@coef[2]))
+coefdat$logcutoff <- log10(coefdat$cutoff)
+coefdat$deltaaicc <- c(aicall1-aicall2, aicshade1-aicshade2, aicint1-aicint2, aicgap1-aicgap2)
+
+# Bootstrap CIs
+
+boot_mle <- function(xboot, nboot) {
+  boot_stats <- list()
+  pb <- txtProgressBar(0, nboot, style = 3)
+  for (i in 1:nboot) {
+    setTxtProgressBar(pb, i)
+    x <<- sample(xboot, size = length(xboot), replace = TRUE) # Sets x in global environment.
+    fit1_i <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
+    fit2_i <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1000), fixed = list(xmin=min(x)), method='BFGS')
+    boot_stats[[i]] <- c(slope1=fit1_i@coef[1], slope2=fit2_i@coef[1], cutoff=fit2_i@coef[2])
+  }
+  close(pb)
+  do.call('rbind', boot_stats)
+}
+
+
+#boot_shade <- boot_mle(xboot = subset(alltreedat, tol_wright=='S')$light_received, nboot = 99)
+#boot_int <- boot_mle(xboot = subset(alltreedat, tol_wright=='I')$light_received, nboot = 99)
+#boot_gap <- boot_mle(xboot = subset(alltreedat, tol_wright=='G')$light_received, nboot = 99)
+#boot_all <- boot_mle(xboot = alltreedat$light_received, nboot = 99)
+
+load('C:/Users/Q/Dropbox/projects/forestlight/bootout_bylight.r')
+
+shade_ci <- apply(boot_shade, 2, quantile, probs = c(0.025, 0.975))
+int_ci <- apply(boot_int, 2, quantile, probs = c(0.025, 0.975))
+gap_ci <- apply(boot_gap, 2, quantile, probs = c(0.025, 0.975))
+all_ci <- apply(boot_all, 2, quantile, probs = c(0.025, 0.975))
+
 ```
 
 \newpage
+```{r, message=FALSE, echo=FALSE,warning=FALSE,fig.height=3.5, fig.width=3.5}
+# Create the plots.
+xl5 <- 'Light received (W)'
+yl5 <- expression(paste('Density (individuals ha'^-1,')', sep=''))
 
-```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.height = 3.5, fig.width = 3.5}
-# Determine axis limits
+# For the 3 groups, concatenate the bin values in individuals per hectare to figure out y axis labels
 raw_numbers <- c(shade_par_bin$bin_value, int_par_bin$bin_value, gap_par_bin$bin_value)/50
 y_min <- 10^floor(log10(min(raw_numbers)))
 y_max <- max(raw_numbers) * 1.1
 y_values <- -6:2
 x_values <- 1:5
 
-xl5 <- 'Light received (W)'
-yl5 <- expression(paste('Density (individuals ha'^-1,')', sep=''))
 
-pparall <- plotlogbin_cutoff(alltree_par_bin, xl5, yl5,  
-                               plottitle = 'All species', plotsubtitle = NULL, reg = TRUE, cutoff = NA, y_min = 5e-7, y_max = 30, x_max = 1e6, y_values = y_values, x_values = x_values)
-pparshade <- plotlogbin_cutoff(shade_par_bin, xl5, yl5,  
-                               plottitle = 'Shade-tolerant species', plotsubtitle = NULL, reg = TRUE, cutoff = NA, y_min = y_min, y_max = y_max, x_max = 4e5, y_values = y_values, x_values = x_values) 
-pparint <- plotlogbin_cutoff(int_par_bin, xl5, yl5,  
-                               plottitle = 'Intermediate species', plotsubtitle = NULL, reg = TRUE, cutoff = NA, y_min = y_min, y_max = y_max, x_max = 4e5, y_values = y_values, x_values = x_values) 
-ppargap <- plotlogbin_cutoff(gap_par_bin, xl5, yl5,  
-                             plottitle = 'Gap species', plotsubtitle = NULL, reg = TRUE, cutoff = NA, y_min = y_min, y_max = y_max, x_max = 4e5, y_values = y_values, x_values = x_values) 
+pdall <- plotbinsandfits_cutoff(bci_dens_fit_all, fit2, alltree_par_bin,
+                                plottitle = 'All species', xl = xl5, yl = yl5, y_min = 5e-7, y_max = 30, x_min = 1, x_max = 1e6, y_values = y_values, x_values = x_values)
+pdshade <- plotbinsandfits_cutoff(bci_dens_fit_shade, fit2shade, shade_par_bin,
+                                  plottitle = 'Shade-tolerant species', xl = xl5, yl = yl5, y_min=y_min, y_max=y_max, x_min=1, x_max=1e6, y_values=y_values, x_values = x_values)
+pdint <- plotbinsandfits_cutoff(bci_dens_fit_inter, fit2int, int_par_bin,
+                                plottitle = 'Intermediate species', xl = xl5, yl = yl5, y_min=y_min, y_max=y_max, x_min=1, x_max=1e6, y_values=y_values, x_values = x_values)
+pdgap <- plotbinsandfits_cutoff(bci_dens_fit_gap, fit2gap, gap_par_bin,
+                                plottitle = 'Gap species', xl = xl5, yl = yl5, y_min=y_min, y_max=y_max, x_min=1, x_max=1e6, y_values=y_values, x_values = x_values)
 
-pparall
-pparshade
-pparint
-ppargap
+pdall
+pdshade
+pdint
+pdgap
+
 ```
 
 \newpage
-## Hypothesis testing: are the slopes different among shade groups?
+## Table showing the slopes for different groups
 
-```{r, fig.height=3.5, fig.width=3.5}
-lmsize_all <- lm(log10(bin_value) ~ log10(bin_midpoint), data=alltreedat)
-lmsizecomp_all <- lm(log10(production34) ~ log10(dbh) + log10(light), data=alltreedat)
-lmsize_shade <- lm(log10(production34) ~ log10(dbh), data=shadedat)
-lmsizecomp_shade <- lm(log10(production34) ~ log10(dbh) + log10(light), data=shadedat)
-lmsize_int <- lm(log10(production34) ~ log10(dbh), data=intdat)
-lmsizecomp_int <- lm(log10(production34) ~ log10(dbh) + log10(light), data=intdat)
-lmsize_gap <- lm(log10(production34) ~ log10(dbh), data=gapdat)
-lmsizecomp_gap <- lm(log10(production34) ~ log10(dbh) + log10(light), data=gapdat)
+The columns of the table below are as follows:
 
-slopedat <- data.frame(withcompidx = rep(c('with light','without light'), each=4),
-                       guild = c('all','shade','intermediate','gap'),
-                       slope = c(lmsizecomp_all$coef[2], lmsizecomp_shade$coef[2], lmsizecomp_int$coef[2], lmsizecomp_gap$coef[2],
-                                 lmsize_all$coef[2], lmsize_shade$coef[2], lmsize_int$coef[2], lmsize_gap$coef[2]),
-                       cimin = c(confint(lmsizecomp_all)[2,1], confint(lmsizecomp_shade)[2,1], confint(lmsizecomp_int)[2,1], confint(lmsizecomp_gap)[2,1],
-                                 confint(lmsize_all)[2,1], confint(lmsize_shade)[2,1], confint(lmsize_int)[2,1], confint(lmsize_gap)[2,1]),
-                       cimax = c(confint(lmsizecomp_all)[2,2], confint(lmsizecomp_shade)[2,2], confint(lmsizecomp_int)[2,2], confint(lmsizecomp_gap)[2,2],
-                                 confint(lmsize_all)[2,2], confint(lmsize_shade)[2,2], confint(lmsize_int)[2,2], confint(lmsize_gap)[2,2]))
-```
+- **slope1** is the density scaling parameter without a cutoff, for all trees. This is the same one we got earlier.
+- **slope2** is the density scaling parameter for the portion of the trees below the cutoff in the Pareto-with-cutoff model. It is shallower because it isn't being dragged down by the big trees' random mortality anymore.
+- **cutoff** is the energy level at which the exponential takes over from the power law (measured in units of W). 
+- **logcutoff** is just the $log_{10}$ of the cutoff.
+- **deltaaicc** is the improvement to the fit from adding the cutoff parameter. If negative, the fit is worse when adding the cutoff parameter.
 
-\newpage
-```{r, fig.height=3.5, fig.width=3.5}
-ggplot(slopedat, aes(x = guild, group = interaction(guild, withcompidx), color = withcompidx, y = slope, ymin = cimin, ymax = cimax)) +
-  geom_pointrange() +
-  panel_border(colour = 'black') +
-  labs(color = 'Regression type') +
-  theme(legend.position = 'bottom')
-```
+| guild          | slope1 | slope2 | cutoff | logcutoff | deltaaicc |
+|----------------|--------|--------|--------|-----------|-----------|
+| all            | 1.221  | 0.939  | 9216   | 3.965     | 41261     |
+| shade-tolerant | 1.235  | 0.950  | 6915   | 3.840     | 33188     |
+| intermediate   | 1.209  | 0.721  | 4343   | 3.638     | 5296      |
+| gap            | 1.199  | 0.520  | 2204   | 3.343     | -982      |
 
-## Slope sensitivities to addition of light index
-
-Guild            | Delta
----------------- | ------
-All trees        | 0.048
-Shade-tolerant   | 0.067
-Intermediate     | -0.033
-Gap/pioneer      | 0.152
+The table shows that the gap trees should not be modeled as having a cutoff, but the other groups should. Ultimately, I think the hypothesis that gap trees have a higher proportion of abundance in the high light classes compared to the other groups is pretty much supported, since they don't have a cutoff, and they have a much shallower slope going from low light to high light, indicating that there are relatively more trees getting high light than there are in the shade-tolerant and intermediate groups.

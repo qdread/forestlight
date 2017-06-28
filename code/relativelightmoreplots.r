@@ -338,6 +338,48 @@ AICc <- function(n, k, lhat) {
   2 * k - 2 * -lhat + ( 2 * k * (k + 1) ) / ( n - k )
 }
 
+powerlawfit <- function(dat) {
+  library(poweRlaw)
+  pl_dat <- conpl$new(dat)
+  lognorm_dat <- conlnorm$new(dat)
+  xmin_pl <- pl_dat$getXmin()
+  xmin_lognorm <- lognorm_dat$getXmin()
+  pars_pl <- estimate_pars(pl_dat)
+  pars_lognorm <- estimate_pars(lognorm_dat)
+  pl_dat$setPars(pars_pl)
+  lognorm_dat$setPars(pars_lognorm)
+  plotdat <- plot(pl_dat)
+  plfit_dat <- lines(pl_dat)
+  lognormfit_dat <- lines(lognorm_dat)
+  pl_pdf <- dist_pdf(m = pl_dat, q = plfit_dat$x, log = FALSE)
+  lognorm_pdf <- dist_pdf(m = lognorm_dat, q = lognormfit_dat$x, log = FALSE)
+  
+  # bootstrap confidence interval of Pareto fit
+  # discard 500 burnin iterations
+  n_boot <- 1499
+  n_burn <- 500
+  pl_boot <- bootstrap(m = pl_dat, xmins = pl_dat$getXmin(), no_of_sims = n_boot, threads = 3)
+  boot_ci <- quantile(pl_boot$bootstraps$pars[-(1:n_burn)], probs = c(0.025, 0.975))
+  
+  return(list(plotdat = plotdat, 
+              plfit = plfit_dat, 
+              lognormfit = lognormfit_dat, 
+              plpdf = data.frame(x = plfit_dat$x, y = pl_pdf),
+              lognormpdf = data.frame(x = lognormfit_dat$x, y = lognorm_pdf),
+              xmin = xmin_pl, 
+              alpha = pars_pl$pars,
+              xmin_lognorm = xmin_lognorm,
+              pars_lognorm = pars_lognorm$pars,
+              boot_ci = as.numeric(boot_ci)
+  ))
+}
+
+# Pareto fits
+bci_dens_fit_all <- powerlawfit(alltreedat$light_received)
+bci_dens_fit_shade <- powerlawfit(shadedat$light_received)
+bci_dens_fit_inter <- powerlawfit(intdat$light_received)
+bci_dens_fit_gap <- powerlawfit(gapdat$light_received)
+
 library(stats4)
 
 x <- alltreedat$light_received
@@ -353,13 +395,13 @@ fit2shade <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1000), fixed = li
 aicshade1 <- AICc(n = length(x), k = 1, lhat = fit1shade@min)
 aicshade2 <- AICc(n = length(x), k = 2, lhat = fit2shade@min)
 
-x <- subset(alltreedat, tol_wright=='I')$dbh
+x <- subset(alltreedat, tol_wright=='I')$light_received
 fit1int <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
 fit2int <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1000), fixed = list(xmin=min(x)), method='BFGS')
 aicint1 <- AICc(n = length(x), k = 1, lhat = fit1int@min)
 aicint2 <- AICc(n = length(x), k = 2, lhat = fit2int@min)
 
-x <- subset(alltreedat, tol_wright=='G')$dbh
+x <- subset(alltreedat, tol_wright=='G')$light_received
 fit1gap <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
 fit2gap <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1000), fixed = list(xmin=min(x)), method='BFGS')
 aicgap1 <- AICc(n = length(x), k = 1, lhat = fit1gap@min)
@@ -411,6 +453,8 @@ lines(1:90, bootshadeci[,1]) # it converges.
 
 save(boot_shade, boot_int, boot_gap, boot_all, file = 'C:/Users/Q/Dropbox/projects/forestlight/bootout_bylight.r')
 
+load('C:/Users/Q/Dropbox/projects/forestlight/bootout_bylight.r')
+
 # Create the plots.
 xl5 <- 'Light received (W)'
 yl5 <- expression(paste('Density (individuals ha'^-1,')', sep=''))
@@ -422,7 +466,6 @@ y_max <- max(raw_numbers) * 1.1
 y_values <- -6:2
 x_values <- 1:5
 
-x_max <- max(bci_dens_logbin_shade$bin_max) 
 
 pdall <- plotbinsandfits_cutoff(bci_dens_fit_all, fit2, alltree_par_bin,
                                 plottitle = 'All species', xl = xl5, yl = yl5, y_min = 5e-7, y_max = 30, x_min = 1, x_max = 1e6, y_values = y_values, x_values = x_values)
@@ -432,3 +475,6 @@ pdint <- plotbinsandfits_cutoff(bci_dens_fit_inter, fit2int, int_par_bin,
                                 plottitle = 'Intermediate species', xl = xl5, yl = yl5, y_min=y_min, y_max=y_max, x_min=1, x_max=1e6, y_values=y_values, x_values = x_values)
 pdgap <- plotbinsandfits_cutoff(bci_dens_fit_gap, fit2gap, gap_par_bin,
                                 plottitle = 'Gap species', xl = xl5, yl = yl5, y_min=y_min, y_max=y_max, x_min=1, x_max=1e6, y_values=y_values, x_values = x_values)
+
+# Hypothesis testing: show slopes and possibly AICs.
+
