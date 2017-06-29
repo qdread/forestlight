@@ -179,3 +179,95 @@ overlay_high <- plotlogbin_overlaid(highlight_bins, xl2, yl2,
 pg <- plot_grid(overlay_low, overlay_mid, overlay_high, nrow = 3)
 ggsave('C:/Users/Q/google_drive/ForestLight/figs/bci50hectare_overlaidhistograms.png', pg, height = 9, width = 4, dpi = 400)
 
+####################
+# Edit 29 June: Yet another log binning function that just takes existing bin edges and puts the trees into it.
+# Redo log bin with same width.
+
+logbin_setedges <- function(x, y = NULL, edges) {
+  logx <- log10(x)                                           # log transform x value (biomass)
+  bin_edges <- log10(c(edges$bin_min, edges$bin_max[length(edges$bin_max)]))
+  n <- length(edges$bin_min)
+  logxbin <- rep(NA, length(logx))                           # create data structure to assign trees to bins
+  b <- bin_edges                                             # add a little to the biggest bin temporarily
+  b[length(b)] <- b[length(b)] + 1                           # (so that the biggest single tree is put in a bin)
+  for (i in 1:length(logx)) {
+    logxbin[i] <- sum(logx[i] >= b)                          # assign each tree to a bin
+  }
+  bin_midpoints <- edges$bin_midpoint
+  bin_widths <- diff(10^bin_edges)                           # get linear width of each bin
+  bin_factor <- factor(logxbin, levels=1:n)                  # convert bin to factor (required to deal with zeroes if present)
+  bin_counts <- table(bin_factor)                            # find number of trees in each bin
+  if (!is.null(y)) {
+    rawy <- tapply(y, bin_factor, sum)                       # sum y value (production) in each bin
+    rawy[is.na(rawy)] <- 0                                   # add zeroes back in if present
+    bin_values <- as.numeric(rawy/bin_widths)                # divide production by width for each bin 
+  }
+  else {
+    bin_values <- as.numeric(bin_counts/bin_widths)          # 1-dimensional case.
+  }
+  
+  return(data.frame(bin_midpoint = bin_midpoints,            # return result!
+                    bin_value = bin_values,                  # also add bin min and max for bar plot purposes
+                    bin_count = as.numeric(bin_counts),
+                    bin_min = 10^bin_edges[1:n],
+                    bin_max = 10^bin_edges[2:(n+1)]))
+  
+}
+
+# Get max and min, split into 10 bins
+bin_lims <- c(floor(min(shadedat$dbh)), ceiling(max(shadedat$dbh)))
+bin_edges <- seq(log10(bin_lims[1]), log10(bin_lims[2]), length.out=11)
+
+bin_dims <- data.frame(bin_min = 10^bin_edges[1:10], bin_max = 10^bin_edges[2:11])
+bin_dims <- transform(bin_dims, bin_midpoint = (bin_min+bin_max)/2)
+
+shade_lowlight_binset2 <-  with(subset(shadedat, light_group == 'Low light'), logbin_setedges(x=dbh, y=NULL, edges=bin_dims))
+int_lowlight_binset2 <- with(subset(intdat, light_group == 'Low light'), logbin_setedges(x=dbh, y=NULL, edges=bin_dims))
+gap_lowlight_binset2 <- with(subset(gapdat, light_group == 'Low light'), logbin_setedges(x=dbh, y=NULL, edges=bin_dims))
+
+shade_intlight_binset2 <-  with(subset(shadedat, light_group == 'Intermediate light'), logbin_setedges(x=dbh, y=NULL, edges=bin_dims))
+int_intlight_binset2 <- with(subset(intdat, light_group == 'Intermediate light'), logbin_setedges(x=dbh, y=NULL, edges=bin_dims))
+gap_intlight_binset2 <- with(subset(gapdat, light_group == 'Intermediate light'), logbin_setedges(x=dbh, y=NULL, edges=bin_dims))
+
+shade_highlight_binset2 <-  with(subset(shadedat, light_group == 'High light'), logbin_setedges(x=dbh, y=NULL, edges=bin_dims))
+int_highlight_binset2 <- with(subset(intdat, light_group == 'High light'), logbin_setedges(x=dbh, y=NULL, edges=bin_dims))
+gap_highlight_binset2 <- with(subset(gapdat, light_group == 'High light'), logbin_setedges(x=dbh, y=NULL, edges=bin_dims))
+
+# Concatenate each light level into one df.
+lowlight_bins <- rbind(transform(shade_lowlight_binset2, guild = 'shade'),
+                       transform(int_lowlight_binset2, guild = 'intermediate'),
+                       transform(gap_lowlight_binset2, guild = 'gap'))
+intlight_bins <- rbind(transform(shade_intlight_binset2, guild = 'shade'),
+                       transform(int_intlight_binset2, guild = 'intermediate'),
+                       transform(gap_intlight_binset2, guild = 'gap'))
+highlight_bins <- rbind(transform(shade_highlight_binset2, guild = 'shade'),
+                        transform(int_highlight_binset2, guild = 'intermediate'),
+                        transform(gap_highlight_binset2, guild = 'gap'))
+
+lowlight_bins <- subset(lowlight_bins, bin_value > 0)
+intlight_bins <- subset(intlight_bins, bin_value > 0)
+highlight_bins <- subset(highlight_bins, bin_value > 0)
+
+raw_numbers <- c(lowlight_bins$bin_value, intlight_bins$bin_value, highlight_bins$bin_value)/50
+y_min <- 10^floor(log10(min(raw_numbers)))
+y_max <- max(raw_numbers) * 1.1
+y_values <- -4:3
+
+xl2 <- 'Diameter (cm)'
+yl2 <- expression(paste('Density (individuals ha'^-1,')', sep=''))
+
+th1 <- theme(plot.title = element_text(size = 12), plot.subtitle = element_text(size = 10), legend.position = c(0.8, 0.8))
+
+
+overlay_low <- plotlogbin_overlaid(lowlight_bins, xl2, yl2,  
+                                   'Low light', NULL, reg = FALSE, cutoff = NA, y_min = y_min, y_max = y_max, x_max = 141, y_values = y_values) + 
+  th1
+overlay_mid <- plotlogbin_overlaid(intlight_bins, xl2, yl2,  
+                                   'Intermediate light', NULL, reg = FALSE, cutoff = NA, y_min = y_min, y_max = y_max, x_max = 141, y_values = y_values) + 
+  th1
+overlay_high <- plotlogbin_overlaid(highlight_bins, xl2, yl2,  
+                                    'High light', NULL, reg = FALSE, cutoff = NA, y_min = y_min, y_max = y_max, x_max = 141, y_values = y_values) +
+  th1
+
+pg <- plot_grid(overlay_low, overlay_mid, overlay_high, nrow = 3)
+ggsave('C:/Users/Q/google_drive/ForestLight/figs/bci50hectare_overlaidhistograms.png', pg, height = 9, width = 4, dpi = 400)
