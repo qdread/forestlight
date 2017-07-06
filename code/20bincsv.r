@@ -81,3 +81,35 @@ unclassified_bin_all <- cbind(guild = 'unclassified', unclassified_bin_dens[,c('
 
 bin_all <- rbind(shade_bin_all, int_bin_all, gap_bin_all, unclassified_bin_all)
 write.csv(bin_all, 'data/bci_binned.csv', row.names = FALSE)
+
+
+##################################
+# 5 Jul 2017: export data for all individuals, including allometry
+
+tp <- function(dbh) {
+  h <- exp(.438 + .595 * log(dbh))    # Height
+  cd <- exp(-.157 + .702 * log(dbh))  # Crown depth
+  cr <- exp(-.438 + .658 * log(dbh))  # Crown radius
+  cV <- exp(-.681 + 2.02 * log(dbh))  # Crown volume
+  data.frame(h=h, cd=cd, cr=cr, cV=cV)
+}
+
+crowndim <- tp(bcicensusdat$dbh) 
+bcicensusdat <- transform(bcicensusdat, 
+                          crownarea = pi * crowndim$cr^2,
+                          crowndepth = crowndim$cd,
+                          height = crowndim$h,
+                          crownvolume = crowndim$cV)
+bcicensusdat <- transform(bcicensusdat, light_received = light * crownarea * insol_bci)
+
+
+alltreedat <- subset(bcicensusdat, 
+                     !is.na(dbh) & production34 > 0 & !is.na(light))
+shadedat <- subset(bcicensusdat, 
+                   !is.na(dbh) & production34 > 0 & !is.na(light) & tol_wright == 'S')
+intdat <- subset(bcicensusdat, 
+                 !is.na(dbh) & production34 > 0 & !is.na(light) & tol_wright == 'I')
+gapdat <- subset(bcicensusdat, 
+                 !is.na(dbh) & production34 > 0 & !is.na(light) & tol_wright == 'G')
+
+write.csv(alltreedat, file = 'C:/Users/Q/google_drive/ForestLight/data/alltreedat05jul.csv', row.names = FALSE)
