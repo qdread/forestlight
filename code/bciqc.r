@@ -195,4 +195,7 @@ save(list = c('growth8590','growth9095',grep('bci.', ls(), value = TRUE)), file 
 # Apply algorithm that tracks stems between censuses
 
 load(file.path(fp, 'bcidata/bciqcrun.R'))
+# Probably not necessary. Just use "full" dataset but be explicit about what we are doing. We can always go ahead and get rid of those later.
+
+
 
