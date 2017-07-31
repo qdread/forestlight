@@ -214,8 +214,16 @@ get_two_slopes <- function(dat, xv = 'dbh_corr', yv = 'production', modv = 'ligh
   return(data.frame(withindex = c('without','with'), rbind(withoutmod, withmod)))
 }
 
-cbind(year = 1990, guild = 'all', get_two_slopes(alltree_light_90))
-####add other ones here.
+allyears_names <- c('alltreedat', 'shadedat', 'intdat', 'gapdat', 'unclassifieddat', 'shadedat_quant', 'intdat_quant', 'gapdat_quant')
+names1990 <- c('alltree_light_90', 'shade_light_90', 'int_light_90', 'gap_light_90', 'unclassified_light_90', 'shadequant_light_90', 'intquant_light_90', 'gapquant_light_90')
+names1995 <- c('alltree_light_95', 'shade_light_95', 'int_light_95', 'gap_light_95', 'unclassified_light_95', 'shadequant_light_95', 'intquant_light_95', 'gapquant_light_95')
+
+
+for (i in c(names1990, names1995)) {
+  dat <- get(i)
+  assign(paste0(i, '_dens_slopes'), get_two_slopes(dat))
+}
+
 
 # Do shade tolerance as continuous variable and plot.
 getslope <- function(dat) {
@@ -261,9 +269,7 @@ ggplot(compslopes1995, aes(x = pca_scores, y = comp_sensitivity)) +
 # Pareto fits
 # All years, all combinations.
 
-allyears_names <- c('alltreedat', 'shadedat', 'intdat', 'gapdat', 'unclassifieddat', 'shadedat_quant', 'intdat_quant', 'gapdat_quant')
-names1990 <- c('alltree_light_90', 'shade_light_90', 'int_light_90', 'gap_light_90', 'unclassified_light_90', 'shadequant_light_90', 'intquant_light_90', 'gapquant_light_90')
-names1995 <- c('alltree_light_95', 'shade_light_95', 'int_light_95', 'gap_light_95', 'unclassified_light_95', 'shadequant_light_95', 'intquant_light_95', 'gapquant_light_95')
+
 
 for (i in allyears_names) {
   dat <- get(i)
@@ -293,8 +299,10 @@ for (i in c(names1990, names1995)) {
 # DENSITY SCALING BY DIAMETER, WITH CUTOFF
 # all years
 
+library(stats4)
+
 pareto_cutoff_fits <- function(dataframe, variable) {
-  x <- dataframe[,variable]
+  x <<- dataframe[,variable]
   fit_pareto <- mle(nll_powerlaw, start = list(alpha = 3), fixed = list(xmin = min(x)), method = 'BFGS')
   fit_cutoff <- mle(nll_powerlaw_cutoff2, start = list(alpha = 3, L = 1), fixed = list(xmin = min(x)), method = 'BFGS')
   aic_pareto <- AICc(n = length(x), k = 1, lhat = fit_pareto@min)
@@ -328,7 +336,7 @@ for (i in allyears_names) {
 coef_tables_9095 <- list()
 
 for (i in c(names1990, names1995)) {
-  coef_tables_9095[[length(coef_tables_9095) + 1]] <- lapply(get(paste0(i,'_paretofits')), function(x) with(x, extractcoeffs(fit_pareto, fit_cutoff, aic_pareto, aic_cutoff)))
+  coef_tables_9095[[length(coef_tables_9095) + 1]] <- with(get(paste0(i,'_paretofits')), extractcoeffs(fit_pareto, fit_cutoff, aic_pareto, aic_cutoff))
 }
 
 # generate bootstrap confidence interval around coefficients
