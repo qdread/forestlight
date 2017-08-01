@@ -188,14 +188,14 @@ plotbinsandfits_cutoff <- function(pl, plc, bindat, plottitle = 'plot title', xl
   return(p)
 }
 
-boot_mle <- function(xboot, nboot) {
+boot_mle <- function(xboot, nboot, L_init = 1000) {
   boot_stats <- list()
   pb <- txtProgressBar(0, nboot, style = 3)
   for (i in 1:nboot) {
     setTxtProgressBar(pb, i)
     x <<- sample(xboot, size = length(xboot), replace = TRUE) # Sets x in global environment.
     fit1_i <- mle(nll_powerlaw, start = list(alpha=3), fixed = list(xmin=min(x)), method='BFGS')
-    fit2_i <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=1000), fixed = list(xmin=min(x)), method='BFGS')
+    fit2_i <- mle(nll_powerlaw_cutoff2, start = list(alpha=3, L=L_init), fixed = list(xmin=min(x)), method='BFGS')
     boot_stats[[i]] <- c(slope1=fit1_i@coef[1], slope2=fit2_i@coef[1], cutoff=fit2_i@coef[2])
   }
   close(pb)
@@ -227,4 +227,74 @@ twoslopeplot <- function(dat, plottitle = 'plot title', xl = 'x label', yl = 'y 
 
 AICc <- function(n, k, lhat) {
   2 * k - 2 * -lhat + ( 2 * k * (k + 1) ) / ( n - k )
+}
+
+# Yet another log binning function that just takes existing bin edges and puts the trees into it.
+# Redo log bin with same width.
+
+logbin_setedges <- function(x, y = NULL, edges) {
+  logx <- log10(x)                                           # log transform x value (biomass)
+  bin_edges <- log10(c(edges$bin_min, edges$bin_max[length(edges$bin_max)]))
+  n <- length(edges$bin_min)
+  logxbin <- rep(NA, length(logx))                           # create data structure to assign trees to bins
+  b <- bin_edges                                             # add a little to the biggest bin temporarily
+  b[length(b)] <- b[length(b)] + 1                           # (so that the biggest single tree is put in a bin)
+  for (i in 1:length(logx)) {
+    logxbin[i] <- sum(logx[i] >= b)                          # assign each tree to a bin
+  }
+  bin_midpoints <- edges$bin_midpoint
+  bin_widths <- diff(10^bin_edges)                           # get linear width of each bin
+  bin_factor <- factor(logxbin, levels=1:n)                  # convert bin to factor (required to deal with zeroes if present)
+  bin_counts <- table(bin_factor)                            # find number of trees in each bin
+  if (!is.null(y)) {
+    rawy <- tapply(y, bin_factor, sum)                       # sum y value (production) in each bin
+    rawy[is.na(rawy)] <- 0                                   # add zeroes back in if present
+    bin_values <- as.numeric(rawy/bin_widths)                # divide production by width for each bin 
+  }
+  else {
+    bin_values <- as.numeric(bin_counts/bin_widths)          # 1-dimensional case.
+  }
+  
+  return(data.frame(bin_midpoint = bin_midpoints,            # return result!
+                    bin_value = bin_values,                  # also add bin min and max for bar plot purposes
+                    bin_count = as.numeric(bin_counts),
+                    bin_min = 10^bin_edges[1:n],
+                    bin_max = 10^bin_edges[2:(n+1)]))
+  
+}
+
+plotlogbin_overlaid <- function(dat, xl, yl, plottitle, plotsubtitle=NULL, reg = FALSE, cutoff = NA, y_min=0.1, y_max=53, x_min=1.1, x_max=141, plotarea=50, y_values=-1:3, x_values = 0:2) {
+  
+  dat <- transform(dat, bin_value = bin_value/plotarea) # kg per hectare.
+  
+  p <- ggplot(dat, aes(xmin=bin_min, xmax=bin_max, ymin=0, ymax=bin_value)) + 
+    geom_rect(alpha = 1, aes(group=guild, fill=guild), color = 'black') +
+    scale_x_log10(name = xl, expand = c(0,0),
+                  breaks = 10^x_values,
+                  labels = as.character(10^x_values), limits=c(x_min,x_max)) +
+    scale_y_log10(name = yl, expand = c(0,0), limits = c(y_min, y_max),
+                  breaks = 10^y_values,
+                  labels = as.character(10^y_values)) +
+    panel_border(colour = 'black') + 
+    ggtitle(plottitle, plotsubtitle)
+  if (reg) {
+    p <- p +
+      stat_smooth(method = 'lm', se = FALSE, color = 'forestgreen', size = 2,
+                  aes(x = bin_midpoint, y = bin_value)) +
+      geom_text(x = -Inf, y = -Inf, 
+                label = paste('Slope without cutoff:', 
+                              round(lm(I(log10(bin_value)) ~ I(log10(bin_midpoint)), data=dat)$coef[2], 2)),
+                hjust = 0, vjust = -1.5)
+    
+    if (!is.na(cutoff)) {
+      p <- p +
+        stat_smooth(method = 'lm', se = FALSE, color = 'goldenrod', size = 2,
+                    aes(x = bin_midpoint, y = bin_value), data = subset(dat, bin_midpoint <= cutoff)) +
+        geom_text(x = -Inf, y = -Inf, 
+                  label = paste('Slope with cutoff:', 
+                                round(lm(I(log10(bin_value)) ~ I(log10(bin_midpoint)), data=subset(dat, bin_midpoint <= cutoff))$coef[2], 2)),
+                  hjust = 0, vjust = -0.2)
+    }
+  }
+  return(p)
 }

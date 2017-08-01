@@ -16,6 +16,7 @@ source('code/wright_groups.r')
 
 # 2. Convert all census data frames to the correct units (dbh in cm, not mm; agb in kg, not Mg)
 # Simultaneously, calculate biomass increments for each stem from the previous census to the current one. Combine everything into a single data frame if possible.
+# Also get rid of the young (secondary) forest patches.
 
 bci_production <- list()
 
@@ -38,7 +39,8 @@ bcicensusdat[[i-1]] <- get(paste0('bci.full',i)) %>%
   filter(DFstatus == 'alive') %>%
   mutate(dbh_corr = dbh_corr/10,
          agb_corr = agb_corr * 1000,
-         production = production * 1000)
+         production = production * 1000) %>%
+  filter(!young)
 }
 
 
@@ -301,10 +303,10 @@ for (i in c(names1990, names1995)) {
 
 library(stats4)
 
-pareto_cutoff_fits <- function(dataframe, variable) {
+pareto_cutoff_fits <- function(dataframe, variable, L_init = 1) {
   x <<- dataframe[,variable]
   fit_pareto <- mle(nll_powerlaw, start = list(alpha = 3), fixed = list(xmin = min(x)), method = 'BFGS')
-  fit_cutoff <- mle(nll_powerlaw_cutoff2, start = list(alpha = 3, L = 1), fixed = list(xmin = min(x)), method = 'BFGS')
+  fit_cutoff <- mle(nll_powerlaw_cutoff2, start = list(alpha = 3, L = L_init), fixed = list(xmin = min(x)), method = 'BFGS')
   aic_pareto <- AICc(n = length(x), k = 1, lhat = fit_pareto@min)
   aic_cutoff <- AICc(n = length(x), k = 2, lhat = fit_cutoff@min)
   return(list(fit_pareto = fit_pareto, fit_cutoff = fit_cutoff, aic_pareto = aic_pareto, aic_cutoff = aic_cutoff))
@@ -363,24 +365,26 @@ for (i in c(names1990, names1995)) {
 
 # fit parameters with and without cutoff
 
+# L_init must be set to a high value to work.
 for(i in c(names1990, names1995)) {
   dat <- get(i)
-  assign(paste0(i, '_lightparetofits'), pareto_cutoff_fits(dat, 'light_received'))
+  assign(paste0(i, '_lightparetofits'), pareto_cutoff_fits(dat, 'light_received', L_init = 10000))
 }
+
 
 # generate table of coefficients
 
 coef_tables_9095light <- list()
 
 for (i in c(names1990, names1995)) {
-  coef_tables_9095light[[length(coef_tables_9095light) + 1]] <- lapply(get(paste0(i,'_lightparetofits')), function(x) with(x, extractcoeffs(fit_pareto, fit_cutoff, aic_pareto, aic_cutoff)))
+  coef_tables_9095light[[length(coef_tables_9095light) + 1]] <- with(get(paste0(i,'_lightparetofits')), extractcoeffs(fit_pareto, fit_cutoff, aic_pareto, aic_cutoff))
 }
 
 # generate bootstrap confidence interval around coefficients
 
 for (i in c(names1990, names1995)) {
   dat <- get(i)
-  assign(paste0(i, '_lightparetoboot'), boot_mle(xboot = dat$light_received, nboot = nb))
+  assign(paste0(i, '_lightparetoboot'), boot_mle(xboot = dat$light_received, nboot = nb, L_init = 10000))
   assign(paste0(i, '_lightparetobootci'), apply(get(paste0(i, '_paretoboot')), 2, quantile, probs = qprobs))
 }
 
@@ -395,13 +399,13 @@ numbins <- 20 # Can be edited if desired. ***NOT JUST FOR LOOKS***
 for (i in allyears_names) {
   dat <- get(i)
   assign(paste0(i, '_prod_logbin'), lapply(dat, function(z) logbin(x=z$dbh_corr, y=z$production, n=numbins)))
-  assign(paste0(i, 'prod_lm'), lapply(get(paste0(i, '_prod_logbin')), function(x) lm(log10(bin_value) ~ log10(bin_midpoint), data=x)))
+  assign(paste0(i, 'prod_lm'), lapply(get(paste0(i, '_prod_logbin')), function(x) lm(log10(bin_value) ~ log10(bin_midpoint), data=subset(x, bin_value > 0))))
 }
 
 for (i in c(names1990, names1995)) {
   dat <- get(i)
   assign(paste0(i, '_prod_logbin'), logbin(x=dat$dbh_corr, y=dat$production, n=numbins))
-  assign(paste0(i, 'prod_lm'), lm(log10(bin_value) ~ log10(bin_midpoint), data=get(paste0(i, '_prod_logbin'))))
+  assign(paste0(i, 'prod_lm'), lm(log10(bin_value) ~ log10(bin_midpoint), data=subset(get(paste0(i, '_prod_logbin')), bin_value > 0)))
 }
 
 # ***insert plotting code here***
@@ -412,22 +416,78 @@ for (i in c(names1990, names1995)) {
 numbins <- 20
 
 # Do logbin and get slopes
-for (i in allyears_names) {
-  dat <- get(i)
-  assign(paste0(i, '_light_logbin'), lapply(dat, function(z) logbin(x=z$dbh_corr, y=z$light_received, n=numbins)))
-  assign(paste0(i, 'light_lm'), lapply(get(paste0(i, '_light_logbin')), function(x) lm(log10(bin_value) ~ log10(bin_midpoint), data=x)))
-}
 
 for (i in c(names1990, names1995)) {
   dat <- get(i)
   assign(paste0(i, '_light_logbin'), logbin(x=dat$dbh_corr, y=dat$light_received, n=numbins))
-  assign(paste0(i, 'light_lm'), lm(log10(bin_value) ~ log10(bin_midpoint), data=get(paste0(i, '_light_logbin'))))
+  assign(paste0(i, 'light_lm'), lm(log10(bin_value) ~ log10(bin_midpoint), data=subset(get(paste0(i, '_light_logbin')), bin_value > 0)))
 }
 
 # ***insert plotting code here
+
+
 
 ######
 # DENSITY SCALING: 2-factor grouping: light grouping vs shade grouping
 # 1990 and 1995 only
 # Use even-axis shade grouping and quantile shade groupings.
 
+threelevelbins <- function(datanames, nbins=10) {
+  dat_shade <- get(datanames[1])
+  dat_int <- get(datanames[2])
+  dat_gap <- get(datanames[3])
+  
+  # Get max and min, split into 10 bins
+  bin_lims <- c(floor(min(dat_shade$dbh_corr)), ceiling(max(dat_shade$dbh_corr)))
+  bin_edges <- seq(log10(bin_lims[1]), log10(bin_lims[2]), length.out=nbins+1)
+  
+  bin_dims <- data.frame(bin_min = 10^bin_edges[1:nbins], bin_max = 10^bin_edges[2:(nbins+1)])
+  bin_dims <- transform(bin_dims, bin_midpoint = (bin_min+bin_max)/2)
+  
+  shade_lowlight_binset2 <-  with(subset(dat_shade, light_group == 'Low light'), logbin_setedges(x=dbh_corr, y=NULL, edges=bin_dims))
+  int_lowlight_binset2 <- with(subset(dat_int, light_group == 'Low light'), logbin_setedges(x=dbh_corr, y=NULL, edges=bin_dims))
+  gap_lowlight_binset2 <- with(subset(dat_gap, light_group == 'Low light'), logbin_setedges(x=dbh_corr, y=NULL, edges=bin_dims))
+  
+  shade_intlight_binset2 <-  with(subset(dat_shade, light_group == 'Intermediate light'), logbin_setedges(x=dbh_corr, y=NULL, edges=bin_dims))
+  int_intlight_binset2 <- with(subset(dat_int, light_group == 'Intermediate light'), logbin_setedges(x=dbh_corr, y=NULL, edges=bin_dims))
+  gap_intlight_binset2 <- with(subset(dat_gap, light_group == 'Intermediate light'), logbin_setedges(x=dbh_corr, y=NULL, edges=bin_dims))
+  
+  shade_highlight_binset2 <-  with(subset(dat_shade, light_group == 'High light'), logbin_setedges(x=dbh_corr, y=NULL, edges=bin_dims))
+  int_highlight_binset2 <- with(subset(dat_int, light_group == 'High light'), logbin_setedges(x=dbh_corr, y=NULL, edges=bin_dims))
+  gap_highlight_binset2 <- with(subset(dat_gap, light_group == 'High light'), logbin_setedges(x=dbh_corr, y=NULL, edges=bin_dims))
+  
+  # Concatenate each light level into one df.
+  lowlight_bins <- rbind(transform(shade_lowlight_binset2, guild = 'shade'),
+                         transform(int_lowlight_binset2, guild = 'intermediate'),
+                         transform(gap_lowlight_binset2, guild = 'gap'))
+  intlight_bins <- rbind(transform(shade_intlight_binset2, guild = 'shade'),
+                         transform(int_intlight_binset2, guild = 'intermediate'),
+                         transform(gap_intlight_binset2, guild = 'gap'))
+  highlight_bins <- rbind(transform(shade_highlight_binset2, guild = 'shade'),
+                          transform(int_highlight_binset2, guild = 'intermediate'),
+                          transform(gap_highlight_binset2, guild = 'gap'))
+  
+  lowlight_bins <- subset(lowlight_bins, bin_value > 0)
+  intlight_bins <- subset(intlight_bins, bin_value > 0)
+  highlight_bins <- subset(highlight_bins, bin_value > 0)
+  
+  return(list(lowlight_bins, intlight_bins, highlight_bins))
+}
+
+threebins_even_1990 <- threelevelbins(datanames = names1990[2:4])
+threebins_quantile_1990 <- threelevelbins(datanames = names1990[6:8])
+threebins_even_1995 <- threelevelbins(datanames = names1995[2:4])
+threebins_quantile_1995 <- threelevelbins(datanames = names1995[6:8])
+
+#####
+# weighted averages of shade, intermediate, and gap.
+
+# *** insert code here ***
+
+# Save gigantic workspace for later plotting
+save.image(file = 'C:/Users/Q/Dropbox/projects/forestlight/allscalings.RData')
+
+#####
+# individual-level scatterplots of light received by production for both years
+
+# *** insert code here ***
