@@ -73,6 +73,8 @@ plotlogbin_cutoff <- function(dat, xl, yl, plottitle, plotsubtitle=NULL, reg = F
   return(p)
 }
 
+#gammainc <- function(a, x) gamma(a) * pgamma(x, a, 1, lower = FALSE)
+
 nll_powerlaw <- function(alpha, xmin) {
   C <- (alpha - 1) * ( xmin ^ (alpha - 1) )
   fx <- x ^ ( -alpha )
@@ -82,7 +84,7 @@ nll_powerlaw <- function(alpha, xmin) {
 
 # See: http://www.stat.cmu.edu/~cshalizi/2010-10-18-Meetup.pdf
 nll_powerlaw_cutoff2 <- function(alpha, xmin, L) {
-  C <- (1/L) / (expint::gammainc(1-alpha, xmin/L))
+  C <- (1/L) / (gsl::gamma_inc(1-alpha, xmin/L))
   fx <- ( (x/L)^ -alpha ) * exp(-x/L)
   px <- C * fx
   -sum(log(px))
@@ -90,13 +92,13 @@ nll_powerlaw_cutoff2 <- function(alpha, xmin, L) {
 
 # Also include the pareto with exponential cutoff fits.
 pareto_cutoff <- function(x, alpha, xmin, L) {
-  C <- (1/L) / (expint::gammainc(1-alpha, xmin/L))
+  C <- (1/L) / (gsl::gamma_inc(1-alpha, xmin/L))
   fx <- ( (x/L)^ -alpha ) * exp(-x/L)
   px <- C * fx
   return(px)
 }
 pareto_cutoff_n <- function(x, alpha, xmin, L, n) {
-  C <- (1/L) / (expint::gammainc(1-alpha, xmin/L))
+  C <- (1/L) / (gsl::gamma_inc(1-alpha, xmin/L))
   fx <- ( (x/L)^ -alpha ) * exp(-x/L)
   px <- C * fx
   return(px*n)
