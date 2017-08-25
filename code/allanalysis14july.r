@@ -11,6 +11,16 @@
 fp <- 'C:/Users/Q/Dropbox/projects/forestlight/'
 load(file.path(fp, 'bcidata/bciqcrun.R')) # Removes strangler figs, applies taper correction on dbh, and flags the secondary forest area and the 20-m edge strip.
 
+# Modification 25 August: get rid of young and edge trees for all datasets. This will reduce the number of hectares but will be most correct.
+
+for (i in 1:7) {
+  assign(paste0('bci.full', i), subset(get(paste0('bci.full', i)), !young & !edge))
+  assign(paste0('bci.stem', i), subset(get(paste0('bci.stem', i)), !young & !edge))
+}
+
+growth8590 <- subset(growth8590, !young & !edge)
+growth9095 <- subset(growth9095, !young & !edge)
+
 # Wright groups by 2 different methods
 source('code/wright_groups.r')
 
@@ -177,31 +187,31 @@ source('code/allfunctions27july.r')
 
 ######
 # PRODUCTION BY DIAMETER SLOPES
-xl1 <- 'Diameter (cm)'
-yl1 <- expression(paste('Individual production (kg y'^-1,')', sep=''))
-
-library(cowplot)
+# xl1 <- 'Diameter (cm)'
+# yl1 <- expression(paste('Individual production (kg y'^-1,')', sep=''))
+# 
+# library(cowplot)
 
 # 1990
 # Only trees with light measurements. Use light_received!
-twoslopeplot(dat = alltree_light_90, plottitle = 'All species 1990', xl = xl1, yl =  yl1)
-twoslopeplot(dat = unclassified_light_90, plottitle = 'Unclassified species 1990', xl = xl1, yl =  yl1)
-twoslopeplot(dat = shade_light_90, plottitle = 'Shade-tolerant species 1990', xl = xl1, yl =  yl1)
-twoslopeplot(dat = int_light_90, plottitle = 'Intermediate species 1990', xl = xl1, yl =  yl1)
-twoslopeplot(dat = gap_light_90, plottitle = 'Gap species 1990', xl = xl1, yl =  yl1)
-twoslopeplot(dat = shadequant_light_90, plottitle = 'Shade-tolerant species 1990 (by quantile)', xl = xl1, yl =  yl1)
-twoslopeplot(dat = intquant_light_90, plottitle = 'Intermediate species 1990 (by quantile)', xl = xl1, yl =  yl1)
-twoslopeplot(dat = gapquant_light_90, plottitle = 'Gap species 1990 (by quantile)', xl = xl1, yl =  yl1)
-
-# 1995
-twoslopeplot(dat = alltree_light_95, plottitle = 'All species 1995', xl = xl1, yl =  yl1)
-twoslopeplot(dat = unclassified_light_95, plottitle = 'Unclassified species 1995', xl = xl1, yl =  yl1)
-twoslopeplot(dat = shade_light_95, plottitle = 'Shade-tolerant species 1995', xl = xl1, yl =  yl1)
-twoslopeplot(dat = int_light_95, plottitle = 'Intermediate species 1995', xl = xl1, yl =  yl1)
-twoslopeplot(dat = gap_light_95, plottitle = 'Gap species 1995', xl = xl1, yl =  yl1)
-twoslopeplot(dat = shadequant_light_95, plottitle = 'Shade-tolerant species 1995 (by quantile)', xl = xl1, yl =  yl1)
-twoslopeplot(dat = intquant_light_95, plottitle = 'Intermediate species 1995 (by quantile)', xl = xl1, yl =  yl1)
-twoslopeplot(dat = gapquant_light_95, plottitle = 'Gap species 1995 (by quantile)', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = alltree_light_90, plottitle = 'All species 1990', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = unclassified_light_90, plottitle = 'Unclassified species 1990', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = shade_light_90, plottitle = 'Shade-tolerant species 1990', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = int_light_90, plottitle = 'Intermediate species 1990', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = gap_light_90, plottitle = 'Gap species 1990', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = shadequant_light_90, plottitle = 'Shade-tolerant species 1990 (by quantile)', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = intquant_light_90, plottitle = 'Intermediate species 1990 (by quantile)', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = gapquant_light_90, plottitle = 'Gap species 1990 (by quantile)', xl = xl1, yl =  yl1)
+# 
+# # 1995
+# twoslopeplot(dat = alltree_light_95, plottitle = 'All species 1995', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = unclassified_light_95, plottitle = 'Unclassified species 1995', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = shade_light_95, plottitle = 'Shade-tolerant species 1995', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = int_light_95, plottitle = 'Intermediate species 1995', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = gap_light_95, plottitle = 'Gap species 1995', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = shadequant_light_95, plottitle = 'Shade-tolerant species 1995 (by quantile)', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = intquant_light_95, plottitle = 'Intermediate species 1995 (by quantile)', xl = xl1, yl =  yl1)
+# twoslopeplot(dat = gapquant_light_95, plottitle = 'Gap species 1995 (by quantile)', xl = xl1, yl =  yl1)
 
 # Get slopes for hypothesis testing and output them to a table.
 # Confidence intervals as well.
@@ -245,25 +255,25 @@ compslopes1995 <- alltree_light_95 %>%
   group_by(sp, pca_scores) %>%
   do(getslope(.))
 
-sens_lm1990 <- lm(comp_sensitivity ~ pca_scores, data=compslopes1990, weights = n_indiv)
-sens_lm1995 <- lm(comp_sensitivity ~ pca_scores, data=compslopes1995, weights = n_indiv)
-
-summary(sens_lm1990)
-summary(sens_lm1995)
-
-ggplot(compslopes1990, aes(x = pca_scores, y = comp_sensitivity)) +
-  geom_hline(yintercept = 0, lty = 3, color = 'gray50', size = 1.5) +
-  geom_point(aes(size = log10(n_indiv)), pch = 1) +
-  geom_abline(slope=sens_lm1990$coef[2], intercept = sens_lm1990$coef[1], color = 'blue', size = 2) +
-  scale_size_continuous(name = 'N', breaks=c(2,3,4), labels=10^c(2,3,4)) +
-  labs(x = 'Shade tolerance', y = 'Production sensitivity') + ggtitle('Competition sensitivity, 1990')
-
-ggplot(compslopes1995, aes(x = pca_scores, y = comp_sensitivity)) +
-  geom_hline(yintercept = 0, lty = 3, color = 'gray50', size = 1.5) +
-  geom_point(aes(size = log10(n_indiv)), pch = 1) +
-  geom_abline(slope=sens_lm1995$coef[2], intercept = sens_lm1995$coef[1], color = 'blue', size = 2) +
-  scale_size_continuous(name = 'N', breaks=c(2,3,4), labels=10^c(2,3,4)) +
-  labs(x = 'Shade tolerance', y = 'Production sensitivity') + ggtitle('Competition sensitivity, 1990')
+# sens_lm1990 <- lm(comp_sensitivity ~ pca_scores, data=compslopes1990, weights = n_indiv)
+# sens_lm1995 <- lm(comp_sensitivity ~ pca_scores, data=compslopes1995, weights = n_indiv)
+# 
+# summary(sens_lm1990)
+# summary(sens_lm1995)
+# 
+# ggplot(compslopes1990, aes(x = pca_scores, y = comp_sensitivity)) +
+#   geom_hline(yintercept = 0, lty = 3, color = 'gray50', size = 1.5) +
+#   geom_point(aes(size = log10(n_indiv)), pch = 1) +
+#   geom_abline(slope=sens_lm1990$coef[2], intercept = sens_lm1990$coef[1], color = 'blue', size = 2) +
+#   scale_size_continuous(name = 'N', breaks=c(2,3,4), labels=10^c(2,3,4)) +
+#   labs(x = 'Shade tolerance', y = 'Production sensitivity') + ggtitle('Competition sensitivity, 1990')
+# 
+# ggplot(compslopes1995, aes(x = pca_scores, y = comp_sensitivity)) +
+#   geom_hline(yintercept = 0, lty = 3, color = 'gray50', size = 1.5) +
+#   geom_point(aes(size = log10(n_indiv)), pch = 1) +
+#   geom_abline(slope=sens_lm1995$coef[2], intercept = sens_lm1995$coef[1], color = 'blue', size = 2) +
+#   scale_size_continuous(name = 'N', breaks=c(2,3,4), labels=10^c(2,3,4)) +
+#   labs(x = 'Shade tolerance', y = 'Production sensitivity') + ggtitle('Competition sensitivity, 1990')
 
 #####
 # DENSITY SCALINGS BY DIAMETER
