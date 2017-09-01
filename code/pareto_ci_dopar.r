@@ -18,7 +18,7 @@ qprobs <- c(0.025, 0.975)
 
 allyears_paretoboot <- foreach(i = allyears_names) %dopar% {
 	dat <- get(i)
-	lapply(dat, function(x) boot_mle(xboot = x$dbh_corr, nboot = nb))
+	lapply(dat, function(x) boot_mle(xboot = x$dbh_corr, nboot = nb, L_init = 1))
 }
 
 for (i in 1:length(allyears_names)) {
@@ -30,7 +30,7 @@ save.image('tempsave.RData')
 
 ninety_paretoboot <- foreach(i = names1990) %dopar% {
 	dat <- get(i)
-	boot_mle(xboot = dat$dbh_corr, nboot = nb)
+	boot_mle(xboot = dat$dbh_corr, nboot = nb, L_init = 1)
 }
 
 for (i in 1:length(names1990)) {
@@ -42,7 +42,7 @@ save.image('tempsave.RData')
 
 ninetyfive_paretoboot <- foreach(i = names1995) %dopar% {
 	dat <- get(i)
-	boot_mle(xboot = dat$dbh_corr, nboot = nb)
+	boot_mle(xboot = dat$dbh_corr, nboot = nb, L_init = 1)
 }
 
 for (i in 1:length(names1995)) {
@@ -58,7 +58,7 @@ save.image('tempsave.RData')
 
 ninety_light <- foreach(i = names1990) %dopar% {
 	dat <- get(i)
-	pareto_cutoff_fits(dat, 'light_received', L_init = 10000)
+	pareto_cutoff_fits(dat, 'light_received', L_init = 1000)
 }
 
 coef_tables_9095light <- list()
@@ -70,7 +70,7 @@ for (i in 1:length(names1990)) {
 
 ninetyfive_light <- foreach(i = names1995) %dopar% {
 	dat <- get(i)
-	pareto_cutoff_fits(dat, 'light_received', L_init = 10000)
+	pareto_cutoff_fits(dat, 'light_received', L_init = 3000)
 }
 
 for (i in 1:length(names1995)) {
@@ -82,7 +82,7 @@ for (i in 1:length(names1995)) {
 
 ninety_lightparetoboot <- foreach (i = names1990) %dopar% {
 	dat <- get(i)
-	boot_mle(xboot = dat$light_received, nboot = nb, L_init = 10000)
+	boot_mle(xboot = dat$light_received, nboot = nb, L_init = 1000)
 }
 
 for (i in 1:length(names1990)) {
@@ -94,7 +94,7 @@ save.image('tempsave.RData')
 
 ninetyfive_lightparetoboot <- foreach (i = names1995) %dopar% {
 	dat <- get(i)
-	boot_mle(xboot = dat$light_received, nboot = nb, L_init = 10000)
+	boot_mle(xboot = dat$light_received, nboot = nb, L_init = 3000)
 }
 
 for (i in 1:length(names1995)) {
