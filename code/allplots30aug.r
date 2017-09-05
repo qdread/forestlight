@@ -157,6 +157,25 @@ for (i in 1:length(names1995)) {
   assign(paste0(name_i, '_lightdens_plots'), dens_plots_i)
 }
 
+plot_1990 <- list()
+
+for (j in 1:length(names1990)) {
+  plot_1990[[j]] <- get(paste0(names1990[plot_order[j]], '_lightdens_plots'))
+}
+
+grid_year_1990 <- plot_grid(plotlist = plot_1990, nrow = 2)
+ggsave(file.path(fpfig, 'lightdensity_scalings_1990.png'), grid_year_1990, height = 8, width = 16, dpi = 300)
+
+plot_1995 <- list()
+
+for (j in 1:length(names1995)) {
+  plot_1995[[j]] <- get(paste0(names1995[plot_order[j]], '_lightdens_plots'))
+}
+
+grid_year_1995 <- plot_grid(plotlist = plot_1995, nrow = 2)
+ggsave(file.path(fpfig, 'lightdensity_scalings_1995.png'), grid_year_1995, height = 8, width = 16, dpi = 300)
+
+
 # 3. Individual production by diameter
 # try it out using something like hexbin, or points with error bars on them.
 # Plot both the cutoffs and no cutoffs.
@@ -188,6 +207,41 @@ ptype <- 'hex'
  twoslopeplot(dat = gapquant_light_95, plottitle = 'Gap species 1995 (by quantile)', xl = xl1, yl =  yl1, plottype = ptype)
  twoslopeplot(dat = unclassified_light_95, plottitle = 'Unclassified species 1995', xl = xl1, yl =  yl1, plottype = ptype)
 
+ # As list
+ twoslopeplots_1990 <- list()
+ for (i in 1:length(names1990)) {
+   twoslopeplots_1990[[i]] <- twoslopeplot(dat = get(names1990[plot_order[i]]), plottitle = paste(longnames[plot_order[i]], '1990'), xl = xl1, yl = yl1, plottype = 'hex')
+ }
+ 
+ grid_year_1990 <- plot_grid(plotlist = twoslopeplots_1990, nrow = 2)
+ ggsave(file.path(fpfig, 'individualproductionscalings_1990_hex.png'), grid_year_1990, height = 8, width = 16, dpi = 300)
+ 
+ twoslopeplots_1995 <- list()
+ for (i in 1:length(names1995)) {
+   twoslopeplots_1995[[i]] <- twoslopeplot(dat = get(names1995[plot_order[i]]), plottitle = paste(longnames[plot_order[i]], '1995'), xl = xl1, yl = yl1, plottype = 'hex')
+ }
+ 
+ grid_year_1995 <- plot_grid(plotlist = twoslopeplots_1995, nrow = 2)
+ ggsave(file.path(fpfig, 'individualproductionscalings_1995_hex.png'), grid_year_1995, height = 8, width = 16, dpi = 300)
+ 
+ # Do as scatterplot as well
+ 
+ twoslopeplots_1990 <- list()
+ for (i in 1:length(names1990)) {
+   twoslopeplots_1990[[i]] <- twoslopeplot(dat = get(names1990[plot_order[i]]), plottitle = paste(longnames[plot_order[i]], '1990'), xl = xl1, yl = yl1, plottype = 'point')
+ }
+ 
+ grid_year_1990 <- plot_grid(plotlist = twoslopeplots_1990, nrow = 2)
+ ggsave(file.path(fpfig, 'individualproductionscalings_1990_point.png'), grid_year_1990, height = 8, width = 16, dpi = 300)
+ 
+ twoslopeplots_1995 <- list()
+ for (i in 1:length(names1995)) {
+   twoslopeplots_1995[[i]] <- twoslopeplot(dat = get(names1995[plot_order[i]]), plottitle = paste(longnames[plot_order[i]], '1995'), xl = xl1, yl = yl1, plottype = 'point')
+ }
+ 
+ grid_year_1995 <- plot_grid(plotlist = twoslopeplots_1995, nrow = 2)
+ ggsave(file.path(fpfig, 'individualproductionscalings_1995_point.png'), grid_year_1995, height = 8, width = 16, dpi = 300)
+ 
  # 4. Individual production by light received
  
  hex_plot <- function(dat, xv, yv, plottitle, xl, yl, textx, texty) {
@@ -252,14 +306,25 @@ ptype <- 'hex'
  prod_light_scatterplots95 <- list()
  
  for (i in 1:length(names1990)) {
-   prod_light_hexplots90[[length(prod_light_hexplots90) + 1]] <- hex_plot(dat = get(names1990[plot_order[i]]),  xv = 'light_received', yv = 'production', plottitle = paste(longnames[plot_order[i]], '1990'), xl = xl1b, yl =  yl1b, textx = 10, texty = 10000)
-   prod_light_scatterplots90[[length(prod_light_scatterplots90) + 1]] <- scatter_plot(dat = get(names1990[plot_order[i]]),  xv = 'light_received', yv = 'production', plottitle = paste(longnames[plot_order[i]], '1990'), xl = xl1b, yl =  yl1b, textx = 10, texty = 10000)
+   prod_light_hexplots90[[length(prod_light_hexplots90) + 1]] <- hex_plot(dat = get(names1990[plot_order[i]]),  xv = 'light_received', yv = 'production', plottitle = paste(longnames[plot_order[i]], '1990'), xl = xl1b, yl =  yl1b, textx = 100, texty = 10000)
+   prod_light_scatterplots90[[length(prod_light_scatterplots90) + 1]] <- scatter_plot(dat = get(names1990[plot_order[i]]),  xv = 'light_received', yv = 'production', plottitle = paste(longnames[plot_order[i]], '1990'), xl = xl1b, yl =  yl1b, textx = 100, texty = 10000)
  }
 
  for (i in 1:length(names1995)) {
-   prod_light_hexplots95[[length(prod_light_hexplots95) + 1]] <- hex_plot(dat = get(names1990[plot_order[i]]),  xv = 'light_received', yv = 'production', plottitle = paste(longnames[plot_order[i]], '1995'), xl = xl1b, yl =  yl1b, textx = 10, texty = 10000)
-   prod_light_scatterplots95[[length(prod_light_scatterplots95) + 1]] <- scatter_plot(dat = get(names1990[plot_order[i]]),  xv = 'light_received', yv = 'production', plottitle = paste(longnames[plot_order[i]], '1995'), xl = xl1b, yl =  yl1b, textx = 10, texty = 10000)
+   prod_light_hexplots95[[length(prod_light_hexplots95) + 1]] <- hex_plot(dat = get(names1990[plot_order[i]]),  xv = 'light_received', yv = 'production', plottitle = paste(longnames[plot_order[i]], '1995'), xl = xl1b, yl =  yl1b, textx = 100, texty = 10000)
+   prod_light_scatterplots95[[length(prod_light_scatterplots95) + 1]] <- scatter_plot(dat = get(names1990[plot_order[i]]),  xv = 'light_received', yv = 'production', plottitle = paste(longnames[plot_order[i]], '1995'), xl = xl1b, yl =  yl1b, textx = 100, texty = 10000)
  }
+
+grid1990hex <- plot_grid(plotlist = prod_light_hexplots90, nrow = 2)
+grid1990point <- plot_grid(plotlist = prod_light_scatterplots90, nrow = 2)
+grid1995hex <- plot_grid(plotlist = prod_light_hexplots95, nrow = 2)
+grid1995point <- plot_grid(plotlist = prod_light_scatterplots95, nrow = 2)
+  
+ggsave(file.path(fpfig, 'individualproductionbylightscalings_1990_hex.png'), grid1990hex, height = 8, width = 16, dpi = 300)
+ggsave(file.path(fpfig, 'individualproductionbylightscalings_1990_point.png'), grid1990point, height = 8, width = 16, dpi = 300)
+ggsave(file.path(fpfig, 'individualproductionbylightscalings_1995_hex.png'), grid1995hex, height = 8, width = 16, dpi = 300)
+ggsave(file.path(fpfig, 'individualproductionbylightscalings_1995_point.png'), grid1995point, height = 8, width = 16, dpi = 300)
+
  
  # 5. Individual light received by diameter
  
@@ -272,14 +337,24 @@ ptype <- 'hex'
  light_diam_scatterplots95 <- list()
  
  for (i in 1:length(names1990)) {
-   light_diam_hexplots90[[length(light_diam_hexplots90) + 1]] <- hex_plot(dat = get(names1990[plot_order[i]]),  xv = 'dbh_corr', yv = 'light_received', plottitle = paste(longnames[plot_order[i]], '1990'), xl = xl1b, yl =  yl1b, textx = 5, texty = 100000)
-   light_diam_scatterplots90[[length(light_diam_scatterplots90) + 1]] <- scatter_plot(dat = get(names1990[plot_order[i]]),  xv = 'dbh_corr', yv = 'light_received', plottitle = paste(longnames[plot_order[i]], '1990'), xl = xl1b, yl =  yl1b, textx = 5, texty = 100000)
+   light_diam_hexplots90[[length(light_diam_hexplots90) + 1]] <- hex_plot(dat = get(names1990[plot_order[i]]),  xv = 'dbh_corr', yv = 'light_received', plottitle = paste(longnames[plot_order[i]], '1990'), xl = xl1c, yl =  yl1c, textx = 5, texty = 100000)
+   light_diam_scatterplots90[[length(light_diam_scatterplots90) + 1]] <- scatter_plot(dat = get(names1990[plot_order[i]]),  xv = 'dbh_corr', yv = 'light_received', plottitle = paste(longnames[plot_order[i]], '1990'), xl = xl1c, yl =  yl1c, textx = 5, texty = 100000)
  }
  
  for (i in 1:length(names1995)) {
-   light_diam_hexplots95[[length(light_diam_hexplots95) + 1]] <- hex_plot(dat = get(names1990[plot_order[i]]),  xv = 'dbh_corr', yv = 'light_received', plottitle = paste(longnames[plot_order[i]], '1995'), xl = xl1b, yl =  yl1b, textx = 5, texty = 100000)
-   light_diam_scatterplots95[[length(light_diam_scatterplots95) + 1]] <- scatter_plot(dat = get(names1990[plot_order[i]]),  xv = 'dbh_corr', yv = 'light_received', plottitle = paste(longnames[plot_order[i]], '1995'), xl = xl1b, yl =  yl1b, textx = 5, texty = 100000)
+   light_diam_hexplots95[[length(light_diam_hexplots95) + 1]] <- hex_plot(dat = get(names1990[plot_order[i]]),  xv = 'dbh_corr', yv = 'light_received', plottitle = paste(longnames[plot_order[i]], '1995'), xl = xl1c, yl =  yl1c, textx = 5, texty = 100000)
+   light_diam_scatterplots95[[length(light_diam_scatterplots95) + 1]] <- scatter_plot(dat = get(names1990[plot_order[i]]),  xv = 'dbh_corr', yv = 'light_received', plottitle = paste(longnames[plot_order[i]], '1995'), xl = xl1c, yl =  yl1c, textx = 5, texty = 100000)
  }
+ 
+ grid1990hex <- plot_grid(plotlist = light_diam_hexplots90, nrow = 2)
+ grid1990point <- plot_grid(plotlist = light_diam_scatterplots90, nrow = 2)
+ grid1995hex <- plot_grid(plotlist = light_diam_hexplots95, nrow = 2)
+ grid1995point <- plot_grid(plotlist = light_diam_scatterplots95, nrow = 2)
+ 
+ ggsave(file.path(fpfig, 'individuallightreceivedscalings_1990_hex.png'), grid1990hex, height = 8, width = 16, dpi = 300)
+ ggsave(file.path(fpfig, 'individuallightreceivedscalings_1990_point.png'), grid1990point, height = 8, width = 16, dpi = 300)
+ ggsave(file.path(fpfig, 'individuallightreceivedscalings_1995_hex.png'), grid1995hex, height = 8, width = 16, dpi = 300)
+ ggsave(file.path(fpfig, 'individuallightreceivedscalings_1995_point.png'), grid1995point, height = 8, width = 16, dpi = 300)
  
  # 6. Binned production by diameter
  
@@ -357,7 +432,7 @@ prod_grid <- plot_grid(plotlist = plot_columns, ncol = length(plot_columns))
  
  for (i in 1:length(names1990)) {
    name_i <- names1990[i]
-   cutoff_fit_i <- get(paste0(name_i, '_lightparetofits'))
+   cutoff_fit_i <- get(paste0(name_i, '_paretofits'))
    logbin_i <- get(paste0(name_i, '_light_logbin'))
    light_plots_i <- plotlogbin_cutoff(logbin_i, cutoff=cutoff_fit_i$fit_cutoff@coef[2], reg=TRUE, plottitle = paste(longnames[i], 'total light received, 1990'), xl = xl4, yl = yl4, plottype = 'point', plotarea = area_core, y_min = light_lim90$y_min/area_core, y_max = light_lim90$y_max/area_core, x_max = light_lim90$x_max, y_values = 10^c(0,2,4,6))
    assign(paste0(name_i, '_lightbin_plots'), light_plots_i)
@@ -367,11 +442,29 @@ prod_grid <- plot_grid(plotlist = plot_columns, ncol = length(plot_columns))
  
  for (i in 1:length(names1995)) {
    name_i <- names1995[i]
-   cutoff_fit_i <- get(paste0(name_i, '_lightparetofits'))
+   cutoff_fit_i <- get(paste0(name_i, '_paretofits'))
    logbin_i <- get(paste0(name_i, '_light_logbin'))
    light_plots_i <- plotlogbin_cutoff(logbin_i, cutoff=cutoff_fit_i$fit_cutoff@coef[2], reg=TRUE, plottitle = paste(longnames[i], 'total light received, 1995'), xl = xl4, yl = yl4, plottype = 'point', plotarea = area_core, y_min = light_lim95$y_min/area_core, y_max = light_lim95$y_max/area_core, x_max = light_lim95$x_max, y_values = 10^c(0,2,4,6))
    assign(paste0(name_i, '_lightbin_plots'), light_plots_i)
  }
+ 
+ plot_1990 <- list()
+ 
+ for (j in 1:length(names1990)) {
+   plot_1990[[j]] <- get(paste0(names1990[plot_order[j]], '_lightbin_plots'))
+ }
+ 
+ grid_year_1990 <- plot_grid(plotlist = plot_1990, nrow = 2)
+ ggsave(file.path(fpfig, 'totallightreceived_scalings_1990.png'), grid_year_1990, height = 8, width = 16, dpi = 300)
+ 
+ plot_1995 <- list()
+ 
+ for (j in 1:length(names1995)) {
+   plot_1995[[j]] <- get(paste0(names1995[plot_order[j]], '_lightbin_plots'))
+ }
+ 
+ grid_year_1995 <- plot_grid(plotlist = plot_1995, nrow = 2)
+ ggsave(file.path(fpfig, 'totallightreceived_scalings_1995.png'), grid_year_1995, height = 8, width = 16, dpi = 300)
  
  # 8. Overlaid histogram plots: density scalings split in a 3x3 group. Both types of splits.
  
