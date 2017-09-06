@@ -1,6 +1,6 @@
 # Weighted average of pca score plotted versus light received per unit crown area.
 
-ggplot(alltree_light_90, aes(x=log10(light_received/crownarea), y=pca_scores)) + geom_hex() # Incorrect.
+ggplot(alltree_light_90, aes(x=log10(light_received/crownarea), y=pca_scores)) + geom_hex() 
 
 # Create log bin, then somehow weight by the pca score of each individual tree.
 
@@ -59,3 +59,39 @@ p1995 <- ggplot(lightperareabin_1995, aes(x = bin_midpoint, y = shade_score)) +
 
 grid2 <- plot_grid(p1990,p1995)
 ggsave(file.path(fpfig, 'shadescore_by_lightperarea.png'), height=5, width=8, dpi=300)
+
+
+##########################################
+# Do analysis without binning.
+
+cscale <- scale_fill_gradientn(colours = colorRampPalette(RColorBrewer::brewer.pal(9, 'YlOrRd'), bias=2)(10))
+ggplot(alltree_light_90, aes(x = light_received/crownarea, y = pca_scores)) + 
+  geom_hex() + 
+  cscale +
+  scale_x_log10(name = expression(paste('Light received (W m'^-2,')'))) +
+  labs(y = 'Shade tolerance score') +
+  panel_border(colour='black') +
+  ggtitle('1990')
+
+p90 <- ggplot(alltree_light_90 %>% mutate(bin = whichbin1990), aes(x = light_received/crownarea, y = pca_scores)) + 
+  geom_point() + 
+  geom_boxplot(aes(group=bin), fill = 'transparent', color = 'red', outlier.shape = NA) +
+  cscale +
+  scale_x_log10(name = expression(paste('Light received (W m'^-2,')'))) +
+  labs(y = 'Shade tolerance score') +
+  panel_border(colour='black') +
+  ggtitle('1990')
+
+lm1990 <- lm(pca_scores ~ I(log10(light_received/crownarea)), data=alltree_light_90)
+
+p95 <- ggplot(alltree_light_95 %>% mutate(bin = whichbin1995), aes(x = light_received/crownarea, y = pca_scores)) + 
+  geom_point() + 
+  geom_boxplot(aes(group=bin), fill = 'transparent', color = 'red',, outlier.shape = NA) +
+  cscale +
+  scale_x_log10(name = expression(paste('Light received (W m'^-2,')'))) +
+  labs(y = 'Shade tolerance score') +
+  panel_border(colour='black') +
+  ggtitle('1995')
+
+p9095 <- plot_grid(p90,p95)
+ggsave(file.path(fpfig, 'shadescore_bylight_individual.png'), height=5, width=8, dpi=300)
