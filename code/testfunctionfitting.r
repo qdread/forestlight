@@ -39,7 +39,7 @@ plotbinsandfits_piecewise <- function(pl, plc, bindat, plottitle = 'plot title',
   
   
   expr1 <- as.character(as.expression(substitute(
-    alpha ==a*","~~cutoff==cval, list(a = round(pl$alpha, 2), cval = round(plc$xmin2/10, 2)))))
+    alpha ==a*","~~min==minval*","~~max==maxval, list(a = round(pl$alpha, 2), minval = round(pl$xmin/10, 2), maxval = round(plc$xmin2/10, 2)))))
 
   
   
@@ -71,9 +71,10 @@ plotbinsandfits_piecewise <- function(pl, plc, bindat, plottitle = 'plot title',
                   expand = c(0,0))
   if (plottype == 'bin') p <- p + data_geom
   p <- p +
-    stat_function(fun = pareto_fn, args = list(alpha = pl$alpha, C = pl$C * n_indivs / plotarea), color = 'forestgreen', size = 2)
-  
-  # Only plot the exponential function if the cutoff is within the range of the data
+    stat_function(fun = pareto_fn, xlim = log10(c(pl$xmin, x_max)),
+                  args = list(alpha = pl$alpha, C = pl$C * n_indivs / plotarea), color = 'forestgreen', size = 2)
+
+    # Only plot the exponential function if the cutoff is within the range of the data
   if (plc$xmin2 < max(bindat$bin_max)) {
   p <- p +
     stat_function(fun = exponential_fn, xlim = log10(c(plc$xmin2, x_max)),
@@ -81,7 +82,7 @@ plotbinsandfits_piecewise <- function(pl, plc, bindat, plottitle = 'plot title',
   }
   if (plottype == 'point') p <- p + data_geom
   p <- p +
-    geom_text(x = -Inf, y = -Inf, label = expr1, parse = TRUE, hjust = 0, vjust = -1.5) +
+    geom_text(x = -Inf, y = -Inf, label = expr1, parse = TRUE, hjust = 0, vjust = -1) +
     panel_border(colour = 'black') +
     labs(x = xl, y = yl) +
     ggtitle(plottitle)
@@ -103,3 +104,24 @@ gap_logbin <- logbin(x = x_gap, y = NULL, n = 20)
 plotbinsandfits_piecewise(x_gappowerlaw, x_gappowerexp, gap_logbin, plottitle = 'Gap trees 2010', xl = 'Diameter', yl = 'Density', plottype = 'point', plotarea = 42.84, y_min = 0.00001, y_max = 10000, x_max = 2000, x_values=10^(1:3), y_values = 10^c(-3,-1,1,3), x_units='mm')
 
 ggsave('C:/Users/Q/google_drive/ForestLight/figs/new_cutoff_plots/gap2010.pdf')
+
+
+
+# Fitting both xmin and cutoff.
+# xmin should indicate where the power law kicks in.
+# Below that, it's light limitation?
+
+
+x_shade <- subset(alltreedat[[6]], tol_wright == 'S')$dbh_corr
+x_shade <- round(x_shade*10, 0)
+
+x_shadepowerlaw <- powerlaw_fit(x = x_shade, interval = c(1.2, 3), plot = TRUE, lines = TRUE)
+x_shadepowerexp <- powerexp_fit(x = x_shade, xmin1 = x_shadepowerlaw$xmin, alpha1 = x_shadepowerlaw$alpha, plotting = TRUE)
+
+x_gap <- subset(alltreedat[[6]], tol_wright == 'G')$dbh_corr
+x_gap <- round(x_gap*10, 0)
+
+x_gappowerlaw <- powerlaw_fit(x = x_gap, interval = c(1.2, 3), plot = TRUE, lines = TRUE)
+x_gappowerexp <- powerexp_fit(x = x_gap, xmin1 = x_gappowerlaw$xmin, alpha1 = x_gappowerlaw$alpha, plotting = TRUE)
+
+
