@@ -123,5 +123,3 @@ x_gap <- round(x_gap*10, 0)
 
 x_gappowerlaw <- powerlaw_fit(x = x_gap, interval = c(1.2, 3), plot = TRUE, lines = TRUE)
 x_gappowerexp <- powerexp_fit(x = x_gap, xmin1 = x_gappowerlaw$xmin, alpha1 = x_gappowerlaw$alpha, plotting = TRUE)
-
-

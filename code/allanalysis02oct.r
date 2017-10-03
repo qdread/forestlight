@@ -201,16 +201,111 @@ unclassified_light_95 <- subset(unclassifieddat[[3]], !is.na(light))
 library(cowplot)
 ggplot(shadedat[[6]], aes(x=dbh_corr, y=production)) + scale_x_log10() + scale_y_log10() + geom_point()
 ggplot(shadedat[[6]], aes(x=dbh_corr, y=production)) + scale_x_log10() + scale_y_log10() + geom_hex()
-ggplot(gapdat[[6]], aes(x=dbh_corr, y=production)) + scale_x_log10() + scale_y_log10() + geom_point()
+ggplot(gapdat[[6]], aes(x=dbh_corr, y=production)) + scale_x_log10() + scale_y_log10() + geom_point() +
+  stat_smooth(method='lm', color = 'blue') + stat_smooth(method='auto', color = 'red')
 
-nls(logprod ~ C * (1 - exp(k * logdbh)), 
+nls_fit_gap <- nls(logprod ~ C * (exp(k * logdbh)), 
     data = transform(gapdat[[6]], logprod=log10(production), logdbh=log10(dbh_corr)), 
     start = c(C=100, k=-2), 
     control = list(maxiter=500))
+
+nls_fit_shade <- nls(logprod ~ C * (exp(k * logdbh)), 
+    data = transform(shadedat[[6]], logprod=log10(production), logdbh=log10(dbh_corr)), 
+    start = c(C=100, k=-2), 
+    control = list(maxiter=500))
+
+linear_fit_gap <- lm(logprod ~ logdbh, 
+                      data = transform(gapdat[[6]], logprod=log10(production), logdbh=log10(dbh_corr)))
+
+library(mgcv)
+gam_fit_gap <- gam(logprod ~ logdbh, 
+                   data = transform(gapdat[[6]], logprod=log10(production), logdbh=log10(dbh_corr)), k=3)
+
+plot(gam_fit_gap, pages=1, residuals=T, all.terms=T)
+summary(gam_fit_gap)
+
+gam_fit_shade <- gam(logprod ~ s(logdbh, bs='cr', k = 3), 
+                   data = transform(shadedat[[6]], logprod=log10(production), logdbh=log10(dbh_corr)))
+linear_fit_shade <- lm(logprod ~ logdbh, 
+                     data = transform(shadedat[[6]], logprod=log10(production), logdbh=log10(dbh_corr)))
+
+predict(gam_fit_shade, newdata=)
+
+ggplot(shadedat[[6]], aes(x=dbh_corr, y=production)) + 
+  geom_point() +
+  stat_function(geom='line', fun = function(x,beta) beta[1] + beta[2]*log10(x), args = list(beta=linear_fit_shade$coefficients), color = 'red', size=2) +
+  geom_line(data=data.frame(cbind(shadedat[[6]], ypred=predict(gam_fit_shade))), aes(y=ypred), color='skyblue', size=2) +
+  scale_x_log10() + scale_y_log10() 
+
+ggplot(shadedat[[6]], aes(x=dbh_corr, y=production)) + 
+  geom_point() +
+  stat_smooth(method = 'lm', se = FALSE, color = 'red', size = 2) +
+  stat_smooth(method = 'lm', formula = y ~ splines::bs(x,3), se = FALSE, color = 'goldenrod', size = 2) +
+  stat_smooth(method = 'lm', formula = y ~ splines::bs(x,knots=c(1,2.7)), se = FALSE, color = 'green', size = 2) +
+  stat_smooth(method = 'lm', formula = y ~ x + I(x^0.5), se = FALSE, color = 'blue', size = 2) +
+  scale_x_log10() + scale_y_log10() 
+
+spline_fit_shade <- lm(logprod ~ splines::bs(logdbh,3), 
+                       data = transform(shadedat[[6]], logprod=log10(production), logdbh=log10(dbh_corr)))  
+spline_fit2_shade <- lm(logprod ~ splines::bs(logdbh, knots = c(1, 2.7)), 
+                       data = transform(shadedat[[6]], logprod=log10(production), logdbh=log10(dbh_corr)))  
+sqrt_fit_shade <- lm(logprod ~ logdbh + I(logdbh^0.5),
+                        data = transform(shadedat[[6]], logprod=log10(production), logdbh=log10(dbh_corr)))
+
+AIC(sqrt_fit_shade)
+AIC(spline_fit_shade)
+AIC(spline_fit2_shade)
+AIC(linear_fit_shade)
+
+library(lme4)
+mixed_sqrt_shade <- lmer(logprod ~ logdbh + I(logdbh^0.5) + (1|sp),
+     data = transform(shadedat[[6]], logprod=log10(production), logdbh=log10(dbh_corr)))
+mixed_lm_shade <- lmer(logprod ~ logdbh + (1|sp),
+                         data = transform(shadedat[[6]], logprod=log10(production), logdbh=log10(dbh_corr)))
+mixed_spline_shade <- lmer(logprod ~ splines::bs(logdbh, knots = c(1, 2.7)) + (1|sp),
+                       data = transform(shadedat[[6]], logprod=log10(production), logdbh=log10(dbh_corr)))
+
+AIC(mixed_spline_shade)
+AIC(mixed_lm_shade)
+AIC(mixed_sqrt_shade)
+# Plot the fits hopefully with predictive intervals
+
+nls_pars_gap <- nls_fit_gap$m$getPars()
+
+ggplot(gapdat[[6]], aes(x=dbh_corr, y=production)) + 
+  stat_function(geom='line', fun = function(x,beta) beta[1] + beta[2]*log10(x), args = list(beta=linear_fit_gap$coefficients), color = 'red', size=2) +
+  stat_function(geom='line', fun = function(x,pars) (pars[1] * exp(pars[2] * log10(x))), args = list(pars=nls_pars_gap), color = 'skyblue', size=2) +
+  scale_x_log10() + scale_y_log10() + geom_point()
+  
+  
+
+
+
+# Test code below ---------------------------------------------------------
+
+
 
 # Check whether there is some artifact in the tree production scalings
 ggplot(shadedat[[6]] %>% filter(sp=='hybapr'), aes(x=dbh_corr, y=production)) + scale_x_log10() + scale_y_log10() + geom_point()
 ggplot(shadedat[[6]] %>% filter(sp=='caseac'), aes(x=dbh_corr, y=production)) + scale_x_log10() + scale_y_log10() + geom_point()
 ggplot(shadedat[[6]] %>% filter(sp=='tachve'), aes(x=dbh_corr, y=production)) + scale_x_log10() + scale_y_log10() + geom_point()
+ggplot(shadedat[[6]] %>% filter(sp %in% unique(shadedat[[6]]$sp[1:50])), aes(x=dbh_corr, y=production)) + scale_x_log10() + scale_y_log10() + geom_point() + facet_wrap(~sp)
+
 # These appear to be modeled. Fitting curves is maybe a bad idea?
 
+# get basal area increments.
+bci.full7$basalareaincrement <- pi*(bci.full7$dbh_corr/2)^2 - pi*(bci.full6$dbh_corr/2)^2
+bci.full7$diameterincrement <- bci.full7$dbh_corr - bci.full6$dbh_corr
+
+bci.full7 %>%
+  filter(sp %in% unique(bci.full7$sp[1:100])) %>%
+  ggplot(aes(x=dbh_corr, y=basalareaincrement)) +
+  scale_x_log10() + scale_y_log10() +
+  geom_point() +
+  facet_wrap(~ sp)
+
+bci.full7 %>%
+  filter(sp %in% unique(bci.full7$sp[1:50])) %>%
+  ggplot(aes(x=dbh_corr, y=diameterincrement)) +
+  geom_point() +
+  facet_wrap(~ sp)
