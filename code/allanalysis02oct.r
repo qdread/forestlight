@@ -1,8 +1,7 @@
 # Modified analysis 02 Oct 2017.
 
-# Do all the function fits using Caroline's MLE code.
+# To do later: Do all the function fits using Caroline's MLE code.
 # Include 2 clusters rather than 3.
-# Don't worry about quantiles.
 
 load('C:/Users/Q/Dropbox/projects/forestlight/bcidata/bciqcrun.R')
 
@@ -176,6 +175,9 @@ gap_light_95 <- subset(gapdat[[3]], !is.na(light))
 unclassified_light_90 <- subset(unclassifieddat[[2]], !is.na(light))
 unclassified_light_95 <- subset(unclassifieddat[[3]], !is.na(light))
 
+# Save raw data as an object
+save(alltreedat, unclassifieddat, shadedat, gapdat, file = 'C:/Users/Q/google_drive/ForestLight/data/data_04oct/rawdataobj.r')
+
 
 # Binning and error bars: all years combined ------------------------------
 
@@ -230,7 +232,7 @@ densitybin_5census <- rbind(cbind(guild = 'all', dbhbin_alltree_5census),
                             cbind(guild = 'gap', dbhbin_gap_5census),
                             cbind(guild = 'unclassified', dbhbin_unclassified_5census))
 
-# Individual production (stupid)
+# Individual production 
 # Take the mean and 2.5, 25, 50, 75, 97.5 quantiles within each bin.
 # Do it across all years.
 
