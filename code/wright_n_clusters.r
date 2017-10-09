@@ -28,7 +28,15 @@ hist(nclusts, breaks = max(nclusts))
 
 set.seed(4930116)
 k_bothtrans <- kmeans(x = wright_df[,c('logit_mrt','log_rgr')], centers=2, nstart=25)
+
+# Compare k-means with pam
+library(cluster)
+pam_trans <- pam(x = wright_df[,c('logit_mrt','log_rgr')], k = 2)
+clara_trans <- clara(x = wright_df[,c('logit_mrt','log_rgr')], k = 2)
+
 wright_df$cluster <- k_bothtrans$cluster
+wright_df$cluster_pam <- pam_trans$clustering
+wright_df$cluster_clara <- clara_trans$clustering
 wright_df$pca <- pca_scores
 
 ggplot(wright_df, aes(x = mrt, y = rgr, color = factor(cluster))) + geom_point()
