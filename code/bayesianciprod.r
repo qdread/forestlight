@@ -266,3 +266,55 @@ ggplot(gap_all_trans_sum_dat) +
   scale_x_log10() + scale_y_log10()
 
 ggsave('C:/Users/Q/google_drive/ForestLight/figs/new_cutoff_plots/gap_indiv_production_predictioninterval_2010nodata.png', height=6, width=7, dpi=400)
+
+##################################
+# 12 Oct.
+# Bayesian fit of power law to diameter distribution
+# Try very simple first
+
+code_density_powerlaw <- '
+data {
+  int<lower=0> N;
+  real<lower=0> min_x;
+  real<lower=min_x> x[N];
+}
+parameters {
+  real<lower=min_x, upper=20> xmin;
+  real<lower=0, upper=5> alpha;
+}
+model {
+  // Priors
+  xmin ~ lognormal(1, 1) T[min_x,20];
+  alpha ~ lognormal(1, 1) T[0, 5];
+
+  // Likelihood
+  for (i in 1:N) {
+    x[i] ~ pareto(xmin, alpha);
+  }
+}
+'
+
+library(rstan)
+rstan_options(auto_write = TRUE)
+options(mc.cores = 3) 
+
+powerlaw_init <- function(nchain, x) replicate(n=nchain, list(xmin=runif(1,min(x),20), alpha=runif(1,0,5)), simplify = FALSE)
+
+model_density_powerlaw <- stan_model(model_code = code_density_powerlaw)
+
+
+estimate_model_dens <- function(x, stanmodel) {
+  N <- length(x)
+  min_x <- min(x)
+  data <- list(N = N, min_x = min_x, x = x)
+  fit <- sampling(stanmodel, data = data, chains = 3, iter = 2000, warmup = 1000, init = powerlaw_init(3, x))
+  return(fit)
+}
+
+
+gap_fit_dens_powerlaw <- estimate_model_dens(x = gapdat[[6]]$dbh_corr, stanmodel = model_density_powerlaw)
+
+# dump data so that I can fit this on cmdstan.
+x <- gapdat[[6]]$dbh_corr
+xdat <- list(N=length(x), min_x = min(x), x = x)
+with(xdat, stan_rdump(names(xdat), file = 'gapdata6.txt'))
