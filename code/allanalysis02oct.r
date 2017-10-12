@@ -29,8 +29,13 @@ wright_pca <- with(wright_df, prcomp(data.frame(qlogis(mrt), log10(rgr)), scale=
 pca_scores <- wright_pca$x[,1]
 
 set.seed(4930116)
-k_bothtrans <- kmeans(x = wright_df[,c('logit_mrt','log_rgr')], centers=2, nstart=25)
-wright_df$cluster <- k_bothtrans$cluster
+### Amendment 11 Oct.
+# Change the clustering method to clara()
+
+library(cluster)
+clara_trans <- clara(x = wright_df[,c('logit_mrt','log_rgr')], k = 2)
+#k_bothtrans <- kmeans(x = wright_df[,c('logit_mrt','log_rgr')], centers=2, nstart=25)
+wright_df$cluster <- clara_trans$clustering
 wright_df$pca <- pca_scores
 
 wright_df$tol_wright <- c('G','S')[wright_df$cluster]
@@ -75,6 +80,21 @@ bci_production <- do.call(cbind, bci_production)
 bci_production <- as.data.frame(bci_production)
 names(bci_production) <- paste0('production', c('8085','8590','9095','9500','0005','0510'))
 
+# Amendment 11 Oct. : Add dbh increment, used to detect production outliers.
+
+for (i in 2:7) {
+  dat_i <- get(paste0('bci.full',i))
+  dat_iminus1 <- get(paste0('bci.full',i-1))
+  dbhlastcensus <- dat_iminus1$dbh_corr
+  dbhlastcensus[is.na(dbhlastcensus)] <- 0
+  bci_dbhinc[[i-1]] <- dat_i$dbh_corr - dbhlastcensus
+  dat_i$dbhlastcensus <- dbhlastcensus
+  assign(paste0('bci.full', i), dat_i)
+}
+
+
+
+
 bcicensusdat <- list()
 
 for (i in 2:7) {
@@ -82,9 +102,23 @@ for (i in 2:7) {
     filter(DFstatus == 'alive') %>%
     mutate(dbh_corr = dbh_corr/10,
            agb_corr = agb_corr * 1000,
-           production = production * 1000) %>%
+           production = production * 1000,
+           dbhinc = dbhinc/10,
+           dbhlastcensus = dbhlastcensus/10) %>%
     filter(!young)
 }
+
+####
+# Amendment 11 Oct.
+# Remove production outliers.
+# Criteria: 
+# 1. If the tree was not in the previous census and its current dbh is >10, remove.
+# 2. If the tree grew over 20 cm dbh between censuses, remove.
+
+bcicensusdat <- lapply(bcicensusdat, function(x) {
+  x$production[x$dbhinc > 20 | (x$dbhinc > 10 & x$dbhlastcensus == 0)] <- NA
+  x
+})
 
 
 # 3. Join with shade tolerance (Wright) groups.
@@ -130,6 +164,11 @@ tp <- function(dbh) {
   cV <- exp(-.681 + 2.02 * log(dbh))  # Crown volume
   data.frame(h=h, cd=cd, cr=cr, cV=cV)
 }
+
+####
+# Insert amendment here: palms get different allometry.
+####
+
 
 for (i in 2:3) {
   
@@ -241,6 +280,10 @@ allyearprod_shade <- unlist(lapply(shadedat[2:6], '[', , 'production'))
 allyearprod_gap <- unlist(lapply(gapdat[2:6], '[', , 'production'))
 allyearprod_unclassified <- unlist(lapply(unclassifieddat[2:6], '[', , 'production'))
 
+gm_mean = function(x, na.rm=TRUE){
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
+
 fakebin_across_years <- function(dat_values, dat_classes, edges) {
   qprobs <- c(0.025, 0.5, 0.975)
   # add some padding just in case
@@ -251,7 +294,7 @@ fakebin_across_years <- function(dat_values, dat_classes, edges) {
   
   binstats <- t(sapply(1:length(mins), function(x) {
     indivs <- dat_values[dat_classes >= mins[x] & dat_classes < maxes[x]]
-    c(mean = mean(indivs), quantile(indivs, probs = qprobs))
+    c(mean = gm_mean(indivs), quantile(indivs, probs = qprobs))
   }))
   dimnames(binstats)[[2]] <- c('mean', 'q025', 'median', 'q975')
   data.frame(bin_midpoint = edges$bin_midpoint,
