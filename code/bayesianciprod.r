@@ -275,22 +275,22 @@ ggsave('C:/Users/Q/google_drive/ForestLight/figs/new_cutoff_plots/gap_indiv_prod
 code_density_powerlaw <- '
 data {
   int<lower=0> N;
-  real<lower=0> min_x;
-  real<lower=min_x> x[N];
+  real x[N];
 }
 parameters {
-  real<lower=min_x, upper=20> xmin;
+  real<lower=0, upper=20> xmin;
   real<lower=0, upper=5> alpha;
+  real<lower=xmin> xtrue[N];
+  real<lower=0> sigma;
 }
 model {
   // Priors
-  xmin ~ lognormal(1, 1) T[min_x,20];
+  xmin ~ lognormal(1, 1) T[0,20];
   alpha ~ lognormal(1, 1) T[0, 5];
 
   // Likelihood
-  for (i in 1:N) {
-    x[i] ~ pareto(xmin, alpha);
-  }
+  xtrue ~ pareto(xmin, alpha);
+  x ~ normal(xtrue, sigma);
 }
 '
 
@@ -306,13 +306,24 @@ model_density_powerlaw <- stan_model(model_code = code_density_powerlaw)
 estimate_model_dens <- function(x, stanmodel) {
   N <- length(x)
   min_x <- min(x)
-  data <- list(N = N, min_x = min_x, x = x)
-  fit <- sampling(stanmodel, data = data, chains = 3, iter = 2000, warmup = 1000, init = powerlaw_init(3, x))
+  data <- list(N = N, x = x)
+  fit <- sampling(stanmodel, data = data, chains = 3, iter = 2000, warmup = 1000)
   return(fit)
 }
 
 
 gap_fit_dens_powerlaw <- estimate_model_dens(x = gapdat[[6]]$dbh_corr, stanmodel = model_density_powerlaw)
+
+library(bayesplot)
+gap_summ <- summary(gap_fit_dens_powerlaw)
+gap_draws <- as.array(gap_fit_dens_powerlaw, pars=c('xmin', 'alpha'))
+mcmc_trace(gap_draws)
+
+shade_fit_dens_powerlaw <- estimate_model_dens(x = shadedat[[6]]$dbh_corr, stanmodel = model_density_powerlaw)
+
+shade_summ <- summary(shade_fit_dens_powerlaw)
+shade_draws <- as.array(shade_fit_dens_powerlaw, pars=c('xmin', 'alpha'))
+mcmc_trace(shade_draws)
 
 # dump data so that I can fit this on cmdstan.
 x <- gapdat[[6]]$dbh_corr
