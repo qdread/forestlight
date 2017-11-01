@@ -92,7 +92,7 @@ shadegap_stats_bin_2census %>%
   ggplot(aes(x = bin_midpoint, y = production_ratio_mean, ymin = production_ratio_min, ymax = production_ratio_max)) +
   geom_pointrange() +
   scale_x_log10(name = expression(paste('Light received per unit crown area (W m'^-2,')'))) + 
-  scale_y_log10(name = 'Shade to gap production ratio') +
+  scale_y_log10(name = 'Shade to gap production ratio', breaks= c(5,10,50,100)) +
   panel_border(colour = 'black')
 
 # Figure 5b
@@ -100,7 +100,7 @@ shadegap_stats_bin_2census %>%
   ggplot(aes(x = bin_midpoint, y = density_ratio_mean, ymin = density_ratio_min, ymax = density_ratio_max)) +
   geom_pointrange() +
   scale_x_log10(name = expression(paste('Light received per unit crown area (W m'^-2,')'))) + 
-  scale_y_log10(name = 'Shade to gap density ratio', breaks = c(1,3,5,10,30,50)) +
+  scale_y_log10(name = 'Shade to gap density ratio', breaks = c(5,10,50)) +
   panel_border(colour = 'black')
 
 # Figure 5c
