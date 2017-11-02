@@ -81,8 +81,8 @@ allyearprod_shade <- unlist(lapply(shadedat[2:6], '[', , 'production'))
 allyearprod_gap <- unlist(lapply(gapdat[2:6], '[', , 'production'))
 allyearprod_unclassified <- unlist(lapply(unclassifieddat[2:6], '[', , 'production'))
 
-fakebin_across_years <- function(dat_values, dat_classes, edges) {
-  qprobs <- c(0.025, 0.5, 0.975)
+fakebin_across_years <- function(dat_values, dat_classes, edges, mean = 'geometric') {
+  qprobs <- c(0.025, 0.25, 0.5, 0.75, 0.975)
   # add some padding just in case
   mins <- edges$bin_min
   mins[1] <- 0
@@ -91,9 +91,9 @@ fakebin_across_years <- function(dat_values, dat_classes, edges) {
   
   binstats <- t(sapply(1:length(mins), function(x) {
     indivs <- dat_values[dat_classes >= mins[x] & dat_classes < maxes[x]]
-    c(mean = mean(indivs), quantile(indivs, probs = qprobs))
+    c(mean = ifelse(mean == 'geometric', exp(mean(log(indivs))), mean(indivs)), quantile(indivs, probs = qprobs))
   }))
-  dimnames(binstats)[[2]] <- c('mean', 'q025', 'median', 'q975')
+  dimnames(binstats)[[2]] <- c('mean', 'q025', 'q25', 'median', 'q75', 'q975')
   data.frame(bin_midpoint = edges$bin_midpoint,
              bin_min = edges$bin_min,
              bin_max = edges$bin_max,
@@ -237,7 +237,7 @@ binshadescore <- function(dat, bindat) {
   dat <- do.call('rbind', dat)
   dat <- subset(dat, !is.na(light_received) & !is.na(pca))
   dat$light_area <- dat$light_received/dat$crownarea
-  with(dat, fakebin_across_years(dat_values = pca, dat_classes = light_area, edges = bindat))
+  with(dat, fakebin_across_years(dat_values = pca, dat_classes = light_area, edges = bindat, mean = 'arithmetic'))
 }
 
 shadescore_bin_2census <- binshadescore(dat = alltreedat[2:3], bindat = light_per_area_bins_shadegap)
@@ -283,7 +283,7 @@ shadegap_stats_bin_2census_bydiam <- shadegap_stats_bydiam %>%
 binshadescore <- function(dat, bindat) {
   dat <- do.call('rbind', dat)
   dat <- subset(dat, !is.na(light_received) & !is.na(pca))
-  with(dat, fakebin_across_years(dat_values = pca, dat_classes = dbh_corr, edges = bindat))
+  with(dat, fakebin_across_years(dat_values = pca, dat_classes = dbh_corr, edges = bindat, mean = 'arithmetic'))
 }
 
 shadescore_bin_2census_bydiam <- binshadescore(dat = alltreedat[2:3], bindat = dbhbin_shadegap)
