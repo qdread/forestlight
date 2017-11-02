@@ -16,6 +16,7 @@ load(file.path(fpdata, 'rawdataobj.r'))
 
 # Source code for log binning function
 source(file.path(fpdata, 'allfunctions27july.r'))
+library(dplyr)
 
 # Set number of bins       
 numbins <- 20
@@ -228,7 +229,7 @@ shadegap_stats_bin_2census <- shadegap_stats %>%
             production_ratio_max = max(shade_gap_production_ratio),
             density_ratio_min = min(shade_gap_density_ratio),
             density_ratio_max = max(shade_gap_density_ratio)) %>%
-  cbind(light_per_area_bins_all[,c(1,4,5)])
+  cbind(light_per_area_bins_shadegap[,c(1,4,5)])
 
 # Shade tolerance score for each bin (continuous). Fake bin
 
@@ -241,11 +242,58 @@ binshadescore <- function(dat, bindat) {
 
 shadescore_bin_2census <- binshadescore(dat = alltreedat[2:3], bindat = light_per_area_bins_shadegap)
 
+#################################################################################
+# Added 2 Nov.
+# Same shade gap ratio and average shade score, but do it by diameter this time.
+# Figure 5: need to bin (a) the number of shade individuals over the number of gap individuals, (b) total shade production over total gap production, and (c) average shade tolerance in the bin
+# The error bars should be based on different values for different years for a and b, and quantiles with all years put together for c.
+
+# Have to rebin production and density because we have to have the same cutoffs for shade and gap so the numbers are comparable.
+totalprodbin_shade_byyear_bydiam <- lapply(shadedat[2:3], function(z) logbin_setedges(x = z$dbh_corr, y = z$production, edges = dbhbin_shadegap))
+totalprodbin_gap_byyear_bydiam <- lapply(gapdat[2:3], function(z) logbin_setedges(x = z$dbh_corr, y = z$production, edges = dbhbin_shadegap))
+
+densitybin_shade_byyear_bydiam <- lapply(shadedat[2:3], function(z) logbin_setedges(x = z$dbh_corr, y = NULL, edges = dbhbin_shadegap))
+densitybin_gap_byyear_bydiam <- lapply(gapdat[2:3], function(z) logbin_setedges(x = z$dbh_corr, y = NULL, edges = dbhbin_shadegap))
+
+shadegap_stats_bydiam <- list()
+
+for (i in 1:2) {
+  shadegap_stats_bydiam[[i]] <- data.frame(bin = 1:numbins,
+                                    year = c(1990,1995)[i],
+                                    shade_gap_production_ratio = totalprodbin_shade_byyear_bydiam[[i]]$bin_value/totalprodbin_gap_byyear_bydiam[[i]]$bin_value,
+                                    shade_gap_density_ratio = densitybin_shade_byyear_bydiam[[i]]$bin_value/densitybin_gap_byyear_bydiam[[i]]$bin_value)  
+}
+
+shadegap_stats_bydiam <- do.call('rbind', shadegap_stats_bydiam)
+
+shadegap_stats_bydiam[shadegap_stats_bydiam == Inf | is.na(shadegap_stats_bydiam)] <- NA
+
+shadegap_stats_bin_2census_bydiam <- shadegap_stats_bydiam %>% 
+  group_by(bin) %>%
+  summarize(production_ratio_mean = mean(shade_gap_production_ratio),
+            density_ratio_mean = mean(shade_gap_density_ratio),
+            production_ratio_min = min(shade_gap_production_ratio),
+            production_ratio_max = max(shade_gap_production_ratio),
+            density_ratio_min = min(shade_gap_density_ratio),
+            density_ratio_max = max(shade_gap_density_ratio)) %>%
+  cbind(dbhbin_shadegap[,c(1,4,5)])
+
+# Shade tolerance score for each bin (continuous). Fake bin
+
+binshadescore <- function(dat, bindat) {
+  dat <- do.call('rbind', dat)
+  dat <- subset(dat, !is.na(light_received) & !is.na(pca))
+  with(dat, fakebin_across_years(dat_values = pca, dat_classes = dbh_corr, edges = bindat))
+}
+
+shadescore_bin_2census_bydiam <- binshadescore(dat = alltreedat[2:3], bindat = dbhbin_shadegap)
+
+
 
 # Export binned data
 
 fpdata <- 'C:/Users/Q/google_drive/ForestLight/data/data_04oct'
-file_names <- c('densitybin_5census', 'indivproductionbin_5census', 'totalproductionbin_5census', 'crownareabin_2census', 'lightreceivedbin_2census', 'indivprodperareabin_2census', 'shadegap_stats_bin_2census', 'shadescore_bin_2census')
+file_names <- c('densitybin_5census', 'indivproductionbin_5census', 'totalproductionbin_5census', 'crownareabin_2census', 'lightreceivedbin_2census', 'indivprodperareabin_2census', 'shadegap_stats_bin_2census', 'shadescore_bin_2census', 'shadegap_stats_bin_2census_bydiam', 'shadescore_bin_2census_bydiam')
 
 for (i in file_names) {
   write.csv(get(i), file=file.path(fpdata, paste0(i,'.csv')), row.names = FALSE)

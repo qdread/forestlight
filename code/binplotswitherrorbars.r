@@ -8,7 +8,7 @@
 fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_04oct'
 
 # Loop through all the csv files and load them into R
-file_names <- c('densitybin_5census', 'indivproductionbin_5census', 'totalproductionbin_5census', 'crownareabin_2census', 'lightreceivedbin_2census', 'indivprodperareabin_2census', 'shadegap_stats_bin_2census', 'shadescore_bin_2census')
+file_names <- c('densitybin_5census', 'indivproductionbin_5census', 'totalproductionbin_5census', 'crownareabin_2census', 'lightreceivedbin_2census', 'indivprodperareabin_2census', 'shadegap_stats_bin_2census', 'shadescore_bin_2census', 'shadegap_stats_bin_2census_bydiam', 'shadescore_bin_2census_bydiam')
 
 for (i in file_names) {
   assign(i, read.csv(file.path(fp, paste0(i,'.csv')), stringsAsFactors = FALSE))
@@ -108,5 +108,29 @@ shadescore_bin_2census %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = q025, ymax = q975)) +
   geom_pointrange() +
   scale_x_log10(name = expression(paste('Light received per unit crown area (W m'^-2,')'))) + 
+  scale_y_continuous(name = 'Shade tolerance score') +
+  panel_border(colour = 'black')
+
+# Figure 5a by diameter
+shadegap_stats_bin_2census_bydiam %>%
+  ggplot(aes(x = bin_midpoint, y = production_ratio_mean, ymin = production_ratio_min, ymax = production_ratio_max)) +
+  geom_pointrange() +
+  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_y_log10(name = 'Shade to gap production ratio', breaks= c(5,10,50,100)) +
+  panel_border(colour = 'black')
+
+# Figure 5b by diameter
+shadegap_stats_bin_2census_bydiam %>%
+  ggplot(aes(x = bin_midpoint, y = density_ratio_mean, ymin = density_ratio_min, ymax = density_ratio_max)) +
+  geom_pointrange() +
+  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_y_log10(name = 'Shade to gap density ratio', breaks = c(5,10,50)) +
+  panel_border(colour = 'black')
+
+# Figure 5c by diameter
+shadescore_bin_2census_bydiam %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = q025, ymax = q975)) +
+  geom_pointrange() +
+  scale_x_log10(name = 'Diameter (cm)') + 
   scale_y_continuous(name = 'Shade tolerance score') +
   panel_border(colour = 'black')

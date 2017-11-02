@@ -6,3 +6,5 @@ forestlight.Rproj
 .html
 *.html
 gapdata6.txt
+*.rds
+*.rda
