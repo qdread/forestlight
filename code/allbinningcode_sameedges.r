@@ -4,6 +4,8 @@
 # Then apply those bin edges to the shade and gap in isolation.
 # That way both shade and gap are given the same bin edges.
 
+# Edited 3 Nov: add number of individuals as a column, also do geometric mean and add the central 50% quantiles
+
 # Concatenate the 5 censuses (3-7) excluding 1985, and find log bin edges.
 # Keep the size classes constant across density and production.
 
@@ -53,12 +55,14 @@ dbhbin_unclassified_byyear <- lapply(unclassifieddat[2:6], function(z) logbin_se
 
 bin_across_years <- function(binlist) {
   binvals <- do.call('cbind', lapply(binlist, '[', , 'bin_value'))
+  binindivs <- do.call('cbind', lapply(binlist, '[', , 'bin_count'))
   data.frame(bin_midpoint = binlist[[1]]$bin_midpoint,
              bin_min = binlist[[1]]$bin_min,
              bin_max = binlist[[1]]$bin_max,
              bin_yvalue = apply(binvals, 1, median),
              bin_ymin = apply(binvals, 1, min),
-             bin_ymax = apply(binvals, 1, max))
+             bin_ymax = apply(binvals, 1, max),
+             mean_n_individuals = apply(binindivs, 1, mean))
 }
 
 dbhbin_alltree_5census <- bin_across_years(dbhbin_alltree_byyear)
@@ -81,7 +85,7 @@ allyearprod_shade <- unlist(lapply(shadedat[2:6], '[', , 'production'))
 allyearprod_gap <- unlist(lapply(gapdat[2:6], '[', , 'production'))
 allyearprod_unclassified <- unlist(lapply(unclassifieddat[2:6], '[', , 'production'))
 
-fakebin_across_years <- function(dat_values, dat_classes, edges, mean = 'geometric') {
+fakebin_across_years <- function(dat_values, dat_classes, edges, mean = 'geometric', n_census = 5) {
   qprobs <- c(0.025, 0.25, 0.5, 0.75, 0.975)
   # add some padding just in case
   mins <- edges$bin_min
@@ -97,6 +101,7 @@ fakebin_across_years <- function(dat_values, dat_classes, edges, mean = 'geometr
   data.frame(bin_midpoint = edges$bin_midpoint,
              bin_min = edges$bin_min,
              bin_max = edges$bin_max,
+             mean_n_individuals = edges$bin_count / n_census,
              binstats)
 }
 
@@ -170,7 +175,7 @@ binprod <- function(dat, bindat, xvar) {
   dat$prod_area <- dat$production/dat$crownarea
   dat$light_area <- dat$light_received/dat$crownarea
   dat <- subset(dat, !is.na(light_received))
-  with(dat, fakebin_across_years(dat_values = prod_area, dat_classes = light_area, edges = bindat))
+  with(dat, fakebin_across_years(dat_values = prod_area, dat_classes = light_area, edges = bindat, n_census = 2))
 }
 
 # Bin the entire light received per crown area dataset for 1990 and 1995 into a single set of bin edges.
@@ -229,7 +234,8 @@ shadegap_stats_bin_2census <- shadegap_stats %>%
             production_ratio_max = max(shade_gap_production_ratio),
             density_ratio_min = min(shade_gap_density_ratio),
             density_ratio_max = max(shade_gap_density_ratio)) %>%
-  cbind(light_per_area_bins_shadegap[,c(1,4,5)])
+  cbind(light_per_area_bins_shadegap[,c('bin_midpoint', 'bin_min', 'bin_max')]) %>%
+  cbind(mean_n_individuals = light_per_area_bins_shadegap$bin_count / 2)
 
 # Shade tolerance score for each bin (continuous). Fake bin
 
@@ -237,7 +243,7 @@ binshadescore <- function(dat, bindat) {
   dat <- do.call('rbind', dat)
   dat <- subset(dat, !is.na(light_received) & !is.na(pca))
   dat$light_area <- dat$light_received/dat$crownarea
-  with(dat, fakebin_across_years(dat_values = pca, dat_classes = light_area, edges = bindat, mean = 'arithmetic'))
+  with(dat, fakebin_across_years(dat_values = pca, dat_classes = light_area, edges = bindat, mean = 'arithmetic', n_census = 2))
 }
 
 shadescore_bin_2census <- binshadescore(dat = alltreedat[2:3], bindat = light_per_area_bins_shadegap)
@@ -276,14 +282,15 @@ shadegap_stats_bin_2census_bydiam <- shadegap_stats_bydiam %>%
             production_ratio_max = max(shade_gap_production_ratio),
             density_ratio_min = min(shade_gap_density_ratio),
             density_ratio_max = max(shade_gap_density_ratio)) %>%
-  cbind(dbhbin_shadegap[,c(1,4,5)])
+  cbind(dbhbin_shadegap[,c('bin_midpoint', 'bin_min', 'bin_max')]) %>%
+  cbind(mean_n_individuals = dbhbin_shadegap$bin_count / 2)
 
 # Shade tolerance score for each bin (continuous). Fake bin
 
 binshadescore <- function(dat, bindat) {
   dat <- do.call('rbind', dat)
   dat <- subset(dat, !is.na(light_received) & !is.na(pca))
-  with(dat, fakebin_across_years(dat_values = pca, dat_classes = dbh_corr, edges = bindat, mean = 'arithmetic'))
+  with(dat, fakebin_across_years(dat_values = pca, dat_classes = dbh_corr, edges = bindat, mean = 'arithmetic', n_census = 2))
 }
 
 shadescore_bin_2census_bydiam <- binshadescore(dat = alltreedat[2:3], bindat = dbhbin_shadegap)
