@@ -51,6 +51,11 @@ plotplawnodata <- function(fitdata, xvar, xname, yname) {
     scale_x_log10(name = xname) + scale_y_log10(name = yname)
 }
 
+
+# Individual production ---------------------------------------------------
+
+
+
 powerlaw_trans_model <- stan_model(file = 'stan/model_powerlaw_logtrans.stan')
 powerlawexp_trans_model <- stan_model(file = 'stan/model_powerlawexp_logtrans.stan')
 
@@ -90,3 +95,31 @@ shade_all_trans_sum_dat <- rbind(cbind(model = 'powerlaw', shade_plaw_plotdat),
 # Plot shade 2010
 plotplawwithdata(fitdata = shade_all_trans_sum_dat, rawdata = shadedat[[6]], xvar = 'dbh_corr', yvar = 'production', xname = 'Diameter (cm)', yname = 'Production (kg y-1)')
 plotplawnodata(fitdata = shade_all_trans_sum_dat, xvar = 'dbh_corr', xname = 'Diameter (cm)', yname = 'Production (kg y-1)')
+
+
+# Density -----------------------------------------------------------------
+
+powerlaw_init <- function(nchain, x) replicate(n=nchain, list(xmin=runif(1,min(x),20), alpha=runif(1,0,5)), simplify = FALSE)
+
+model_density_powerlaw <- stan_model(file = 'stan/model_pareto.stan')
+model_density_weibull <- stan_model(file = 'stan/model_weibull.stan')
+
+estimate_model_dens <- function(x, stanmodel) {
+  N <- length(x)
+  min_x <- min(x)
+  data <- list(N = N, x = x)
+  fit <- sampling(stanmodel, data = data, chains = 2, iter = 2000, warmup = 1000)
+  return(fit)
+}
+
+gap_fit_dens_powerlaw <- estimate_model_dens(x = gapdat[[6]]$dbh_corr, stanmodel = model_density_powerlaw)
+gap_fit_dens_weibull <- estimate_model_dens(x = gapdat[[6]]$dbh_corr, stanmodel = model_density_weibull)
+
+library(bayesplot)
+gap_summ <- summary(gap_fit_dens_powerlaw)
+gap_draws <- as.array(gap_fit_dens_powerlaw, pars=c('xmin', 'alpha'))
+mcmc_trace(gap_draws)
+
+gap_weib_summ <- summary(gap_fit_dens_weibull)
+gap_weib_draw <- as.array(gap_fit_dens_weibull, pars=c('shape', 'scale'))
+mcmc_trace(gap_weib_draw)
