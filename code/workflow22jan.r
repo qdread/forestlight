@@ -415,7 +415,7 @@ guild_colors <- RColorBrewer::brewer.pal(5, 'Set1')
 fg_names <- paste('fg',1:5,sep='')
 
 # Figure 3a
-indivproductionbin_5census %>%
+fig_3a <- indivproductionbin_5census %>%
   filter(fg %in% fg_names) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = q025, ymax = q975, group = fg, color = fg)) +
   geom_pointrange() +
@@ -425,7 +425,7 @@ indivproductionbin_5census %>%
   panel_border(colour = 'black')
 
 # Figure 3b
-densitybin_5census %>%
+fig_3b <- densitybin_5census %>%
   filter(fg %in% fg_names) %>%
   mutate(bin_yvalue = bin_yvalue/area_core, bin_ymin = bin_ymin/area_core, bin_ymax = bin_ymax/area_core) %>%
   ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, color = fg)) +
@@ -436,7 +436,7 @@ densitybin_5census %>%
   panel_border(colour = 'black')
 
 # Figure 3c
-totalproductionbin_5census %>%
+fig_3c <- totalproductionbin_5census %>%
   filter(fg %in% fg_names) %>%
   mutate(bin_yvalue = bin_yvalue/area_core, bin_ymin = bin_ymin/area_core, bin_ymax = bin_ymax/area_core) %>%
   ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, color = fg)) +
@@ -447,7 +447,7 @@ totalproductionbin_5census %>%
   panel_border(colour = 'black')
 
 # Figure 4a
-crownareabin_2census %>%
+fig_4a <- crownareabin_2census %>%
   filter(fg %in% fg_names) %>%
   mutate(bin_yvalue = bin_yvalue/area_core, bin_ymin = bin_ymin/area_core, bin_ymax = bin_ymax/area_core) %>%
   ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, color = fg)) +
@@ -458,7 +458,7 @@ crownareabin_2census %>%
   panel_border(colour = 'black')
 
 # Figure 4b
-lightreceivedbin_2census %>%
+fig_4b <- lightreceivedbin_2census %>%
   filter(fg %in% fg_names) %>%
   mutate(bin_yvalue = bin_yvalue/area_core, bin_ymin = bin_ymin/area_core, bin_ymax = bin_ymax/area_core) %>%
   ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, color = fg)) +
@@ -469,7 +469,7 @@ lightreceivedbin_2census %>%
   panel_border(colour = 'black')
 
 # Figure 4c
-indivprodperareabin_2census %>%
+fig_4c <- indivprodperareabin_2census %>%
   filter(fg %in% fg_names) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = q025, ymax = q975, group = fg, color = fg)) +
   geom_pointrange() +
@@ -477,3 +477,19 @@ indivprodperareabin_2census %>%
   scale_y_log10(name = expression(paste('Production per unit crown area (kg y'^-1, ' m'^-2,')'))) +
   scale_color_manual(values = guild_colors) +
   panel_border(colour = 'black')
+
+pdf('C:/Users/Q/google_drive/ForestLight/figs/figures_22jan2018/figs3and4.pdf', height = 6, width = 6)
+  print(fig_3a + ggtitle('3A'))
+  print(fig_3b + ggtitle('3B'))
+  print(fig_3c + ggtitle('3C'))
+  print(fig_4a + ggtitle('4A'))
+  print(fig_4b + ggtitle('4B'))
+  print(fig_4c + ggtitle('4C'))
+dev.off()
+
+# Make a figure to show the FGs
+ggplot(fgbci, aes(x = X1, y = X2, color = factor(fg))) +
+  geom_point() +
+  labs(x = 'X1 performance/recruitment', y = 'X2 shade/gap') +
+  scale_color_manual(values = guild_colors)
+ggsave('C:/Users/Q/google_drive/ForestLight/figs/figures_22jan2018/funcgroups.pdf', height=6, width=6)
