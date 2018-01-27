@@ -35,12 +35,12 @@ model {
 	sigma ~ exponential(0.01);
 	{
 	  vector[N] mu;
-	  for (i in 1:N) mu[i] = (a + b * logx[i]) * (a * logx[i] ^ b + c);
+	  for (i in 1:N) mu[i] = (a1 + b1 * logx[i]) * (a * logx[i] ^ b + c);
 	  logy ~ normal(mu, sigma);
 	}
 }
 
 generated quantities {
 	vector[N_pred] y_pred;
-	for (i in 1:N_pred) y_pred[i] = 10^((a + b * logx_pred[i]) * (a * logx_pred[i] ^ b + c));
+	for (i in 1:N_pred) y_pred[i] = 10^((a1 + b1 * logx_pred[i]) * (a * logx_pred[i] ^ b + c));
 }
