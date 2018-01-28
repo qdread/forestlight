@@ -115,3 +115,5 @@ fit_weibull_byfg <- lapply(data1995_byfg, function(x) sampling(stanmodel_weibull
                                                                chains = 3,
                                                                iter = 10000,
                                                                warmup = 5000))
+
+save(fit_pareto_byfg, fit_weibull_byfg, file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/paretoweibullfits.RData')
