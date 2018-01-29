@@ -1,6 +1,7 @@
 // Model of density and production
 // Density as Pareto
 // Production as power law
+// Edit on 29 Jan: new priors
 
 data {
 	int<lower=0> N;
@@ -17,13 +18,13 @@ transformed data {
 parameters {
 	real<lower=0, upper=5> alpha;
 	real a;
-	real b;
+	real<lower=0> b;
 	real<lower=0> sigma;
 }
 model {
 	// Priors
 	alpha ~ lognormal(1, 1) T[0, 5];
-	b ~ normal(2, 1);
+	b ~ normal(0, 2);
 	a  ~ normal(0, 10);
 	sigma ~ exponential(0.01);
 

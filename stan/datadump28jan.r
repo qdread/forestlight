@@ -27,3 +27,14 @@ for (i in 2:6) {
   }
 }
 
+# Get minimum x values and numbers of individuals that are used for plotting.
+valall <- do.call('rbind', lapply(alltreedat, function(x) data.frame(xmin = min(x$dbh_corr), n = nrow(x))))
+valall <- data.frame(fg = 'alltree', year = c(1985, 1990, 1995, 2000, 2005, 2010), valall)
+valfg <- do.call('rbind', do.call('rbind', lapply(fgdat, function(x) lapply(x, function(x) data.frame(xmin = min(x$dbh_corr), n = nrow(x))))))
+
+valfg <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','unclassified'),
+                    year = rep(c(1985, 1990, 1995, 2000, 2005, 2010), each = 6),
+                    valfg)
+
+min_n <- rbind(valall, valfg)
+write.csv(min_n, 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/min_n.csv', row.names = FALSE)
