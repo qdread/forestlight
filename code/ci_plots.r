@@ -1,11 +1,15 @@
+library(rstan)
 fp <- 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput'
 
 pareto_fits <- list()
 weibull_fits <- list()
-fg_names <- c('alltree','fg1','fg2','fg3','fg4','fg5','unclassified')
+fg_names <- c('fg1','fg2','fg3','fg4','fg5','alltree','unclassified')
 
 for (i in 1:length(fg_names)) {
   pareto_fits[[i]] <- read_stan_csv(file.path(fp, paste0('fit_paretoxpower_', fg_names[i], '_1995_', 1:3, '.csv')))
+}
+
+for (i in 1:3) {
   weibull_fits[[i]] <- read_stan_csv(file.path(fp, paste0('fit_weibullxexp_', fg_names[i], '_1995_', 1:3, '.csv')))
 }
 
@@ -15,6 +19,7 @@ diag_plots(pareto_fits[[1]])
 pareto_pars <- names(pareto_fits[[2]])[-length(names(pareto_fits[[2]]))]
 weib_pars <- names(weibull_fits[[2]])[-length(names(weibull_fits[[2]]))]
 
+mcmc_trace(as.array(pareto_fits[[1]]), pars = pareto_pars)
 mcmc_trace(as.array(pareto_fits[[2]]), pars = pareto_pars)
 mcmc_trace(as.array(pareto_fits[[3]]), pars = pareto_pars)
 mcmc_trace(as.array(pareto_fits[[4]]), pars = pareto_pars)
@@ -22,9 +27,9 @@ mcmc_trace(as.array(pareto_fits[[5]]), pars = pareto_pars)
 mcmc_trace(as.array(pareto_fits[[6]]), pars = pareto_pars)
 mcmc_trace(as.array(pareto_fits[[7]]), pars = pareto_pars)
 
-mcmc_trace(as.array(weibull_fits[[2]]), pars = weib_pars) # not good
-mcmc_trace(as.array(weibull_fits[[3]]), pars = weib_pars) # good
-mcmc_trace(as.array(weibull_fits[[4]]), pars = weib_pars) # not good
+mcmc_trace(as.array(weibull_fits[[1]]), pars = weib_pars) 
+mcmc_trace(as.array(weibull_fits[[2]]), pars = weib_pars) 
+mcmc_trace(as.array(weibull_fits[[3]]), pars = weib_pars) 
 
 # Confidence interval plots.
 # Load density bin midpoints to get x values at which to predict.

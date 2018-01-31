@@ -1,15 +1,15 @@
-qsub fitcmdstan.sh -v guild=fg1,year=1995,model=pareto -N par95_1
-qsub fitcmdstan.sh -v guild=fg2,year=1995,model=pareto -N par95_2
-qsub fitcmdstan.sh -v guild=fg3,year=1995,model=pareto -N par95_3
-qsub fitcmdstan.sh -v guild=fg4,year=1995,model=pareto -N par95_4
-qsub fitcmdstan.sh -v guild=fg5,year=1995,model=pareto -N par95_5
-qsub fitcmdstan.sh -v guild=unclassified,year=1995,model=pareto -N par95_unc
-qsub fitcmdstan.sh -v guild=alltree,year=1995,model=pareto -N par95_all
+qsub fitcmdstan.sh -v guild=fg1,year=1995,model=pareto -N par95_1 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=fg2,year=1995,model=pareto -N par95_2 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=fg3,year=1995,model=pareto -N par95_3 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=fg4,year=1995,model=pareto -N par95_4 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=fg5,year=1995,model=pareto -N par95_5 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=unclassified,year=1995,model=pareto -N par95_unc -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=1995,model=pareto -N par95_all -l walltime=4:00:00
 
 qsub fitcmdstan.sh -v guild=fg1,year=1995,model=weibull -N weib95_1
 qsub fitcmdstan.sh -v guild=fg2,year=1995,model=weibull -N weib95_2
 qsub fitcmdstan.sh -v guild=fg3,year=1995,model=weibull -N weib95_3
-qsub fitcmdstan.sh -v guild=fg4,year=1995,model=weibull -N weib95_4
-qsub fitcmdstan.sh -v guild=fg5,year=1995,model=weibull -N weib95_5
 qsub fitcmdstan.sh -v guild=unclassified,year=1995,model=weibull -N weib95_unc
-qsub fitcmdstan.sh -v guild=alltree,year=1995,model=weibull -N weib95_all
+qsub fitcmdstan.sh -v guild=fg4,year=1995,model=weibull -N weib95_4 -l walltime=7:00:00:00
+qsub fitcmdstan.sh -v guild=fg5,year=1995,model=weibull -N weib95_5 -l walltime=7:00:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=1995,model=weibull -N weib95_all -l walltime=7:00:00:00
