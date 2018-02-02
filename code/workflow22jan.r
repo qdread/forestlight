@@ -752,7 +752,7 @@ fig_fdiamprod <- fastslow_stats_bydiam_2census %>%
   panel_border(colour = 'black')
 
 fig_fdiamdens <- fastslow_stats_bydiam_2census %>%
-  filter(density_ratio_mean > 0)
+  filter(density_ratio_mean > 0) %>%
   mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
   ggplot(aes(x = bin_midpoint, y = density_ratio_mean, ymin = density_ratio_min, ymax = density_ratio_max)) +
   geom_pointrange() +
