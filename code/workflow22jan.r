@@ -8,6 +8,8 @@
 # 3-7 FGs 1 through 5
 # 8 individuals not classified in a FG
 
+# Modifications 02 Feb:
+
 group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
 
 load('C:/Users/Q/Dropbox/projects/forestlight/bcidata/bciqcrun.R')
@@ -195,7 +197,9 @@ save(alltreedat, fgdat, alltree_light_90, alltree_light_95, light_fg_90, light_f
 # Then apply those bin edges to each FG in isolation.
 # That way each FG are given the same bin edges.
 
-load('C:/Users/Q/google_drive/ForestLight/data/rawdataobj_22jan.r')
+library(dplyr)
+
+load('C:/Users/Q/google_drive/ForestLight/data/data_22jan2018/rawdataobj_22jan.r')
 group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
 source('code/allfunctions27july.r')
 
@@ -256,7 +260,7 @@ allyearprod <- unlist(lapply(alltreedat[2:6], '[', , 'production'))
 allyearprod_classified <- unlist(lapply(alltreedat_classified[2:6], '[', , 'production'))
 allyearprod_fg <- lapply(fgdat, function(x) unlist(lapply(x[2:6], '[', , 'production')))
 
-fakebin_across_years <- function(dat_values, dat_classes, edges, mean = 'geometric', n_census = 5) {
+fakebin_across_years <- function(dat_values, dat_classes, edges, mean_type = 'geometric', n_census = 5) {
   qprobs <- c(0.025, 0.25, 0.5, 0.75, 0.975)
   # add some padding just in case
   mins <- edges$bin_min
@@ -266,9 +270,27 @@ fakebin_across_years <- function(dat_values, dat_classes, edges, mean = 'geometr
   
   binstats <- t(sapply(1:length(mins), function(x) {
     indivs <- dat_values[dat_classes >= mins[x] & dat_classes < maxes[x]]
-    c(mean = ifelse(mean == 'geometric', exp(mean(log(indivs))), mean(indivs)), quantile(indivs, probs = qprobs))
+    if (mean_type == 'geometric') {
+      mean_n <- exp(mean(log(indivs)))
+      sd_n <- exp(sd(log(indivs)))
+      ci_width <- qnorm(0.975) * sd(log(indivs)) / sqrt(length(indivs))
+      ci_min <- exp(mean(log(indivs)) - ci_width)
+      ci_max <- exp(mean(log(indivs)) + ci_width)
+      
+    } else {
+      mean_n <- mean(indivs)
+      sd_n <- sd(indivs)
+      ci_width <- qnorm(0.975) * sd(indivs) / sqrt(length(indivs))
+      ci_min <- mean_n - ci_width
+      ci_max <- mean_n + ci_width
+    }
+    c(mean = mean_n, 
+      sd = sd_n,
+      quantile(indivs, probs = qprobs),
+      ci_min = ci_min,
+      ci_max = ci_max)
   }))
-  dimnames(binstats)[[2]] <- c('mean', 'q025', 'q25', 'median', 'q75', 'q975')
+  dimnames(binstats)[[2]] <- c('mean', 'sd', 'q025', 'q25', 'median', 'q75', 'q975', 'ci_min', 'ci_max')
   data.frame(bin_midpoint = edges$bin_midpoint,
              bin_min = edges$bin_min,
              bin_max = edges$bin_max,
@@ -534,12 +556,15 @@ for (i in file_names) {
   assign(i, read.csv(file.path(fpdata, paste0(i,'.csv')), stringsAsFactors = FALSE))
 }
 
+fgbci <- read.table('C:/Users/Q/google_drive/ForestLight/data/Ruger/functional_groups_BCI.txt', stringsAsFactors = FALSE)
+
 # Plot data ---------------------------------------------------------------
 
 library(cowplot)
 library(dplyr)
 
 area_core <- 42.84 # Area of the plot without the edge strip and without the "young" forest area.
+global_diam_xlimits <- c(1, 316) # Maximum and minimum for x axis if it's diameter.
 
 guild_colors <- RColorBrewer::brewer.pal(5, 'Set1')
 fg_names <- paste('fg', 1:5, sep = '')
@@ -547,66 +572,70 @@ fg_labels <- c('fast','long-lived pioneer', 'slow', 'short-lived breeder', 'inte
 
 # Figure 3a
 fig_3a <- indivproductionbin_5census %>%
-  filter(fg %in% fg_names) %>%
+  filter(fg %in% fg_names, !is.na(mean), mean > 0) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = q025, ymax = q975, group = fg, color = fg)) +
   geom_pointrange() +
-  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
   scale_y_log10(name = expression(paste('Production (kg y'^-1,')'))) +
-  scale_color_manual(values = guild_colors, labels = fg_labels) +
+  scale_color_manual(values = guild_colors, labels = fg_labels, name = 'functional group') +
   panel_border(colour = 'black')
 
 # Figure 3b
 fig_3b <- densitybin_5census %>%
-  filter(fg %in% fg_names) %>%
+  filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
+  mutate(bin_ymin = ifelse(bin_ymin == 0, bin_yvalue, bin_ymin)) %>%
   mutate(bin_yvalue = bin_yvalue/area_core, bin_ymin = bin_ymin/area_core, bin_ymax = bin_ymax/area_core) %>%
   ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, color = fg)) +
   geom_pointrange() +
-  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
   scale_y_log10(name = expression(paste('Density (individuals ha'^-1,')'))) +
-  scale_color_manual(values = guild_colors, labels = fg_labels) +
+  scale_color_manual(values = c('black', guild_colors), labels = c('all', fg_labels), name = 'functional group') +
   panel_border(colour = 'black')
 
 # Figure 3c
 fig_3c <- totalproductionbin_5census %>%
-  filter(fg %in% fg_names) %>%
+  filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
+  mutate(bin_ymin = ifelse(bin_ymin == 0, bin_yvalue, bin_ymin)) %>%
   mutate(bin_yvalue = bin_yvalue/area_core, bin_ymin = bin_ymin/area_core, bin_ymax = bin_ymax/area_core) %>%
   ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, color = fg)) +
   geom_pointrange() +
-  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
   scale_y_log10(name = expression(paste('Total production (kg ha'^-1,' y'^-1,')'))) +
-  scale_color_manual(values = guild_colors, labels = fg_labels) +
+  scale_color_manual(values = c('black', guild_colors), labels = c('all', fg_labels), name = 'functional group') +
   panel_border(colour = 'black')
 
 # Figure 4a
 fig_4a <- crownareabin_2census %>%
-  filter(fg %in% fg_names) %>%
+  filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
+  mutate(bin_ymin = ifelse(bin_ymin == 0, bin_yvalue, bin_ymin)) %>%
   mutate(bin_yvalue = bin_yvalue/area_core, bin_ymin = bin_ymin/area_core, bin_ymax = bin_ymax/area_core) %>%
   ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, color = fg)) +
   geom_pointrange() +
-  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
   scale_y_log10(name = expression(paste('Total crown area (m'^2, ' ha'^-1,')'))) +
-  scale_color_manual(values = guild_colors, labels = fg_labels) +
+  scale_color_manual(values = c('black', guild_colors), labels = c('all', fg_labels), name = 'functional group') +
   panel_border(colour = 'black')
 
 # Figure 4b
 fig_4b <- lightreceivedbin_2census %>%
-  filter(fg %in% fg_names) %>%
+  filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
+  mutate(bin_ymin = ifelse(bin_ymin == 0, bin_yvalue, bin_ymin)) %>%
   mutate(bin_yvalue = bin_yvalue/area_core, bin_ymin = bin_ymin/area_core, bin_ymax = bin_ymax/area_core) %>%
   ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, color = fg)) +
   geom_pointrange() +
-  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
   scale_y_log10(name = expression(paste('Total light received (W ha'^-1,')'))) +
-  scale_color_manual(values = guild_colors, labels = fg_labels) +
+  scale_color_manual(values = c('black', guild_colors), labels = c('all', fg_labels), name = 'functional group') +
   panel_border(colour = 'black')
 
 # Figure 4c
 fig_4c <- indivprodperareabin_2census %>%
-  filter(fg %in% fg_names) %>%
+  filter(fg %in% fg_names, !is.na(mean), mean > 0) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = q025, ymax = q975, group = fg, color = fg)) +
   geom_pointrange() +
   scale_x_log10(name = expression(paste('Light received per unit crown area (W m'^-2,')'))) + 
   scale_y_log10(name = expression(paste('Production per unit crown area (kg y'^-1, ' m'^-2,')'))) +
-  scale_color_manual(values = guild_colors, labels = fg_labels) +
+  scale_color_manual(values = guild_colors, labels = fg_labels, name = 'functional group') +
   panel_border(colour = 'black')
 
 pdf('C:/Users/Q/google_drive/ForestLight/figs/figures_22jan2018/figs3and4.pdf', height = 6, width = 7.5)
@@ -618,13 +647,11 @@ pdf('C:/Users/Q/google_drive/ForestLight/figs/figures_22jan2018/figs3and4.pdf', 
   print(fig_4c + ggtitle('4C'))
 dev.off()
 
-# Make a figure to show the FGs
+# Plot functional groups
 ggplot(fgbci, aes(x = X1, y = X2, color = factor(fg))) +
   geom_point() +
-  labs(x = 'X1 performance/recruitment', y = 'X2 shade/gap') +
-  scale_color_manual(values = guild_colors)
-ggsave('C:/Users/Q/google_drive/ForestLight/figs/figures_22jan2018/funcgroups.pdf', height=6, width=6)
-
+  labs(x = 'X1 slow to fast', y = 'X2 pioneers to breeders') +
+  scale_color_manual(values = guild_colors, labels = fg_labels, name = 'functional group')
 
 ###
 # Added 23 Jan: Ratio figures (fig 5)
@@ -632,6 +659,8 @@ ggsave('C:/Users/Q/google_drive/ForestLight/figs/figures_22jan2018/funcgroups.pd
 
 # Breeder to pioneer by light
 fig_blightprod <- breeder_stats_bylight_2census %>%
+  filter(production_ratio_mean > 0) %>%
+  mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
   ggplot(aes(x = bin_midpoint, y = production_ratio_mean, ymin = production_ratio_min, ymax = production_ratio_max)) +
   geom_pointrange() +
   scale_x_log10(name = expression(paste('Light received per unit crown area (W m'^-2,')'))) + 
@@ -639,6 +668,8 @@ fig_blightprod <- breeder_stats_bylight_2census %>%
   panel_border(colour = 'black')
 
 fig_blightdens <- breeder_stats_bylight_2census %>%
+  filter(density_ratio_mean > 0) %>%
+  mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
   ggplot(aes(x = bin_midpoint, y = density_ratio_mean, ymin = density_ratio_min, ymax = density_ratio_max)) +
   geom_pointrange() +
   scale_x_log10(name = expression(paste('Light received per unit crown area (W m'^-2,')'))) + 
@@ -655,16 +686,20 @@ fig_blightscore <- breederscore_bin_bylight_2census %>%
 
 # Breeder to pioneer by diameter
 fig_bdiamprod <- breeder_stats_bydiam_2census %>%
+  filter(production_ratio_mean > 0) %>%
+  mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
   ggplot(aes(x = bin_midpoint, y = production_ratio_mean, ymin = production_ratio_min, ymax = production_ratio_max)) +
   geom_pointrange() +
-  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
   scale_y_log10(name = 'Breeder to pioneer production ratio', breaks= 10^(-1:3)) +
   panel_border(colour = 'black')
 
 fig_bdiamdens <- breeder_stats_bydiam_2census %>%
+  filter(density_ratio_mean > 0) %>%
+  mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
   ggplot(aes(x = bin_midpoint, y = density_ratio_mean, ymin = density_ratio_min, ymax = density_ratio_max)) +
   geom_pointrange() +
-  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
   scale_y_log10(name = 'Breeder to pioneer density ratio', breaks = c(0.1,1,10,100)) +
   panel_border(colour = 'black')
 
@@ -672,7 +707,7 @@ fig_bdiamscore <- breederscore_bin_bydiam_2census %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = q025, ymax = q975)) +
   geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
   geom_pointrange() +
-  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
   scale_y_continuous(name = 'Low = long-lived pioneer, high = short-lived breeder') +
   panel_border(colour = 'black')
 
@@ -681,6 +716,8 @@ fig_bdiamscore <- breederscore_bin_bydiam_2census %>%
 
 # Fast to slow by light
 fig_flightprod <- fastslow_stats_bylight_2census %>%
+  filter(production_ratio_mean > 0) %>%
+  mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
   ggplot(aes(x = bin_midpoint, y = production_ratio_mean, ymin = production_ratio_min, ymax = production_ratio_max)) +
   geom_pointrange() +
   scale_x_log10(name = expression(paste('Light received per unit crown area (W m'^-2,')'))) + 
@@ -688,6 +725,8 @@ fig_flightprod <- fastslow_stats_bylight_2census %>%
   panel_border(colour = 'black')
 
 fig_flightdens <- fastslow_stats_bylight_2census %>%
+  filter(density_ratio_mean > 0) %>%
+  mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
   ggplot(aes(x = bin_midpoint, y = density_ratio_mean, ymin = density_ratio_min, ymax = density_ratio_max)) +
   geom_pointrange() +
   scale_x_log10(name = expression(paste('Light received per unit crown area (W m'^-2,')'))) + 
@@ -704,16 +743,20 @@ fig_flightscore <- fastslowscore_bin_bylight_2census %>%
 
 # Fast to slow by diameter
 fig_fdiamprod <- fastslow_stats_bydiam_2census %>%
+  filter(production_ratio_mean > 0) %>%
+  mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
   ggplot(aes(x = bin_midpoint, y = production_ratio_mean, ymin = production_ratio_min, ymax = production_ratio_max)) +
   geom_pointrange() +
-  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
   scale_y_log10(name = 'Fast to slow production ratio', breaks= 10^(-1:3)) +
   panel_border(colour = 'black')
 
 fig_fdiamdens <- fastslow_stats_bydiam_2census %>%
+  filter(density_ratio_mean > 0)
+  mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
   ggplot(aes(x = bin_midpoint, y = density_ratio_mean, ymin = density_ratio_min, ymax = density_ratio_max)) +
   geom_pointrange() +
-  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
   scale_y_log10(name = 'Fast to slow density ratio', breaks = c(0.1,1,10,100)) +
   panel_border(colour = 'black')
 
@@ -721,7 +764,7 @@ fig_fdiamscore <- fastslowscore_bin_bydiam_2census %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = q025, ymax = q975)) +
   geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
   geom_pointrange() +
-  scale_x_log10(name = 'Diameter (cm)') + 
+  scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
   scale_y_continuous(name = 'Low = slow, high = fast') +
   panel_border(colour = 'black')
 
