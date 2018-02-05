@@ -125,6 +125,16 @@ all_prod_1995 <- fakebin_across_years(dat_values = alltreedat[[3]]$production, d
 totalprodbin_alltree_byyear <- lapply(alltreedat[2:6], function(z) logbin_setedges(x = z$dbh_corr, y = z$production, edges = dbhbin_all))
 
 all_totalprod_1995 <- totalprodbin_alltree_byyear[[2]]
+
+# Correct the density numbers b/c of the subsampling done on the Weibull models' input data
+
+# Correction factor for subsample
+dens_corr_factor <- sum(all_dens_1995$bin_count)/25000
+
+rowidx <- with(ci_df, dens_model == 'weibull' & fg %in% c('fg5', 'alltree') & variable %in% c('density', 'total_production'))
+colidx <- c('q025','q05','q25','q50','q75','q95','q975')
+ci_df[rowidx, colidx] <- ci_df[rowidx, colidx] * dens_corr_factor
+
 # Plot all trees' individual production, density, and total production.
 
 # Set options for error bar widths and dodge amounts for all the plots
@@ -145,9 +155,9 @@ p_all_indivprod <- all_prod_1995 %>%
 dat_prod <- dplyr::filter(ci_df, fg == 'alltree', variable == 'production')
 
 p_all_indivprod +
-  geom_line(data = dat_prod, aes(y = q50/area_core, x = dbh, color = prod_model, group = prod_model)) +
-  geom_line(data = dat_prod, aes(y = q025/area_core, x = dbh, color = prod_model, group = prod_model), linetype = 'dotted') +
-  geom_line(data = dat_prod, aes(y = q975/area_core, x = dbh, color = prod_model, group = prod_model), linetype = 'dotted')
+  geom_line(data = dat_prod, aes(y = q50, x = dbh, color = prod_model, group = prod_model)) +
+  geom_line(data = dat_prod, aes(y = q025, x = dbh, color = prod_model, group = prod_model), linetype = 'dotted') +
+  geom_line(data = dat_prod, aes(y = q975, x = dbh, color = prod_model, group = prod_model), linetype = 'dotted')
 
 
 p_all_dens <- all_dens_1995 %>%
@@ -162,13 +172,12 @@ p_all_dens <- all_dens_1995 %>%
 
 dat_dens <- dplyr::filter(ci_df, fg == 'alltree', variable == 'density')
 
-# Correction factor for subsample
-dens_corr_factor <- sum(all_dens_1995$bin_count)/25000
+
 
 p_all_dens +
-  geom_line(data = dat_dens, aes(y = dens_corr_factor*q50/area_core, x = dbh, color = dens_model, group = dens_model)) +
-  geom_line(data = dat_dens, aes(y = dens_corr_factor*q025/area_core, x = dbh, color = dens_model, group = dens_model), linetype = 'dotted') +
-  geom_line(data = dat_dens, aes(y = dens_corr_factor*q975/area_core, x = dbh, color = dens_model, group = dens_model), linetype = 'dotted')
+  geom_line(data = dat_dens, aes(y = q50/area_core, x = dbh, color = dens_model, group = dens_model)) +
+  geom_line(data = dat_dens, aes(y = q025/area_core, x = dbh, color = dens_model, group = dens_model), linetype = 'dotted') +
+  geom_line(data = dat_dens, aes(y = q975/area_core, x = dbh, color = dens_model, group = dens_model), linetype = 'dotted')
 
 
 p_all_totalprod <- all_totalprod_1995 %>%
@@ -184,8 +193,8 @@ p_all_totalprod <- all_totalprod_1995 %>%
 dat_totalprod <- dplyr::filter(ci_df, fg == 'alltree', variable == 'total_production')
 
 p_all_totalprod +
-  geom_line(data = dat_totalprod, aes(y = dens_corr_factor*q50/area_core, x = dbh, color = dens_model, group = dens_model)) +
-  geom_line(data = dat_totalprod, aes(y = dens_corr_factor*q025/area_core, x = dbh, color = dens_model, group = dens_model), linetype = 'dotted') +
-  geom_line(data = dat_totalprod, aes(y = dens_corr_factor*q975/area_core, x = dbh, color = dens_model, group = dens_model), linetype = 'dotted') +
+  geom_line(data = dat_totalprod, aes(y = q50/area_core, x = dbh, color = dens_model, group = dens_model)) +
+  geom_line(data = dat_totalprod, aes(y = q025/area_core, x = dbh, color = dens_model, group = dens_model), linetype = 'dotted') +
+  geom_line(data = dat_totalprod, aes(y = q975/area_core, x = dbh, color = dens_model, group = dens_model), linetype = 'dotted') +
   scale_color_discrete(name = 'Functional forms', labels = c('D Pareto\nP Powerlaw', 'D Weibull\nP Powerlaw + exponential')) +
   theme(legend.position = 'bottom')

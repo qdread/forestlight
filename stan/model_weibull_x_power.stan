@@ -17,23 +17,23 @@ transformed data {
 parameters {
 	real<lower=0> shape;
 	real<lower=0> scale;
-	real a;
-	real<lower=0> b;
+	real beta0;
+	real<lower=0> beta1;
 	real<lower=0> sigma;
 }
 model {
 	// Priors
 	shape ~ lognormal(1, 1);
 	scale ~ lognormal(1, 1);
-	b ~ normal(0, 2);
-	a  ~ normal(0, 10);
+	beta0  ~ normal(0, 10);
+	beta1 ~ normal(0, 2);
 	sigma ~ exponential(0.01);
 
 	// Likelihood
 	x ~ weibull(shape, scale);
 	{
 	  vector[N] mu;
-	  for (i in 1:N) mu[i] = a + b * logx[i];
+	  for (i in 1:N) mu[i] = beta0 + beta1 * logx[i];
 	  logy ~ normal(mu, sigma);
 	}
 }
