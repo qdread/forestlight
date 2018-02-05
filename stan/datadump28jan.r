@@ -1,11 +1,14 @@
 # Create Rdump for new grouped data to run with CMDSTAN.
 
 # Load data (changing file path if necessary)
-fpdata <- 'C:/Users/Q/google_drive/ForestLight/data/'
+fpdata <- 'C:/Users/Q/google_drive/ForestLight/data/data_22jan2018'
 load(file.path(fpdata, 'rawdataobj_22jan.r'))
 
-prod_dump <- function(dat, to_file = FALSE, fn = NULL) {
+prod_dump <- function(dat, to_file = FALSE, fn = NULL, subsample = NULL) {
   require(rstan)
+  if (!is.null(subsample) && nrow(dat) > subsample) {
+    dat <- dat[sample(nrow(dat), subsample, replace = FALSE), ]
+  }
   x <- dat$dbh_corr
   y <- dat$production
   xdat <- list(N = length(x), x = x, y = y, x_min = min(x))
@@ -38,3 +41,16 @@ valfg <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','unclassified'),
 
 min_n <- rbind(valall, valfg)
 write.csv(min_n, 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/min_n.csv', row.names = FALSE)
+
+# Added 3 Feb. 2018
+# Take a subset of the data so that we can fit the Weibull in a reasonable amount of time.
+
+n_sub <- 25000
+set.seed(574)
+
+for (i in 2:6) {
+  prod_dump(alltreedat[[i]], to_file = TRUE, fn = file.path(fpdump, paste0('ssdump_alltree_', years[i-1], '.r')), subsample = n_sub)
+  for (j in 1:6) {
+    prod_dump(fgdat[[j]][[i]], to_file = TRUE, fn = file.path(fpdump, paste0('ssdump_', fgs[j], '_', years[i-1], '.r')), subsample = n_sub)
+  }
+}

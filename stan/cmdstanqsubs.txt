@@ -13,3 +13,12 @@ qsub fitcmdstan.sh -v guild=unclassified,year=1995,model=weibull -N weib95_unc
 qsub fitcmdstan.sh -v guild=fg4,year=1995,model=weibull -N weib95_4 -l walltime=7:00:00:00
 qsub fitcmdstan.sh -v guild=fg5,year=1995,model=weibull -N weib95_5 -l walltime=7:00:00:00
 qsub fitcmdstan.sh -v guild=alltree,year=1995,model=weibull -N weib95_all -l walltime=7:00:00:00
+
+qsub fitcmdstan.sh -v guild=fg1,year=1995,model=weibullsub -N wsub95_1
+qsub fitcmdstan.sh -v guild=fg2,year=1995,model=weibullsub -N wsub95_2
+qsub fitcmdstan.sh -v guild=fg3,year=1995,model=weibullsub -N wsub95_3
+qsub fitcmdstan.sh -v guild=unclassified,year=1995,model=weibullsub -N wsub95_unc
+qsub fitcmdstan.sh -v guild=fg4,year=1995,model=weibullsub -N wsub95_4 -l walltime=3:00:00:00
+
+qsub fitcmdstan.sh -v guild=fg5,year=1995,model=weibullsub -N wsub95_5 -l walltime=7:00:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=1995,model=weibullsub -N wsub95_all -l walltime=7:00:00:00

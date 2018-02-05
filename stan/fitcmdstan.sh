@@ -18,3 +18,7 @@ fi
 if [ "$model" == "weibull" ]; then
 	~/forestlight/stancode/model_weibull_x_powerexp sample algorithm=hmc engine=nuts max_depth=20 num_samples=1000 num_warmup=5000 thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/dump_${guild}_${year}.r init=0.1 output file=~/forestlight/stanoutput/fit_weibullxexp_${guild}_${year}_${PBS_ARRAYID}.csv
 fi
+
+if [ "$model" == "weibullsub" ]; then
+	~/forestlight/stancode/model_weibull_x_powerexp sample algorithm=hmc engine=nuts max_depth=20 num_samples=1000 num_warmup=5000 thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/ssdump_${guild}_${year}.r init=0.1 output file=~/forestlight/stanoutput/ssfit_weibullxexp_${guild}_${year}_${PBS_ARRAYID}.csv
+fi
