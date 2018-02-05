@@ -23,7 +23,8 @@ parameters {
 }
 model {
 	// Priors
-	alpha ~ lognormal(1, 1) T[0, 5];
+	shape ~ lognormal(1, 1);
+	scale ~ lognormal(1, 1);
 	b ~ normal(0, 2);
 	a  ~ normal(0, 10);
 	sigma ~ exponential(0.01);
@@ -32,7 +33,7 @@ model {
 	x ~ weibull(shape, scale);
 	{
 	  vector[N] mu;
-	  for (i in 1:N) mu[i] = a + b * logx[i]
+	  for (i in 1:N) mu[i] = a + b * logx[i];
 	  logy ~ normal(mu, sigma);
 	}
 }
