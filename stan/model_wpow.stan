@@ -30,8 +30,8 @@ model {
 	shape ~ lognormal(1, 1);
 	scale ~ lognormal(1, 1);
 	// Priors: Power law production
-	beta0  ~ lognormal(1, 10);
-	beta1 ~ lognormal(0.5, 2);	
+	beta0  ~ normal(0, 10);
+	beta1 ~ normal(0, 2);	
 	sigma ~ exponential(0.01);
 	
 	// Likelihood: Weibull density

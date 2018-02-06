@@ -54,8 +54,8 @@ parameters {
 }
 model {
 	// Priors
-	beta0  ~ lognormal(1, 10);
-	beta1 ~ lognormal(0.5, 2);	
+	beta0  ~ normal(0, 10);
+	beta1 ~ normal(0, 2);	
 	sigma ~ exponential(0.01);
 
 	// Likelihood
@@ -81,8 +81,8 @@ model {
 	a ~ normal(0, 10);
 	b ~ normal(0, 2);
 	c ~ normal(0, 10);
-	beta0  ~ lognormal(1, 10);
-	beta1 ~ lognormal(0.5, 2);	
+	beta0  ~ normal(0, 10);
+	beta1 ~ normal(0, 2);		
 	sigma ~ exponential(0.01);
 
 	// Likelihood
