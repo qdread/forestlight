@@ -1,7 +1,8 @@
 # Fit stan models for 1995.
+# Edit 06 Feb 2018: Use the new models and some test data perhaps.
 
 # Load data (changing file path if necessary)
-fpdata <- 'C:/Users/Q/google_drive/ForestLight/data/'
+fpdata <- 'C:/Users/Q/google_drive/ForestLight/data/data_22jan2018'
 load(file.path(fpdata, 'rawdataobj_22jan.r'))
 
 library(rstan)
@@ -23,97 +24,39 @@ prod_dump <- function(dat, to_file = FALSE, fn = NULL) {
 data1995_alltree <- prod_dump(alltreedat[[3]])
 data1995_byfg <- lapply(fgdat, function(x) prod_dump(x[[3]]))
 
-# Define models
-model_pareto_x_powerlaw <- 
-  'data {
-int<lower=0> N;
-vector[N] x;
-vector[N] y;
-real<lower=0> x_min;
-}
-transformed data {
-vector[N] logx;
-vector[N] logy;
-logx = log(x)/log(10);
-logy = log(y)/log(10);
-}
-parameters {
-real<lower=0, upper=5> alpha;
-real a;
-real b;
-real<lower=0> sigma;
-}
-model {
-// Priors
-alpha ~ lognormal(1, 1) T[0, 5];
-b ~ normal(2, 1);
-a  ~ normal(0, 10);
-sigma ~ exponential(0.01);
+stanmodel_paretoxpower <- stan_model(file = 'stan/model_ppow.stan', model_name = 'paretoxpow')
+stanmodel_paretoxexp <- stan_model(file = 'stan/model_pexp.stan', model_name = 'paretoxexp')
+stanmodel_weibullxpower <- stan_model(file = 'stan/model_wpow.stan', model_name = 'weibullxpow')
+stanmodel_weibullxexp <- stan_model(file = 'stan/model_wexp.stan', model_name = 'weibullxexp')
 
-// Likelihood
-x ~ pareto(x_min, alpha);
-{
-  vector[N] mu;
-  for (i in 1:N) mu[i] = a + b * logx[i];
-  logy ~ normal(mu, sigma);
-}
-}'
+# Test each model.
+fit_ppow <- sampling(stanmodel_paretoxpower, data = data1995_byfg[[1]], chains = 2, iter = 1500, warmup = 1000)
+fit_pexp <- sampling(stanmodel_paretoxexp, data = data1995_byfg[[1]], chains = 2, iter = 1500, warmup = 1000)
+fit_wpow <- sampling(stanmodel_weibullxpower, data = data1995_byfg[[1]], chains = 2, iter = 1500, warmup = 1000)
+fit_wexp <- sampling(stanmodel_weibullxexp, data = data1995_byfg[[1]], chains = 2, iter = 1500, warmup = 1000)
 
-model_weibull_x_powerexp <- 
-  'data {
-int<lower=0> N;
-vector[N] x;
-vector[N] y;
-}
-transformed data {
-vector[N] logx;
-vector[N] logy;
-logx = log(x)/log(10);
-logy = log(y)/log(10);
-}
-parameters {
-real<lower=0> shape;
-real<lower=0> scale;
-real a1;
-real b1;
-real a;
-real b;
-real c;
-real<lower=0> sigma;
-}
-model {
-// Priors
-shape ~ lognormal(1, 1);
-scale ~ lognormal(1, 1);
-a ~ normal(1, 2);
-b ~ normal(0, 10);
-c ~ normal(1, 2);
-b1 ~ normal(2, 1);
-a1  ~ normal(0, 10);
-sigma ~ exponential(0.01);
+summary(fit_ppow)
+summary(fit_pexp)
+summary(fit_wpow)
+summary(fit_wexp)
 
-// Likelihood
-x ~ weibull(shape, scale);
-{
-  vector[N] mu;
-  for (i in 1:N) mu[i] = (a1 + b1 * logx[i]) * (a * logx[i] ^ b + c);
-  logy ~ normal(mu, sigma);
-}
-}'
+library(bayesplot)
 
-stanmodel_paretoxpower <- stan_model(model_code = model_pareto_x_powerlaw)
-stanmodel_weibullxexp <- stan_model(model_code = model_weibull_x_powerexp)
+mcmc_trace(as.array(fit_ppow))
+mcmc_trace(as.array(fit_pexp))
+mcmc_trace(as.array(fit_wpow))
+mcmc_trace(as.array(fit_wexp))
 
-fit_pareto_byfg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxpower,
-                                                              data = x,
-                                                              chains = 3,
-                                                              iter = 10000,
-                                                              warmup = 5000))
-
-fit_weibull_byfg <- lapply(data1995_byfg, function(x) sampling(stanmodel_weibullxexp,
-                                                               data = x,
-                                                               chains = 3,
-                                                               iter = 10000,
-                                                               warmup = 5000))
-
-save(fit_pareto_byfg, fit_weibull_byfg, file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/paretoweibullfits.RData')
+# fit_pareto_byfg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxpower,
+#                                                               data = x,
+#                                                               chains = 3,
+#                                                               iter = 10000,
+#                                                               warmup = 5000))
+# 
+# fit_weibull_byfg <- lapply(data1995_byfg, function(x) sampling(stanmodel_weibullxexp,
+#                                                                data = x,
+#                                                                chains = 3,
+#                                                                iter = 10000,
+#                                                                warmup = 5000))
+# 
+# save(fit_pareto_byfg, fit_weibull_byfg, file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/paretoweibullfits.RData')

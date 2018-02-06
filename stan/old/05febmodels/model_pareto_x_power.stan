@@ -1,12 +1,13 @@
 // Model of density and production
-// Density as Weibull
+// Density as Pareto
 // Production as power law
-// Created on 05 Feb
+// Edit on 29 Jan: new priors
 
 data {
 	int<lower=0> N;
 	vector[N] x;
 	vector[N] y;
+	real<lower=0> x_min;
 }
 transformed data {
 	vector[N] logx;
@@ -15,22 +16,20 @@ transformed data {
 	logy = log(y)/log(10);
 }
 parameters {
-	real<lower=0> shape;
-	real<lower=0> scale;
+	real<lower=0, upper=5> alpha;
 	real beta0;
 	real<lower=0> beta1;
 	real<lower=0> sigma;
 }
 model {
 	// Priors
-	shape ~ lognormal(1, 1);
-	scale ~ lognormal(1, 1);
+	alpha ~ lognormal(1, 1) T[0, 5];
 	beta0  ~ normal(0, 10);
-	beta1 ~ normal(0, 2);
+	beta1 ~ normal(0, 2);	
 	sigma ~ exponential(0.01);
 
 	// Likelihood
-	x ~ weibull(shape, scale);
+	x ~ pareto(x_min, alpha);
 	{
 	  vector[N] mu;
 	  for (i in 1:N) mu[i] = beta0 + beta1 * logx[i];

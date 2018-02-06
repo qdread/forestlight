@@ -29,7 +29,7 @@ model {
 	alpha ~ lognormal(1, 1) T[0, 5];
 	a ~ normal(0, 1);
 	b ~ normal(0, 5);
-	c ~ normal(0, 1);s
+	c ~ normal(0, 1);
 	beta0  ~ normal(0, 10);
 	beta1 ~ normal(0, 2);
 	sigma ~ exponential(0.01);
