@@ -78,8 +78,8 @@ parameters {
 }
 model {
 	// Priors
-	a ~ lognormal(5, 10);
-	b ~ lognormal(0.5, 2);
+	a ~ normal(0, 10);
+	b ~ normal(0, 2);
 	c ~ normal(0, 10);
 	beta0  ~ lognormal(1, 10);
 	beta1 ~ lognormal(0.5, 2);	

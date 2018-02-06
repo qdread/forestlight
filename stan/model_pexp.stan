@@ -32,8 +32,8 @@ model {
 	// Priors: Pareto density
 	alpha ~ lognormal(1, 1) T[0, 5];
 	// Priors: Power law times exponential production
-	a ~ lognormal(5, 10);
-	b ~ lognormal(0.5, 2);
+	a ~ normal(0, 10);
+	b ~ normal(0, 2);
 	c ~ normal(0, 10);
 	beta0  ~ lognormal(1, 10);
 	beta1 ~ lognormal(0.5, 2);	
