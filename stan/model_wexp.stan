@@ -45,7 +45,7 @@ model {
 	// Likelihood: Power law times exponential production
 	{
 	  vector[N] mu;
-	  for (i in 1:N) mu[i] = -beta0 + beta1 * logx[i] + log(-a * x[i] ^ b + c);
+	  for (i in 1:N) mu[i] = -beta0 + beta1 * logx[i] + log(-a * x[i] ^ -b + c);
 	  logy ~ normal(mu, sigma);
 	}
 }

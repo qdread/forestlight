@@ -126,23 +126,24 @@ fg1_totalprod_1995 <- totalprodbin_fg_byyear[[1]][[2]]
 
 ###
 
+fpfig <- 'C:/Users/Q/google_drive/ForestLight/figs/credible_interval_plots'
 global_diam_xlimits <- c(1, 316) # Maximum and minimum for x axis if it's diameter.
 
 p_fg1_indivprod <- fg1_prod_1995 %>%
   filter(!is.na(mean), mean > 0) %>%
-  ggplot(aes(x = bin_midpoint, y = mean, ymin = q025, ymax = q975)) +
-  geom_point(color = 'black') +
+  ggplot() +
+  geom_point(aes(x = bin_midpoint, y = mean, ymin = q025, ymax = q975), color = 'black') +
   scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
   scale_y_log10(name = expression(paste('Production (kg y'^-1,')'))) +
   panel_border(colour = 'black')
 
-dat_prod <- dplyr::filter(ci_df, variable == 'production')
+dat_prod <- dplyr::filter(ci_df, variable == 'production', dens_model == 'pareto')
 
 p_fg1_indivprod +
-  geom_line(data = dat_prod, aes(y = q50, x = dbh, color = interaction(dens_model, prod_model), group = interaction(dens_model, prod_model))) +
-  geom_line(data = dat_prod, aes(y = q025, x = dbh, color = interaction(dens_model, prod_model), group = interaction(dens_model, prod_model)), linetype = 'dotted') +
-  geom_line(data = dat_prod, aes(y = q975, x = dbh, color = interaction(dens_model, prod_model), group = interaction(dens_model, prod_model)), linetype = 'dotted')
-
+  geom_ribbon(data = dat_prod, aes(ymin = q025, ymax = q975, x = dbh, fill = prod_model, group = prod_model), alpha = 0.5) +
+  geom_line(data = dat_prod, aes(y = q50, x = dbh, color = prod_model, group = prod_model)) +
+  theme(legend.position = 'bottom') + ggtitle('Individual production')
+ggsave(file.path(fpfig, 'fg1_1995_production.png'), height=5, width=5, dpi=300)
 
 p_fg1_dens <- fg1_dens_1995 %>%
   filter(!is.na(bin_value), bin_value > 0) %>%
@@ -154,15 +155,13 @@ p_fg1_dens <- fg1_dens_1995 %>%
   scale_y_log10(name = expression(paste('Density (individuals ha'^-1,')'))) +
   panel_border(colour = 'black')
 
-dat_dens <- dplyr::filter(ci_df, variable == 'density')
-
-
+dat_dens <- dplyr::filter(ci_df, variable == 'density', prod_model == 'powerlaw')
 
 p_fg1_dens +
-  geom_line(data = dat_dens, aes(y = q50/area_core, x = dbh, color = interaction(dens_model, prod_model), group = interaction(dens_model, prod_model))) +
-  geom_line(data = dat_dens, aes(y = q025/area_core, x = dbh, color = interaction(dens_model, prod_model), group = interaction(dens_model, prod_model)), linetype = 'dotted') +
-  geom_line(data = dat_dens, aes(y = q975/area_core, x = dbh, color = interaction(dens_model, prod_model), group = interaction(dens_model, prod_model)), linetype = 'dotted')
-
+  geom_ribbon(data = dat_dens, aes(ymin = q025/area_core, ymax = q975/area_core, x = dbh, fill = dens_model, group = dens_model), alpha = 0.5) +
+  geom_line(data = dat_dens, aes(y = q50/area_core, x = dbh, color = dens_model, group = dens_model)) +
+  theme(legend.position = 'bottom') + ggtitle('Density')
+ggsave(file.path(fpfig, 'fg1_1995_density.png'), height = 5, width = 5, dpi = 300)
 
 p_fg1_totalprod <- fg1_totalprod_1995 %>%
   filter(!is.na(bin_value), bin_value > 0) %>%
@@ -171,14 +170,14 @@ p_fg1_totalprod <- fg1_totalprod_1995 %>%
   ggplot() +
   geom_point(aes(x = bin_midpoint, y = bin_yvalue)) +
   scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
-  scale_y_log10(name = expression(paste('Total production (kg ha'^-1,' y'^-1,')')), limits = c(.1,10000)) +
+  scale_y_log10(name = expression(paste('Total production (kg ha'^-1,' y'^-1,')')), limits = c(.01,500)) +
   panel_border(colour = 'black')
 
 dat_totalprod <- dplyr::filter(ci_df, variable == 'total_production')
 
 p_fg1_totalprod +
+  geom_ribbon(data = dat_totalprod, aes(ymin = q025/area_core, ymax = q975/area_core, x = dbh, fill = interaction(dens_model, prod_model), group = interaction(dens_model, prod_model)), alpha = 0.5) +
   geom_line(data = dat_totalprod, aes(y = q50/area_core, x = dbh, color = interaction(dens_model, prod_model), group = interaction(dens_model, prod_model))) +
-  geom_line(data = dat_totalprod, aes(y = q025/area_core, x = dbh, color = interaction(dens_model, prod_model), group = interaction(dens_model, prod_model)), linetype = 'dotted') +
-  geom_line(data = dat_totalprod, aes(y = q975/area_core, x = dbh, color = interaction(dens_model, prod_model), group = interaction(dens_model, prod_model)), linetype = 'dotted') +
-  scale_color_discrete(name = 'Functional forms', labels = c('D Pareto\nP Powerlaw', 'D Weibull\nP Powerlaw', 'D Pareto\nP Powerlaw*Exponential', 'D Weibull\nP Powerlaw*Exponential')) +
-  theme(legend.position = 'bottom')
+  scale_fill_discrete(name = 'Functional forms', labels = c('D Pareto\nP Powerlaw', 'D Weibull\nP Powerlaw', 'D Pareto\nP Powerlaw*Exponential', 'D Weibull\nP Powerlaw*Exponential')) +
+  theme(legend.position = 'bottom', legend.text = element_text(size=8)) + ggtitle('Total production') + guides(colour = FALSE)
+ggsave(file.path(fpfig, 'fg1_1995_totalproduction.png'), height=5, width=6.5, dpi=300)

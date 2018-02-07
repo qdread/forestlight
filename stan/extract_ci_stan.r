@@ -14,7 +14,7 @@ diag_plots <- function(fit) {
 dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, x_min = NULL, n_indiv = 1) {
   pdf_pareto <- function(x, xmin, alpha) (alpha * xmin^alpha) / (x ^ (alpha+1))
   pdf_weibull <- function(x, shape, scale) (shape/scale) * (x/scale)^(shape-1) * exp(-(x/scale)^shape)
-  powerlaw_exp_log <- function(x, a, b, c, beta0, beta1) exp(-beta0) * x^beta1 * (-a * x ^ b + c)
+  powerlaw_exp_log <- function(x, a, b, c, beta0, beta1) exp(-beta0) * x^beta1 * (-a * x ^ -b + c)
   powerlaw_log <- function(x, beta0, beta1) exp(-beta0) * x^beta1
   
   pars <- do.call('cbind', extract(fit))
