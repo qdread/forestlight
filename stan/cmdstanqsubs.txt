@@ -20,7 +20,7 @@ qsub fitcmdstan.sh -v guild=fg1,year=1995,model=paretoexp -N pexp95_1
 qsub fitcmdstan.sh -v guild=fg2,year=1995,model=paretoexp -N pexp95_2 
 qsub fitcmdstan.sh -v guild=fg3,year=1995,model=paretoexp -N pexp95_3 
 qsub fitcmdstan.sh -v guild=unclassified,year=1995,model=paretoexp -N pexp95_unc 
-qsub fitcmdstan.sh -v guild=fg4,year=1995,model=paretoexp -N pexp95_4 -l walltime=3:00:00:00
+qsub fitcmdstan.sh -v guild=fg4,year=1995,model=paretoexp -N pexp95_4 -l walltime=7:00:00:00
 qsub fitcmdstan.sh -v guild=fg5,year=1995,model=paretoexpsub -N pexp95_5 -l walltime=7:00:00:00
 qsub fitcmdstan.sh -v guild=alltree,year=1995,model=paretoexpsub -N pexp95_all -l walltime=7:00:00:00
 
