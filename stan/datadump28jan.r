@@ -44,8 +44,9 @@ write.csv(min_n, 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/min_n.csv',
 
 # Added 3 Feb. 2018
 # Take a subset of the data so that we can fit the Weibull in a reasonable amount of time.
+# Edited 8 Feb to subsample an even smaller number
 
-n_sub <- 25000
+n_sub <- 5000
 set.seed(574)
 
 for (i in 2:6) {

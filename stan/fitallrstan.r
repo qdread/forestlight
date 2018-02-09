@@ -9,8 +9,11 @@ library(rstan)
 rstan_options(auto_write = TRUE)
 options(mc.cores = 3) 
 
-prod_dump <- function(dat, to_file = FALSE, fn = NULL) {
+prod_dump <- function(dat, to_file = FALSE, fn = NULL, subsample = NULL) {
   require(rstan)
+  if (!is.null(subsample) && nrow(dat) > subsample) {
+    dat <- dat[sample(nrow(dat), subsample, replace = FALSE), ]
+  }
   x <- dat$dbh_corr
   y <- dat$production
   xdat <- list(N = length(x), x = x, y = y, x_min = min(x))
@@ -21,31 +24,45 @@ prod_dump <- function(dat, to_file = FALSE, fn = NULL) {
   }
 }
 
-data1995_alltree <- prod_dump(alltreedat[[3]])
-data1995_byfg <- lapply(fgdat, function(x) prod_dump(x[[3]]))
+n_sub <- 5000
+set.seed(574)
+
+data1995_alltree <- prod_dump(alltreedat[[3]], subsample = n_sub)
+data1995_byfg <- lapply(fgdat, function(x) prod_dump(x[[3]], subsample = n_sub))
 
 stanmodel_paretoxpower <- stan_model(file = 'stan/model_ppow.stan', model_name = 'paretoxpow')
 stanmodel_paretoxexp <- stan_model(file = 'stan/model_pexp.stan', model_name = 'paretoxexp')
 stanmodel_weibullxpower <- stan_model(file = 'stan/model_wpow.stan', model_name = 'weibullxpow')
 stanmodel_weibullxexp <- stan_model(file = 'stan/model_wexp.stan', model_name = 'weibullxexp')
 
-# Test each model.
-fit_ppow <- sampling(stanmodel_paretoxpower, data = data1995_byfg[[1]], chains = 2, iter = 1500, warmup = 1000)
-fit_pexp <- sampling(stanmodel_paretoxexp, data = data1995_byfg[[1]], chains = 2, iter = 1500, warmup = 1000)
-fit_wpow <- sampling(stanmodel_weibullxpower, data = data1995_byfg[[1]], chains = 2, iter = 1500, warmup = 1000)
-fit_wexp <- sampling(stanmodel_weibullxexp, data = data1995_byfg[[1]], chains = 2, iter = 1500, warmup = 1000)
+NC <- 3
+NI <- 6000
+NW <- 5000
 
-summary(fit_ppow)
-summary(fit_pexp)
-summary(fit_wpow)
-summary(fit_wexp)
+fit_ppow_all <- sampling(stanmodel_paretoxpower, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
+fit_pexp_all <- sampling(stanmodel_paretoxexp, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
+fit_wpow_all <- sampling(stanmodel_weibullxpower, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
+fit_wexp_all <- sampling(stanmodel_weibullxexp, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
 
-library(bayesplot)
+fit_ppow_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxpower, data = x, chains = NC, iter = NI, warmup = NW))
+fit_pexp_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxexp, data = x, chains = NC, iter = NI, warmup = NW))
+fit_wpow_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_weibullxpower, data = x, chains = NC, iter = NI, warmup = NW))
+fit_wexp_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_weibullxexp, data = x, chains = NC, iter = NI, warmup = NW))
 
-mcmc_trace(as.array(fit_ppow))
-mcmc_trace(as.array(fit_pexp))
-mcmc_trace(as.array(fit_wpow))
-mcmc_trace(as.array(fit_wexp))
+save(list = grep('fit_', ls(), value = TRUE), file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/localsubsamplefit5000.RData')
+
+
+# summary(fit_ppow)
+# summary(fit_pexp)
+# summary(fit_wpow)
+# summary(fit_wexp)
+# 
+# library(bayesplot)
+# 
+# mcmc_trace(as.array(fit_ppow))
+# mcmc_trace(as.array(fit_pexp))
+# mcmc_trace(as.array(fit_wpow))
+# mcmc_trace(as.array(fit_wexp))
 
 # fit_pareto_byfg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxpower,
 #                                                               data = x,

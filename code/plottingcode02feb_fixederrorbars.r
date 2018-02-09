@@ -4,7 +4,7 @@
 # Edit 1: Error bars have horizontal caps with fixed width
 # Edit 2: At the bottom of this script, alternative versions of the quantile plots are made with 95% CI of the mean instead
 
-include_shrubs <- TRUE # *** change this to FALSE to exclude shrubs.
+include_shrubs <- FALSE # *** change this to FALSE to exclude shrubs.
 
 # Load data ---------------------------------------------------------------
 
@@ -21,8 +21,8 @@ if (include_shrubs) {
 } else {
   for (i in file_names) {
     assign(i, read.csv(file.path(fpdata, paste0('noshrub_', i,'.csv')), stringsAsFactors = FALSE))
-    fgbci <- subset(fgbci, !grform %in% 'S')
   }
+  fgbci <- subset(fgbci, !grform %in% 'S')
 }
 
 # Plot data ---------------------------------------------------------------
