@@ -51,18 +51,22 @@ fit_wexp_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_weibullxexp,
 
 save(list = grep('fit_', ls(), value = TRUE), file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/localsubsamplefit5000.RData')
 
+###
+library(rstan)
+load('C:/Users/Q/Dropbox/projects/forestlight/stanoutput/localsubsamplefit5000.RData')
 
-# summary(fit_ppow)
-# summary(fit_pexp)
-# summary(fit_wpow)
-# summary(fit_wexp)
-# 
-# library(bayesplot)
-# 
-# mcmc_trace(as.array(fit_ppow))
-# mcmc_trace(as.array(fit_pexp))
-# mcmc_trace(as.array(fit_wpow))
-# mcmc_trace(as.array(fit_wexp))
+summary(fit_ppow_all)[[1]]
+summary(fit_pexp_all)[[1]]
+summary(fit_wpow_all)[[1]]
+summary(fit_wexp_all)[[1]]
+
+
+library(bayesplot)
+
+mcmc_trace(as.array(fit_ppow_all))
+mcmc_trace(as.array(fit_pexp_all))
+mcmc_trace(as.array(fit_wpow_all))
+mcmc_trace(as.array(fit_wexp_all))
 
 # fit_pareto_byfg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxpower,
 #                                                               data = x,

@@ -41,7 +41,7 @@ dens_plot_fg <- function(dat_dens_points, dat_dens_fits, fgname, year) {
   p_all_dens +
     geom_ribbon(data = dat_dens, aes(ymin = q025/area_core, ymax = q975/area_core, x = dbh, fill = dens_model, group = dens_model), alpha = 0.5) +
     geom_line(data = dat_dens, aes(y = q50/area_core, x = dbh, color = dens_model, group = dens_model)) +
-    theme(legend.position = 'bottom') + ggtitle('Density', 'contingent on production fit as power law')
+    theme(legend.position = 'bottom') + ggtitle('Density')
   
 }
 
@@ -51,6 +51,10 @@ dens_plot_fg(dbhbin_fg_byyear, ci_df, "fg2", 1995)
 dens_plot_fg(dbhbin_fg_byyear, ci_df, "fg3", 1995)
 dens_plot_fg(dbhbin_fg_byyear, ci_df, "fg4", 1995)
 dens_plot_fg(dbhbin_fg_byyear, ci_df, "fg5", 1995)
+
+for (i in c('fg1','fg2','fg3','fg4','fg5')) ggsave(file.path(fpfig, paste0(i, '_1995_density.png')),
+                                                   dens_plot_fg(dbhbin_fg_byyear, ci_df, i, 1995),
+                                                   height = 5, width = 5, dpi = 300)
 
 prod_plot_fg <- function(dat_prod_fits, dat_dens_points, fgname, year) {
   fg_names <- c("fg1", "fg2", "fg3", "fg4", "fg5", "unclassified")
@@ -69,7 +73,7 @@ prod_plot_fg <- function(dat_prod_fits, dat_dens_points, fgname, year) {
   p_all_indivprod +
     geom_ribbon(data = dat_prod, aes(ymin = q025, ymax = q975, x = dbh, fill = prod_model, group = prod_model), alpha = 0.5) +
     geom_line(data = dat_prod, aes(y = q50, x = dbh, color = prod_model, group = prod_model)) +
-    theme(legend.position = 'bottom') + ggtitle('Individual production' , 'contingent on density fit as Pareto')
+    theme(legend.position = 'bottom') + ggtitle('Individual production')
   
 }
 
@@ -79,6 +83,9 @@ prod_plot_fg(ci_df, dbhbin_fg_byyear, "fg3", 1995)
 prod_plot_fg(ci_df, dbhbin_fg_byyear, "fg4", 1995)
 prod_plot_fg(ci_df, dbhbin_fg_byyear, "fg5", 1995)
 
+for (i in c('fg1','fg2','fg3','fg4','fg5')) ggsave(file.path(fpfig, paste0(i, '_1995_production.png')),
+                                                   prod_plot_fg(ci_df, dbhbin_fg_byyear, i, 1995),
+                                                   height = 5, width = 5, dpi = 300)
 
 totalprod_plot_fg <- function(dat_totalprod_points, dat_totalprod_fits, fgname, year) {
   fg_names <- c("fg1", "fg2", "fg3", "fg4", "fg5", "unclassified")
@@ -108,3 +115,7 @@ totalprod_plot_fg(totalprodbin_fg_byyear, ci_df, "fg2", 1995)
 totalprod_plot_fg(totalprodbin_fg_byyear, ci_df, "fg3", 1995)
 totalprod_plot_fg(totalprodbin_fg_byyear, ci_df, "fg4", 1995)
 totalprod_plot_fg(totalprodbin_fg_byyear, ci_df, "fg5", 1995)
+
+for (i in c('fg1','fg2','fg3','fg4','fg5')) ggsave(file.path(fpfig, paste0(i, '_1995_totalproduction.png')),
+                                                   totalprod_plot_fg(totalprodbin_fg_byyear, ci_df, i, 1995),
+                                                   height = 5, width = 6.5, dpi = 300)

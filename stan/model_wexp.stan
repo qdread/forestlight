@@ -33,11 +33,11 @@ model {
 	shape ~ lognormal(1, 1);
 	scale ~ lognormal(1, 1);
 	// Priors: Power law times exponential production
-	a ~ normal(0, 10);
-	b ~ normal(0, 2);
-	c ~ normal(0, 10);
-	beta0  ~ normal(0, 10);
-	beta1 ~ normal(0, 2);	
+	a ~ normal(5, 5);
+	b ~ normal(0.5, 1);
+	c ~ normal(5, 10);
+	beta0 ~ normal(5, 2);
+	beta1 ~ normal(0.5, 1);		
 	sigma ~ exponential(0.01);
 	
 	// Likelihood: Weibull density

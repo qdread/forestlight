@@ -29,8 +29,8 @@ model {
 	// Priors: Pareto density
 	alpha ~ lognormal(1, 1) T[0, 5];
 	// Priors: Power law production
-	beta0  ~ normal(0, 10);
-	beta1 ~ normal(0, 2);	
+	beta0 ~ normal(5, 2);
+	beta1 ~ normal(0.5, 1);		
 	sigma ~ exponential(0.01);
 	
 	// Likelihood: Pareto density

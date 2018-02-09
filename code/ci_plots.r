@@ -22,6 +22,12 @@ for (i in 1:length(fg_names)) {
   wexp_fits[[i]] <- read_stan_csv(file.path(fp, paste0(prefix, 'weibullxexp_', fg_names[i], '_1995_', 1:3, '.csv')))
 }
 
+# For fits run locally:
+ppow_fits <- c(fit_ppow_all, fit_ppow_fg)
+wpow_fits <- c(fit_wpow_all, fit_wpow_fg)
+pexp_fits <- c(fit_pexp_all, fit_pexp_fg)
+wexp_fits <- c(fit_wexp_all, fit_wexp_fg)
+fg_names <- c('alltree', 'fg1','fg2','fg3','fg4','fg5','unclassified')
 
 # Run diagnostics ---------------------------------------------------------
 
@@ -176,16 +182,10 @@ totalprodbin_alltree_byyear <- lapply(alltreedat[2:6], function(z) logbin_setedg
 
 all_totalprod_1995 <- totalprodbin_alltree_byyear[[2]]
 
-# Correct the density numbers b/c of the subsampling done on the Weibull models' input data
-
-# Correction factor for subsample
-# dens_corr_factor <- sum(all_dens_1995$bin_count)/25000
-# 
-# rowidx <- with(ci_df, prod_model == 'powerlawexp' & fg %in% c('fg5', 'alltree') & variable %in% c('density', 'total_production'))
-# colidx <- c('q025','q05','q25','q50','q75','q95','q975')
-# ci_df[rowidx, colidx] <- ci_df[rowidx, colidx] * dens_corr_factor
 
 # Plot all trees' individual production, density, and total production.
+
+fpfig <- 'C:/Users/Q/google_drive/ForestLight/figs/credible_interval_plots'
 
 area_core <- 42.84 # Area of the plot without the edge strip and without the "young" forest area.
 global_diam_xlimits <- c(1, 316) # Maximum and minimum for x axis if it's diameter.
@@ -203,7 +203,9 @@ dat_prod <- dplyr::filter(ci_df, fg == 'alltree', variable == 'production', dens
 p_all_indivprod +
   geom_ribbon(data = dat_prod, aes(ymin = q025, ymax = q975, x = dbh, fill = prod_model, group = prod_model), alpha = 0.5) +
   geom_line(data = dat_prod, aes(y = q50, x = dbh, color = prod_model, group = prod_model)) +
-  theme(legend.position = 'bottom') + ggtitle('Individual production' , 'contingent on density fit as Pareto')
+  theme(legend.position = 'bottom') + ggtitle('Individual production')
+ggsave(file.path(fpfig, 'alltree_1995_production.png'), height=5, width=5, dpi=400)
+
 
 p_all_dens <- all_dens_1995 %>%
   filter(!is.na(bin_value), bin_value > 0) %>%
@@ -220,7 +222,8 @@ dat_dens <- dplyr::filter(ci_df, fg == 'alltree', variable == 'density', prod_mo
 p_all_dens +
   geom_ribbon(data = dat_dens, aes(ymin = q025/area_core, ymax = q975/area_core, x = dbh, fill = dens_model, group = dens_model), alpha = 0.5) +
   geom_line(data = dat_dens, aes(y = q50/area_core, x = dbh, color = dens_model, group = dens_model)) +
-  theme(legend.position = 'bottom') + ggtitle('Density', 'contingent on production fit as power law')
+  theme(legend.position = 'bottom') + ggtitle('Density')
+ggsave(file.path(fpfig, 'alltree_1995_density.png'), height=5, width=5, dpi=400)
 
 
 p_all_totalprod <- all_totalprod_1995 %>%
@@ -240,3 +243,4 @@ p_all_totalprod +
   geom_line(data = dat_totalprod, aes(y = q50/area_core, x = dbh, color = interaction(dens_model, prod_model), group = interaction(dens_model, prod_model))) +
   scale_fill_discrete(name = 'Functional forms', labels = c('D Pareto\nP Powerlaw', 'D Weibull\nP Powerlaw', 'D Pareto\nP Powerlaw*Exponential', 'D Weibull\nP Powerlaw*Exponential')) +
   theme(legend.position = 'bottom', legend.text = element_text(size=8)) + ggtitle('Total production') + guides(colour = FALSE)
+ggsave(file.path(fpfig, 'alltree_1995_totalproduction.png'), height=5, width=6.5, dpi=400)
