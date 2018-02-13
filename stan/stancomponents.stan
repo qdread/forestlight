@@ -93,3 +93,40 @@ model {
 	  logy ~ normal(mu, sigma);
 	}
 }
+
+// Improved Weibull with manually specified function (density)
+
+functions {
+  // Wrote this by taking the log of right hand side of equation 4b in Muller-Landau 2006
+  // Must include the normalizing constant (same as for other Weibull)
+  real myweib_log (real x, real mu, real nu) {
+    return log(mu / nu) + (mu - 1) * log(x / nu) - (mu * x / nu);
+  }
+}
+
+parameters {
+  real<lower=0> mu;
+  real<lower=0> nu;
+}
+
+model {
+  // priors on component parameters
+  mu ~ gamma(.0001, .0001);
+  nu ~ gamma(.0001, .0001);
+
+  for(i in 1:N) {
+    x[i] ~ myweib(mu, nu);  
+  }
+}
+
+// Generalized extreme value distribution (density)
+
+functions {
+
+  real gev_log (real y, real mu, real sigma, real xi){
+    real z;
+    z = 1 + (y - mu) * xi / sigma;
+    return -log(sigma) - (1 + 1/xi)*log(z) - pow(z,-1/xi);  
+  }
+
+}

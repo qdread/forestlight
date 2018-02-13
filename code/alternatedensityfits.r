@@ -299,9 +299,14 @@ model {
 
 stanmod_weib <- stan_model(model_name = 'MLweibull', model_code = mod_weib)
 
+NC <- 3
+NI <- 3000
+NW <- 2000
+
 fit_weib <- sampling(stanmod_weib, data = dat_gev_alltree95, chains = NC, iter = NI, warmup = NW)
 
 summ_weib <- summary(fit_weib)
+summ_weib$summary
 mcmc_trace(as.array(fit_weib))
 
 myweib_ci <- function(fit, dbh_pred, n_indiv = 1) {
@@ -362,14 +367,14 @@ data {
 parameters {
   real<lower=0> alpha;
   real<lower=0> beta;
-  real<lower=-2, upper=2> gamma;
+  real<lower=0, upper=2> gamma;
 }
 
 model {
   // priors on component parameters
   alpha ~ gamma(.0001, .0001);
   beta ~ gamma(.0001, .0001);
-  gamma ~ uniform(-2, 2);
+  gamma ~ uniform(0, 2);
   
   for(i in 1:N) {
     y[i] ~ qweib(alpha, beta, gamma);  
@@ -384,3 +389,5 @@ fit_qweib <- sampling(stanmod_qweib, data = dat_gev_alltree95, chains = NC, iter
 summ_qweib <- summary(fit_qweib)
 summ_qweib$summary
 mcmc_trace(as.array(fit_qweib))
+
+# The quasi Weibull just becomes Weibull.

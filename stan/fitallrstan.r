@@ -1,5 +1,6 @@
 # Fit stan models for 1995.
 # Edit 06 Feb 2018: Use the new models and some test data perhaps.
+# Edit 13 Feb 2018: Add the new specification of Weibulls
 
 # Load data (changing file path if necessary)
 fpdata <- 'C:/Users/Q/google_drive/ForestLight/data/data_22jan2018'
@@ -32,12 +33,12 @@ data1995_byfg <- lapply(fgdat, function(x) prod_dump(x[[3]], subsample = n_sub))
 
 stanmodel_paretoxpower <- stan_model(file = 'stan/model_ppow.stan', model_name = 'paretoxpow')
 stanmodel_paretoxexp <- stan_model(file = 'stan/model_pexp.stan', model_name = 'paretoxexp')
-stanmodel_weibullxpower <- stan_model(file = 'stan/model_wpow.stan', model_name = 'weibullxpow')
-stanmodel_weibullxexp <- stan_model(file = 'stan/model_wexp.stan', model_name = 'weibullxexp')
+stanmodel_weibullxpower <- stan_model(file = 'stan/model_w2pow.stan', model_name = 'weibullxpow')
+stanmodel_weibullxexp <- stan_model(file = 'stan/model_w2exp.stan', model_name = 'weibullxexp')
 
 NC <- 3
-NI <- 6000
-NW <- 5000
+NI <- 2500
+NW <- 2000
 
 fit_ppow_all <- sampling(stanmodel_paretoxpower, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
 fit_pexp_all <- sampling(stanmodel_paretoxexp, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
@@ -49,11 +50,11 @@ fit_pexp_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxexp, 
 fit_wpow_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_weibullxpower, data = x, chains = NC, iter = NI, warmup = NW))
 fit_wexp_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_weibullxexp, data = x, chains = NC, iter = NI, warmup = NW))
 
-save(list = grep('fit_', ls(), value = TRUE), file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/localsubsamplefit5000.RData')
+save(list = grep('fit_', ls(), value = TRUE), file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/localsubsamplefit5000_13feb.RData')
 
 ###
 library(rstan)
-load('C:/Users/Q/Dropbox/projects/forestlight/stanoutput/localsubsamplefit5000.RData')
+load('C:/Users/Q/Dropbox/projects/forestlight/stanoutput/localsubsamplefit5000_13feb.RData')
 
 summary(fit_ppow_all)[[1]]
 summary(fit_pexp_all)[[1]]
