@@ -35,8 +35,8 @@ parameters {
 
 model {
 	// Priors: Weibull density
-	m ~ gamma(.0001, .0001);
-    n ~ gamma(.0001, .0001);
+	m ~ lognormal(1, 1);
+    n ~ lognormal(1, 1);
 	// Priors: Power law production
 	beta0 ~ normal(5, 2);
 	beta1 ~ normal(0.5, 1);		

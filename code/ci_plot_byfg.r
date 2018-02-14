@@ -1,6 +1,8 @@
 # Set number of bins       
 numbins <- 20
 
+source('code/allfunctions27july.r')
+
 # Bin all trees including unclassified
 allyeardbh <- unlist(lapply(alltreedat[2:6], '[', , 'dbh_corr'))
 dbhbin_all <- logbin(x = allyeardbh, y = NULL, n = numbins)

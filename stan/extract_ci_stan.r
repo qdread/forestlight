@@ -13,7 +13,7 @@ diag_plots <- function(fit) {
 
 dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, x_min = NULL, n_indiv = 1) {
   pdf_pareto <- function(x, xmin, alpha) (alpha * xmin^alpha) / (x ^ (alpha+1))
-  pdf_weibull <- function(x, shape, scale) (shape/scale) * (x/scale)^(shape-1) * exp(-(x/scale)^shape)
+  pdf_weibull <- function(x, m, n) (m/n) * (x/n)^(m-1) * exp(-(x/n)^m)
   powerlaw_exp_log <- function(x, a, b, c, beta0, beta1) exp(-beta0) * x^beta1 * (-a * x ^ -b + c)
   powerlaw_log <- function(x, beta0, beta1) exp(-beta0) * x^beta1
   
@@ -23,7 +23,7 @@ dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, x_min = NULL, n_in
     dens_pred <- sapply(dbh_pred, pdf_pareto, xmin = x_min, alpha = pars[,'alpha'])
   }
   if (dens_form == 'weibull') {
-    dens_pred <- sapply(dbh_pred, pdf_weibull, shape = pars[,'shape'], scale = pars[,'scale'])
+    dens_pred <- sapply(dbh_pred, pdf_weibull, m = pars[,'m'], n = pars[,'n'])
   }
   if (prod_form == 'powerlaw') {
     prod_pred <- sapply(dbh_pred, powerlaw_log, beta0 = pars[,'beta0'], beta1 = pars[,'beta1'])

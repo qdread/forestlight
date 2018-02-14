@@ -38,8 +38,8 @@ parameters {
 
 model {
 	// Priors: Weibull density
-	m ~ gamma(.0001, .0001);
-    n ~ gamma(.0001, .0001);
+	m ~ lognormal(1, 1);
+    n ~ lognormal(1, 1);
 	// Priors: Power law times exponential production
 	a ~ normal(5, 5);
 	b ~ normal(0.5, 1);

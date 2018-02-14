@@ -37,8 +37,8 @@ stanmodel_weibullxpower <- stan_model(file = 'stan/model_w2pow.stan', model_name
 stanmodel_weibullxexp <- stan_model(file = 'stan/model_w2exp.stan', model_name = 'weibullxexp')
 
 NC <- 3
-NI <- 2500
-NW <- 2000
+NI <- 6000
+NW <- 5000
 
 fit_ppow_all <- sampling(stanmodel_paretoxpower, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
 fit_pexp_all <- sampling(stanmodel_paretoxexp, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
@@ -68,17 +68,3 @@ mcmc_trace(as.array(fit_ppow_all))
 mcmc_trace(as.array(fit_pexp_all))
 mcmc_trace(as.array(fit_wpow_all))
 mcmc_trace(as.array(fit_wexp_all))
-
-# fit_pareto_byfg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxpower,
-#                                                               data = x,
-#                                                               chains = 3,
-#                                                               iter = 10000,
-#                                                               warmup = 5000))
-# 
-# fit_weibull_byfg <- lapply(data1995_byfg, function(x) sampling(stanmodel_weibullxexp,
-#                                                                data = x,
-#                                                                chains = 3,
-#                                                                iter = 10000,
-#                                                                warmup = 5000))
-# 
-# save(fit_pareto_byfg, fit_weibull_byfg, file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/paretoweibullfits.RData')

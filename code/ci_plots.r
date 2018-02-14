@@ -35,7 +35,7 @@ source('stan/extract_ci_stan.r')
 
 #diag_plots(ppow_fits[[1]])
 par_pars <- c('alpha')
-wei_pars <- c('shape', 'scale')
+wei_pars <- c('m', 'n')
 pow_pars <- c('beta0', 'beta1', 'sigma')
 exp_pars <- c('a', 'b', 'c')
 
