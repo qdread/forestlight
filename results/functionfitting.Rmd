@@ -1,9 +1,14 @@
 ---
 title: "Function fitting"
 author: "Quentin D. Read"
-date: "February 9, 2018"
+date: "February 16, 2018"
 output: pdf_document
 ---
+
+# Modification history
+
+* **9 Feb**: Original
+* **16 Feb**: Edited version with respecified Weibull
 
 # Scalings
 
@@ -31,7 +36,7 @@ I fit the density scaling in two different ways:
 
 $$ d(x) = \frac {\alpha x_{min}^{\alpha}} {x^{\alpha + 1}} $$
 
-2. **Weibull**: Fit as a Weibull distribution which can capture those fall-offs.
+2. **Weibull**: Fit as a Weibull distribution which can capture those fall-offs. On 16 February, I updated the way the log density was calculated for the Weibull which gives a much better fit.
 
 $$ d(x) = \frac {shape}{scale} (\frac {x}{scale})^{shape-1}e^{-{(\frac {x}{scale}})^{shape}} $$
 
@@ -44,13 +49,13 @@ Following from the previous two, there are four possible combinations for total 
 
 See figures below. All the fits are done for one year (1995), for all trees together and then for each of the five functional groups separately. A binned version of the raw data is shown, and the shaded areas around the fits are the 95% prediction intervals.
 
-Summary:
+Summary (edited 16 Feb):
 
 * The power law times exponential does capture the lower-than-expected production of small trees slightly better than the pure power law.
-* For some functional groups, the Weibull is a very good fit to the density data. For others, both are quite a poor fit.
+* The Weibull is a good fit to most of the production groups but group 4, where all trees die before a large size, is probably more of a Pareto distribution.
 * For total production, the density functional form has a much greater impact than the production functional form on the fit.
 
-To me it seems like there is a need to find a better density functional form because neither the Pareto nor the Weibull can capture it. It could either be a piecewise function (Pareto or Weibull plus exponential at large sizes, like Caroline Farrior did) or a different distribution. I have been advocating for the piecewise function for a while myself.
+With the new specification of Weibull, it does a much better job of fitting. We could also still try a piecewise function (Pareto or Weibull plus exponential at large sizes, like Caroline Farrior did) or a different distribution. 
 
 \newpage
 ## Individual production figures

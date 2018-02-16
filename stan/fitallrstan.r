@@ -45,6 +45,8 @@ fit_pexp_all <- sampling(stanmodel_paretoxexp, data = data1995_alltree, chains =
 fit_wpow_all <- sampling(stanmodel_weibullxpower, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
 fit_wexp_all <- sampling(stanmodel_weibullxexp, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
 
+save(fit_ppow_all, fit_pexp_all, fit_wpow_all, fit_wexp_all, file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/localsubsamplefit5000_15feb_alltree.RData')
+
 fit_ppow_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxpower, data = x, chains = NC, iter = NI, warmup = NW))
 fit_pexp_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxexp, data = x, chains = NC, iter = NI, warmup = NW))
 fit_wpow_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_weibullxpower, data = x, chains = NC, iter = NI, warmup = NW))
