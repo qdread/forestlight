@@ -50,6 +50,6 @@ NW <- 5000
 
 fit <- sampling(stan_model_dens_prod, data = dat, chains = NC, iter = NI, warmup = NW)
 
-save(fit, file = file.path('~/forestlight/stanoutput', paste0('fit_', z$model_name[task], '_' z$fg[task], '_', z$year[task], '.csv')))
+save(fit, file = file.path('~/forestlight/stanoutput', paste0('fit_', z$model_name[task], '_', z$fg[task], '_', z$year[task], '.r')))
 
 

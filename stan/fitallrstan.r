@@ -33,7 +33,7 @@ data1995_byfg <- lapply(fgdat, function(x) prod_dump(x[[3]], subsample = n_sub))
 
 stanmodel_paretoxpower <- stan_model(file = 'stan/model_ppow.stan', model_name = 'paretoxpow')
 stanmodel_paretoxexp <- stan_model(file = 'stan/model_pexp.stan', model_name = 'paretoxexp')
-stanmodel_weibullxpower <- stan_model(file = 'stan/model_w2pow.stan', model_name = 'weibullxpow')
+stanmodel_weibullxpower <- stan_model(file = 'stan/model_w3pow.stan', model_name = 'weibullxpow')
 stanmodel_weibullxexp <- stan_model(file = 'stan/model_w2exp.stan', model_name = 'weibullxexp')
 
 NC <- 3
