@@ -24,7 +24,7 @@ prod_dump <- function(dat, to_file = FALSE, fn = NULL, subsample = NULL) {
   }
   x <- dat$dbh_corr
   y <- dat$production
-  xdat <- list(N = length(x), x = x, y = y, x_min = min(x))
+  xdat <- list(N = length(x), x = x, y = y, x_min = min(x), LL = 1.05, UL = 499.95)
   if (to_file) {
     with(xdat, stan_rdump(names(xdat), file = fn))
   } else {
@@ -41,7 +41,7 @@ if (z$fg[task] == 'alltree') {
 	dat <- prod_dump(fgdat[[fg_idx]][[year_idx]])
 }
 
-model_file <- c('model_ppow.stan', 'model_w2pow.stan', 'model_pexp.stan', 'model_w2exp.stan')[which(z$model_name[task] == c('ppow', 'wpow', 'pexp', 'wexp'))]
+model_file <- c('model_ppow.stan', 'model_wpow.stan', 'model_pexp.stan', 'model_wexp.stan')[which(z$model_name[task] == c('ppow', 'wpow', 'pexp', 'wexp'))]
 stan_model_dens_prod <- stan_model(file = file.path('~/forestlight/stancode', model_file), model_name = z$model_name[task])
 
 NC <- 3

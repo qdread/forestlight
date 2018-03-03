@@ -1,5 +1,6 @@
 // "Modules" for different models in Stan
 // Edited 09 Feb 2018: weakly informative priors.
+// Edited 03 Mar 2018: add truncation to Weibull
 
 // Pareto density
 
@@ -32,18 +33,20 @@ data {
 	int<lower=0> N;
 	vector<lower=0>[N] x;
 	vector<lower=0>[N] y;
+	real<lower=0> UL; // Lower truncation limit
+	real<lower=0> LL; // Upper truncation limit
 }
 //same transformed data as pareto
 parameters {
-	real<lower=0> shape;
-	real<lower=0> scale;
+	real<lower=0> m;
+	real<lower=0> n;
 }
 model {
 	// Priors
-	shape ~ lognormal(1, 1);
-	scale ~ lognormal(1, 1);
+	m ~ lognormal(1, 1);
+	n ~ lognormal(1, 1);
 	// Likelihood
-	x ~ weibull(shape, scale);
+	for (i in 1:N) x[i] ~ weibull(m, n) T[LL,UL];
 }
 
 // Power law production
@@ -92,41 +95,4 @@ model {
 	  for (i in 1:N) mu[i] = -beta0 + beta1 * logx[i] + log(-a * x[i] ^ -b + c);
 	  logy ~ normal(mu, sigma);
 	}
-}
-
-// Improved Weibull with manually specified function (density)
-
-functions {
-  // Wrote this by taking the log of right hand side of equation 4b in Muller-Landau 2006
-  // Must include the normalizing constant (same as for other Weibull)
-  real myweib_log (real x, real mu, real nu) {
-    return log(mu / nu) + (mu - 1) * log(x / nu) - (mu * x / nu);
-  }
-}
-
-parameters {
-  real<lower=0> mu;
-  real<lower=0> nu;
-}
-
-model {
-  // priors on component parameters
-  mu ~ gamma(.0001, .0001);
-  nu ~ gamma(.0001, .0001);
-
-  for(i in 1:N) {
-    x[i] ~ myweib(mu, nu);  
-  }
-}
-
-// Generalized extreme value distribution (density)
-
-functions {
-
-  real gev_log (real y, real mu, real sigma, real xi){
-    real z;
-    z = 1 + (y - mu) * xi / sigma;
-    return -log(sigma) - (1 + 1/xi)*log(z) - pow(z,-1/xi);  
-  }
-
 }

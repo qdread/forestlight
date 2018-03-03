@@ -17,7 +17,7 @@ prod_dump <- function(dat, to_file = FALSE, fn = NULL, subsample = NULL) {
   }
   x <- dat$dbh_corr
   y <- dat$production
-  xdat <- list(N = length(x), x = x, y = y, x_min = min(x))
+  xdat <- list(N = length(x), x = x, y = y, x_min = min(x), LL = 1.05, UL = 499.95) # Muller-Landau's truncation limits.
   if (to_file) {
     with(xdat, stan_rdump(names(xdat), file = fn))
   } else {
@@ -33,8 +33,8 @@ data1995_byfg <- lapply(fgdat, function(x) prod_dump(x[[3]], subsample = n_sub))
 
 stanmodel_paretoxpower <- stan_model(file = 'stan/model_ppow.stan', model_name = 'paretoxpow')
 stanmodel_paretoxexp <- stan_model(file = 'stan/model_pexp.stan', model_name = 'paretoxexp')
-stanmodel_weibullxpower <- stan_model(file = 'stan/model_w3pow.stan', model_name = 'weibullxpow')
-stanmodel_weibullxexp <- stan_model(file = 'stan/model_w2exp.stan', model_name = 'weibullxexp')
+stanmodel_weibullxpower <- stan_model(file = 'stan/model_wpow.stan', model_name = 'weibullxpow')
+stanmodel_weibullxexp <- stan_model(file = 'stan/model_wexp.stan', model_name = 'weibullxexp')
 
 NC <- 3
 NI <- 6000
