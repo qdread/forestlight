@@ -17,7 +17,7 @@ prod_dump <- function(dat, to_file = FALSE, fn = NULL, subsample = NULL) {
   }
   x <- dat$dbh_corr
   y <- dat$production
-  xdat <- list(N = length(x), x = x, y = y, x_min = min(x), LL = 1.05, UL = 499.95) # Muller-Landau's truncation limits.
+  xdat <- list(N = length(x), x = x, y = y, x_min = min(x), LL = 1.1, UL = 316) # Truncation limits from data
   if (to_file) {
     with(xdat, stan_rdump(names(xdat), file = fn))
   } else {
@@ -45,7 +45,16 @@ fit_pexp_all <- sampling(stanmodel_paretoxexp, data = data1995_alltree, chains =
 fit_wpow_all <- sampling(stanmodel_weibullxpower, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
 fit_wexp_all <- sampling(stanmodel_weibullxexp, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
 
-save(fit_ppow_all, fit_pexp_all, fit_wpow_all, fit_wexp_all, file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/localsubsamplefit5000_15feb_alltree.RData')
+dbh_pred_100 <- logbin(x = allyeardbh, y = NULL, n = 100)$bin_mid
+
+ci_ppow <- dens_prod_ci(fit_ppow_all, seq(1.1,315,length.out=100), 'pareto', 'powerlaw', min_n$xmin[3], min_n$n[3])
+ci_pexp <- dens_prod_ci(fit_pexp_all, seq(1.1,315,length.out=100), 'pareto', 'powerlawexp', min_n$xmin[3], min_n$n[3])
+ci_wpow <- dens_prod_ci(fit_wpow_all, seq(1.1,315,length.out=100), 'weibull', 'powerlaw', min_n$xmin[3], min_n$n[3])
+ci_wexp <- dens_prod_ci(fit_wexp_all, seq(1.1,315,length.out=100), 'weibull', 'powerlawexp', min_n$xmin[3], min_n$n[3])
+
+ci_df <- cbind(fg = 'alltree', dens_model = rep(c('pareto','weibull'), each=nrow(ci_ppow)*2), prod_model = rep(c('powerlaw','powerlawexp'), each=nrow(ci_ppow)), rbind(ci_ppow, ci_pexp, ci_wpow, ci_wexp))
+
+save(fit_ppow_all, fit_pexp_all, fit_wpow_all, fit_wexp_all, ci_df, file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/localsubsamplefit5000_05Mar_alltree.RData')
 
 fit_ppow_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxpower, data = x, chains = NC, iter = NI, warmup = NW))
 fit_pexp_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxexp, data = x, chains = NC, iter = NI, warmup = NW))
