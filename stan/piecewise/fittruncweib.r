@@ -95,7 +95,10 @@ NC <- 1
 NI <- 2000
 NW <- 1500
 
-fit_tw2 <- sampling(stanmodel_trunc2w, data = c(data1995_alltree, UL=1.05, LL=499.95), chains = NC, iter = NI, warmup = NW)
+lowlim <- 1.1
+upplim <- 316
+
+fit_tw2 <- sampling(stanmodel_trunc2w, data = c(data1995_alltree, UL=lowlim, LL=upplim), chains = NC, iter = NI, warmup = NW)
 fit_tw2 <- sampling(stanmodel_trunc2w, data = data1995_alltree_full, chains = NC, iter = NI, warmup = NW)
 summary(fit_tw2)
 
@@ -106,7 +109,8 @@ mcmc_trace(as.array(fit_tw2))
 densitybin_5census <- read.csv('C:/Users/Q/google_drive/ForestLight/data/data_22jan2018/densitybin_5census.csv', stringsAsFactors = FALSE)
 dbh_pred_bins <- densitybin_5census[densitybin_5census$fg == 'all', 'bin_midpoint']
 
-w_fitted <- dweibull(dbh_pred_bins, 0.458, 0.8996)
+w_fitted <- dweibull(dbh_pred_bins, 0.428, 0.657)
+
 
 min_n <- read.csv('C:/Users/Q/Dropbox/projects/forestlight/stanoutput/min_n.csv', stringsAsFactors = FALSE)
 
@@ -115,7 +119,12 @@ xmin_i <- min_n$xmin[min_n$year == 1995 & min_n$fg == 'alltree']
 
 area_core <- 42.84
 
-w_fitted_n <- (w_fitted / sum(w_fitted)) * n_i / area_core
+# Remove truncations
+upper_lower <- pweibull(c(lowlim,upplim), 0.428, 0.657)
+
+w2 <- w_fitted / sum(1-upper_lower)
+w_fitted_n <- w2/sum(w2) * n_i/area_core
+w_fitted_n <- (w_fitted / sum(w_fitted) / sum(1-upper_lower)) * n_i / area_core
 
 global_diam_xlimits <- c(1, 316)
 
