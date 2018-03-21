@@ -17,6 +17,7 @@ dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, x_min = NULL, n_in
   #pdf_weibull <- function(x, m, n) (m/n) * (x/n)^(m-1) * exp(-(x/n)^m)
   powerlaw_exp_log <- function(x, a, b, c, beta0, beta1) exp(-beta0) * x^beta1 * (-a * x ^ -b + c)
   powerlaw_log <- function(x, beta0, beta1) exp(-beta0) * x^beta1
+  powerlaw_bert_log <- function(x, beta0, beta1, beta2) exp(-beta0) * x^beta1 * (1 - exp(-beta2 * x))
   
   pars <- as.data.frame(do.call('cbind', extract(fit)))
 
@@ -39,6 +40,9 @@ dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, x_min = NULL, n_in
   }
   if (prod_form == 'powerlawexp') {
     prod_pred <- sapply(dbh_pred, powerlaw_exp_log, a = pars[,'a'], b = pars[,'b'], c = pars[,'c'], beta0 = pars[,'beta0'], beta1 = pars[,'beta1'])
+  }
+  if (prod_form == 'bertalanffy') {
+    prod_pred <- sapply(dbh_pred, powerlaw_bert_log, beta0 = pars[,'beta0'], beta1 = pars[,'beta1'], beta2 = pars[,'beta2'])
   }
   
   dens_pred <- dens_pred * n_indiv

@@ -1,6 +1,7 @@
 # Fit stan models for 1995.
 # Edit 06 Feb 2018: Use the new models and some test data perhaps.
 # Edit 13 Feb 2018: Add the new specification of Weibulls
+# Edit 20 Mar 2018: Add power law x bertalanffy production
 
 # Load data (changing file path if necessary)
 fpdata <- 'C:/Users/Q/google_drive/ForestLight/data/data_22jan2018'
@@ -35,6 +36,9 @@ stanmodel_paretoxpower <- stan_model(file = 'stan/model_ppow.stan', model_name =
 stanmodel_paretoxexp <- stan_model(file = 'stan/model_pexp.stan', model_name = 'paretoxexp')
 stanmodel_weibullxpower <- stan_model(file = 'stan/model_wpow.stan', model_name = 'weibullxpow')
 stanmodel_weibullxexp <- stan_model(file = 'stan/model_wexp.stan', model_name = 'weibullxexp')
+stanmodel_paretoxbert <- stan_model(file = 'stan/model_pbert.stan', model_name = 'paretoxbert')
+stanmodel_weibullxbert <- stan_model(file = 'stan/model_wbert.stan', model_name = 'weibullxbert')
+
 
 NC <- 3
 NI <- 6000
@@ -44,17 +48,30 @@ fit_ppow_all <- sampling(stanmodel_paretoxpower, data = data1995_alltree, chains
 fit_pexp_all <- sampling(stanmodel_paretoxexp, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
 fit_wpow_all <- sampling(stanmodel_weibullxpower, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
 fit_wexp_all <- sampling(stanmodel_weibullxexp, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
+fit_pbert_all <- sampling(stanmodel_paretoxbert, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
+fit_wbert_all <- sampling(stanmodel_weibullxbert, data = data1995_alltree, chains = NC, iter = NI, warmup = NW)
 
+source('code/allfunctions27july.r')
+source('stan/extract_ci_stan.r')
+
+allyeardbh <- unlist(lapply(alltreedat[2:6], '[', , 'dbh_corr'))
 dbh_pred_100 <- logbin(x = allyeardbh, y = NULL, n = 100)$bin_mid
 
-ci_ppow <- dens_prod_ci(fit_ppow_all, seq(1.1,315,length.out=100), 'pareto', 'powerlaw', min_n$xmin[3], min_n$n[3])
-ci_pexp <- dens_prod_ci(fit_pexp_all, seq(1.1,315,length.out=100), 'pareto', 'powerlawexp', min_n$xmin[3], min_n$n[3])
-ci_wpow <- dens_prod_ci(fit_wpow_all, seq(1.1,315,length.out=100), 'weibull', 'powerlaw', min_n$xmin[3], min_n$n[3])
-ci_wexp <- dens_prod_ci(fit_wexp_all, seq(1.1,315,length.out=100), 'weibull', 'powerlawexp', min_n$xmin[3], min_n$n[3])
+# Minimum x values for Pareto.
+min_n <- read.csv('C:/Users/Q/Dropbox/projects/forestlight/stanoutput/min_n.csv', stringsAsFactors = FALSE)
 
-ci_df <- cbind(fg = 'alltree', dens_model = rep(c('pareto','weibull'), each=nrow(ci_ppow)*2), prod_model = rep(c('powerlaw','powerlawexp'), each=nrow(ci_ppow)), rbind(ci_ppow, ci_pexp, ci_wpow, ci_wexp))
 
-save(fit_ppow_all, fit_pexp_all, fit_wpow_all, fit_wexp_all, ci_df, file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/localsubsamplefit5000_05Mar_alltree.RData')
+ci_ppow <- dens_prod_ci(fit_ppow_all, dbh_pred_100, 'pareto', 'powerlaw', min_n$xmin[3], min_n$n[3])
+ci_pexp <- dens_prod_ci(fit_pexp_all, dbh_pred_100, 'pareto', 'powerlawexp', min_n$xmin[3], min_n$n[3])
+ci_pbert <- dens_prod_ci(fit_pbert_all, dbh_pred_100, 'pareto', 'bertalanffy', min_n$xmin[3], min_n$n[3])
+ci_wpow <- dens_prod_ci(fit_wpow_all, dbh_pred_100, 'weibull', 'powerlaw', min_n$xmin[3], min_n$n[3])
+ci_wexp <- dens_prod_ci(fit_wexp_all, dbh_pred_100, 'weibull', 'powerlawexp', min_n$xmin[3], min_n$n[3])
+ci_wbert <- dens_prod_ci(fit_wbert_all, dbh_pred_100, 'weibull', 'bertalanffy', min_n$xmin[3], min_n$n[3])
+
+
+ci_df <- cbind(fg = 'alltree', dens_model = rep(c('pareto','weibull'), each=nrow(ci_ppow)*3), prod_model = rep(c('powerlaw','powerlawexp','bertalanffy'), each=nrow(ci_ppow)), rbind(ci_ppow, ci_pexp, ci_pbert, ci_wpow, ci_wexp, ci_wbert))
+
+save(fit_ppow_all, fit_pexp_all, fit_pbert_all, fit_wpow_all, fit_wexp_all, fit_wbert_all, ci_df, file = 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/localsubsamplefit5000_20Mar_alltree.RData')
 
 fit_ppow_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxpower, data = x, chains = NC, iter = NI, warmup = NW))
 fit_pexp_fg <- lapply(data1995_byfg, function(x) sampling(stanmodel_paretoxexp, data = x, chains = NC, iter = NI, warmup = NW))

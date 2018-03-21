@@ -96,3 +96,25 @@ model {
 	  logy ~ normal(mu, sigma);
 	}
 }
+
+// Power law times Bertalanffy production
+parameters {
+	real<lower=0> beta0;
+	real<lower=0> beta1;
+	real<lower=0> beta2;
+	real<lower=0> sigma;
+}
+model {
+	// Priors
+	beta0 ~ normal(5, 2);
+	beta1 ~ normal(0.5, 1);
+	beta2 ~ normal(0.5, 1);
+	sigma ~ exponential(0.01);
+
+	// Likelihood
+	{
+	  vector[N] mu;
+	  for (i in 1:N) mu[i] = -beta0 + beta1 * logx[i] + log(1 - exp(-beta2 * x[i]));
+	  logy ~ normal(mu, sigma);
+	}
+}
