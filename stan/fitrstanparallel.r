@@ -6,7 +6,7 @@ task <- as.numeric(Sys.getenv('PBS_ARRAYID'))
 
 z <- expand.grid(year = c(1990, 1995, 2000, 2005, 2010),
 				 fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'alltree'),
-				 model_name = c('ppow', 'wpow', 'pexp', 'wexp'),
+				 model_name = c('ppow', 'wpow', 'pexp', 'wexp', 'pbert', 'wbert'),
 				 stringsAsFactors = FALSE)
 
 # Load data (changing file path if necessary)
@@ -41,7 +41,7 @@ if (z$fg[task] == 'alltree') {
 	dat <- prod_dump(fgdat[[fg_idx]][[year_idx]])
 }
 
-model_file <- c('model_ppow.stan', 'model_wpow.stan', 'model_pexp.stan', 'model_wexp.stan')[which(z$model_name[task] == c('ppow', 'wpow', 'pexp', 'wexp'))]
+model_file <- c('model_ppow.stan', 'model_wpow.stan', 'model_pexp.stan', 'model_wexp.stan', 'model_pbert.stan', 'model_wbert.stan')[which(z$model_name[task] == c('ppow', 'wpow', 'pexp', 'wexp'))]
 stan_model_dens_prod <- stan_model(file = file.path('~/forestlight/stancode', model_file), model_name = z$model_name[task])
 
 NC <- 3

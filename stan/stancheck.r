@@ -1,7 +1,7 @@
 
 z <- expand.grid(year = c(1990, 1995, 2000, 2005, 2010),
 				 fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'alltree'),
-				 model_name = c('ppow', 'wpow', 'pexp', 'wexp'),
+				 model_name = c('ppow', 'wpow', 'pexp', 'wexp', 'pbert', 'wbert'),
 				 stringsAsFactors = FALSE)
 
 i <- 1:nrow(z)

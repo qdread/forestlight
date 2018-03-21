@@ -63,7 +63,7 @@ min_n <- read.csv('C:/Users/Q/Dropbox/projects/forestlight/stanoutput/min_n.csv'
 
 ci_ppow <- dens_prod_ci(fit_ppow_all, dbh_pred_100, 'pareto', 'powerlaw', min_n$xmin[3], min_n$n[3])
 ci_pexp <- dens_prod_ci(fit_pexp_all, dbh_pred_100, 'pareto', 'powerlawexp', min_n$xmin[3], min_n$n[3])
-ci_pbert <- dens_prod_ci(fit_pbert_all, dbh_pred_100, 'pareto', 'bertalanffy', min_n$xmin[3], min_n$n[3])
+ci_pbert <- dens_prod_ci(fit_pbert_all, dbh_pred_100, 'pareto', 'bertalanffy', min_n$xmin[3], min_n$n[3], delete_samples = 1001:2000)
 ci_wpow <- dens_prod_ci(fit_wpow_all, dbh_pred_100, 'weibull', 'powerlaw', min_n$xmin[3], min_n$n[3])
 ci_wexp <- dens_prod_ci(fit_wexp_all, dbh_pred_100, 'weibull', 'powerlawexp', min_n$xmin[3], min_n$n[3])
 ci_wbert <- dens_prod_ci(fit_wbert_all, dbh_pred_100, 'weibull', 'bertalanffy', min_n$xmin[3], min_n$n[3])

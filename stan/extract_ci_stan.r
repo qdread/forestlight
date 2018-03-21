@@ -11,7 +11,7 @@ diag_plots <- function(fit) {
 
 }
 
-dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, x_min = NULL, n_indiv = 1) {
+dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, x_min = NULL, n_indiv = 1, delete_samples = NULL) {
   require(purrr)
   pdf_pareto <- function(x, xmin, alpha) (alpha * xmin^alpha) / (x ^ (alpha+1))
   #pdf_weibull <- function(x, m, n) (m/n) * (x/n)^(m-1) * exp(-(x/n)^m)
@@ -20,7 +20,11 @@ dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, x_min = NULL, n_in
   powerlaw_bert_log <- function(x, beta0, beta1, beta2) exp(-beta0) * x^beta1 * (1 - exp(-beta2 * x))
   
   pars <- as.data.frame(do.call('cbind', extract(fit)))
-
+  
+  if (!is.null(delete_samples)) {
+    pars <- pars[-delete_samples,]
+  }
+  
   if (dens_form == 'pareto') {
     dens_pred <- sapply(dbh_pred, pdf_pareto, xmin = x_min, alpha = pars[,'alpha'])
   }
