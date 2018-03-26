@@ -1,4 +1,5 @@
 # Credible intervals for all fits for all years.
+# Edit 26 March. Get credible intervals for the parameters as well.
 
 fp <- '~/forestlight/stanoutput'
 fnames <- dir(fp, pattern = 'fit_')
@@ -31,6 +32,25 @@ all_cis <- pmap(z, function(filename, year, fg, dens_model, prod_model) {
 ci_df <- do.call(rbind, all_cis)
 write.csv(ci_df, '~/forestlight/ci_by_fg.csv', row.names = FALSE)
 
+# Credible intervals for parameters
+pareto_par <- c('alpha')
+weibull_par <- c('m', 'n')
+powerlaw_par <- c('beta0', 'beta1')
+powerlawexp_par <- c('beta0', 'beta1', 'a', 'b', 'c')
+
+param_cis <- pmap(z, function(filename, year, fg, dens_model, prod_model) {
+  load(file.path(fp, filename))
+  if (dens_model == 'pareto') get_pars <- pareto_par else get_pars <- weibull_par
+  if (prod_model == 'powerlaw') get_pars <- c(get_pars, powerlaw_par) else get_pars <- c(get_pars, powerlawexp_par)
+  
+  summ_fit <- summary(fit)
+  cbind(data.frame(year = year, dens_model = dens_model, prod_model = prod_model, fg = fg), summ_fit[[1]][get_pars, ])
+})
+
+param_cis <- map(param_cis, function(x) cbind(parameter = dimnames(x)[[1]], x))
+param_cis <- do.call(rbind, param_cis)
+names(param_cis)[9:13] <- c('q025', 'q25', 'q50', 'q75', 'q975')
+write.csv(param_cis, '~/forestlight/paramci_by_fg.csv', row.names = FALSE)
 
 # Draw plots (locally) ----------------------------------------------------
 
