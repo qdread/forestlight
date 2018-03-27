@@ -1,12 +1,17 @@
 # Fit stan models for all years with full datasets
 # Use RStan on HPCC
 # 16 Feb 2018
+# Edited 27 March: add models that output log likelihoods with each iteration.
+
+NC <- 3
+NI <- 4000
+NW <- 3500
 
 task <- as.numeric(Sys.getenv('PBS_ARRAYID'))
 
 z <- expand.grid(year = c(1990, 1995, 2000, 2005, 2010),
 				 fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'alltree'),
-				 model_name = c('ppow', 'wpow', 'pexp', 'wexp', 'pbert', 'wbert'),
+				 model_name = c('ppow', 'wpow', 'pexp', 'wexp'),
 				 stringsAsFactors = FALSE)
 
 # Load data (changing file path if necessary)
@@ -15,7 +20,7 @@ load(file.path(fpdata, 'rawdataobj_22jan.r'))
 
 library(rstan)
 rstan_options(auto_write = TRUE)
-options(mc.cores = 3) 
+options(mc.cores = NC) 
 
 prod_dump <- function(dat, to_file = FALSE, fn = NULL, subsample = NULL) {
   require(rstan)
@@ -41,12 +46,8 @@ if (z$fg[task] == 'alltree') {
 	dat <- prod_dump(fgdat[[fg_idx]][[year_idx]])
 }
 
-model_file <- c('model_ppow.stan', 'model_wpow.stan', 'model_pexp.stan', 'model_wexp.stan', 'model_pbert.stan', 'model_wbert.stan')[which(z$model_name[task] == c('ppow', 'wpow', 'pexp', 'wexp', 'pbert', 'wbert'))]
+model_file <- c('model_ppow_withlik.stan', 'model_wpow_withlik.stan', 'model_pexp_withlik.stan', 'model_wexp_withlik.stan')[which(z$model_name[task] == c('ppow', 'wpow', 'pexp', 'wexp'))]
 stan_model_dens_prod <- stan_model(file = file.path('~/forestlight/stancode', model_file), model_name = z$model_name[task])
-
-NC <- 3
-NI <- 6000
-NW <- 5000
 
 fit <- sampling(stan_model_dens_prod, data = dat, chains = NC, iter = NI, warmup = NW)
 

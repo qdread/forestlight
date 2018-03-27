@@ -61,3 +61,5 @@ wei_ll <- extract_log_lik(fit_wei, 'log_lik_dens')
 
 waic(par_ll)
 waic(wei_ll)
+loo(par_ll)
+loo(wei_ll)

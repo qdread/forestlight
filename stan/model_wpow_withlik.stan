@@ -7,8 +7,8 @@ data {
 	int<lower=0> N;
 	vector<lower=0>[N] x;
 	vector<lower=0>[N] y;
-	real<lower=0> UL; // Lower truncation limit
-	real<lower=0> LL; // Upper truncation limit
+	real<lower=0> LL; // Lower truncation limit
+	real<lower=0> UL; // Upper truncation limit
 }
 
 transformed data {
@@ -53,7 +53,7 @@ generated quantities {
 	vector[N] log_lik_prod;
 	real k;
 	
-	k = log_diff_exp(weibull_lcdf(UL | m, n), weibull_lcdf(LL | m, n));
+	k = -log_diff_exp(weibull_lcdf(UL | m, n), weibull_lcdf(LL | m, n));
 	
 	for (i in 1:N) {
 		log_lik_dens[i] = weibull_lpdf(x[i] | m, n) + k;

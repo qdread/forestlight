@@ -5,6 +5,7 @@ data {
 	int<lower=0> N;
 	vector<lower=0>[N] x;
 	real<lower=0> x_min;
+	
 	int<lower=0> N_pred;
 	vector<lower=0>[N_pred] x_pred;
 }

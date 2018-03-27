@@ -1,4 +1,5 @@
 # Create Rdump for new grouped data to run with CMDSTAN.
+# Edited 27 March: add lower and upper limits from data.
 
 # Load data (changing file path if necessary)
 fpdata <- 'C:/Users/Q/google_drive/ForestLight/data/data_22jan2018'
@@ -11,7 +12,7 @@ prod_dump <- function(dat, to_file = FALSE, fn = NULL, subsample = NULL) {
   }
   x <- dat$dbh_corr
   y <- dat$production
-  xdat <- list(N = length(x), x = x, y = y, x_min = min(x))
+  xdat <- list(N = length(x), x = x, y = y, x_min = min(x), LL = 1.1, UL = 316)
   if (to_file) {
     with(xdat, stan_rdump(names(xdat), file = fn))
   } else {
