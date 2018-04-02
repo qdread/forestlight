@@ -64,6 +64,8 @@ plot_prod <- function(year_to_plot = 1990,
                       ),
                       x_name = 'Diameter (cm)',
                       y_name = 'Production (kg/y)',
+                      average = 'mean',
+                      error_quantiles = c('ci_min', 'ci_max'),
                       obsdat = obs_indivprod,
                       preddat = pred_indivprod
 ) {
@@ -81,7 +83,8 @@ plot_prod <- function(year_to_plot = 1990,
   ggplot() +
     geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg), fill = 'gray80') +
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
-    geom_point(data = obsdat, aes(x = bin_midpoint, y = mean, group = fg, color = fg)) +
+    geom_errorbar(data = obsdat, aes_string(x = 'bin_midpoint', ymin = error_quantiles[1], ymax = error_quantiles[2], group = 'fg', color = 'fg')) +
+    geom_point(data = obsdat, aes_string(x = 'bin_midpoint', y = average, group = 'fg', color = 'fg')) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) +
     scale_color_manual(values = color_names) +
@@ -162,11 +165,41 @@ plot_prod(year_to_plot = 1995,
           y_breaks = c(0.1, 10, 1000))
 
 # Production plot for just one fg with power law times expo fit in 1995
+# Specify that we are using the geometric mean and ci around it
 plot_prod(year_to_plot = 1995,
           fg_names = c('fg1'),
           model_fit = 'powerlawexp',
           y_limits = c(0.01, 7000),
-          y_breaks = c(0.1, 10, 1000))
+          y_breaks = c(0.1, 10, 1000),
+          error_quantiles = c('ci_min', 'ci_max'),
+          average = 'mean')
+
+# Specify that we are using the median and the .025 and .975 quantiles
+plot_prod(year_to_plot = 1995,
+          fg_names = c('fg1'),
+          model_fit = 'powerlawexp',
+          y_limits = c(0.01, 7000),
+          y_breaks = c(0.1, 10, 1000),
+          error_quantiles = c('q025', 'q975'),
+          average = 'median')
+
+plot_prod(year_to_plot = 1995,
+          fg_names = c('fg1'),
+          model_fit = 'powerlawexp',
+          y_limits = c(0.01, 7000),
+          y_breaks = c(0.1, 10, 1000),
+          error_quantiles = c('ci_min', 'ci_max'),
+          average = 'mean',
+          color_names = 'black')
+
+plot_prod(year_to_plot = 1995,
+          fg_names = c('all'),
+          model_fit = 'powerlawexp',
+          y_limits = c(0.01, 7000),
+          y_breaks = c(0.1, 10, 1000),
+          error_quantiles = c('q025', 'q975'),
+          average = 'median',
+          color_names = 'black')
 
 # Total production plot for some functional groups for Weibull and power law in 1995
 plot_totalprod(year_to_plot = 1995,
@@ -175,6 +208,13 @@ plot_totalprod(year_to_plot = 1995,
           model_fit_production = 'powerlaw',
           y_limits = c(0.01, 200),
           y_breaks = c(0.1, 1, 10, 100))
+
+plot_totalprod(year_to_plot = 1995,
+               fg_names = c('fg4','fg5'),
+               model_fit_density = 'weibull', 
+               model_fit_production = 'powerlaw',
+               y_limits = c(0.01, 500),
+               y_breaks = c(0.1, 1, 10, 100))
 
 plot_totalprod(year_to_plot = 1995,
                fg_names = c('all'),

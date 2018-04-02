@@ -21,11 +21,17 @@ z <- data.frame(filename = fnames, stringsAsFactors = FALSE) %>%
 min_n <- read.csv('~/forestlight/stancode/min_n.csv', stringsAsFactors = FALSE)
 dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
 
-all_cis <- pmap(z, function(filename, year, fg, dens_model, prod_model) {
-  x_min_i <- min_n$xmin[min_n$year == year & min_n$fg == fg]
-  n_i <- min_n$n[min_n$year == year & min_n$fg == fg]
+# Edit 02 March: Get the total production values to adjust the total production fitted values
+total_prod <- read.csv('~/forestlight/production_total.csv', stringsAsFactors = FALSE)
+z <- z %>%
+  mutate(year = as.numeric(year)) %>%
+  left_join(total_prod) %>%
+  rename(total_production = production) %>%
+  left_join(min_n)
+
+all_cis <- pmap(z, function(filename, year, fg, dens_model, prod_model, total_production, xmin, n) {
   load(file.path(fp, filename))
-  ci <- dens_prod_ci(fit, dbh_pred, dens_form = dens_model, prod_form = prod_model, x_min = x_min_i, n_indiv = n_i)
+  ci <- dens_prod_ci(fit, dbh_pred, dens_form = dens_model, prod_form = prod_model, total_prod = total_production, x_min = xmin, n_indiv = n)
   data.frame(year = year, dens_model = dens_model, prod_model = prod_model, fg = fg, ci)
 })
 

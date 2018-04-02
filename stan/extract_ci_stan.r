@@ -1,5 +1,6 @@
 # Function to get confidence intervals from fitted stan object
 # Edit 29 Jan: Also functions to read csv files and functions to make stan plots
+# Edit 02 Apr: Multiply fitted total production by this ratio: total observed production / integral of fitted total production
 
 diag_plots <- function(fit) {
   require(bayesplot)
@@ -11,10 +12,10 @@ diag_plots <- function(fit) {
 
 }
 
-dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, x_min = NULL, n_indiv = 1, delete_samples = NULL) {
+dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, total_prod, x_min = NULL, n_indiv = 1, delete_samples = NULL) {
   require(purrr)
+  require(pracma)
   pdf_pareto <- function(x, xmin, alpha) (alpha * xmin^alpha) / (x ^ (alpha+1))
-  #pdf_weibull <- function(x, m, n) (m/n) * (x/n)^(m-1) * exp(-(x/n)^m)
   powerlaw_exp_log <- function(x, a, b, c, beta0, beta1) exp(-beta0) * x^beta1 * (-a * x ^ -b + c)
   powerlaw_log <- function(x, beta0, beta1) exp(-beta0) * x^beta1
   powerlaw_bert_log <- function(x, beta0, beta1, beta2) exp(-beta0) * x^beta1 * (1 - exp(-beta2 * x))
@@ -51,6 +52,15 @@ dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, x_min = NULL, n_in
   
   dens_pred <- dens_pred * n_indiv
   totalprod_pred <- dens_pred * prod_pred
+  
+  # Integrate fitted total production and multiply total production fitted values by the 
+  # ratio of total observed production and integral of fitted production
+  # (Use trapezoidal integration)
+  totalprod_pred <- t(sapply(1:nrow(totalprod_pred), function(i) {
+    fitted_integral <- trapz(x = dbh_pred, y = totalprod_pred[i,])
+    totalprod_pred[i,] * total_prod / fitted_integral
+  }))
+
   
   # Get some quantiles from each of these.
   qprobs <- c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975)
