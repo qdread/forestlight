@@ -175,3 +175,10 @@ plot_totalprod(year_to_plot = 1995,
           model_fit_production = 'powerlaw',
           y_limits = c(0.01, 200),
           y_breaks = c(0.1, 1, 10, 100))
+
+plot_totalprod(year_to_plot = 1995,
+               fg_names = c('all'),
+               model_fit_density = 'weibull', 
+               model_fit_production = 'powerlaw',
+               y_limits = c(0.01, 500),
+               y_breaks = c(0.1, 1, 10, 100))

@@ -1,7 +1,7 @@
 # Credible intervals for all fits for all years.
 # Edit 26 March. Get credible intervals for the parameters as well.
 
-fp <- '~/forestlight/stanoutput'
+fp <- '~/forestlight/stanoutput/mar27'
 fnames <- dir(fp, pattern = 'fit_')
 
 source('~/forestlight/stancode/extract_ci_stan.r')
@@ -19,7 +19,7 @@ z <- data.frame(filename = fnames, stringsAsFactors = FALSE) %>%
 
 
 min_n <- read.csv('~/forestlight/stancode/min_n.csv', stringsAsFactors = FALSE)
-dbh_pred <- exp(seq(log(1.2), log(315), length.out = 50))
+dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
 
 all_cis <- pmap(z, function(filename, year, fg, dens_model, prod_model) {
   x_min_i <- min_n$xmin[min_n$year == year & min_n$fg == fg]

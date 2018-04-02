@@ -1,0 +1,56 @@
+// Stan model 06 Feb
+// Pareto density
+// Power law production
+// 30 Mar: added log likelihood output and remove log transformation on x.
+
+
+data {
+	int<lower=0> N;
+	vector<lower=0>[N] x;
+	vector<lower=0>[N] y;
+	real<lower=0> x_min;
+}
+
+transformed data {
+	vector[N] logy;
+	logy = log(y);
+}
+
+parameters {
+	// Pareto density
+	real<lower=0, upper=5> alpha;
+	// Power law production
+	real<lower=0> beta0;
+	real<lower=0> beta1;
+	real<lower=0> sigma;
+}
+
+model {
+	// Priors: Pareto density
+	alpha ~ lognormal(1, 1) T[0, 5];
+	// Priors: Power law production
+	beta0 ~ normal(0.5, 1);
+	beta1 ~ normal(0.5, 1);		
+	sigma ~ exponential(0.01);
+	
+	// Likelihood: Pareto density
+	x ~ pareto(x_min, alpha);
+	// Likelihood: Power law production
+	{
+	  vector[N] mu;
+	  for (i in 1:N) mu[i] = beta0 * x[i] ^ beta1;
+	  logy ~ normal(log(mu), sigma);
+	}
+}
+
+generated quantities {
+	// Log likelihood
+	vector[N] log_lik_dens;
+	vector[N] log_lik_prod;
+	
+	for (i in 1:N) {
+		log_lik_dens[i] = pareto_lpdf(x[i] | x_min, alpha);
+		log_lik_prod[i] = normal_lpdf(logy[i] | beta0 * x[i] ^ beta1, sigma);
+	}
+	
+}

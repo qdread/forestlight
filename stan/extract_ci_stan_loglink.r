@@ -1,25 +1,20 @@
 # Function to get confidence intervals from fitted stan object
 # Edit 29 Jan: Also functions to read csv files and functions to make stan plots
-
-diag_plots <- function(fit) {
-  require(bayesplot)
-  # Trace plot
-  parnames <- names(fit)[-length(names(fit))]
-  print(mcmc_trace(as.array(fit), pars = parnames))
-  print(stan_diag(fit, 'sample'))
-  print(stan_diag(fit, 'stepsize'))
-
-}
+# Edit 30 Mar: Add the powerlaw and powerlaw * exponential without the log transform.
 
 dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, x_min = NULL, n_indiv = 1, delete_samples = NULL) {
   require(purrr)
   pdf_pareto <- function(x, xmin, alpha) (alpha * xmin^alpha) / (x ^ (alpha+1))
   #pdf_weibull <- function(x, m, n) (m/n) * (x/n)^(m-1) * exp(-(x/n)^m)
-  powerlaw_exp_log <- function(x, a, b, c, beta0, beta1) exp(-beta0) * x^beta1 * (-a * x ^ -b + c)
-  powerlaw_log <- function(x, beta0, beta1) exp(-beta0) * x^beta1
-  powerlaw_bert_log <- function(x, beta0, beta1, beta2) exp(-beta0) * x^beta1 * (1 - exp(-beta2 * x))
+  powerlaw_exp_log <- function(x, a, b, c, beta0, beta1) beta0 * x^beta1 * (-a * x ^ -b + c)
+  powerlaw_log <- function(x, beta0, beta1) beta0 * x^beta1
+  powerlaw_bert_log <- function(x, beta0, beta1, beta2) beta0 * x^beta1 * (1 - exp(-beta2 * x))
   
-  pars <- as.data.frame(do.call('cbind', extract(fit)))
+  get_pars <- if (dens_form == 'pareto') 'alpha' else c('m', 'n')
+  get_pars <- c(get_pars, c('beta0', 'beta1'))
+  if (prod_form == 'powerlawexp') get_pars <- c(get_pars, c('a', 'b', 'c'))
+  
+  pars <- as.data.frame(do.call('cbind', extract(fit, pars = get_pars)))
   
   if (!is.null(delete_samples)) {
     pars <- pars[-delete_samples,]

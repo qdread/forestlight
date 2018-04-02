@@ -118,3 +118,52 @@ model {
 	  logy ~ normal(mu, sigma);
 	}
 }
+
+
+// Power law production without log transformation
+
+parameters {
+	real<lower=0> beta0;
+	real<lower=0> beta1;
+	real<lower=0> sigma;
+}
+model {
+	// Priors
+	beta0  ~ normal(0.5, 1);
+	beta1 ~ normal(0.5, 1);	
+	sigma ~ exponential(0.01);
+
+	// Likelihood
+	{
+	  vector[N] mu;
+	  for (i in 1:N) mu[i] = beta0 * x[i] ^ beta1;
+	  logy ~ normal(log(mu), sigma);
+	}
+}
+
+// Power law times exponential production without log transformation
+
+parameters {
+	real<lower=0> beta0;
+	real<lower=0> beta1;
+	real<lower=0> a;
+	real<lower=0> b;
+	real c;
+	real<lower=0> sigma;
+}
+model {
+	// Priors
+	a ~ normal(5, 5);
+	b ~ normal(0.5, 1);
+	c ~ normal(5, 10);
+	beta0  ~ normal(0.5, 1);
+	beta1 ~ normal(0.5, 1);	
+	sigma ~ exponential(0.01);
+
+	// Likelihood
+	{
+	  vector[N] mu;
+	  for (i in 1:N) mu[i] = (beta0 * x[i] ^ beta1) * (-a * x[i] ^ -b + c);
+	  logy ~ normal(log(mu), sigma);
+	}
+}

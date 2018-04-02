@@ -1,4 +1,9 @@
-# Combine modeled and observed data into a single data frame for plotting
+# Combine modeled and observed data into separate data frames for plotting
+
+
+# Observed data -----------------------------------------------------------
+
+
 
 # Put bins by year and by functional group into single data frames
 
@@ -58,22 +63,30 @@ write.csv(obs_dens_df, file.path(fp, 'obs_dens.csv'), row.names = FALSE)
 write.csv(obs_indivprod_df, file.path(fp, 'obs_indivprod.csv'), row.names = FALSE)
 write.csv(obs_totalprod_df, file.path(fp, 'obs_totalprod.csv'), row.names = FALSE)
 
+
+# Modeled data -----------------------------------------------------------
+
+library(dplyr)
+
+ci_df <- read.csv('C:/Users/Q/Dropbox/projects/forestlight/ci_by_fg.csv', stringsAsFactors = FALSE)
+area_core <- 42.84
+
 ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
 
-pred_dens_df <- ci_df %>%
+pred_dens <- ci_df %>%
   filter(variable == 'density') %>%
   select(-variable) %>%
   mutate_at(vars(starts_with('q')), funs(./area_core)) 
 
-pred_indivprod_df <- ci_df %>%
+pred_indivprod <- ci_df %>%
   filter(variable == 'production') %>%
   select(-variable)
 
-pred_totalprod_df <- ci_df %>%
+pred_totalprod <- ci_df %>%
   filter(variable == 'total_production') %>%
   select(-variable) %>%
   mutate_at(vars(starts_with('q')), funs(./area_core)) 
 
-write.csv(pred_dens_df, file.path(fp, 'pred_dens.csv'), row.names = FALSE)
-write.csv(pred_indivprod_df, file.path(fp, 'pred_indivprod.csv'), row.names = FALSE)
-write.csv(pred_totalprod_df, file.path(fp, 'pred_totalprod.csv'), row.names = FALSE)
+write.csv(pred_dens, file.path(fp, 'pred_dens.csv'), row.names = FALSE)
+write.csv(pred_indivprod, file.path(fp, 'pred_indivprod.csv'), row.names = FALSE)
+write.csv(pred_totalprod, file.path(fp, 'pred_totalprod.csv'), row.names = FALSE)
