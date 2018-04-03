@@ -1,3 +1,9 @@
+# Restart Weibull ones that did not finish.
+qsub fitcmdstan2.sh -v guild=alltree,year=1990,model=weibullexp,NS=500,NW=2000 -N wexp1990_all -l walltime=7:00:00:00 
+qsub fitcmdstan2.sh -v guild=alltree,year=1995,model=weibullexp,NS=500,NW=2000 -N wexp1995_all -l walltime=7:00:00:00
+qsub fitcmdstan2.sh -v guild=alltree,year=2000,model=weibullexp,NS=500,NW=2000 -N wexp2000_all -l walltime=7:00:00:00
+qsub fitcmdstan2.sh -v guild=alltree,year=2010,model=weibullexp,NS=500,NW=2000 -N wexp2010_all -l walltime=7:00:00:00
+
 ### 1995
 
 qsub fitcmdstan.sh -v guild=fg1,year=1995,model=paretopow -N ppow1995_1 -l walltime=4:00:00

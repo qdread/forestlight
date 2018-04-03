@@ -1,0 +1,37 @@
+---
+title: "Logistic fit to production versus incoming light per area"
+author: "Quentin D. Read"
+date: "April 3, 2018"
+output: pdf_document
+---
+
+# Model
+
+I fit the following logistic model to the 1995 tree data (5000 individuals were randomly selected from the ~90000 trees with light data so that the model would fit quickly). Here $x$ is incoming light per unit area of an individual tree, and $y$ is its yearly biomass growth per unit area.
+
+$$y = \frac {L}{1 + e^{-k(x - x_0)}} + \epsilon$$
+
+Error around $\log y$ is modeled as normally distributed: $\log y \sim Normal(\log \mu, \sigma)$, where $\mu = \frac {L}{1 + e^{-k(x - x_0)}}$.
+
+# Parameter estimates
+
+The medians and credible intervals for the three parameters $L$ (asymptote of logistic curve), $x_0$ (midpoint of logistic curve), and $k$ (slope), are:
+
+Parameter     | Median | 95% credible interval
+------------- | ------ | ---------------------
+L             | 0.36   | [0.32, 0.41]
+x<sub>0</sub> | 84.7   | [75.3, 95.0]
+k             | 0.030  | [0.028, 0.033]
+
+\newpage
+# Plot of function fit
+
+These two plots show the same function fit with a 95% predictive interval around it. One plot shows the mean of each bin with its confidence interval, the other shows the median of each bin with 50% and 95% quantile ranges (thicker and thinner lines). I also included a histogram of number of individuals to go with each bin, as a reminder that the extreme low and high light values have relatively few individuals in the bins. That is why the middle points appear to have more "leverage" and the fit follows them more closely: they are actually bins containing a lot more data (the function is fit to the individual trees, not bins).
+
+![Fit with geometric means and confidence intervals][plot1]
+
+![Fit with medians and quantiles][plot2]
+
+[plot1]: C:/Users/Q/google_drive/ForestLight/figs/credible_interval_plots/production_vs_light_1995_mean.png 
+
+[plot2]: C:/Users/Q/google_drive/ForestLight/figs/credible_interval_plots/production_vs_light_1995_median.png 

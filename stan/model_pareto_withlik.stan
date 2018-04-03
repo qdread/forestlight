@@ -5,9 +5,6 @@ data {
 	int<lower=0> N;
 	vector<lower=0>[N] x;
 	real<lower=0> x_min;
-	
-	int<lower=0> N_pred;
-	vector<lower=0>[N_pred] x_pred;
 }
 
 parameters {
@@ -26,10 +23,10 @@ model {
 
 generated quantities {
 	// Log likelihood
-	vector[N_pred] log_lik_dens;
+	vector[N] log_lik_dens;
 	
-	for (i in 1:N_pred) {
-		log_lik_dens[i] = pareto_lpdf(x_pred[i] | x_min, alpha);
+	for (i in 1:N) {
+		log_lik_dens[i] = pareto_lpdf(x[i] | x_min, alpha);
 	}
 	
 }
