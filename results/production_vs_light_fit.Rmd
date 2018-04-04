@@ -5,7 +5,13 @@ date: "April 3, 2018"
 output: pdf_document
 ---
 
+# Modification history
+
+**4 April**: Added two additional fits.
+
 # Model
+
+## fit 1: logistic
 
 I fit the following logistic model to the 1995 tree data (5000 individuals were randomly selected from the ~90000 trees with light data so that the model would fit quickly). Here $x$ is incoming light per unit area of an individual tree, and $y$ is its yearly biomass growth per unit area.
 
@@ -13,20 +19,54 @@ $$y = \frac {L}{1 + e^{-k(x - x_0)}} + \epsilon$$
 
 Error around $\log y$ is modeled as normally distributed: $\log y \sim Normal(\log \mu, \sigma)$, where $\mu = \frac {L}{1 + e^{-k(x - x_0)}}$.
 
+## fit 2: modified logistic
+
+This function has an additional parameter but gives very similar results to Fit 1. Error around $\log y$ is normally distributed as above.
+
+$$y = \frac {b_{1}x^{-a}} {1 + b_{2}e^{-kx}} + \epsilon$$
+
+## fit 3: von Bertalanffy equation
+
+Error around $\log y$ is normally distributed as in the other two fits.
+
+$$y = G (1 - b_{1}e^{-kx})^{3} + \epsilon$$
+
+\newpage
 # Parameter estimates
+
+I checked diagnostics to make sure all the parameter estimates converged, and they are all fine.
+
+## fit 1: logistic
 
 The medians and credible intervals for the three parameters $L$ (asymptote of logistic curve), $x_0$ (midpoint of logistic curve), and $k$ (slope), are:
 
 Parameter     | Median | 95% credible interval
 ------------- | ------ | ---------------------
-L             | 0.36   | [0.32, 0.41]
-x<sub>0</sub> | 84.7   | [75.3, 95.0]
-k             | 0.030  | [0.028, 0.033]
+$L$           | 0.36   | [0.32, 0.41]
+$x_0$         | 84.7   | [75.3, 95.0]
+$k$           | 0.030  | [0.028, 0.033]
+
+## fit 2: modified logistic
+
+Parameter     | Median | 95% credible interval
+------------- | ------ | ---------------------
+$a$           | 0.023  | [0.001, 0.047]
+$b_1$         | 0.40   | [0.35, 0.47]
+$b_2$         | 13.6   | [11.9, 15.6]
+$k$           | 0.031  | [0.029, 0.034]
+
+## fit 3: von Bertalanffy equation
+
+Parameter     | Median | 95% credible interval
+------------- | ------ | ---------------------
+$G$           | 0.54   | [0.44, 0.67]
+$b_1$         | 0.66   | [0.63, 0.68]
+$k$           | 0.0083 | [0.0069, 0.0098]
 
 \newpage
-# Plot of function fit
+# Plot of function fits
 
-These two plots show the same function fit with a 95% predictive interval around it. One plot shows the mean of each bin with its confidence interval, the other shows the median of each bin with 50% and 95% quantile ranges (thicker and thinner lines). I also included a histogram of number of individuals to go with each bin, as a reminder that the extreme low and high light values have relatively few individuals in the bins. That is why the middle points appear to have more "leverage" and the fit follows them more closely: they are actually bins containing a lot more data (the function is fit to the individual trees, not bins).
+These two plots show the same three function fits with a 95% predictive interval around them (median fitted value is a solid line, and the bounds of the predictive interval are dashed lines, all colored by function fit). One plot shows the mean of each bin with its confidence interval, the other shows the median of each bin with 50% and 95% quantile ranges (thicker and thinner lines). I also included a histogram of number of individuals to go with each bin, as a reminder that the extreme low and high light values have relatively few individuals in the bins. That is why the middle points appear to have more "leverage" and the fit follows them more closely: they are actually bins containing a lot more data (the function is fit to the individual trees, not bins).
 
 ![Fit with geometric means and confidence intervals][plot1]
 
