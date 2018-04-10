@@ -1,3 +1,29 @@
+# All tree models for all years, with 25000 subsampled datasets
+qsub fitcmdstan.sh -v guild=alltree,year=1990,model=paretopowsub -N ppowsub1990 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=1990,model=weibullpowsub -N wpowsub1990 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=1990,model=paretoexpsub -N pexpsub1990 -l walltime=7:00:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=1990,model=weibullexpsub -N wexpsub1990 -l walltime=7:00:00:00
+
+qsub fitcmdstan.sh -v guild=alltree,year=1995,model=paretopowsub -N ppowsub1995 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=1995,model=weibullpowsub -N wpowsub1995 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=1995,model=paretoexpsub -N pexpsub1995 -l walltime=7:00:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=1995,model=weibullexpsub -N wexpsub1995 -l walltime=7:00:00:00
+
+qsub fitcmdstan.sh -v guild=alltree,year=2000,model=paretopowsub -N ppowsub2000 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=2000,model=weibullpowsub -N wpowsub2000 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=2000,model=paretoexpsub -N pexpsub2000 -l walltime=7:00:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=2000,model=weibullexpsub -N wexpsub2000 -l walltime=7:00:00:00
+
+qsub fitcmdstan.sh -v guild=alltree,year=2005,model=paretopowsub -N ppowsub2005 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=2005,model=weibullpowsub -N wpowsub2005 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=2005,model=paretoexpsub -N pexpsub2005 -l walltime=7:00:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=2005,model=weibullexpsub -N wexpsub2005 -l walltime=7:00:00:00
+
+qsub fitcmdstan.sh -v guild=alltree,year=2010,model=paretopowsub -N ppowsub2010 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=2010,model=weibullpowsub -N wpowsub2010 -l walltime=4:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=2010,model=paretoexpsub -N pexpsub2010 -l walltime=7:00:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=2010,model=weibullexpsub -N wexpsub2010 -l walltime=7:00:00:00
+
 # Restart Weibull ones that did not finish.
 qsub fitcmdstan2.sh -v guild=alltree,year=1990,model=weibullexp,NS=500,NW=2000 -N wexp1990_all -l walltime=7:00:00:00 
 qsub fitcmdstan2.sh -v guild=alltree,year=1995,model=weibullexp,NS=500,NW=2000 -N wexp1995_all -l walltime=7:00:00:00

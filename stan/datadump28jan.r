@@ -1,8 +1,10 @@
 # Create Rdump for new grouped data to run with CMDSTAN.
 # Edited 27 March: add lower and upper limits from data.
+# Edited 10 April: run on cluster; increase subsample size.
 
 # Load data (changing file path if necessary)
 fpdata <- 'C:/Users/Q/google_drive/ForestLight/data/data_22jan2018'
+fpdata <- '~/forestlight/stanrdump'
 load(file.path(fpdata, 'rawdataobj_22jan.r'))
 
 prod_dump <- function(dat, to_file = FALSE, fn = NULL, subsample = NULL) {
@@ -21,6 +23,7 @@ prod_dump <- function(dat, to_file = FALSE, fn = NULL, subsample = NULL) {
 }
 
 fpdump <- 'C:/Users/Q/Dropbox/projects/forestlight/stanrdump'
+fpdump <- '~/forestlight/stanrdump'
 years <- c(1990, 1995, 2000, 2005, 2010)
 fgs <- c('fg1','fg2','fg3','fg4','fg5','unclassified')
 
@@ -46,8 +49,9 @@ write.csv(min_n, 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/min_n.csv',
 # Added 3 Feb. 2018
 # Take a subset of the data so that we can fit the Weibull in a reasonable amount of time.
 # Edited 8 Feb to subsample an even smaller number
+# Edited 10 April: back to large number
 
-n_sub <- 5000
+n_sub <- 25000
 set.seed(574)
 
 for (i in 2:6) {
