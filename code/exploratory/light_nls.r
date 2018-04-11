@@ -399,3 +399,16 @@ p_raw_byfg <- ggplot(dat %>% filter(!fg %in% 'unclassified')) +
 fpfig <- 'C:/Users/Q/google_drive/ForestLight/figs/credible_interval_plots'
 ggsave(file.path(fpfig, 'production_vs_light_1995_separatefg_median.png'), p_median_byfg, height=6, width=9, dpi=400)
 ggsave(file.path(fpfig, 'production_vs_light_1995_separatefg_rawdata.png'), p_raw_byfg, height=6, width=9, dpi=400)
+
+# Transformed slope, adjusted by asymptote
+adj_slope_fg <- map(par_bert_fg, function(x) pmap_dbl(x, function(G, k, ...) k * G * (1/3))) %>%
+  map(quantile, probs = c(.025, .25, .5, .75, .975))
+adj_slope_fg <- cbind(fg = c('fg1','fg2','fg3','fg4','fg5','unclassified'),
+                      as.data.frame(do.call(rbind, adj_slope_fg)))
+names(adj_slope_fg) <- c('fg', 'q025', 'q25', 'q50', 'q75', 'q975')
+
+p_slope <- ggplot(adj_slope_fg[1:5,], aes(x = fg, y = q50, ymin = q025, ymax = q975)) +
+  geom_pointrange() +
+  theme_classic() + 
+  labs(x = 'Functional group', y = 'Maximum slope')
+ggsave(file.path(fpfig, 'production_vs_light_1995_slopemax.png'), p_slope, height=3, width=4, dpi=400)

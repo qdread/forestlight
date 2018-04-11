@@ -1,5 +1,8 @@
 # Production versus light: Fit all functional groups.
-# Do with CMDstan (data dump)
+# Do with CMDstan 
+
+
+# Data dumps --------------------------------------------------------------
 
 # Load data (changing file path if necessary)
 fpdata <- '~/forestlight/stanrdump'
@@ -50,3 +53,58 @@ pmap(dat95_fg, function(fg, data) with(data, stan_rdump(names(data), file=file.p
 
 with(dat90_all, stan_rdump(names(dat90_all), file=file.path(fpdata, 'dump_light_alltree_1990.r')))
 with(dat95_all, stan_rdump(names(dat90_all), file=file.path(fpdata, 'dump_light_alltree_1995.r')))
+
+
+# Load fits and get CIs ---------------------------------------------------
+
+fp <- '~/forestlight/stanoutput'
+
+library(purrr)
+library(tidyr)
+library(dplyr)
+library(rstan)
+
+fgnames <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'alltree')
+
+z <- expand.grid(fg=fgnames, year = c(1990, 1995), stringsAsFactors = FALSE)
+
+# Define function to get credible intervals around the parameters and to get the interval around the fitted values
+
+extract_light_ci <- function(fg, year) {
+  getpar <- function(fit) as.data.frame(do.call(cbind, extract(fit)))
+  fn_logistic3 <- function(x, G, b1, k, ...) G * (1 - b1 * exp(-k * x)) ^ 3
+  light_pred <- exp(seq(log(1.1), log(412), length.out = 101))
+  
+  qprob <- c(0.025, 0.25, 0.5, 0.75, 0.975)
+  qname <- c('q025', 'q25', 'q50', 'q75', 'q975')
+  
+  filenames <- paste0('fit_light_', fg, '_', year, '_', 1:3, '.csv')
+  fit <- read_stan_csv(file.path(fp, filenames))
+  pars <- getpar(fit)
+  pars <- mutate(pars, max_slope = k * G * (1/3))
+  par_quant <- map(pars, ~ quantile(., probs = qprob)) %>%
+    do.call(rbind, .) %>%
+    as.data.frame %>%
+    setNames(nm = qname)
+  par_quant <- data.frame(fg = fg, year = year, parameter = c('G','b1','k','max_slope'), par_quant[c('G','b1','k','max_slope'),])
+  
+  pred <- do.call(rbind, pmap(pars, fn_logistic3, x = light_pred))
+  pred_quant <- pred %>%
+    as.data.frame %>%
+    map(~ quantile(., probs = qprob)) %>%
+    do.call(rbind, .) %>%
+    as.data.frame %>%
+    setNames(nm = qname)
+  pred_quant <- data.frame(fg = fg, year = year, light_area = light_pred, pred_quant)
+  
+  list(pars = par_quant, preds = pred_quant)
+}
+
+all_output <- pmap(z, extract_light_ci)
+
+# Combine the parameter confidence intervals and the predicted values into two single data frames.
+all_pars <- do.call(rbind, map(all_output, 'pars'))
+all_preds <- do.call(rbind, map(all_output, 'preds'))
+
+write.csv(all_pars, file = '~/forestlight/lightbyarea_paramci_by_fg.csv', row.names = FALSE)
+write.csv(all_preds, file = '~/forestlight/lightbyarea_predci_by_fg.csv', row.names = FALSE)
