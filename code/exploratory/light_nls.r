@@ -42,7 +42,44 @@ nls_fn <- function(x, L, x0, k) L/(1 + exp(-k*(x - x0)))
 nls2_fn <- function(x, beta0, beta1) beta0 * x^beta1
 
 source('code/allfunctions27july.r')
-source('code/fakebin.r')
+
+fakebin_across_years <- function(dat_values, dat_classes, edges, mean_type = 'geometric', n_census = 5) {
+  qprobs <- c(0.025, 0.25, 0.5, 0.75, 0.975)
+  # add some padding just in case
+  mins <- edges$bin_min
+  mins[1] <- 0
+  maxes <- edges$bin_max
+  maxes[length(maxes)] <- Inf
+  
+  binstats <- t(sapply(1:length(mins), function(x) {
+    indivs <- dat_values[dat_classes >= mins[x] & dat_classes < maxes[x]]
+    if (mean_type == 'geometric') {
+      mean_n <- exp(mean(log(indivs)))
+      sd_n <- exp(sd(log(indivs)))
+      ci_width <- qnorm(0.975) * sd(log(indivs)) / sqrt(length(indivs))
+      ci_min <- exp(mean(log(indivs)) - ci_width)
+      ci_max <- exp(mean(log(indivs)) + ci_width)
+      
+    } else {
+      mean_n <- mean(indivs)
+      sd_n <- sd(indivs)
+      ci_width <- qnorm(0.975) * sd(indivs) / sqrt(length(indivs))
+      ci_min <- mean_n - ci_width
+      ci_max <- mean_n + ci_width
+    }
+    c(mean_n_individuals = length(indivs) / n_census,
+      mean = mean_n, 
+      sd = sd_n,
+      quantile(indivs, probs = qprobs),
+      ci_min = ci_min,
+      ci_max = ci_max)
+  }))
+  dimnames(binstats)[[2]] <- c('mean_n_individuals','mean', 'sd', 'q025', 'q25', 'median', 'q75', 'q975', 'ci_min', 'ci_max')
+  data.frame(bin_midpoint = edges$bin_midpoint,
+             bin_min = edges$bin_min,
+             bin_max = edges$bin_max,
+             binstats)
+}
 
 numbins <- 20
 light_bins <- logbin(x = dat$light_area, n = numbins)
@@ -199,3 +236,166 @@ grid.arrange(
                         c(2, 2))
 )
 dev.off()
+
+
+# Fit by FG ---------------------------------------------------------------
+
+# Create data
+
+make_logistic_data <- function(x, n_sub) {
+  if (n_sub < nrow(x)) {
+    sample_rows <- sample(nrow(x), n_sub)
+  } else {
+    sample_rows <- 1:nrow(x)
+    n_sub <- nrow(x)
+  }
+  with(x[sample_rows, ],
+       list(N = n_sub, x = light_received/crownarea, y = production/crownarea))
+}
+
+n_sub <- 5000
+set.seed(919)
+
+dat <- mutate(dat, fg = paste0('fg', fg))
+dat$fg[dat$fg == 'fgNA'] <- 'unclassified'
+
+dat_logistic_fg <- dat %>%
+  group_by(fg) %>%
+  do(data = make_logistic_data(., n_sub))
+
+NC <- 3
+NI <- 6000
+NW <- 5000
+
+fit_bert_fg <- list()
+
+for (i in 1:6) {
+print(i)
+fit_bert_fg[[i]] <- sampling(mod_logistic3, data = dat_logistic_fg$data[[i]], chains = NC, iter = NI, warmup = NW, seed = 117+i)
+
+}
+
+sum_bert_fg <- lapply(fit_bert_fg, function(x) summary(x)[[1]][c('G', 'b1', 'k'), ])
+
+getpar <- function(fit) as.data.frame(do.call(cbind, extract(fit)))
+
+par_bert_fg <- lapply(fit_bert_fg, getpar)
+
+fn_logistic3 <- function(x, G, b1, k, ...) G * (1 - b1 * exp(-k * x)) ^ 3
+
+light_pred <- exp(seq(log(1.1), log(412), length.out = 101))
+
+pred_bert_fg <- lapply(par_bert_fg, function(z) do.call(rbind, pmap(z, fn_logistic3, x = light_pred)))
+
+getpred <- function(x, p, n, modelname) {
+  out <- x %>%
+    as.data.frame %>%
+    map(~ quantile(., probs = p)) %>%
+    do.call(rbind, .) %>%
+    as.data.frame %>%
+    setNames(nm = n)
+  data.frame(model = modelname, cbind(light_area = light_pred, out))
+}
+
+pred_bert_quant_fg <- lapply(pred_bert_fg, function(z) getpred(z, c(0.025, 0.25, 0.5, 0.75, 0.975), c('q025', 'q25', 'q50', 'q75', 'q975'), 'bertalanffy'))
+
+pred_bert_quant_fg <- cbind(fg = rep(c('fg1','fg2','fg3','fg4','fg5','unclassified'), each = length(light_pred)),
+                            do.call(rbind, pred_bert_quant_fg))
+
+# Bin data by functional group to create the plot.
+numbins <- 20
+light_bins <- logbin(x = dat$light_area, n = numbins)
+
+prod_light_bin_fg <- dat %>%
+  group_by(fg) %>%
+  do(bin = fakebin_across_years(dat_values = .$production_area,
+                                       dat_classes = .$light_area,
+                                       edges = light_bins,
+                                       n_census = 1))
+
+prod_light_bin_fg <- cbind(fg = rep(c('fg1','fg2','fg3','fg4','fg5','unclassified'), each = numbins),
+                           do.call(rbind, prod_light_bin_fg$bin)) %>%
+  filter(complete.cases(.))
+
+x_loc <- 'bin_midpoint'
+
+p_median <- ggplot(prod_light_bin_fg %>% filter(!fg %in% "unclassified")) +
+  geom_segment(aes_string(x = x_loc, xend = x_loc, y = 'q25', yend = 'q75', group = 'fg'), size = 0.75) +
+  geom_segment(aes_string(x = x_loc, xend = x_loc, y = 'q025', yend = 'q975', group = 'fg')) +
+  geom_point(aes_string(x = x_loc, y = 'median', color = 'fg', group = 'fg')) +
+  geom_line(data = pred_bert_quant_fg %>% filter(!fg %in% "unclassified"), aes(x = light_area, y = q50, color = fg, group = fg)) +
+  geom_line(data = pred_bert_quant_fg %>% filter(!fg %in% "unclassified"), aes(x = light_area, y = q025, color = fg, group = fg), linetype = 'dashed') +
+  geom_line(data = pred_bert_quant_fg %>% filter(!fg %in% "unclassified"), aes(x = light_area, y = q975, color = fg, group = fg), linetype = 'dashed') +
+  scale_x_log10(name = 'Incoming light per area (W m-2)') + scale_y_log10('Production per area (kg y-1 m-2)') +
+  theme_classic() +
+  theme(panel.border = element_rect(fill=NA),
+        legend.position = c(0.2, 0.8))
+
+p_mean <- ggplot(prod_light_bin_fg %>% filter(!fg %in% "unclassified")) +
+  geom_errorbar(aes_string(x = x_loc, ymin = 'ci_min', ymax = 'ci_max', group = 'fg'), width = 0.1) +
+  geom_point(aes_string(x = x_loc, y = 'mean', color = 'fg', group = 'fg')) +
+  geom_line(data = pred_bert_quant_fg %>% filter(!fg %in% "unclassified"), aes(x = light_area, y = q50, color = fg, group = fg)) +
+  geom_line(data = pred_bert_quant_fg %>% filter(!fg %in% "unclassified"), aes(x = light_area, y = q025, color = fg, group = fg), linetype = 'dashed') +
+  geom_line(data = pred_bert_quant_fg %>% filter(!fg %in% "unclassified"), aes(x = light_area, y = q975, color = fg, group = fg), linetype = 'dashed') +
+  scale_x_log10(name = 'Incoming light per area (W m-2)') + scale_y_log10('Production per area (kg y-1 m-2)') +
+  theme_classic() +
+  theme(panel.border = element_rect(fill=NA),
+        legend.position = c(0.2, 0.8))
+
+slope_fg <- lapply(sum_bert_fg, function(x) c(q50 = x[3, 6], q025 = x[3,4], q975 = x[3,8]))
+slope_fg <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','unclassified'), do.call(rbind, slope_fg))
+
+p_slope <- ggplot(slope_fg[1:5,], aes(x = fg, y = q50, ymin = q025, ymax = q975)) +
+  geom_pointrange() +
+  theme_classic() + 
+  labs(x = 'Functional group', y = 'Bertalanffy slope')
+
+fpfig <- 'C:/Users/Q/google_drive/ForestLight/figs/credible_interval_plots'
+ggsave(file.path(fpfig, 'production_vs_light_1995_median_allFG.png'), p_median, height=5, width=6, dpi=400)
+ggsave(file.path(fpfig, 'production_vs_light_1995_mean_allFG.png'), p_mean, height=5, width=6, dpi=400)
+ggsave(file.path(fpfig, 'production_vs_light_1995_slopes.png'), p_slope, height=3, width=4, dpi=400)
+
+# Histogram of number of individuals by fg
+ggplot(prod_light_bin_fg %>% filter(!fg %in% "unclassified"), aes(x = bin_midpoint, y = mean_n_individuals)) + 
+  theme_bw() + geom_col() + facet_grid(fg ~ ., scales = 'free_y') + scale_x_log10(name = 'Incoming light per area') + labs(y = 'Number of individuals in bin')
+ggsave(file.path(fpfig, 'histograms_bylight.png'), height = 8, width = 5, dpi = 400)
+
+
+
+# Plot individual functional groups with raw data -------------------------
+
+prod_light_bin_fg <- filter(prod_light_bin_fg, !fg %in% 'unclassified')
+pred_bert_quant_fg <- filter(pred_bert_quant_fg, !fg %in% 'unclassified')
+
+p_median_byfg <- ggplot(prod_light_bin_fg) +
+  facet_wrap(~ fg, scales = 'free') +
+  geom_segment(aes(x = bin_midpoint, xend = bin_midpoint, y = q25, yend = q75), size = 0.75) +
+  geom_segment(aes(x = bin_midpoint, xend = bin_midpoint, y = q025, yend = q975)) +
+  geom_point(aes(x = bin_midpoint, y = median)) +
+  geom_point(aes(x = bin_midpoint, y = mean), color = 'dodgerblue') +
+  geom_line(data = pred_bert_quant_fg, aes(x = light_area, y = q50), color = 'red') +
+  geom_line(data = pred_bert_quant_fg, aes(x = light_area, y = q025), linetype = 'dashed', color = 'red') +
+  geom_line(data = pred_bert_quant_fg, aes(x = light_area, y = q975), linetype = 'dashed', color = 'red') +
+  scale_x_log10(name = expression(paste('Incoming light per area (W m'^-2,')',sep=''))) + scale_y_log10(name = expression(paste('Growth per area (kg y'^-1, ' m'^-2,')', sep=''))) +
+  theme_classic() +
+  theme(panel.border = element_rect(fill=NA),
+        strip.background = element_rect(fill=NA))
+
+# Raw data
+# Set color so that the data points look roughly the same amount of transparent.
+p_raw_byfg <- ggplot(dat %>% filter(!fg %in% 'unclassified')) +
+  facet_wrap(~ fg, scales = 'free') +
+  geom_point(aes(x = light_area, y = production_area, alpha = fg)) +
+  geom_line(data = pred_bert_quant_fg, aes(x = light_area, y = q50), color = 'red') +
+  geom_line(data = pred_bert_quant_fg, aes(x = light_area, y = q025), linetype = 'dashed', color = 'red') +
+  geom_line(data = pred_bert_quant_fg, aes(x = light_area, y = q975), linetype = 'dashed', color = 'red') +
+  scale_alpha_manual(values = c(0.1, 0.08, 0.02, 0.02, 0.004)) +
+  scale_x_log10(name = expression(paste('Incoming light per area (W m'^-2,')',sep=''))) + scale_y_log10(name = expression(paste('Growth per area (kg y'^-1, ' m'^-2,')', sep=''))) +
+  theme_classic() +
+  theme(panel.border = element_rect(fill=NA),
+        strip.background = element_rect(fill=NA),
+        legend.position = 'none')
+
+fpfig <- 'C:/Users/Q/google_drive/ForestLight/figs/credible_interval_plots'
+ggsave(file.path(fpfig, 'production_vs_light_1995_separatefg_median.png'), p_median_byfg, height=6, width=9, dpi=400)
+ggsave(file.path(fpfig, 'production_vs_light_1995_separatefg_rawdata.png'), p_raw_byfg, height=6, width=9, dpi=400)
