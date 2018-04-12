@@ -33,9 +33,11 @@ model {
 	}
 }
 
-/* UNCOMMENT THIS IF YOU WANT TO CALCULATE LOG-LIKELIHOOD
 generated quantities {
-	vector[N] log_lik;
-	for (i in 1:N) log_lik[i] = normal_lpdf(log_y[i] | log(G * (1 - b1 * exp(-k * x[i])) ^ 3;), sigma);
+	real<lower=0> max_slope;
+	max_slope = k * G / 3;
+	
+	// Uncomment the lines below if you want to output the log-likelihood.
+	// vector[N] log_lik;
+	// for (i in 1:N) log_lik[i] = normal_lpdf(log_y[i] | log(G * (1 - b1 * exp(-k * x[i])) ^ 3;), sigma);
 } 
-*/

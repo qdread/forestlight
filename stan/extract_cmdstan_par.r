@@ -3,6 +3,9 @@
 # Predictive intervals to make graphs
 # Information criteria
 
+# Edit 12 April: Do this in parallel because it is too slow
+task <- as.numeric(Sys.getenv('PBS_ARRAYID'))
+
 extract_all_fit <- function(dens_model, prod_model, fg, year, xmin, n, total_production) {
   require(rstan)
   require(loo)
@@ -72,4 +75,12 @@ mod_df <- mod_df %>%
 
 dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
 
-fit_info <- pmap(mod_df, extract_all_fit)
+fit_info <- extract_all_fit(dens_model = mod_df$dens_model[task],
+                            prod_model = mod_df$prod_model[task],
+                            fg = mod_df$fg[task],
+                            year = mod_df$year[task],
+                            xmin = mod_df$xmin[task],
+                            n = mod_df$n[task],
+                            total_production = mod_df$total_production[task])
+
+save(fit_info, file = paste0('~/forestlight/stanoutput/fitinfo/info_',task,'.r'))

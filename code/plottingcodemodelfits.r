@@ -4,7 +4,7 @@
 
 # Load data ---------------------------------------------------------------
 
-fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_20mar2018' ## CHANGE PATH AS NEEDED
+fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_12apr2018' ## CHANGE PATH AS NEEDED
 
 # Read all the csvs in directory.
 for (i in dir(fp, pattern = '.csv')) {
@@ -227,7 +227,8 @@ plot_prod(year_to_plot = 1995,
           y_limits = c(0.01, 7000),
           y_breaks = c(0.1, 10, 1000),
           error_quantiles = c('q025', 'q975'),
-          average = 'median')
+          average = 'median',
+          color_names = 'black')
 
 plot_prod(year_to_plot = 1995,
           fg_names = c('fg1'),
@@ -238,14 +239,6 @@ plot_prod(year_to_plot = 1995,
           average = 'mean',
           color_names = 'black')
 
-plot_prod(year_to_plot = 1995,
-          fg_names = c('all'),
-          model_fit = 'powerlawexp',
-          y_limits = c(0.01, 7000),
-          y_breaks = c(0.1, 10, 1000),
-          error_quantiles = c('q025', 'q975'),
-          average = 'median',
-          color_names = 'black')
 
 # Total production plot for some functional groups for Weibull and power law in 1995
 plot_totalprod(year_to_plot = 1995,

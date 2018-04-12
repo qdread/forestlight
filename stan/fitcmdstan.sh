@@ -31,7 +31,7 @@ if [ "$model" == "weibullpow" ]; then
 fi
 
 if [ "$model" == "paretopowsub" ]; then
-	~/forestlight/stancode/model_ppow_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/ssdump_${guild}_${year}.r output file=~/forestlight/stanoutput/ssfit_paretoxpow_${guild}_${year}_${PBS_ARRAYID}.csv
+	~/forestlight/stancode/model_ppow_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/ssdump_${guild}_${year}.r output file=~/forestlight/stanoutput/ssfit_paretoxpower_${guild}_${year}_${PBS_ARRAYID}.csv
 fi
 
 if [ "$model" == "paretoexpsub" ]; then

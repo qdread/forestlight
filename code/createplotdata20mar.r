@@ -87,7 +87,7 @@ pred_totalprod <- ci_df %>%
   select(-variable) %>%
   mutate_at(vars(starts_with('q')), funs(./area_core)) 
 
-fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_20mar2018'
+fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_12apr2018'
 
 write.csv(pred_dens, file.path(fp, 'pred_dens.csv'), row.names = FALSE)
 write.csv(pred_indivprod, file.path(fp, 'pred_indivprod.csv'), row.names = FALSE)
