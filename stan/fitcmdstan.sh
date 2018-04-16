@@ -10,7 +10,7 @@
 # chain is the PBS_ARRAYID
 
 NS=1000
-NW=3000
+NW=5000
 
 module load GNU/6.2
 
@@ -46,3 +46,22 @@ if [ "$model" == "weibullexpsub" ]; then
 	~/forestlight/stancode/model_wexp_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/ssdump_${guild}_${year}.r output file=~/forestlight/stanoutput/ssfit_weibullxexp_${guild}_${year}_${PBS_ARRAYID}.csv
 fi
 
+if [ "$model" == "paretopowmid" ]; then
+	~/forestlight/stancode/model_ppow_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/midsizedump_${guild}_${year}.r output file=~/forestlight/stanoutput/midsizefit_paretoxpower_${guild}_${year}_${PBS_ARRAYID}.csv
+fi
+
+if [ "$model" == "paretoexpmid" ]; then
+	~/forestlight/stancode/model_pexp_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/midsizedump_${guild}_${year}.r output file=~/forestlight/stanoutput/midsizefit_paretoxexp_${guild}_${year}_${PBS_ARRAYID}.csv
+fi
+
+if [ "$model" == "weibullpowmid" ]; then
+	~/forestlight/stancode/model_wpow_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/midsizedump_${guild}_${year}.r output file=~/forestlight/stanoutput/midsizefit_weibullxpower_${guild}_${year}_${PBS_ARRAYID}.csv
+fi
+
+if [ "$model" == "weibullexpmid" ]; then
+	~/forestlight/stancode/model_wexp_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/midsizedump_${guild}_${year}.r output file=~/forestlight/stanoutput/midsizefit_weibullxexp_${guild}_${year}_${PBS_ARRAYID}.csv
+fi
+
+if [ "$model" == "ppslope" ]; then
+	~/forestlight/stancode/model_ppow_slopes sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/midsizedump_${guild}_${year}.r output file=~/forestlight/stanoutput/midsizefit_slope_paretoxpower_${guild}_${year}_${PBS_ARRAYID}.csv
+fi

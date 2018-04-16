@@ -1,20 +1,30 @@
 # Create Rdump for new grouped data to run with CMDSTAN.
 # Edited 27 March: add lower and upper limits from data.
 # Edited 10 April: run on cluster; increase subsample size.
+# Edited 13 April: create new data dump for middle sized trees 5 to 50 cm
 
 # Load data (changing file path if necessary)
 fpdata <- 'C:/Users/Q/google_drive/ForestLight/data/data_22jan2018'
 fpdata <- '~/forestlight/stanrdump'
 load(file.path(fpdata, 'rawdataobj_22jan.r'))
 
-prod_dump <- function(dat, to_file = FALSE, fn = NULL, subsample = NULL) {
+prod_dump <- function(dat, to_file = FALSE, fn = NULL, subsample = NULL, size_limits = NULL) {
   require(rstan)
   if (!is.null(subsample) && nrow(dat) > subsample) {
     dat <- dat[sample(nrow(dat), subsample, replace = FALSE), ]
   }
+  # If size limits are given, get rid of the trees outside the limits.
+  if (!is.null(size_limits)) {
+    dat <- dat[dat$dbh_corr >= size_limits[1] & dat$dbh_corr <= size_limits[2], ]
+    ll <- size_limits[1]
+    ul <- size_limits[2]
+  } else {
+    ll <- 1.1
+    ul <- 316
+  }
   x <- dat$dbh_corr
   y <- dat$production
-  xdat <- list(N = length(x), x = x, y = y, x_min = min(x), LL = 1.1, UL = 316)
+  xdat <- list(N = length(x), x = x, y = y, x_min = min(x), LL = ll, UL = ul)
   if (to_file) {
     with(xdat, stan_rdump(names(xdat), file = fn))
   } else {
@@ -34,6 +44,15 @@ for (i in 2:6) {
   }
 }
 
+# Added 13 April: 5 to 50 cm subsets.
+
+for (i in 2:6) {
+  prod_dump(alltreedat[[i]], to_file = TRUE, fn = file.path(fpdump, paste0('midsizedump_alltree_', years[i-1], '.r')), size_limits = c(5,50))
+  for (j in 1:6) {
+    prod_dump(fgdat[[j]][[i]], to_file = TRUE, fn = file.path(fpdump, paste0('midsizedump_', fgs[j], '_', years[i-1], '.r')), size_limits = c(5,50))
+  }
+}
+
 # Get minimum x values and numbers of individuals that are used for plotting.
 valall <- do.call('rbind', lapply(alltreedat, function(x) data.frame(xmin = min(x$dbh_corr), n = nrow(x))))
 valall <- data.frame(fg = 'alltree', year = c(1985, 1990, 1995, 2000, 2005, 2010), valall)
@@ -45,6 +64,46 @@ valfg <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','unclassified'),
 
 min_n <- rbind(valall, valfg)
 write.csv(min_n, 'C:/Users/Q/Dropbox/projects/forestlight/stanoutput/min_n.csv', row.names = FALSE)
+
+# Edited 16 April: Find minimum size, number of individuals, and total production for the midsize trees
+size_limits <- c(5,50)
+
+valall <- do.call('rbind', lapply(alltreedat, function(x) {
+  x <- subset(x, dbh_corr >= size_limits[1] & dbh_corr <= size_limits[2])
+  data.frame(xmin = min(x$dbh_corr), n = nrow(x))}))
+valall <- data.frame(fg = 'alltree', year = c(1985, 1990, 1995, 2000, 2005, 2010), valall)
+valfg <- do.call('rbind', do.call('rbind', lapply(fgdat, function(x) lapply(x, function(x) {
+  x <- subset(x, dbh_corr >= size_limits[1] & dbh_corr <= size_limits[2])
+  data.frame(xmin = min(x$dbh_corr), n = nrow(x))}))))
+
+valfg <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','unclassified'),
+                    year = rep(c(1985, 1990, 1995, 2000, 2005, 2010), each = 6),
+                    valfg)
+
+min_n <- rbind(valall, valfg)
+write.csv(min_n, '~/forestlight/stancode/min_n_midsize.csv', row.names = FALSE)
+
+library(dplyr)
+library(purrr)
+alltreeprod <- map_dbl(alltreedat, function(x) {
+  x <- x %>% filter(dbh_corr >= size_limits[1] & dbh_corr <= size_limits[2])
+  sum(x$production)
+})
+fgprod <- map_dfr(alltreedat, function(x) {
+  x %>%
+    filter(dbh_corr >= size_limits[1] & dbh_corr <= size_limits[2]) %>%
+    mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg',fg))) %>%
+    group_by(fg) %>%
+    summarize(production = sum(production))
+})
+
+prodtotals <- rbind(data.frame(year = rep(seq(1985,2010,5), each=6), fgprod),
+                    data.frame(year = seq(1985,2010,5), fg = 'alltree', production = alltreeprod)) %>%
+  arrange(year, fg)
+
+write.csv(prodtotals, file = '~/forestlight/production_total_midsize.csv', row.names = FALSE)
+
+
 
 # Added 3 Feb. 2018
 # Take a subset of the data so that we can fit the Weibull in a reasonable amount of time.
