@@ -272,7 +272,8 @@ qsub fitcmdstan.sh -v guild=alltree,year=2010,model=ppslope -N ppow2010_all -l w
 
 ##################################
 # Midsize ones that aren't done.
-qsub fitcmdstan.sh -v guild=alltree,year=1990,model=weibullpowmid -N wpow1990_all -l walltime=2:00:00:00
-qsub fitcmdstan.sh -v guild=alltree,year=2000,model=weibullpowmid -N wpow2000_all -l walltime=2:00:00:00
-qsub fitcmdstan.sh -v guild=alltree,year=2005,model=weibullpowmid -N wpow2005_all -l walltime=2:00:00:00
-qsub fitcmdstan.sh -v guild=alltree,year=2010,model=weibullpowmid -N wpow2010_all -l walltime=2:00:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=1990,model=weibullpowmid -N wpow1990_all -l walltime=4:00:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=1995,model=weibullpowmid -N wpow1995_all -l walltime=4:00:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=2000,model=weibullpowmid -N wpow2000_all -l walltime=4:00:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=2005,model=weibullpowmid -N wpow2005_all -l walltime=4:00:00:00
+qsub fitcmdstan.sh -v guild=alltree,year=2010,model=weibullpowmid -N wpow2010_all -l walltime=4:00:00:00

@@ -60,3 +60,27 @@ fit_info_list <- map(1:nrow(mod_df), function(i) {
 
 param_cis <- do.call(rbind, map(fit_info_list, 'param_cis'))
 write.csv(param_cis, file = '~/forestlight/paramci_eeslopes_midsizetrees.csv', row.names = FALSE)
+
+############################################################################################
+
+# All the fits for midsize trees, including the log likelihood scores.
+
+library(purrr)
+fp <- '~/forestlight/stanoutput/fitinfo'
+
+mod_df <- expand.grid(dens_model = c('pareto', 'weibull'),
+                      prod_model = c('power', 'exp'),
+                      fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
+                      year = seq(1990, 2010, 5), 
+                      stringsAsFactors = FALSE)
+					  
+fit_info_list <- map(1:nrow(mod_df), function(i) {
+  load(file.path(fp, paste0('midsizeinfo_', i, '.r')))
+  fit_info
+})
+
+param_cis <- do.call(rbind, map(fit_info_list, 'param_cis'))
+write.csv(param_cis, file = '~/forestlight/paramci_by_fg_midsizetrees.csv', row.names = FALSE)
+
+pred_values <- do.call(rbind, map(fit_info_list, 'pred_interval'))
+write.csv(pred_values, file = '~/forestlight/ci_by_fg_midsizetrees.csv', row.names = FALSE)
