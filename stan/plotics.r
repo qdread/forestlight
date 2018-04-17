@@ -2,6 +2,9 @@
 
 ics <- read.csv('C:/Users/Q/Dropbox/projects/forestlight/ics_by_fg.csv', stringsAsFactors = FALSE)
 
+# Midsize
+ics <- read.csv('C:/Users/Q/Dropbox/projects/forestlight/ics_by_fg_midsizetrees.csv', stringsAsFactors = FALSE)
+
 library(dplyr)
 library(ggplot2)
 
@@ -49,3 +52,7 @@ ic_density_cast <- dcast(ic_density, fg + year ~ dens_model) %>%
 
 write.csv(ic_production_cast, file = 'C:/Users/Q/google_drive/ForestLight/data/summarytables_12apr2018/LOOIC_production.csv', row.names = FALSE)
 write.csv(ic_density_cast, file = 'C:/Users/Q/google_drive/ForestLight/data/summarytables_12apr2018/LOOIC_density.csv', row.names = FALSE)
+
+# Midsize
+write.csv(ic_production_cast, file = 'C:/Users/Q/google_drive/ForestLight/data/summarytables_12apr2018/LOOIC_production_midsize.csv', row.names = FALSE)
+write.csv(ic_density_cast, file = 'C:/Users/Q/google_drive/ForestLight/data/summarytables_12apr2018/LOOIC_density_midsize.csv', row.names = FALSE)

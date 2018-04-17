@@ -84,3 +84,19 @@ write.csv(param_cis, file = '~/forestlight/paramci_by_fg_midsizetrees.csv', row.
 
 pred_values <- do.call(rbind, map(fit_info_list, 'pred_interval'))
 write.csv(pred_values, file = '~/forestlight/ci_by_fg_midsizetrees.csv', row.names = FALSE)
+
+get_ics <- function(x) {
+  wd <- unname(do.call(c, x$waic_dens[1:6]))
+  wp <- unname(do.call(c, x$waic_prod[1:6]))
+  ld <- unname(do.call(c, x$loo_dens[1:6]))
+  lp <- unname(do.call(c, x$loo_prod[1:6]))
+  out <- data.frame(variable = c('density', 'production'),
+             criterion = c('WAIC','WAIC','LOOIC','LOOIC'),
+             rbind(wd, wp, ld, lp))
+  setNames(out, nm = c('variable','criterion','elpd','p','ic','se_elpd','se_p','se_ic'))
+}
+
+fit_ics <- map(fit_info_list, get_ics)
+
+fit_ics <- cbind(mod_df[rep(1:nrow(mod_df), each=4),], do.call(rbind, fit_ics))
+write.csv(fit_ics, file = '~/forestlight/ics_by_fg_midsizetrees.csv', row.names = FALSE)

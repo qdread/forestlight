@@ -33,7 +33,7 @@ extract_all_fit <- function(dens_model, prod_model, fg, year, xmin, n, total_pro
   names(param_cis)[9:13] <- c('q025', 'q25', 'q50', 'q75', 'q975')
 
   # Get predictive intervals
-  pred_interval <- dens_prod_ci(fit, dbh_pred, dens_form = dens_model, prod_form = prod_model, total_prod = total_production, x_min = xmin, n_indiv = n)
+  pred_interval <- dens_prod_ci(fit, dbh_pred, dens_form = dens_model, prod_form = prod_model, total_prod = total_production, x_min = xmin, n_indiv = n, ll = 5, ul = 50)
   pred_interval <- data.frame(year = year, dens_model = dens_model, prod_model = prod_model, fg = fg, pred_interval)
 
   # Get WAIC and LOOIC
@@ -72,7 +72,7 @@ mod_df <- mod_df %>%
   rename(total_production = production) %>%
   left_join(min_n)
 
-dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
+dbh_pred <- exp(seq(log(5), log(50), length.out = 101))
 
 fit_info <- extract_all_fit(dens_model = mod_df$dens_model[task],
                             prod_model = mod_df$prod_model[task],

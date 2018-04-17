@@ -12,7 +12,7 @@ diag_plots <- function(fit) {
 
 }
 
-dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, total_prod, x_min = NULL, n_indiv = 1, delete_samples = NULL) {
+dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, total_prod, x_min = NULL, n_indiv = 1, ll = 1.1, ul = 316, delete_samples = NULL) {
   require(purrr)
   require(pracma)
   pdf_pareto <- function(x, xmin, alpha) (alpha * xmin^alpha) / (x ^ (alpha+1))
@@ -31,8 +31,6 @@ dens_prod_ci <- function(fit, dbh_pred, dens_form, prod_form, total_prod, x_min 
   }
   if (dens_form == 'weibull') {
     # Must manually rescale and remove upper and lower truncations
-    ll <- 1.1
-    ul <- 316
     trunc_pts <- pmap(pars, function(m, n, ...) pweibull(q = c(ll,ul), shape = m, scale = n))
     dens_pred <- sapply(dbh_pred, dweibull, shape = pars[,'m'], scale = pars[,'n']) 
     dens_pred <- t(sapply(1:nrow(dens_pred), function(i) {
