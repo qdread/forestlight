@@ -1,6 +1,7 @@
 # Production versus light: Fit all functional groups.
 # Do with CMDstan 
 
+# Edited 24 Apr 2018: Extract the "corrected" slope in log space also.
 
 # Data dumps --------------------------------------------------------------
 
@@ -84,20 +85,12 @@ extract_light_ci <- function(fg, year) {
   
   summ_fit <- summary(fit)
   
-  get_pars <- c('G','b1','k','max_slope')
+  get_pars <- c('G','b1','k','max_slope', 'x_max', 'y_max', 'log_slope')
   
   param_cis <- cbind(data.frame(fg = fg, year = year), summ_fit[[1]][get_pars, ])
   
   param_cis <- cbind(parameter = dimnames(param_cis)[[1]], param_cis)
   names(param_cis)[7:11] <- c('q025', 'q25', 'q50', 'q75', 'q975')
-  
-  
-  # pars <- mutate(pars, max_slope = k * G * (1/3))
-  # par_quant <- map(pars, ~ quantile(., probs = qprob)) %>%
-  #   do.call(rbind, .) %>%
-  #   as.data.frame %>%
-  #   setNames(nm = qname)
-  # par_quant <- data.frame(fg = fg, year = year, parameter = get_pars, par_quant[get_pars,])
   
   pred <- do.call(rbind, pmap(pars, fn_logistic3, x = light_pred))
   pred_quant <- pred %>%
