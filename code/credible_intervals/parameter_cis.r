@@ -51,3 +51,21 @@ ggplot(param_ci %>% filter(year == 1995, dens_model == 'weibull', prod_model == 
   theme_classic() +
   theme(strip.background = element_blank(), panel.border = element_rect(color = 'black', fill = 'transparent')) +
   ggtitle('Weibull density, power law times exponential production', '1995')
+
+
+# Get rid of duplicates ---------------------------------------------------
+
+# Added 20 Apr: get rid of duplicated parameter cis to make a good table
+
+cis <- read.csv('C:/Users/Q/google_drive/ForestLight/data/summarytables_12apr2018/paramci_by_fg.csv', stringsAsFactors = FALSE)
+
+library(dplyr)
+cis <- cis[,1:15] %>%
+  filter((dens_model == 'pareto' & prod_model == 'powerlaw') | (dens_model == 'weibull' & prod_model == 'powerlawexp')) %>%
+  mutate(model = if_else(dens_model == 'pareto' & parameter %in% 'alpha', 'density: Pareto',
+                         if_else(dens_model == 'pareto' & parameter %in% c('beta0','beta1'), 'production: Power Law',
+                                 if_else(parameter %in% c('m', 'n'), 'density: Weibull', 'production: Power Law x Exponential')))) %>%
+  select(-dens_model, -prod_model) %>%
+  select(year, model, parameter, fg, everything())
+         
+write.csv(cis, 'C:/Users/Q/google_drive/ForestLight/data/summarytables_12apr2018/paramci_noduplicates.csv', row.names = FALSE)         
