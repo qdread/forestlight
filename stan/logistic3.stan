@@ -35,7 +35,14 @@ model {
 
 generated quantities {
 	real<lower=0> max_slope;
-	max_slope = k * G / 3;
+	real x_max;
+	real y_max;
+	real log_slope;
+	
+	max_slope = (4/9) * k * G;
+	x_max = (-1 / k) * log(1/(3*b1));
+	y_max = G * (1 - b1 * exp(-k * x_max))^3;
+	log_slope = max_slope * x_max / y_max;
 	
 	// Uncomment the lines below if you want to output the log-likelihood.
 	// vector[N] log_lik;
