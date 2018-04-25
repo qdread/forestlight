@@ -54,11 +54,12 @@ fg_colors <- c(fg1 = 'red', fg2 = 'blue', fg3 = 'green', fg4 = 'purple', fg5 = '
 
 # Remove all tree and unclassified groups
 
-ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'max_slope', !fg %in% c('alltree','unclassified')),
+ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
        aes(x = fg, y = q50, ymin = q025, ymax = q975)) +
+  geom_hline(yintercept = 1, linetype = 'dotted', color = 'dodgerblue', size = 1) + 
   geom_errorbar(width = 0.1) + geom_point() +
-  labs(y = 'maximal slope') +
   scale_x_discrete(name = 'functional group', labels = fg_display) +
+  scale_y_continuous(name = 'maximal slope', breaks = seq(0, 1.25, 0.25), labels = seq(0, 1.25, 0.25)) +
   panel_border(colour = 'black')
 
 # 2. Plot with different panels for each functional group, and raw data
