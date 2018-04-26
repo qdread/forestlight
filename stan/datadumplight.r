@@ -85,8 +85,9 @@ extract_light_ci <- function(fg, year) {
   
   summ_fit <- summary(fit)
   
-  get_pars <- c('G','b1','k','max_slope', 'x_max', 'y_max', 'log_slope')
-  
+  #get_pars <- c('G','b1','k','max_slope', 'x_max', 'y_max', 'log_slope')
+  get_pars <- c('G','b1','k','log_slope')
+
   param_cis <- cbind(data.frame(fg = fg, year = year), summ_fit[[1]][get_pars, ])
   
   param_cis <- cbind(parameter = dimnames(param_cis)[[1]], param_cis)

@@ -34,15 +34,27 @@ model {
 }
 
 generated quantities {
-	real<lower=0> max_slope;
-	real x_max;
-	real y_max;
+	//real<lower=0> max_slope;
+	//real x_max;
+	//real y_max;
 	real log_slope;
 	
-	max_slope = (4.0/9.0) * k * G;
+	/* max_slope = (4.0/9.0) * k * G;
 	x_max = (-1 / k) * log(1/(3*b1));
 	y_max = G * (1 - b1 * exp(-k * x_max))^3;
-	log_slope = max_slope * x_max / y_max;
+	log_slope = max_slope * x_max / y_max; */
+	
+	// edit April 26: redo log slope
+	{
+		vector[N] all_slopes;
+		vector[N] y_fit;
+		for (i in 1:N) {
+			y_fit[i] = G * (1 - b1 * exp(-k * x[i])) ^ 3;
+			all_slopes[i] = 3*b1*k*G*((1-b1*exp(-k*x[i]))^2)*exp(-k*x[i])*(x[i]/y_fit[i]);
+		}
+		log_slope = max(all_slopes);
+	}
+	
 	
 	// Uncomment the lines below if you want to output the log-likelihood.
 	// vector[N] log_lik;
