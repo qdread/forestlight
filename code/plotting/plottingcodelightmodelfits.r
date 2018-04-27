@@ -62,6 +62,15 @@ ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'log_slope', !fg
   scale_y_continuous(name = 'maximal slope', breaks = seq(0, 1.25, 0.25), labels = seq(0, 1.25, 0.25)) +
   panel_border(colour = 'black')
 
+# Plot of intercept by FG
+
+ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'G', !fg %in% c('alltree','unclassified')),
+       aes(x = fg, y = q50, ymin = q025, ymax = q975)) +
+  geom_errorbar(width = 0.1) + geom_point() +
+  scale_x_discrete(name = 'functional group', labels = fg_display) +
+  scale_y_continuous(name = 'growth vs light intercept', breaks = seq(0, 1.25, 0.25), labels = seq(0, 1.25, 0.25)) +
+  panel_border(colour = 'black')
+
 # 2. Plot with different panels for each functional group, and raw data
 
 # I attempted to set an alpha scale so that the amount of transparency is roughly the same but the numbers may need to be tweaked
