@@ -1,4 +1,8 @@
 
+# Change density model to 'pareto' and/or production model to 'powerlaw'
+density_model <- 'weibull'
+production_model <- 'powerlawexp'
+
 fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_12apr2018' ## CHANGE PATH AS NEEDED
 
 # Read all the csvs in directory.
@@ -14,12 +18,25 @@ library(cowplot)
 
 # Use formula d log y / d log x = x/y dy/dx to get slope of total production.
 slope_totalprod <- pred_totalprod %>%
-  filter(year == 1995, !fg %in% 'unclassified', dens_model == 'weibull', prod_model == 'powerlawexp') %>%
+  filter(year == 1995, !fg %in% 'unclassified', dens_model == density_model, prod_model == production_model) %>%
+  group_by(fg) %>%
+  mutate_at(vars(starts_with('q')), funs(c(NA, (dbh[-1]/.[-1]) * diff(.)/diff(dbh))))
+
+# Calculate slope of density  
+slope_density <- pred_dens %>%
+  filter(year == 1995, !fg %in% 'unclassified', dens_model == density_model, prod_model == production_model) %>%
+  group_by(fg) %>%
+  mutate_at(vars(starts_with('q')), funs(c(NA, (dbh[-1]/.[-1]) * diff(.)/diff(dbh))))
+
+# Calculate slope of individual production
+slope_indivprod <- pred_indivprod %>%
+  filter(year == 1995, !fg %in% 'unclassified', dens_model == density_model, prod_model == production_model) %>%
   group_by(fg) %>%
   mutate_at(vars(starts_with('q')), funs(c(NA, (dbh[-1]/.[-1]) * diff(.)/diff(dbh))))
 
 colors <- c('black', RColorBrewer::brewer.pal(5, 'Set1'))
 
+# Just show total production slopes for all sizes
 ggplot(slope_totalprod, aes(x=dbh, y=q50, ymin=q025, ymax=q975, group=fg, color=fg, fill=fg)) +
   geom_ribbon(alpha = 0.5) +
   geom_line() +
@@ -28,7 +45,7 @@ ggplot(slope_totalprod, aes(x=dbh, y=q50, ymin=q025, ymax=q975, group=fg, color=
   scale_color_manual(values=colors) + scale_fill_manual(values=colors)
   
 
-# Show intermediate only
+# Just total production slopes, Show intermediate sizes only
 ggplot(slope_totalprod, aes(x=dbh, y=q50, ymin=q025, ymax=q975, group=fg, color=fg, fill=fg)) +
   geom_ribbon(alpha = 0.5) +
   geom_line() +
@@ -38,16 +55,6 @@ ggplot(slope_totalprod, aes(x=dbh, y=q50, ymin=q025, ymax=q975, group=fg, color=
   scale_color_manual(values=colors) + scale_fill_manual(values=colors)
 
 # Slopes of density and growth too ----------------------------------------
-
-slope_density <- pred_dens %>%
-  filter(year == 1995, !fg %in% 'unclassified', dens_model == 'weibull', prod_model == 'powerlawexp') %>%
-  group_by(fg) %>%
-  mutate_at(vars(starts_with('q')), funs(c(NA, (dbh[-1]/.[-1]) * diff(.)/diff(dbh))))
-
-slope_indivprod <- pred_indivprod %>%
-  filter(year == 1995, !fg %in% 'unclassified', dens_model == 'weibull', prod_model == 'powerlawexp') %>%
-  group_by(fg) %>%
-  mutate_at(vars(starts_with('q')), funs(c(NA, (dbh[-1]/.[-1]) * diff(.)/diff(dbh))))
 
 ggplot(slope_totalprod, aes(x=dbh, y=q50, ymin=q025, ymax=q975, group=fg, color=fg, fill=fg)) +
   geom_line(size = 1.5) +
