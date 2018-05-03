@@ -65,3 +65,12 @@ ggplot(slope_totalprod, aes(x=dbh, y=q50, ymin=q025, ymax=q975, group=fg, color=
   geom_hline(yintercept = c(-2, 0, 2), linetype = 'dashed') +
   scale_color_manual(values=colors) + scale_fill_manual(values=colors)
 
+# Just density slope
+ggplot(slope_density, aes(x=dbh, y=q50, ymin=q025, ymax=q975, group=fg, color=fg, fill=fg)) +
+  geom_ribbon(alpha = 0.5) +
+  geom_line(size = 1) +
+  scale_x_log10(expand=c(0,0), breaks = c(5,10,20,50), name = 'Diameter (cm)') + 
+  scale_y_continuous(name = 'Slope', expand = c(0,0)) +
+  coord_cartesian(xlim = c(5,50), ylim=c(-3.3,-0.5)) +
+  geom_hline(yintercept = c(-2), linetype = 'dashed') +
+  scale_color_manual(values=colors) + scale_fill_manual(values=colors)
