@@ -78,6 +78,15 @@ pred_dens <- ci_df %>%
   select(-variable) %>%
   mutate_at(vars(starts_with('q')), funs(./area_core)) 
 
+fitted_indivprod <- ci_df %>%
+  filter(variable == 'production_fitted') %>%
+  select(-variable)
+
+fitted_totalprod <- ci_df %>%
+  filter(variable == 'total_production_fitted') %>%
+  select(-variable) %>%
+  mutate_at(vars(starts_with('q')), funs(./area_core)) 
+
 pred_indivprod <- ci_df %>%
   filter(variable == 'production') %>%
   select(-variable)
@@ -92,6 +101,8 @@ fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_12apr2018'
 write.csv(pred_dens, file.path(fp, 'pred_dens.csv'), row.names = FALSE)
 write.csv(pred_indivprod, file.path(fp, 'pred_indivprod.csv'), row.names = FALSE)
 write.csv(pred_totalprod, file.path(fp, 'pred_totalprod.csv'), row.names = FALSE)
+write.csv(fitted_indivprod, file.path(fp, 'fitted_indivprod.csv'), row.names = FALSE)
+write.csv(fitted_totalprod, file.path(fp, 'fitted_totalprod.csv'), row.names = FALSE)
 
 # Observed data midsize ---------------------------------------------------
 
