@@ -9,3 +9,4 @@ gapdata6.txt
 *.rds
 *.rda
 testmullerweibull.r
+*.pdf
