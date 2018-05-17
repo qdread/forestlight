@@ -18,7 +18,7 @@ library(dplyr)
 library(cowplot)
 
 # Use formula d log y / d log x = x/y dy/dx to get slope of total production.
-slope_totalprod <- pred_totalprod %>%
+slope_totalprod <- fitted_totalprod %>%
   filter(year == year_to_plot, !fg %in% 'unclassified', dens_model == density_model, prod_model == production_model) %>%
   group_by(fg) %>%
   mutate_at(vars(starts_with('q')), funs(c(NA, (dbh[-1]/.[-1]) * diff(.)/diff(dbh))))
@@ -30,7 +30,7 @@ slope_density <- pred_dens %>%
   mutate_at(vars(starts_with('q')), funs(c(NA, (dbh[-1]/.[-1]) * diff(.)/diff(dbh))))
 
 # Calculate slope of individual production
-slope_indivprod <- pred_indivprod %>%
+slope_indivprod <- fitted_indivprod %>%
   filter(year == year_to_plot, !fg %in% 'unclassified', dens_model == density_model, prod_model == production_model) %>%
   group_by(fg) %>%
   mutate_at(vars(starts_with('q')), funs(c(NA, (dbh[-1]/.[-1]) * diff(.)/diff(dbh))))
