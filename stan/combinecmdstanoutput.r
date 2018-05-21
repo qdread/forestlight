@@ -100,3 +100,17 @@ fit_ics <- map(fit_info_list, get_ics)
 
 fit_ics <- cbind(mod_df[rep(1:nrow(mod_df), each=4),], do.call(rbind, fit_ics))
 write.csv(fit_ics, file = '~/forestlight/ics_by_fg_midsizetrees.csv', row.names = FALSE)
+
+######################################################################################
+
+# Fitted slopes
+fp <- '~/forestlight/stanoutput/fitinfo'
+library(purrr)
+
+fitted_slope_list <- map(1:140, function(i) {
+  load(file.path(fp, paste0('logslope_', i, '.r')))
+  fit_info
+})
+
+fitted_slope_df <- do.call(rbind, fitted_slope_list)
+write.csv(fitted_slope_df, file = '~/forestlight/fitted_slopes_by_fg.csv', row.names = FALSE)					  
