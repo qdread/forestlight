@@ -78,3 +78,6 @@ r2list <- lapply(1:nrow(mod_df), function(i) {
 })
 
 r2df <- cbind(mod_df, do.call(rbind, r2list))
+r2df <- subset(r2df, dens_model == 'weibull', select = c(prod_model, fg, year, q025, q50, q975))
+
+write.csv(r2df, '~/forestlight/r2_by_fg.csv', row.names = FALSE)
