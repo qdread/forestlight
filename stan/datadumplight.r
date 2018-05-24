@@ -113,3 +113,52 @@ all_preds <- do.call(rbind, map(all_output, 'preds'))
 
 write.csv(all_pars, file = '~/forestlight/lightbyarea_paramci_by_fg.csv', row.names = FALSE)
 write.csv(all_preds, file = '~/forestlight/lightbyarea_predci_by_fg.csv', row.names = FALSE)
+
+# Bayesian R2 for each fit ---------------------------------------------------
+
+bayesian_rsquared_light <- function(fg, year) {
+  require(rstan)
+  require(purrr)
+
+  # 1. Load CSVs with model fit as stanfit object
+  fp <- '~/forestlight/stanoutput'
+  files <- paste0('fit_light_', fg, '_', year, '_', 1:3, '.csv')
+  fit <- read_stan_csv(file.path(fp, files))
+  
+  # 2. Load data
+  fpdump <- '~/forestlight/stanrdump'
+  dumpfile <- paste0('dump_light_', fg, '_', year, '.r')
+  source(file.path(fpdump, dumpfile)) # Creates variables x and y.
+  
+  # 3. Extract parameter estimates.
+  pars_to_get <- c('G', 'b1', 'k') 
+  pars <- extract(fit, pars_to_get)
+  pars <- as.data.frame(do.call(cbind, pars))
+  
+  # 4. Plug in light (x) to get posterior estimates of linear predictor of production
+  fn_logistic3 <- function(x, G, b1, k, ...) G * (1 - b1 * exp(-k * x)) ^ 3
+  
+  # Take the log of the fitted values
+  prod_fitted <- log(do.call(rbind, pmap(pars, fn_logistic3, x = x)))
+
+  # 5. Get residuals by subtracting log y from linear predictor
+  resids <- -1 * sweep(prod_fitted, 2, log(y))
+  
+  # 6. Calculate variances and ratio
+  pred_var <- apply(prod_fitted, 1, var)
+  resid_var <- apply(resids, 1, var)
+  r2s <- pred_var / (pred_var + resid_var)
+  
+  # Quantiles of rsq
+  r2_quant <- quantile(r2s, probs = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
+  setNames(r2_quant, c('q025', 'q05', 'q25', 'q50', 'q75', 'q95', 'q975'))
+}
+
+fgnames <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'alltree')
+
+z <- expand.grid(fg=fgnames, year = c(1990, 1995), stringsAsFactors = FALSE)
+
+library(purrr)
+r2s <- pmap(z, bayesian_rsquared_light)
+r2s <- cbind(z, do.call(rbind, r2s))
+write.csv(r2s, file = '~/forestlight/r2_light_by_fg.csv', row.names = FALSE)

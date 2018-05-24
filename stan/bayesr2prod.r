@@ -36,8 +36,6 @@ bayesian_rsquared_production <- function(dens_model, prod_model, fg, year) {
   powerlaw_exp_log <- function(x, a, b, c, beta0, beta1) exp(-beta0) * x^beta1 * (-a * x ^ -b + c)
   powerlaw_log <- function(x, beta0, beta1) exp(-beta0) * x^beta1
   
-  pmap(pars[,c('beta0','beta1')], powerlaw_log, x = x)
-  
   # Take the log of the fitted values
   if (prod_model == 'power') {
     prod_fitted <- log(do.call(rbind, pmap(pars, powerlaw_log, x = x)))
