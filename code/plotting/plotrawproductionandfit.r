@@ -37,12 +37,15 @@ plot_prod <- function(year_to_plot = 1990,
                       x_name = 'Diameter (cm)',
                       y_name = 'Production (kg/y)',
                       color_names = c('green', 'blue'),
+                      aspect_ratio = 1,
+                      hex_scale = scale_fill_gradient(low = 'gray90', high = 'gray10', guide = FALSE),
                       obsdat = raw_prod,
                       preddat = fitted_indivprod
 ) {
   
   require(dplyr)
   require(cowplot)
+  require(pracma)
   
   obsdat <- obsdat %>%
     filter(fg %in% fg_names, year == year_to_plot)
@@ -50,6 +53,11 @@ plot_prod <- function(year_to_plot = 1990,
   obs_limits <- obsdat %>%
     group_by(fg) %>%
     summarize(min_obs = min(production), max_obs = max(production))
+  
+  # Add more identical rows of the f. groups with less data so that the fill scales appear the same on all plots.
+  multiples <- Reduce(Lcm, table(obsdat$fg)) / table(obsdat$fg)
+  obsdat <- obsdat[rep(1:nrow(obsdat), ceiling(multiples/(min(multiples)/3))[obsdat$fg]), ]
+  
   
   preddat <- preddat %>%
     left_join(obs_limits) %>%
@@ -69,8 +77,9 @@ plot_prod <- function(year_to_plot = 1990,
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) +
     scale_color_manual(values = color_names, name = 'Functional form') +
-    scale_fill_gradient(low = 'gray90', high = 'gray10', guide = FALSE) +
+    hex_scale +
     panel_border(colour = 'black') +
+    coord_fixed(ratio = aspect_ratio) +
     theme(legend.position = c(0.8, 0.2), strip.background = element_blank())
   
   
@@ -79,6 +88,21 @@ plot_prod <- function(year_to_plot = 1990,
 
 # Call function to draw plot ----------------------------------------------
 
+# Original grayscale
+hex_scale_1 <- scale_fill_gradient(low = 'gray90', high = 'gray10', guide = FALSE)
+
+# Biased grayscale to emphasize the variation in the hexagons with less data.
+# Bias >1 does this.
+hex_scale_2 <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=4)(50), guide = FALSE)
+
+# Biased color scale of red yellow and blue to do the same, using a brewer palette
+# the bias is <1 this time because I had to reverse the scale.
+hex_scale_3 <- scale_fill_gradientn(colours = rev(colorRampPalette(RColorBrewer::brewer.pal(9,'RdYlBu'), bias=0.3)(50)), guide = FALSE)
+
+# Biased and customized color scale
+hex_scale_4 <- scale_fill_gradientn(colours = colorRampPalette(c('skyblue', 'goldenrod', 'indianred'), bias = 3)(50), guide = FALSE)
+
+# Edit the hex scale argument to draw this with other color scales.
 plot_prod(year_to_plot = 1990,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           full_names = c('fast', 'slow', 'pioneer', 'breeder', 'middle', 'unclassified'),
@@ -86,6 +110,8 @@ plot_prod(year_to_plot = 1990,
           x_breaks = c(1, 3, 10, 30, 100),
           y_limits = c(5e-03, 1e04),
           y_breaks = c(.001, .1, 10, 1000),
-          color_names = c('red', 'purple'))
+          color_names = c('red', 'purple'),
+          hex_scale = hex_scale_4,
+          aspect_ratio = 0.4)
           
           
