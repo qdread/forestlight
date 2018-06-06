@@ -184,3 +184,23 @@ p_mean_segments <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
   theme_classic() +
   theme(panel.border = element_rect(fill=NA),
         strip.background = element_rect(fill=NA))
+
+
+# 8. Raw data plot converted to hexbin instead of plain scatter
+
+hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=3)(50), trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+
+p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% 'unclassified')) +
+  facet_wrap(~ fg, labeller = labeller(fg = fg_display)) +
+  geom_hex(aes(x = light_area, y = production_area)) +
+  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50, color = fg)) +
+  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q025, color = fg),  linetype = 'dotted') +
+  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q975, color = fg),  linetype = 'dotted') +
+  scale_x_log10(name = title_x) + 
+  scale_y_log10(name = title_y) +
+  hex_scale_log + 
+  theme_classic() +
+  guides(color = FALSE) +
+  theme(panel.border = element_rect(fill=NA),
+        strip.background = element_rect(fill=NA),
+        legend.position = c(0.8, 0.2))
