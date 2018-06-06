@@ -166,8 +166,8 @@ cast_pars <- dcast(melt_pars, fg+year~parameter+variable)
 
 segment_location <- pred_light_5groups %>%
   group_by(fg, year) %>%
-  summarize(xmax = sum(light_area[which.max(diff(q50)):(1+which.max(diff(q50)))])/2,
-            ymax = sum(q50[which.max(diff(q50)):(1+which.max(diff(q50)))])/2)
+  summarize(xmax = sum(light_area[which.max(diff(log(q50))):(1+which.max(diff(log(q50))))])/2,
+            ymax = sum(q50[which.max(diff(log(q50))):(1+which.max(diff(log(q50))))])/2)
 
 cast_pars <- left_join(cast_pars, segment_location)
 
