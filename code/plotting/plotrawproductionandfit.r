@@ -80,7 +80,7 @@ plot_prod <- function(year_to_plot = 1990,
     hex_scale +
     panel_border(colour = 'black') +
     coord_fixed(ratio = aspect_ratio) +
-    theme(legend.position = c(0.8, 0.2), strip.background = element_blank())
+    theme(legend.position = c(0.75, 0.2), strip.background = element_blank())
   
   
 }
@@ -103,7 +103,9 @@ hex_scale_3 <- scale_fill_gradientn(colours = rev(colorRampPalette(RColorBrewer:
 hex_scale_4 <- scale_fill_gradientn(colours = colorRampPalette(c('skyblue', 'goldenrod', 'indianred'), bias = 3)(50), guide = FALSE)
 
 # Edit the hex scale argument to draw this with other color scales.
-hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=1)(50), trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=1)(50), trans = 'log', name = 'Number of\nindividuals per bin', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(c('blue','yellow','red'), bias=1)(50), trans = 'log', name = 'Number of\nindividuals per bin', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+
 
 plot_prod(year_to_plot = 1990,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
@@ -113,7 +115,7 @@ plot_prod(year_to_plot = 1990,
           y_limits = c(5e-03, 1e04),
           y_breaks = c(.001, .1, 10, 1000),
           color_names = c('red', 'purple'),
-          hex_scale = hex_scale_log,
+          hex_scale = hex_scale_log_colors,
           aspect_ratio = 0.4) 
           
           
