@@ -36,7 +36,7 @@ plot_prod <- function(year_to_plot = 1990,
                       y_breaks,
                       x_name = 'Diameter (cm)',
                       y_name = 'Production (kg/y)',
-                      color_names = c('green', 'blue'),
+                      line_types = c('dashed', 'solid'),
                       aspect_ratio = 1,
                       hex_scale = scale_fill_gradient(low = 'gray90', high = 'gray10', guide = FALSE),
                       obsdat = raw_prod,
@@ -70,13 +70,11 @@ plot_prod <- function(year_to_plot = 1990,
   
   ggplot() +
     geom_hex(data = obsdat, aes(x = dbh_corr, y = production)) +
-    geom_line(data = preddat, aes(x = dbh, y = q50, group = prod_model, color = prod_model)) +
-    geom_line(data = preddat, aes(x = dbh, y = q025, group = prod_model, color = prod_model), size = 0.2, linetype = 'dotted') +
-    geom_line(data = preddat, aes(x = dbh, y = q975, group = prod_model, color = prod_model), size = 0.2, linetype = 'dotted') +
+    geom_line(data = preddat, aes(x = dbh, y = q50, group = prod_model, linetype = prod_model)) +
     facet_wrap(~ fg, labeller = labeller(fg = labels)) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) +
-    scale_color_manual(values = color_names, name = 'Functional form') +
+    scale_linetype_manual(values = line_types, name = 'Functional form') +
     hex_scale +
     panel_border(colour = 'black') +
     coord_fixed(ratio = aspect_ratio) +
@@ -103,8 +101,8 @@ hex_scale_3 <- scale_fill_gradientn(colours = rev(colorRampPalette(RColorBrewer:
 hex_scale_4 <- scale_fill_gradientn(colours = colorRampPalette(c('skyblue', 'goldenrod', 'indianred'), bias = 3)(50), guide = FALSE)
 
 # Edit the hex scale argument to draw this with other color scales.
-hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=1)(50), trans = 'log', name = 'Number of\nindividuals per bin', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
-hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(c('blue','yellow','red'), bias=1)(50), trans = 'log', name = 'Number of\nindividuals per bin', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=1)(50), trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50), trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
 
 
 plot_prod(year_to_plot = 1990,
@@ -114,7 +112,7 @@ plot_prod(year_to_plot = 1990,
           x_breaks = c(1, 3, 10, 30, 100),
           y_limits = c(5e-03, 1e04),
           y_breaks = c(.001, .1, 10, 1000),
-          color_names = c('red', 'purple'),
+          line_types = c('dashed', 'solid'),
           hex_scale = hex_scale_log_colors,
           aspect_ratio = 0.4) 
           
