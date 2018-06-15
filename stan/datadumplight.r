@@ -1,6 +1,7 @@
 # Production versus light: Fit all functional groups.
 # Do with CMDstan 
 
+# Edited 15 Jun 2018: Change parameter names and get the analytically solved log slopes out
 # Edited 24 Apr 2018: Extract the "corrected" slope in log space also.
 
 # Data dumps --------------------------------------------------------------
@@ -73,7 +74,7 @@ z <- expand.grid(fg=fgnames, year = c(1990, 1995), stringsAsFactors = FALSE)
 
 extract_light_ci <- function(fg, year) {
   getpar <- function(fit) as.data.frame(do.call(cbind, extract(fit)))
-  fn_logistic3 <- function(x, G, b1, k, ...) G * (1 - b1 * exp(-k * x)) ^ 3
+  fn_vonbert <- function(x, A, b, k, ...) A * (1 - b * exp(-k * x)) ^ 3
   light_pred <- exp(seq(log(1.1), log(412), length.out = 101))
   
   qprob <- c(0.025, 0.25, 0.5, 0.75, 0.975)
@@ -85,15 +86,14 @@ extract_light_ci <- function(fg, year) {
   
   summ_fit <- summary(fit)
   
-  #get_pars <- c('G','b1','k','max_slope', 'x_max', 'y_max', 'log_slope')
-  get_pars <- c('G','b1','k','log_slope')
+  get_pars <- c('A','b','k', 'x_max', 'y_max', 'log_slope')
 
   param_cis <- cbind(data.frame(fg = fg, year = year), summ_fit[[1]][get_pars, ])
   
   param_cis <- cbind(parameter = dimnames(param_cis)[[1]], param_cis)
   names(param_cis)[7:11] <- c('q025', 'q25', 'q50', 'q75', 'q975')
   
-  pred <- do.call(rbind, pmap(pars, fn_logistic3, x = light_pred))
+  pred <- do.call(rbind, pmap(pars, fn_vonbert, x = light_pred))
   pred_quant <- pred %>%
     as.data.frame %>%
     map(~ quantile(., probs = qprob)) %>%
@@ -131,15 +131,15 @@ bayesian_rsquared_light <- function(fg, year) {
   source(file.path(fpdump, dumpfile)) # Creates variables x and y.
   
   # 3. Extract parameter estimates.
-  pars_to_get <- c('G', 'b1', 'k') 
+  pars_to_get <- c('A', 'b', 'k') 
   pars <- extract(fit, pars_to_get)
   pars <- as.data.frame(do.call(cbind, pars))
   
   # 4. Plug in light (x) to get posterior estimates of linear predictor of production
-  fn_logistic3 <- function(x, G, b1, k, ...) G * (1 - b1 * exp(-k * x)) ^ 3
+  fn_vonbert <- function(x, A, b, k, ...) A * (1 - b * exp(-k * x)) ^ 3
   
   # Take the log of the fitted values
-  prod_fitted <- log(do.call(rbind, pmap(pars, fn_logistic3, x = x)))
+  prod_fitted <- log(do.call(rbind, pmap(pars, fn_vonbert, x = x)))
 
   # 5. Get residuals by subtracting log y from linear predictor
   resids <- -1 * sweep(prod_fitted, 2, log(y))
