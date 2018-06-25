@@ -1,5 +1,7 @@
 # Full data processing pipeline
-# June 2018 version: Use the fg08 classification.
+# June 2018 version: Use the fg5 classification.
+
+# Last modified 25 June 2018 to use Nadja's newest FG classification
 
 # Each bin dataframe should include the following
 # 1 all individuals
@@ -7,11 +9,9 @@
 # 3-7 FGs 1 through 5
 # 8 individuals not classified in a FG
 
-# Modifications 02 Feb:
-
 group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
 
-load('C:/Users/Q/Dropbox/projects/forestlight/bcidata/bciqcrun.R')
+load('C:/Users/Q/google_drive/ForestLight/data/BCI_raw/bcidata/bciqcrun.R')
 
 # Modification 25 August: get rid of young and edge trees for all datasets. This will reduce the number of hectares but will be most correct.
 
@@ -25,20 +25,40 @@ growth9095 <- subset(growth9095, !young & !edge)
 
 library(dplyr)
 
-# Load Nadja's data
-fgbci <- read.table('C:/Users/Q/google_drive/ForestLight/data/Ruger/functional_groups_BCI.txt', stringsAsFactors = FALSE)
+# Load Nadja's data (new functional groups 25 June)
+# fg5 is the new column (we originally used fg from the older df)
+fgbci <- read.table('C:/Users/Q/google_drive/ForestLight/data/Ruger/fgroups_dynamics_new.txt', stringsAsFactors = FALSE)
+
+# Correct functional groups so that: 1 fast, 2 pioneer, 3 slow, 4 breeder, 5 intermediate
+# Old 1,2,3,4,5 --> New 2,3,1,4,5
+fgbci$fg5 <- match(fgbci$fg5, c(2,3,1,4,5))
+
+# Currently X1new is high for slow species and low for fast species
+# Currently X2new is high for pioneer species and low for breeder species
+# Correct these
+fgbci$PC_slow_to_fast <- -fgbci$X1new
+fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 
 # 2. Convert all census data frames to the correct units (dbh in cm, not mm; agb in kg, not Mg)
 # Simultaneously, calculate biomass increments for each stem from the previous census to the current one. Combine everything into a single data frame if possible.
+# Use harmonic mean to annualize the 5-year biomass increment into a 1-year biomass increment using the small end of the interval
 # Also get rid of the young (secondary) forest patches.
+
+### Function for annualizing biomass increment
+# census interval should be 5 years and desired new interval should be 1 year
+annual_increment <- function(agb_old, agb_new, census_interval = 5, new_interval = 1){
+  rate <-  (agb_new / agb_old)^(1/census_interval) - 1
+  agb_oldplus1year <- agb_old * (1 + rate)^new_interval
+  return(agb_oldplus1year - agb_old)
+}
 
 bci_production <- list()
 
 for (i in 2:7) {
   dat_i <- get(paste0('bci.full',i))
   dat_iminus1 <- get(paste0('bci.full',i-1))
-  bci_production[[i-1]] <- dat_i$agb_corr - dat_iminus1$agb_corr
-  dat_i$production <- dat_i$agb_corr - dat_iminus1$agb_corr
+  bci_production[[i-1]] <- annual_increment(agb_old = dat_iminus1$agb_corr, agb_new = dat_i$agb_corr)
+  dat_i$production <- bci_production[[i-1]]
   assign(paste0('bci.full', i), dat_i)
 }
 
@@ -88,11 +108,11 @@ bcicensusdat <- lapply(bcicensusdat, function(x) {
 
 
 # 3. Join with shade tolerance (Rüger) groups.
-# Here is where the fg is changed.
+# Here is where the fg5 is assigned as the fg classification we are using.
 
 fgbci_less <- fgbci %>%
-  select(sp, grform, fg08, X1, X2, X3) %>%
-  rename(fg = fg08) %>%
+  select(sp, grform, fg5, PC_slow_to_fast, PC_breeder_to_pioneer) %>%
+  rename(fg = fg5, X1 = PC_slow_to_fast, X2 = PC_breeder_to_pioneer) %>%
   mutate(sp = tolower(sp))
 
 for (i in 1:6) {
@@ -200,7 +220,7 @@ save(alltreedat, fgdat, alltree_light_90, alltree_light_95, light_fg_90, light_f
 
 library(dplyr)
 
-load('C:/Users/Q/google_drive/ForestLight/data/data_22jan2018/rawdataobj_alternativecluster.r')
+load('C:/Users/Q/google_drive/ForestLight/data/data/rawdataobj_alternativecluster.r')
 group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
 source('code/allfunctions27july.r')
 
@@ -557,8 +577,6 @@ for (i in file_names) {
   assign(i, read.csv(file.path(fpdata, paste0(i,'.csv')), stringsAsFactors = FALSE))
 }
 
-fgbci <- read.table('C:/Users/Q/google_drive/ForestLight/data/Ruger/functional_groups_BCI.txt', stringsAsFactors = FALSE)
-
 # Plot data ---------------------------------------------------------------
 
 library(cowplot)
@@ -649,11 +667,11 @@ pdf('C:/Users/Q/google_drive/ForestLight/figs/figures_june2018_newcluster/figs3a
 dev.off()
 
 # Plot functional groups
-ggplot(fgbci, aes(x = X1, y = X2, color = factor(fg08))) +
+ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, color = factor(fg5))) +
   geom_point() +
-  labs(x = 'X1 slow to fast', y = 'X2 pioneers to breeders') +
+  labs(x = 'X1 slow to fast', y = 'X2 breeders to pioneers') +
   scale_color_manual(values = guild_colors, labels = fg_labels, name = 'functional group')
-ggsave('C:/Users/Q/google_drive/ForestLight/figs/figures_june2018_newcluster/fg08plot.pdf')
+ggsave('C:/Users/Q/google_drive/ForestLight/figs/figures_june2018_newcluster/fg5plot (newest groups).pdf')
 ###
 # Added 23 Jan: Ratio figures (fig 5)
 # Note that the continuous figures, as they don't use groupings, use all the data.
@@ -682,7 +700,7 @@ fig_blightscore <- breederscore_bin_bylight_2census %>%
   geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
   geom_pointrange() +
   scale_x_log10(name = expression(paste('Light received per unit crown area (W m'^-2,')'))) + 
-  scale_y_continuous(name = 'Low = long-lived pioneer, high = short-lived breeder') +
+  scale_y_continuous(name = 'Low = short-lived breeder, high = long-lived pioneer') +
   panel_border(colour = 'black')
 
 # Breeder to pioneer by diameter
@@ -709,7 +727,7 @@ fig_bdiamscore <- breederscore_bin_bydiam_2census %>%
   geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
   geom_pointrange() +
   scale_x_log10(name = 'Diameter (cm)', limits = global_diam_xlimits) + 
-  scale_y_continuous(name = 'Low = long-lived pioneer, high = short-lived breeder') +
+  scale_y_continuous(name = 'Low = short-lived breeder, high = long-lived pioneer') +
   panel_border(colour = 'black')
 
 

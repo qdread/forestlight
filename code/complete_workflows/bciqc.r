@@ -4,7 +4,7 @@
 
 # Load Condit's BCI data and Nadja's light data.
 
-fp <- 'C:/Users/Q/Dropbox/projects/forestlight/'
+fp <- 'C:/Users/Q/google_drive/ForestLight/data/BCI_raw'
 
 growth8590 <- read.delim(file.path(fp, 'BCI_light/growth_final8590.txt'), stringsAsFactors = FALSE)
 growth9095 <- read.delim(file.path(fp, 'BCI_light/growth_final9095.txt'), stringsAsFactors = FALSE)
@@ -191,11 +191,6 @@ core_area <- 5e5 - edge_area # 44.16 ha
 
 # Save all the edited files
 save(list = c('growth8590','growth9095',grep('bci.', ls(), value = TRUE)), file = file.path(fp, 'bcidata/bciqcrun.R'))
-
-# Apply algorithm that tracks stems between censuses
-
-load(file.path(fp, 'bcidata/bciqcrun.R'))
-# Probably not necessary. Just use "full" dataset but be explicit about what we are doing. We can always go ahead and get rid of those later.
 
 
 
