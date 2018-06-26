@@ -1,0 +1,41 @@
+# For each CMDstan model fit, get the following
+# Credible intervals of parameters
+# Credible and prediction intervals to make graphs
+# Information criteria
+# Fitted slopes in log space
+# Bayesian R-squared
+
+# Edit 12 April: Do this in parallel because it is too slow
+task <- as.numeric(Sys.getenv('PBS_ARRAYID'))
+
+source('~/forestlight/stancode/extraction_functions_productionfits.r')
+
+library(purrr)
+library(dplyr)
+
+mod_df <- expand.grid(dens_model = c('pareto', 'weibull'),
+                      prod_model = c('power', 'exp'),
+                      fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
+                      year = seq(1990, 2010, 5), 
+                      stringsAsFactors = FALSE)
+
+min_n <- read.csv('~/forestlight/stanrdump/min_n.csv', stringsAsFactors = FALSE)
+
+total_prod <- read.csv('~/forestlight/stanrdump/production_total.csv', stringsAsFactors = FALSE)
+
+mod_df <- mod_df %>%
+  left_join(total_prod) %>%
+  rename(total_production = production) %>%
+  left_join(min_n)
+
+dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
+
+fit_info <- extract_all_fit(dens_model = mod_df$dens_model[task],
+                            prod_model = mod_df$prod_model[task],
+                            fg = mod_df$fg[task],
+                            year = mod_df$year[task],
+                            xmin = mod_df$xmin[task],
+                            n = mod_df$n[task],
+                            total_production = mod_df$total_production[task])
+
+save(fit_info, file = paste0('~/forestlight/stanoutput/fitinfo/info_',task,'.r'))

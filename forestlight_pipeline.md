@@ -17,20 +17,20 @@ The pipeline is organized by script. I tried to summarize what each script does,
 
 `GitHub/forestlight/code/complete_workflows/bciqc.r`
 
-#### Inputs required
+*Inputs required*
  
 - Condit's raw BCI data (all in `google_drive/ForestLight/data/BCI_raw/bcidata`)
 - Wood specific gravity and taper parameters for BCI trees (both in `google_drive/ForestLight/data/BCI_raw/bci_taper`), provided by KC Cushman
 - Location of quadrats that are "young" or secondary forest, provided by Nadja (`google_drive/ForestLight/data/BCI_light/habitats2.txt`)
 
-#### What the script does
+*What the script does*
 
 - Remove tree ferns and strangler figs
 - Correct dbh for tapering and buttressed species
 - Recalculate biomass allometry using corrected dbh and using the wood specific gravity values for each species
 - Assign trees to either being in the 42.84-ha study area, the "young" area, or within 20 m of the edge
  
-#### Outputs generated
+*Outputs generated*
 
 - R data object `google_drive/ForestLight/data/BCI_raw/bcidata/bciqcrun.R`
 
@@ -38,12 +38,12 @@ The pipeline is organized by script. I tried to summarize what each script does,
 
 `GitHub/forestlight/code/complete_workflows/workflow_june_newFGs.r`
 
-#### Inputs required
+*Inputs required*
 
 - R data object `bciqcrun.R` from previous step
 - Nadja's functional group classifications (`google_drive/ForestLight/data/Ruger/fgroups_dynamics_new.txt`)
 
-#### What the script does
+*What the script does*
 
 - Exclude the young-forest trees and edge trees from the dataset
 - Calculate annual biomass increment from the 5-year biomass increments
@@ -55,7 +55,7 @@ The pipeline is organized by script. I tried to summarize what each script does,
 - Save raw and binned data
 - Make some figures of the binned data for temporary visualization
 
-#### Outputs generated
+*Outputs generated*
 
 - Raw data R object
 - Binned data R object
@@ -78,16 +78,56 @@ All the shell scripts and R scripts for working with the Stan scripts are in `Gi
 
 #### Step 3a: Create data objects usable by Stan
 
-The Rdumps are done with the scripts `datadump_densprod.r` and `datadump_light.r` for the main models and the light von B models, respectively.
+The Rdumps are done with the scripts `datadump_densprod.r` and `datadump_light.r` for the main models and the light von Bertalanffy models, respectively.
+
+*Inputs required*
+
+The raw data R objects from step 2
+
+*Outputs generated*
+
+R objects called Rdumps that Stan can use to load the data
+
 
 #### Step 3b: Fit models with Stan
 
 The script `fitcmdstan.sh` calls the Stan programs to fit the density-production models, if you input which model, which guild, and which year, along with the number of sampling and warm-up iterations. A list of `qsub` calls that will run this script remotely are in the document `cmdstanqsubs.sh`. The script `fitlight.sh` does the same for the light models.
 
+*Inputs required*
+
+- Rdumps from step 3a
+- The compiled Stan models
+
+*Outputs generated*
+
+Each model generates a huge CSV with all the MCMC samples for the parameters.
+
 #### Step 3c: Extract summary information from raw Stan output
 
-*density-production models*:
+*density-production models*: The script `extraction_functions_productionfits.r` has the source code for 5 functions. The first four functions extract the following from a model fit:
 
-*light models*: The script `extract_ci_lightfits.r` gets all needed information out of the light model fits. It calculates median and quantile values for the model parameters and for fitted values for the curves, as well as for the maximum log slope. Lastly a separate part of the script manually calculates the Bayesian R-squared, using the correct method endorsed by Gelman.
+- Parameter values and credible intervals
+- Fitted values and credible intervals (and prediction intervals)
+- Fitted log slopes and credible intervals
+- Bayesian R-squared and credible intervals
+
+The final function calls all these functions as well as running LOOIC on the model fit.
+
+The functions in the above script are run on each model in parallel in the script `extract_ci_productionfits.r`. Since that script is run in parallel, you next need to combine all the output into CSV files using `combinecmdstanoutput.r`.
+
+*light models*: The script `extract_ci_lightfits.r` gets all needed information out of the light model fits. It calculates median and quantile values for the model parameters and for fitted values for the curves, as well as for the maximum log slope. Lastly a separate part of the script manually calculates the Bayesian R-squared, using the correct method endorsed by Gelman. This function isn't needed to be run in parallel because it's a lot quicker and runs in a few seconds for every model separately.
+
+*Inputs required (for both density-production models and light models)*
+
+The CSV files with the MCMC samples
+
+*Outputs generated*
+
+First, R objects for each model, then the combining script loads those R objects and writes them into CSVs with summary information from all the models
 
 ### Step 4: Plot and analyze results of function fitting
+
+- Script to create plotting data for density-production models
+- Script to create plotting data for light models
+- Script to draw density-production plots
+- Script to draw light plots
