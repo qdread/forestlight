@@ -78,8 +78,16 @@ All the shell scripts and R scripts for working with the Stan scripts are in `Gi
 
 #### Step 3a: Create data objects usable by Stan
 
+The Rdumps are done with the scripts `datadump_densprod.r` and `datadump_light.r` for the main models and the light von B models, respectively.
+
 #### Step 3b: Fit models with Stan
 
+The script `fitcmdstan.sh` calls the Stan programs to fit the density-production models, if you input which model, which guild, and which year, along with the number of sampling and warm-up iterations. A list of `qsub` calls that will run this script remotely are in the document `cmdstanqsubs.sh`. The script `fitlight.sh` does the same for the light models.
+
 #### Step 3c: Extract summary information from raw Stan output
+
+*density-production models*:
+
+*light models*: The script `extract_ci_lightfits.r` gets all needed information out of the light model fits. It calculates median and quantile values for the model parameters and for fitted values for the curves, as well as for the maximum log slope. Lastly a separate part of the script manually calculates the Bayesian R-squared, using the correct method endorsed by Gelman.
 
 ### Step 4: Plot and analyze results of function fitting
