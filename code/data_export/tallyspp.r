@@ -1,6 +1,8 @@
+# Tally species by functional group
+
 # Load data (changing file path if necessary)
-fpdata <- 'C:/Users/Q/google_drive/ForestLight/data/data_22jan2018'
-load(file.path(fpdata, 'rawdataobj_22jan.r'))
+fpdata <- 'C:/Users/Q/google_drive/ForestLight/data'
+load(file.path(fpdata, 'rawdataobj_alternativecluster.r'))
 
 # Tally the functional groups' species and individuals.
 
@@ -25,5 +27,5 @@ n_spp <- alldat %>%
   group_by(fg) %>%
   summarize(n_spp = length(unique(sp)))
 
-write.csv(tallies, 'C:/Users/Q/google_drive/ForestLight/data/summarytables_12apr2018/tally_indiv_by_fg.csv', row.names = FALSE)
-write.csv(n_spp, 'C:/Users/Q/google_drive/ForestLight/data/summarytables_12apr2018/tally_spp_by_fg.csv', row.names = FALSE)
+write.csv(tallies, 'C:/Users/Q/google_drive/ForestLight/data/summarytables_june2018/tally_indiv_by_fg.csv', row.names = FALSE)
+write.csv(n_spp, 'C:/Users/Q/google_drive/ForestLight/data/summarytables_june2018/tally_spp_by_fg.csv', row.names = FALSE)

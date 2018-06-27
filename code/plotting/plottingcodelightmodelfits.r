@@ -6,7 +6,7 @@ year_to_plot <- 1990 ### CHANGE THIS IF YOU WANT TO PLOT 1990
 
 # Load data ---------------------------------------------------------------
 
-fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_light_12apr2018'
+fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_light_june2018'
 
 obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
 obs_light_raw <- read.csv(file.path(fp, 'obs_light_raw.csv'), stringsAsFactors = FALSE)

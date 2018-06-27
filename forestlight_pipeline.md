@@ -127,7 +127,40 @@ First, R objects for each model, then the combining script loads those R objects
 
 ### Step 4: Plot and analyze results of function fitting
 
-- Script to create plotting data for density-production models
-- Script to create plotting data for light models
-- Script to draw density-production plots
-- Script to draw light plots
+#### Create plotting data for density-production models
+
+`GitHub/forestlight/code/data_export/createplotdata_final.r`
+
+*Inputs required*
+
+- The raw data R object created in step 2 
+- The fitted model values created in step 3c (for density-production models)
+
+*Outputs generated*
+
+- Several CSVs with observed and predicted values in separate files
+
+#### Create plotting data for light models
+
+`GitHub/forestlight/code/data_export/createlightplotdata_final.r`
+
+*Inputs required*
+
+- The raw data R object created in step 2 (for light & growth per unit area)
+- The fitted model values created in step 3c (for light models)
+
+*Outputs generated*
+
+- Several CSVs with observed and predicted values in separate files
+
+#### Draw density-production plots
+
+`GitHub/forestlight/code/plotting/plottingcodemodelfits.r`
+
+Uses the observed and predicted CSVs to draw many different plots based on the density and production models.
+
+#### Draw light plots
+
+`GitHub/forestlight/code/plotting/plottingcodelightmodelfits.r`
+
+Uses the observed and predicted CSVs to draw many different plots based on the light models.
