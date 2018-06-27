@@ -91,7 +91,7 @@ R objects called Rdumps that Stan can use to load the data
 
 #### Step 3b: Fit models with Stan
 
-The script `fitcmdstan.sh` calls the Stan programs to fit the density-production models, if you input which model, which guild, and which year, along with the number of sampling and warm-up iterations. A list of `qsub` calls that will run this script remotely are in the document `cmdstanqsubs.sh`. The script `fitlight.sh` does the same for the light models.
+The script `fitproduction.sh` calls the Stan programs to fit the density-production models, if you input which model, which guild, and which year, along with the number of sampling and warm-up iterations. A list of `qsub` calls that will run this script remotely are in the document `cmdstanqsubs.sh`. Cmdstan is the name of Stan's command line interface. The script `fitlight.sh` does the same for the light models.
 
 *Inputs required*
 
@@ -113,7 +113,7 @@ Each model generates a huge CSV with all the MCMC samples for the parameters.
 
 The final function calls all these functions as well as running LOOIC on the model fit.
 
-The functions in the above script are run on each model in parallel in the script `extract_ci_productionfits.r`. Since that script is run in parallel, you next need to combine all the output into CSV files using `combinecmdstanoutput.r`.
+The functions in the above script are run on each model in parallel in the script `extract_ci_productionfits.r`. Since that script is run in parallel, you next need to combine all the output into CSV files using `combinestanoutput.r`.
 
 *light models*: The script `extract_ci_lightfits.r` gets all needed information out of the light model fits. It calculates median and quantile values for the model parameters and for fitted values for the curves, as well as for the maximum log slope. Lastly a separate part of the script manually calculates the Bayesian R-squared, using the correct method endorsed by Gelman. This function isn't needed to be run in parallel because it's a lot quicker and runs in a few seconds for every model separately.
 
