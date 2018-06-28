@@ -1,7 +1,6 @@
 #!/bin/bash --login
 #PBS -l walltime=48:00:00,nodes=1:ppn=1,mem=4gb
 #PBS -N stanfit
-#PBS -j oe
 #PBS -m n
 #PBS -t 1-3
 
