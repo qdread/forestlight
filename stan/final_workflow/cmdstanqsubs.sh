@@ -181,17 +181,18 @@ qsub fitproduction.sh -v guild=unclassified,year=2010,model=weibullexp,NS=1000,N
 qsub fitproduction.sh -v guild=alltree,year=2010,model=weibullexp,NS=1000,NW=3000 -N wexp2010_all -l walltime=7:00:00:00
 
 # Weibull x double power law, longer jobs for groups 3 and alltree, with only 3k warmup
+# (lower to only 2k warmup and 750 sample for alltree)
+qsub fitproduction.sh -v guild=alltree,year=1990,model=weibullexp,NS=750,NW=2000 -N wexp1990_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=1995,model=weibullexp,NS=750,NW=2000 -N wexp1995_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2000,model=weibullexp,NS=750,NW=2000 -N wexp2000_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2005,model=weibullexp,NS=750,NW=2000 -N wexp2005_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2010,model=weibullexp,NS=750,NW=2000 -N wexp2010_all -l walltime=7:00:00:00
 
 qsub fitproduction.sh -v guild=fg3,year=1990,model=weibullexp,NS=1000,NW=3000 -N wexp1990_3 -l walltime=7:00:00:00
-qsub fitproduction.sh -v guild=alltree,year=1990,model=weibullexp,NS=1000,NW=3000 -N wexp1990_all -l walltime=7:00:00:00
 qsub fitproduction.sh -v guild=fg3,year=1995,model=weibullexp,NS=1000,NW=3000 -N wexp1995_3 -l walltime=7:00:00:00
-qsub fitproduction.sh -v guild=alltree,year=1995,model=weibullexp,NS=1000,NW=3000 -N wexp1995_all -l walltime=7:00:00:00
 qsub fitproduction.sh -v guild=fg3,year=2000,model=weibullexp,NS=1000,NW=3000 -N wexp2000_3 -l walltime=7:00:00:00
-qsub fitproduction.sh -v guild=alltree,year=2000,model=weibullexp,NS=1000,NW=3000 -N wexp2000_all -l walltime=7:00:00:00
 qsub fitproduction.sh -v guild=fg3,year=2005,model=weibullexp,NS=1000,NW=3000 -N wexp2005_3 -l walltime=7:00:00:00
-qsub fitproduction.sh -v guild=alltree,year=2005,model=weibullexp,NS=1000,NW=3000 -N wexp2005_all -l walltime=7:00:00:00
 qsub fitproduction.sh -v guild=fg3,year=2010,model=weibullexp,NS=1000,NW=3000 -N wexp2010_3 -l walltime=7:00:00:00
-qsub fitproduction.sh -v guild=alltree,year=2010,model=weibullexp,NS=1000,NW=3000 -N wexp2010_all -l walltime=7:00:00:00
 
 
 # Production versus light, 1990 and 1995
