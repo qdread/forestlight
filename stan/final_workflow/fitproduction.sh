@@ -15,6 +15,10 @@ if [ "$model" == "paretopow" ]; then
 	~/forestlight/stancode/model_ppow_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/dump_${guild}_${year}.r output file=~/forestlight/stanoutput/fit_paretoxpower_${guild}_${year}_${PBS_ARRAYID}.csv
 fi
 
+if [ "$model" == "paretopowsub" ]; then
+	~/forestlight/stancode/model_ppow_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/ssdump_${guild}_${year}.r output file=~/forestlight/stanoutput/ssfit_paretoxpower_${guild}_${year}_${PBS_ARRAYID}.csv
+fi
+
 if [ "$model" == "weibullexp" ]; then
 	~/forestlight/stancode/model_wexp_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/dump_${guild}_${year}.r output file=~/forestlight/stanoutput/fit_weibullxexp_${guild}_${year}_${PBS_ARRAYID}.csv
 fi
@@ -27,12 +31,12 @@ if [ "$model" == "paretoexp" ]; then
 	~/forestlight/stancode/model_pexp_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/dump_${guild}_${year}.r output file=~/forestlight/stanoutput/fit_paretoxexp_${guild}_${year}_${PBS_ARRAYID}.csv
 fi
 
-if [ "$model" == "weibullpow" ]; then
-	~/forestlight/stancode/model_wpow_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/dump_${guild}_${year}.r output file=~/forestlight/stanoutput/fit_weibullxpower_${guild}_${year}_${PBS_ARRAYID}.csv
-fi
-
 if [ "$model" == "paretoexpsub" ]; then
 	~/forestlight/stancode/model_pexp_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/ssdump_${guild}_${year}.r output file=~/forestlight/stanoutput/ssfit_paretoxexp_${guild}_${year}_${PBS_ARRAYID}.csv
+fi
+
+if [ "$model" == "weibullpow" ]; then
+	~/forestlight/stancode/model_wpow_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/dump_${guild}_${year}.r output file=~/forestlight/stanoutput/fit_weibullxpower_${guild}_${year}_${PBS_ARRAYID}.csv
 fi
 
 if [ "$model" == "weibullpowsub" ]; then

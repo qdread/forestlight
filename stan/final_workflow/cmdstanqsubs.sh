@@ -180,20 +180,81 @@ qsub fitproduction.sh -v guild=fg5,year=2010,model=weibullexp,NS=1000,NW=5000 -N
 qsub fitproduction.sh -v guild=unclassified,year=2010,model=weibullexp,NS=1000,NW=5000 -N wexp2010_unc -l walltime=3:00:00:00
 qsub fitproduction.sh -v guild=alltree,year=2010,model=weibullexp,NS=1000,NW=3000 -N wexp2010_all -l walltime=7:00:00:00
 
-# Weibull x double power law, longer jobs for groups 3 and alltree, with only 3k warmup
+# Weibull x single and double power law, longer jobs for groups 3 and alltree, with only 3k warmup
 # (lower to only 2k warmup and 750 sample for alltree)
+qsub fitproduction.sh -v guild=alltree,year=1990,model=paretoexp,NS=750,NW=2000 -N pexp1990_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=1995,model=paretoexp,NS=750,NW=2000 -N pexp1995_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2000,model=paretoexp,NS=750,NW=2000 -N pexp2000_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2005,model=paretoexp,NS=750,NW=2000 -N pexp2005_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2010,model=paretoexp,NS=750,NW=2000 -N pexp2010_all -l walltime=7:00:00:00
+
+qsub fitproduction.sh -v guild=fg3,year=1990,model=paretoexp,NS=750,NW=2000 -N pexp1990_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=1995,model=paretoexp,NS=750,NW=2000 -N pexp1995_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2000,model=paretoexp,NS=750,NW=2000 -N pexp2000_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2005,model=paretoexp,NS=750,NW=2000 -N pexp2005_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2010,model=paretoexp,NS=750,NW=2000 -N pexp2010_3 -l walltime=7:00:00:00
+
 qsub fitproduction.sh -v guild=alltree,year=1990,model=weibullexp,NS=750,NW=2000 -N wexp1990_all -l walltime=7:00:00:00
 qsub fitproduction.sh -v guild=alltree,year=1995,model=weibullexp,NS=750,NW=2000 -N wexp1995_all -l walltime=7:00:00:00
 qsub fitproduction.sh -v guild=alltree,year=2000,model=weibullexp,NS=750,NW=2000 -N wexp2000_all -l walltime=7:00:00:00
 qsub fitproduction.sh -v guild=alltree,year=2005,model=weibullexp,NS=750,NW=2000 -N wexp2005_all -l walltime=7:00:00:00
 qsub fitproduction.sh -v guild=alltree,year=2010,model=weibullexp,NS=750,NW=2000 -N wexp2010_all -l walltime=7:00:00:00
 
-qsub fitproduction.sh -v guild=fg3,year=1990,model=weibullexp,NS=1000,NW=3000 -N wexp1990_3 -l walltime=7:00:00:00
-qsub fitproduction.sh -v guild=fg3,year=1995,model=weibullexp,NS=1000,NW=3000 -N wexp1995_3 -l walltime=7:00:00:00
-qsub fitproduction.sh -v guild=fg3,year=2000,model=weibullexp,NS=1000,NW=3000 -N wexp2000_3 -l walltime=7:00:00:00
-qsub fitproduction.sh -v guild=fg3,year=2005,model=weibullexp,NS=1000,NW=3000 -N wexp2005_3 -l walltime=7:00:00:00
-qsub fitproduction.sh -v guild=fg3,year=2010,model=weibullexp,NS=1000,NW=3000 -N wexp2010_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=1990,model=weibullexp,NS=750,NW=2000 -N wexp1990_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=1995,model=weibullexp,NS=750,NW=2000 -N wexp1995_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2000,model=weibullexp,NS=750,NW=2000 -N wexp2000_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2005,model=weibullexp,NS=750,NW=2000 -N wexp2005_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2010,model=weibullexp,NS=750,NW=2000 -N wexp2010_3 -l walltime=7:00:00:00
 
+# Revised way 25 July. Using full datasets model still did not finish in one week for alltree and for group 3.
+# All fits for group 3 and for all tree, using the same number of iterations as the other model fits, but with a reduced number of individuals
+qsub fitproduction.sh -v guild=alltree,year=1990,model=paretopowsub,NS=1000,NW=5000 -N ppow1990_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=1995,model=paretopowsub,NS=1000,NW=5000 -N ppow1995_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2000,model=paretopowsub,NS=1000,NW=5000 -N ppow2000_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2005,model=paretopowsub,NS=1000,NW=5000 -N ppow2005_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2010,model=paretopowsub,NS=1000,NW=5000 -N ppow2010_all -l walltime=7:00:00:00
+
+qsub fitproduction.sh -v guild=fg3,year=1990,model=paretopowsub,NS=1000,NW=5000 -N ppow1990_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=1995,model=paretopowsub,NS=1000,NW=5000 -N ppow1995_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2000,model=paretopowsub,NS=1000,NW=5000 -N ppow2000_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2005,model=paretopowsub,NS=1000,NW=5000 -N ppow2005_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2010,model=paretopowsub,NS=1000,NW=5000 -N ppow2010_3 -l walltime=7:00:00:00
+
+qsub fitproduction.sh -v guild=alltree,year=1990,model=weibullpowsub,NS=1000,NW=5000 -N wpow1990_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=1995,model=weibullpowsub,NS=1000,NW=5000 -N wpow1995_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2000,model=weibullpowsub,NS=1000,NW=5000 -N wpow2000_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2005,model=weibullpowsub,NS=1000,NW=5000 -N wpow2005_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2010,model=weibullpowsub,NS=1000,NW=5000 -N wpow2010_all -l walltime=7:00:00:00
+
+qsub fitproduction.sh -v guild=fg3,year=1990,model=weibullpowsub,NS=1000,NW=5000 -N wpow1990_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=1995,model=weibullpowsub,NS=1000,NW=5000 -N wpow1995_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2000,model=weibullpowsub,NS=1000,NW=5000 -N wpow2000_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2005,model=weibullpowsub,NS=1000,NW=5000 -N wpow2005_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2010,model=weibullpowsub,NS=1000,NW=5000 -N wpow2010_3 -l walltime=7:00:00:00
+
+qsub fitproduction.sh -v guild=alltree,year=1990,model=paretoexpsub,NS=1000,NW=5000 -N pexp1990_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=1995,model=paretoexpsub,NS=1000,NW=5000 -N pexp1995_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2000,model=paretoexpsub,NS=1000,NW=5000 -N pexp2000_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2005,model=paretoexpsub,NS=1000,NW=5000 -N pexp2005_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2010,model=paretoexpsub,NS=1000,NW=5000 -N pexp2010_all -l walltime=7:00:00:00
+
+qsub fitproduction.sh -v guild=fg3,year=1990,model=paretoexpsub,NS=1000,NW=5000 -N pexp1990_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=1995,model=paretoexpsub,NS=1000,NW=5000 -N pexp1995_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2000,model=paretoexpsub,NS=1000,NW=5000 -N pexp2000_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2005,model=paretoexpsub,NS=1000,NW=5000 -N pexp2005_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2010,model=paretoexpsub,NS=1000,NW=5000 -N pexp2010_3 -l walltime=7:00:00:00
+
+qsub fitproduction.sh -v guild=alltree,year=1990,model=weibullexpsub,NS=1000,NW=5000 -N wexp1990_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=1995,model=weibullexpsub,NS=1000,NW=5000 -N wexp1995_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2000,model=weibullexpsub,NS=1000,NW=5000 -N wexp2000_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2005,model=weibullexpsub,NS=1000,NW=5000 -N wexp2005_all -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=alltree,year=2010,model=weibullexpsub,NS=1000,NW=5000 -N wexp2010_all -l walltime=7:00:00:00
+
+qsub fitproduction.sh -v guild=fg3,year=1990,model=weibullexpsub,NS=1000,NW=5000 -N wexp1990_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=1995,model=weibullexpsub,NS=1000,NW=5000 -N wexp1995_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2000,model=weibullexpsub,NS=1000,NW=5000 -N wexp2000_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2005,model=weibullexpsub,NS=1000,NW=5000 -N wexp2005_3 -l walltime=7:00:00:00
+qsub fitproduction.sh -v guild=fg3,year=2010,model=weibullexpsub,NS=1000,NW=5000 -N wexp2010_3 -l walltime=7:00:00:00
 
 # Production versus light, 1990 and 1995
 
