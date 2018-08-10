@@ -256,6 +256,10 @@ qsub fitproduction.sh -v guild=fg3,year=2000,model=weibullexpsub,NS=1000,NW=3000
 qsub fitproduction.sh -v guild=fg3,year=2005,model=weibullexpsub,NS=1000,NW=3000 -N wexp2005_3 -l walltime=7:00:00:00
 qsub fitproduction.sh -v guild=fg3,year=2010,model=weibullexpsub,NS=1000,NW=3000 -N wexp2010_3 -l walltime=7:00:00:00
 
+# Final chain.
+~/forestlight/stancode/model_wexp_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=1000 num_warmup=3000 thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/ssdump_fg3_2000.r output file=~/forestlight/stanoutput/ssfit_weibullxexp_fg3_2000_2.csv random seed=222 
+
+
 # Production versus light, 1990 and 1995
 
 qsub fitlight.sh -v guild=fg1,year=1990 -N l_fg1_90 -l walltime=4:00:00

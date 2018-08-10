@@ -199,7 +199,7 @@ bayesian_rsquared_production <- function(fit, x, y, prod_model) {
 # 5. Master function that calls all the above functions to extract all relevant fit information
 # ------------------------------------------------------------------------------------------
 
-extract_all_fit <- function(dens_model, prod_model, fg, year, xmin, n, total_production) {
+extract_all_fit <- function(dens_model, prod_model, fg, year, xmin, n, total_production, use_subset = FALSE) {
   require(rstan)
   require(loo)
 
@@ -207,7 +207,7 @@ extract_all_fit <- function(dens_model, prod_model, fg, year, xmin, n, total_pro
   print('Loading stan fit . . .')
   fp <- '~/forestlight/stanoutput'
   files <- paste0('fit_', dens_model, 'x', prod_model, '_', fg, '_', year, '_', 1:3, '.csv')
-  #if (fg == 'alltree') files <- paste0('ss', files) # Use the 25K subset for all trees.
+  if (use_subset) files <- paste0('ss', files) # Use the 25K subset if needed.
   fit <- read_stan_csv(file.path(fp,files))
   
   prod_model <- ifelse(prod_model == 'power', 'powerlaw', 'powerlawexp')

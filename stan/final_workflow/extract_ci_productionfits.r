@@ -5,6 +5,7 @@
 # Fitted slopes in log space
 # Bayesian R-squared
 
+# Edit 10 Aug: specify subset for alltree and for fg 3
 # Edit 12 April: Do this in parallel because it is too slow
 task <- as.numeric(Sys.getenv('PBS_ARRAYID'))
 
@@ -30,12 +31,15 @@ mod_df <- mod_df %>%
 
 dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
 
+use_subset <- (mod_df$fg[task] %in% c('fg3', 'alltree'))
+
 fit_info <- extract_all_fit(dens_model = mod_df$dens_model[task],
                             prod_model = mod_df$prod_model[task],
                             fg = mod_df$fg[task],
                             year = mod_df$year[task],
                             xmin = mod_df$xmin[task],
                             n = mod_df$n[task],
-                            total_production = mod_df$total_production[task])
+                            total_production = mod_df$total_production[task],
+							use_subset = use_subset)
 
 save(fit_info, file = paste0('~/forestlight/stanoutput/fitinfo/info_',task,'.r'))
