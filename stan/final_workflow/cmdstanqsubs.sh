@@ -259,6 +259,8 @@ qsub fitproduction.sh -v guild=fg3,year=2010,model=weibullexpsub,NS=1000,NW=3000
 # Final chain.
 ~/forestlight/stancode/model_wexp_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=1000 num_warmup=3000 thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/ssdump_fg3_2000.r output file=~/forestlight/stanoutput/ssfit_weibullxexp_fg3_2000_2.csv random seed=222 
 
+((SEED=111+PBS_ARRAYID))
+~/forestlight/stancode/model_wexp_withlik sample algorithm=hmc engine=nuts max_depth=20 num_samples=1000 num_warmup=3000 thin=1 adapt delta=0.9 data file=~/forestlight/stanrdump/ssdump_alltree_2000.r output file=~/forestlight/stanoutput/ssfit_weibullxexp_alltree_2000_${PBS_ARRAYID}.csv random seed=${SEED} 
 
 # Production versus light, 1990 and 1995
 

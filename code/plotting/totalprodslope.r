@@ -1,10 +1,12 @@
+# Plot slopes of total production (energy equivalence slope)
+# Edit 15 Aug: path to new data
 
-# Change density model to 'pareto' and/or production model to 'powerlaw'
+# Change density model to 'pareto' and/or production model to 'powerlaw' if you want to plot those.
 density_model <- 'weibull'
 production_model <- 'powerlawexp'
 year_to_plot <- 1990
 
-fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_12apr2018' ## CHANGE PATH AS NEEDED
+fp <- '~/google_drive/ForestLight/data/data_forplotting_aug2018' ## CHANGE PATH AS NEEDED
 
 fitted_slopes_by_fg <- read.csv(file.path(fp, 'fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 

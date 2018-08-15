@@ -1,10 +1,11 @@
 # Plot observed data, predicted values of different model fits, and different confidence intervals on model fits
 # Edit 03 April: add dodge error bars and a dashed line at various places.
 # Edit 11 April: predictions should not extend past bins
+# Edit 14 Aug: path to new data
 
 # Load data ---------------------------------------------------------------
 
-fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_12apr2018' ## CHANGE PATH AS NEEDED
+fp <- '~/google_drive/ForestLight/data/data_forplotting_aug2018' ## CHANGE PATH AS NEEDED
 
 # Read all the csvs in directory.
 for (i in dir(fp, pattern = '.csv')) {
@@ -79,7 +80,7 @@ plot_prod <- function(year_to_plot = 1990,
                       dodge_width = 0.03,
                       dodge_errorbar = TRUE,
                       obsdat = obs_indivprod,
-                      preddat = pred_indivprod
+                      preddat = fitted_indivprod
 ) {
   
   require(dplyr)
@@ -129,7 +130,7 @@ plot_totalprod <- function(year_to_plot = 1990,
                       x_name = 'Diameter (cm)',
                       y_name = 'Total production (kg/y/ha/cm)',
                       obsdat = obs_totalprod,
-                      preddat = pred_totalprod
+                      preddat = fitted_totalprod
 ) {
   
   require(dplyr)
@@ -238,6 +239,17 @@ plot_prod(year_to_plot = 1995,
           error_quantiles = c('ci_min', 'ci_max'),
           average = 'mean',
           color_names = 'black')
+
+# Same as above but show the prediction interval of the fit, not the confidence interval
+plot_prod(year_to_plot = 1995,
+          fg_names = c('fg1'),
+          model_fit = 'powerlawexp',
+          y_limits = c(0.01, 7000),
+          y_breaks = c(0.1, 10, 1000),
+          error_quantiles = c('ci_min', 'ci_max'),
+          average = 'mean',
+          color_names = 'black',
+          preddat = pred_indivprod)
 
 
 # Total production plot for some functional groups for Weibull and power law in 1995

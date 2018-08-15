@@ -11,7 +11,7 @@
 
 group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
 
-load('C:/Users/Q/google_drive/ForestLight/data/BCI_raw/bcidata/bciqcrun.R')
+load('~/google_drive/ForestLight/data/BCI_raw/bcidata/bciqcrun.R')
 
 # Modification 25 August: get rid of young and edge trees for all datasets. This will reduce the number of hectares but will be most correct.
 
@@ -27,7 +27,7 @@ library(dplyr)
 
 # Load Nadja's data (new functional groups 25 June)
 # fg5 is the new column (we originally used fg from the older df)
-fgbci <- read.table('C:/Users/Q/google_drive/ForestLight/data/Ruger/fgroups_dynamics_new.txt', stringsAsFactors = FALSE)
+fgbci <- read.table('~/google_drive/ForestLight/data/Ruger/fgroups_dynamics_new.txt', stringsAsFactors = FALSE)
 
 # Correct functional groups so that: 1 fast, 2 pioneer, 3 slow, 4 breeder, 5 intermediate
 # Old 1,2,3,4,5 --> New 2,3,1,4,5
@@ -220,7 +220,7 @@ save(alltreedat, fgdat, alltree_light_90, alltree_light_95, light_fg_90, light_f
 
 library(dplyr)
 
-load('C:/Users/Q/google_drive/ForestLight/data/data/rawdataobj_alternativecluster.r')
+load('~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
 group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
 source('code/allfunctions27july.r')
 

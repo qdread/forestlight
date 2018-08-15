@@ -3,7 +3,7 @@
 
 # Load data ---------------------------------------------------------------
 
-fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_12apr2018' ## CHANGE PATH AS NEEDED
+fp <- '~/google_drive/ForestLight/data/data_forplotting_aug2018' ## CHANGE PATH AS NEEDED
 
 # Read all the csvs in directory.
 for (i in dir(fp, pattern = '.csv')) {
@@ -12,7 +12,7 @@ for (i in dir(fp, pattern = '.csv')) {
 }
 
 # Load raw data
-load('C:/Users/Q/google_drive/ForestLight/data/data_22jan2018/rawdataobj_22jan.r')
+load('~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
 
 # Process the raw data to get one single data frame with a lot of rows.
 library(dplyr)

@@ -1,9 +1,10 @@
 # Visualize the information criteria
+# Edit 15 Aug: use new data and include new file paths
 
-ics <- read.csv('C:/Users/Q/Dropbox/projects/forestlight/ics_by_fg.csv', stringsAsFactors = FALSE)
+ics <- read.csv('~/google_drive/ForestLight/data/data_forplotting_aug2018/ics_by_fg.csv', stringsAsFactors = FALSE)
 
 # Midsize
-ics <- read.csv('C:/Users/Q/Dropbox/projects/forestlight/ics_by_fg_midsizetrees.csv', stringsAsFactors = FALSE)
+#ics <- read.csv('C:/Users/Q/Dropbox/projects/forestlight/ics_by_fg_midsizetrees.csv', stringsAsFactors = FALSE)
 
 library(dplyr)
 library(ggplot2)

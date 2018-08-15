@@ -1,9 +1,10 @@
 # Combine modeled and observed data into separate data frames for plotting
 # Edit 17 Apr: Do midsize trees as well.
+# Edit 15 Aug: Add new file paths
 
 # Observed data -----------------------------------------------------------
 
-
+### Run code/complete_workflows/workflow_june_newFGs.r lines 221-566. This loads some bins.
 
 # Put bins by year and by functional group into single data frames
 
@@ -28,8 +29,6 @@ obs_totalprod_df <- rbind(obs_totalprod_df, obs_totalprod_fg)
 
 # Observed individual production
 # "Fake bin" for each functional group and each year separately.
-
-all_prod_1995 <- fakebin_across_years(dat_values = alltreedat[[3]]$production, dat_classes = alltreedat[[3]]$dbh_corr, edges = all_dens_1995, n_census = 1)
 
 obs_indivprod_df <- map2(alltreedat[-1], dbhbin_all_byyear, 
      function(x, y) fakebin_across_years(dat_values = x$production, dat_classes = x$dbh_corr, edges = y, n_census = 1))
@@ -57,7 +56,7 @@ obs_dens_df <- mutate(obs_dens_df, bin_value = bin_value/area_core)
 obs_totalprod_df <- mutate(obs_totalprod_df, bin_value = bin_value/area_core)
 
 # Write the data
-fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_20mar2018'
+fp <- '~/google_drive/ForestLight/data/data_forplotting_aug2018'
 
 write.csv(obs_dens_df, file.path(fp, 'obs_dens.csv'), row.names = FALSE)
 write.csv(obs_indivprod_df, file.path(fp, 'obs_indivprod.csv'), row.names = FALSE)
@@ -68,7 +67,7 @@ write.csv(obs_totalprod_df, file.path(fp, 'obs_totalprod.csv'), row.names = FALS
 
 library(dplyr)
 
-ci_df <- read.csv('C:/Users/Q/Dropbox/projects/forestlight/ci_by_fg.csv', stringsAsFactors = FALSE)
+ci_df <- read.csv('~/google_drive/ForestLight/data/data_forplotting_aug2018/ci_by_fg.csv', stringsAsFactors = FALSE)
 area_core <- 42.84
 
 ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
@@ -96,7 +95,7 @@ pred_totalprod <- ci_df %>%
   select(-variable) %>%
   mutate_at(vars(starts_with('q')), funs(./area_core)) 
 
-fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_12apr2018'
+fp <- '~/google_drive/ForestLight/data/data_forplotting_aug2018'
 
 write.csv(pred_dens, file.path(fp, 'pred_dens.csv'), row.names = FALSE)
 write.csv(pred_indivprod, file.path(fp, 'pred_indivprod.csv'), row.names = FALSE)
@@ -189,7 +188,7 @@ obs_dens_df <- mutate(obs_dens_df, bin_value = bin_value/area_core)
 obs_totalprod_df <- mutate(obs_totalprod_df, bin_value = bin_value/area_core)
 
 # Write the data
-fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_12apr2018'
+fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_aug2018'
 
 write.csv(obs_dens_df, file.path(fp, 'obs_dens_midsize.csv'), row.names = FALSE)
 write.csv(obs_indivprod_df, file.path(fp, 'obs_indivprod_midsize.csv'), row.names = FALSE)
@@ -199,7 +198,7 @@ write.csv(obs_totalprod_df, file.path(fp, 'obs_totalprod_midsize.csv'), row.name
 
 library(dplyr)
 
-ci_df <- read.csv('C:/Users/Q/Dropbox/projects/forestlight/ci_by_fg_midsizetrees.csv', stringsAsFactors = FALSE)
+ci_df <- read.csv('~/Dropbox/projects/forestlight/ci_by_fg_midsizetrees.csv', stringsAsFactors = FALSE)
 area_core <- 42.84
 
 ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
@@ -218,7 +217,7 @@ pred_totalprod <- ci_df %>%
   select(-variable) %>%
   mutate_at(vars(starts_with('q')), funs(./area_core)) 
 
-fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_12apr2018'
+fp <- '~/google_drive/ForestLight/data/data_forplotting_aug2018'
 
 write.csv(pred_dens, file.path(fp, 'pred_dens_midsize.csv'), row.names = FALSE)
 write.csv(pred_indivprod, file.path(fp, 'pred_indivprod_midsize.csv'), row.names = FALSE)
