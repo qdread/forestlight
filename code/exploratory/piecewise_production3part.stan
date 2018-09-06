@@ -16,22 +16,30 @@ transformed data {
 }
 
 parameters {
-	real<lower=x_min, upper=x_max> tau_p;
+	real<lower=x_min, upper=x_max> tau_p_low;
+	real<lower=tau_p_low, upper=x_max> tau_p_high;
 	// Power law production
 	real<lower=0> beta0;
 	real<lower=0> beta1_low;
+	real<lower=0> beta1_mid;
 	real<lower=0> beta1_high;
 	real<lower=0> sigma;
 }
 
 transformed parameters {
-	vector[N] x2; // Indicator for whether x[i] > tau_p
+	vector[N] x2; // Indicator for whether x[i] > tau_p_low
+	vector[N] x3; // Indicator for whether x[i] > tau_p_high
 	
 	for (i in 1:N) {
-		if (x[i] < tau_p) {
+		if (x[i] < tau_p_low && x[i] <= tau_p_high) {
 			x2[i] = 0;
 		} else {
 			x2[i] = 1;
+		}
+		if (x[i] < tau_p_high) {
+			x3[i] = 0;
+		} else {
+			x3[i] = 1;
 		}
 	}
 }
@@ -39,7 +47,8 @@ transformed parameters {
 model {
 	// Priors: Power law production
 	beta0 ~ normal(5, 2);
-	beta1_low ~ normal(0.5, 1);		
+	beta1_low ~ normal(0.5, 1);
+	beta1_mid ~ normal(0.5, 1);
 	beta1_high ~ normal(0.5, 1);
 	sigma ~ exponential(0.01);
 	
@@ -48,7 +57,7 @@ model {
 	  vector[N] mu;
 	   
 	  for (i in 1:N) {
-		  mu[i] = -beta0 + beta1_low * logx[i] + beta1_high * (logx[i] - log(tau_p)) * x2[i];
+		  mu[i] = -beta0 + beta1_low * logx[i] + beta1_mid * (logx[i] - log(tau_p_low)) * x2[i] + beta1_high * (logx[i] - log(tau_p_high)) * x3[i];
 	  }
 	  logy ~ normal(mu, sigma);
 	}
@@ -59,7 +68,7 @@ generated quantities {
 	vector[N] log_lik_prod;
 	
 	for (i in 1:N) {
-		log_lik_prod[i] = normal_lpdf(logy[i] | -beta0 + beta1_low * logx[i] + beta1_high * (logx[i] - log(tau_p)) * x2[i], sigma);
+		log_lik_prod[i] = normal_lpdf(logy[i] | -beta0 + beta1_low * logx[i] + beta1_mid * (logx[i] - log(tau_p_low)) * x2[i] + beta1_high * (logx[i] - log(tau_p_high)) * x3[i], sigma);
 	}
 	
 }

@@ -1,4 +1,5 @@
 // Stan model for two part piecewise production
+// With self defined function
 
 data {
 	int<lower=0> N;
@@ -19,27 +20,17 @@ parameters {
 	real<lower=x_min, upper=x_max> tau_p;
 	// Power law production
 	real<lower=0> beta0;
-	real<lower=0> beta1_low;
-	real<lower=0> beta1_high;
+	real<lower=0> beta1;
+	real<lower=0> a;
+	real<lower=0> b;
+	real c;
 	real<lower=0> sigma;
-}
-
-transformed parameters {
-	vector[N] x2; // Indicator for whether x[i] > tau_p
-	
-	for (i in 1:N) {
-		if (x[i] < tau_p) {
-			x2[i] = 0;
-		} else {
-			x2[i] = 1;
-		}
-	}
 }
 
 model {
 	// Priors: Power law production
 	beta0 ~ normal(5, 2);
-	beta1_low ~ normal(0.5, 1);		
+	beta1 ~ normal(0.5, 1);		
 	beta1_high ~ normal(0.5, 1);
 	sigma ~ exponential(0.01);
 	
@@ -48,7 +39,11 @@ model {
 	  vector[N] mu;
 	   
 	  for (i in 1:N) {
-		  mu[i] = -beta0 + beta1_low * logx[i] + beta1_high * (logx[i] - log(tau_p)) * x2[i];
+		  if (x <= tau_p) {
+			  mu[i] = ;
+		  } else {
+			  mu[i] = ;
+		  }
 	  }
 	  logy ~ normal(mu, sigma);
 	}
@@ -59,7 +54,7 @@ generated quantities {
 	vector[N] log_lik_prod;
 	
 	for (i in 1:N) {
-		log_lik_prod[i] = normal_lpdf(logy[i] | -beta0 + beta1_low * logx[i] + beta1_high * (logx[i] - log(tau_p)) * x2[i], sigma);
+		log_lik_prod[i] = normal_lpdf(logy[i] | , sigma);
 	}
 	
 }
