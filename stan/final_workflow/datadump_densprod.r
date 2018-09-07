@@ -23,7 +23,7 @@ prod_dump <- function(dat, to_file = FALSE, fn = NULL, subsample = NULL, size_li
   }
   x <- dat$dbh_corr
   y <- dat$production
-  xdat <- list(N = length(x), x = x, y = y, x_min = min(x), LL = ll, UL = ul)
+  xdat <- list(N = length(x), x = x, y = y, x_min = min(x), x_max = max(x), LL = ll, UL = ul)
   if (to_file) {
     with(xdat, stan_rdump(names(xdat), file = fn))
   } else {

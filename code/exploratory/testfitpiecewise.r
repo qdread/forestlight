@@ -87,3 +87,40 @@ prodmodcurve <- stan_model(file.path(code_dir,'piecewise_curved_production.stan'
 prodfitcurve <- sampling(prodmodcurve, data = standataprod, chains = 2, iter = 1500, warmup = 1000, seed = 676, pars = c('log_lik_prod', 'x2'), include = FALSE, control = list(max_treedepth = 20, adapt_delta = 0.8))
 
 summary(prodfitcurve)$summary
+
+prodmodhinge <- stan_model(file.path(code_dir,'piecewise_production_selfdefined.stan'))
+prodfithinge <- sampling(prodmodhinge, data = standataprod, chains = 2, iter = 4000, warmup = 3000, seed = 88, pars = c('log_lik_prod'), include = FALSE, control = list(max_treedepth = 20, adapt_delta = 0.8))
+
+summary(prodfithinge)$summary
+mcmc_trace(as.array(prodfithinge))
+hinge_coefs <- summary(prodfithinge)$summary[1:5, 1]
+
+# Fit very complicated model with 3 segment density and hinged production
+modd3p2 <- stan_model(file.path(code_dir, 'model_d3p2.stan'))
+fitd3p2 <- sampling(modd3p2, data = standataprod, chains = 2, iter = 1500, warmup = 1000, seed = 111, pars = c('log_lik_prod', 'log_lik_dens'), include = FALSE)
+
+summary(fitd3p2)$summary
+mcmc_trace(as.array(fitd3p2))
+
+# Test all model variants
+
+modd1p1 <- stan_model(file.path(code_dir, 'model_d1p1.stan'))
+modd1p2 <- stan_model(file.path(code_dir, 'model_d1p2.stan'))
+modd2p1 <- stan_model(file.path(code_dir, 'model_d2p1.stan'))
+modd2p2 <- stan_model(file.path(code_dir, 'model_d2p2.stan'))
+modd3p1 <- stan_model(file.path(code_dir, 'model_d3p1.stan'))
+modd3p2 <- stan_model(file.path(code_dir, 'model_d3p2.stan'))
+
+fitd1p1 <- sampling(modd1p1, data = standataprod, chains = 2, iter = 1500, warmup = 1000, seed = 111, pars = c('log_lik_prod', 'log_lik_dens'), include = FALSE)
+fitd1p2 <- sampling(modd1p2, data = standataprod, chains = 2, iter = 1500, warmup = 1000, seed = 111, pars = c('log_lik_prod', 'log_lik_dens'), include = FALSE)
+fitd2p1 <- sampling(modd2p1, data = standataprod, chains = 2, iter = 1500, warmup = 1000, seed = 111, pars = c('log_lik_prod', 'log_lik_dens'), include = FALSE)
+fitd2p2 <- sampling(modd2p2, data = standataprod, chains = 2, iter = 1500, warmup = 1000, seed = 111, pars = c('log_lik_prod', 'log_lik_dens'), include = FALSE)
+fitd3p1 <- sampling(modd3p1, data = standataprod, chains = 2, iter = 1500, warmup = 1000, seed = 111, pars = c('log_lik_prod', 'log_lik_dens'), include = FALSE)
+fitd3p2 <- sampling(modd3p2, data = standataprod, chains = 2, iter = 1500, warmup = 1000, seed = 111, pars = c('log_lik_prod', 'log_lik_dens'), include = FALSE)
+
+summary(fitd1p1)$summary
+summary(fitd1p2)$summary
+summary(fitd2p1)$summary
+summary(fitd2p2)$summary
+summary(fitd3p1)$summary
+summary(fitd3p2)$summary

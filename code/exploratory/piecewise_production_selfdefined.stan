@@ -1,5 +1,12 @@
 // Stan model for two part piecewise production
-// With self defined function
+// With hinge function (self-defined with thanks to Gelman)
+
+functions {
+	real logistic_hinge(real x, real x0, real a, real b0, real b1, real delta) { 
+	  real xdiff = x - x0;
+	  return a + b0 * xdiff + (b1 - b0) * delta * log1p_exp(xdiff / delta);
+	}
+}
 
 data {
 	int<lower=0> N;
@@ -17,33 +24,28 @@ transformed data {
 }
 
 parameters {
-	real<lower=x_min, upper=x_max> tau_p;
-	// Power law production
-	real<lower=0> beta0;
-	real<lower=0> beta1;
-	real<lower=0> a;
-	real<lower=0> b;
-	real c;
+	real<lower=0> x0;
+	real a;
+	real<lower=0> b0;
+	real<lower=0> b1;
+	real<lower=0> delta;
 	real<lower=0> sigma;
 }
 
 model {
-	// Priors: Power law production
-	beta0 ~ normal(5, 2);
-	beta1 ~ normal(0.5, 1);		
-	beta1_high ~ normal(0.5, 1);
-	sigma ~ exponential(0.01);
+	// Priors: Hinged production
+	b0 ~ lognormal(1, 1);
+	b1 ~ lognormal(1, 1);
+	delta ~ exponential(10);
+	a ~ normal(0, 10);
+	x0 ~ normal(0, 10);
 	
-	// Likelihood: Power law production
+	// Likelihood: Hinged production
 	{
 	  vector[N] mu;
 	   
 	  for (i in 1:N) {
-		  if (x <= tau_p) {
-			  mu[i] = ;
-		  } else {
-			  mu[i] = ;
-		  }
+		  mu[i] = logistic_hinge(logx[i], x0, a, b0, b1, delta);
 	  }
 	  logy ~ normal(mu, sigma);
 	}
@@ -54,7 +56,7 @@ generated quantities {
 	vector[N] log_lik_prod;
 	
 	for (i in 1:N) {
-		log_lik_prod[i] = normal_lpdf(logy[i] | , sigma);
+		log_lik_prod[i] = normal_lpdf(logy[i] | logistic_hinge(logx[i], x0, a, b0, b1, delta), sigma);
 	}
 	
 }
