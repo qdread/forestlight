@@ -106,14 +106,14 @@ fitted_predicted_values <- function(fit, dbh_pred, dens_form, prod_form, total_p
   
   # Get some quantiles from each of these.
   qprobs <- c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975)
-  dens_fitted_quant <- apply(dens_fitted, 2, quantile, probs = qprobs)
-  prod_fitted_quant <- apply(prod_fitted, 2, quantile, probs = qprobs)
-  totalprod_fitted_quant <- apply(totalprod_fitted, 2, quantile, probs = qprobs)
+  dens_fitted_quant <- apply(dens_fitted, 2, quantile, probs = qprobs, na.rm = TRUE)
+  prod_fitted_quant <- apply(prod_fitted, 2, quantile, probs = qprobs, na.rm = TRUE)
+  totalprod_fitted_quant <- apply(totalprod_fitted, 2, quantile, probs = qprobs, na.rm = TRUE)
   
   # Use high and low normal quantiles to get prediction intervals
   prediction_quantile <- function(p, fitted_values) {
 	pred_raw <- apply(fitted_values, 2, function(mus) exp(qnorm(p, mean = log(mus), sd = pars[,'sigma'])))
-	apply(pred_raw, 2, median)
+	apply(pred_raw, 2, median, na.rm = TRUE)
   }
   prod_pred_quant <- map_dfc(qprobs, prediction_quantile, fitted_values = prod_fitted)
   totalprod_pred_quant <- map_dfc(qprobs, prediction_quantile, fitted_values = totalprod_fitted)
@@ -234,7 +234,7 @@ extract_all_fit <- function(dens_model, prod_model, fg, year, xmin, n, total_pro
   print('Loading stan fit . . .')
   fp <- '~/forestlight/stanoutput'
   files <- paste0('fit_d', dens_model, 'p', prod_model, '_', fg, '_', year, '_', 1:3, '.csv')
-  if (use_subset) files <- paste0('ss', files) # Use the 25K subset if needed.
+  #if (use_subset) files <- paste0('ss', files) # Use the 25K subset if needed.
   fit <- read_stan_csv(file.path(fp,files))
   
   # Get credible intervals of parameters
