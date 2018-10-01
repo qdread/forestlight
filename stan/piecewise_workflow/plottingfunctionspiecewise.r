@@ -38,12 +38,13 @@ plot_dens <- function(year_to_plot = 1990,
     filter(dbh >= min_obs & dbh <= max_obs)
   
   ggplot() +
-    geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg), fill = 'gray80') +
+    geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value, group = fg, color = fg)) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) +
     scale_color_manual(values = color_names) +
+    scale_fill_manual(values = color_names) +
     panel_border(colour = 'black')
   
   
@@ -90,13 +91,14 @@ plot_prod <- function(year_to_plot = 1990,
     filter(dbh >= min_obs & dbh <= max_obs)
   
   ggplot() +
-    geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg), fill = 'gray80') +
+    geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     geom_errorbar(data = obsdat, aes_string(x = 'bin_midpoint', ymin = error_quantiles[1], ymax = error_quantiles[2], group = 'fg', color = 'fg', width = 'width'), position = pos) +
     geom_point(data = obsdat, aes_string(x = 'bin_midpoint', y = average, group = 'fg', color = 'fg'), position = pos) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) +
     scale_color_manual(values = color_names) +
+    scale_fill_manual(values = color_names) +
     panel_border(colour = 'black')
   
   
@@ -137,12 +139,13 @@ plot_totalprod <- function(year_to_plot = 1990,
     filter(dbh >= min_obs & dbh <= max_obs)
   
   ggplot() +
-    geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg), fill = 'gray80') +
+    geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value, group = fg, color = fg)) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) +
     scale_color_manual(values = color_names) +
+    scale_fill_manual(values = color_names) +
     panel_border(colour = 'black')
   
   

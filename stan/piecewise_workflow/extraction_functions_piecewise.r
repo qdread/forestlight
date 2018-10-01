@@ -8,6 +8,7 @@
 # Fitted log slopes and credible intervals
 # Information criteria
 # "Bayesian" R-squared
+# Corrected hinge function. Must accommodate very high numbers.
 
 # 0. Define all density and production functions.
 # -----------------------------------------------
@@ -47,7 +48,7 @@ powerlaw_log <- function(x, beta0, beta1) beta0 * x^beta1
 # Production model 2 parts (hinged)
 powerlaw_hinge_log <- function(x, x0, beta0, beta1_low, beta1_high, delta) {
 	xdiff <- log(x) - log(x0)
-	exp( log(beta0) + beta1_low * xdiff + (beta1_high - beta1_low) * delta * log(1 + exp(xdiff / delta)) )
+	exp( log(beta0) + beta1_low * xdiff + (beta1_high - beta1_low) * delta * log(1 + exp(as.brob(xdiff / delta))) )
 }
 
 # 1. Function for parameter values and their credible intervals
@@ -229,6 +230,7 @@ bayesian_rsquared_production <- function(fit, x, y, prod_model) {
 extract_all_fit <- function(dens_model, prod_model, fg, year, xmin, n, total_production, use_subset = FALSE) {
   require(rstan)
   require(loo)
+  require(Brobdingnag)
 
   # Load CSVs as stanfit object
   print('Loading stan fit . . .')

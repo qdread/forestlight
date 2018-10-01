@@ -70,7 +70,7 @@ for (i in dir(fp_obs, pattern = 'obs_')) {
 
 # Read modeled data (CIs)
 
-for (i in dir(fp, pattern = 'pred_')) {
+for (i in dir(fp, pattern = 'pred_|fitted_')) {
   n <- gsub('.csv','',i)
   assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
 }
