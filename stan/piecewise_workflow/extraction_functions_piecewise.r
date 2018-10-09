@@ -227,7 +227,7 @@ bayesian_rsquared_production <- function(fit, x, y, prod_model) {
 # 5. Master function that calls all the above functions to extract all relevant fit information
 # ------------------------------------------------------------------------------------------
 
-extract_all_fit <- function(dens_model, prod_model, fg, year, xmin, n, total_production, use_subset = FALSE) {
+extract_all_fit <- function(dens_model, prod_model, fg, year, xmin, n, total_production, use_subset = FALSE, n_chains = 3) {
   require(rstan)
   require(loo)
   require(Brobdingnag)
@@ -235,7 +235,7 @@ extract_all_fit <- function(dens_model, prod_model, fg, year, xmin, n, total_pro
   # Load CSVs as stanfit object
   print('Loading stan fit . . .')
   fp <- '~/forestlight/stanoutput'
-  files <- paste0('fit_d', dens_model, 'p', prod_model, '_', fg, '_', year, '_', 1:3, '.csv')
+  files <- paste0('fit_d', dens_model, 'p', prod_model, '_', fg, '_', year, '_', 1:n_chains, '.csv')
   #if (use_subset) files <- paste0('ss', files) # Use the 25K subset if needed.
   fit <- read_stan_csv(file.path(fp,files))
   

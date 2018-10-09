@@ -91,5 +91,9 @@ qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel
 qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=7500,seed=999 -N d3p2_1995_a -l walltime=7:00:00:00
 
 qsub fitpiecewiseseed.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=7500,seed=1212 -N d3p1_1995_4 -l walltime=2:00:00:00
-qsub fitpiecewiseseed.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=7500,seed=1313 -N d3p2_1995_4 -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=13131 -N d3p2_1995_4 -l walltime=7:00:00:00
 qsub fitpiecewiseseed.sh -v dumptype=dump,guild=fg5,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=10000,seed=1616 -N d3p2_1995_5 -l walltime=4:00:00:00
+
+# More redos (3 Oct 2018)
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=7500,seed=10101 -N d3p2_1995_a -l walltime=7:00:00:00 -t 3
+qsub fitpiecewiseseed.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=7500,seed=66 -N d3p1_1995_4 -l walltime=2:00:00:00 -t 1
