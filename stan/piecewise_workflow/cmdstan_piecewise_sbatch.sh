@@ -1,0 +1,153 @@
+# Piecewise fits 
+# Converted from qsub to sbatch
+# All done with random seeds and proper number of iterations
+
+# D1P1
+
+sbatch --export=dumptype=dump,guild=fg1,year=1995,densitymodel=1,productionmodel=1,NS=1000,NW=5000,seed=11 --time=4:00:00 --job-name=d1p1_95_1 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg2,year=1995,densitymodel=1,productionmodel=1,NS=1000,NW=5000,seed=12 --time=4:00:00 --job-name=d1p1_95_2 fitpiecewiseseed.sb
+sbatch --export=dumptype=ssdump,guild=fg3,year=1995,densitymodel=1,productionmodel=1,NS=1000,NW=5000,seed=13 --time=4:00:00 --job-name=d1p1_95_3 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg4,year=1995,densitymodel=1,productionmodel=1,NS=1000,NW=5000,seed=14 --time=4:00:00 --job-name=d1p1_95_4 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg5,year=1995,densitymodel=1,productionmodel=1,NS=1000,NW=5000,seed=15 --time=4:00:00 --job-name=d1p1_95_5 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=unclassified,year=1995,densitymodel=1,productionmodel=1,NS=1000,NW=5000,seed=16 --time=4:00:00 --job-name=d1p1_95_u fitpiecewiseseed.sb
+sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=1,productionmodel=1,NS=1000,NW=5000,seed=17 --time=4:00:00 --job-name=d1p1_95_a fitpiecewiseseed.sb
+
+# D1P2
+
+sbatch --export=dumptype=dump,guild=fg1,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000,seed=11 --time=4:00:00 --job-name=d1p2_95_1 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg2,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000,seed=12 --time=4:00:00 --job-name=d1p2_95_2 fitpiecewiseseed.sb
+sbatch --export=dumptype=ssdump,guild=fg3,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000,seed=13 --time=7:00:00:00 --job-name=d1p2_95_3 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg4,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000,seed=14 --time=7:00:00:00 --job-name=d1p2_95_4 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg5,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000,seed=15 --time=4:00:00 --job-name=d1p2_95_5 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=unclassified,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000,seed=16 --time=4:00:00 --job-name=d1p2_95_u fitpiecewiseseed.sb
+sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000,seed=17 --time=7:00:00:00 --job-name=d1p2_95_a fitpiecewiseseed.sb
+
+# D2P1
+
+sbatch --export=dumptype=dump,guild=fg1,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000,seed=11 --time=4:00:00 --job-name=d2p1_95_1 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg2,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000,seed=12 --time=4:00:00 --job-name=d2p1_95_2 fitpiecewiseseed.sb
+sbatch --export=dumptype=ssdump,guild=fg3,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000,seed=13 --time=2:00:00:00 --job-name=d2p1_95_3 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg4,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000,seed=14 --time=2:00:00:00 --job-name=d2p1_95_4 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg5,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000,seed=15 --time=4:00:00 --job-name=d2p1_95_5 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=unclassified,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000,seed=16 --time=4:00:00 --job-name=d2p1_95_u fitpiecewiseseed.sb
+sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000,seed=17 --time=2:00:00:00 --job-name=d2p1_95_a fitpiecewiseseed.sb
+
+# D2P2
+
+sbatch --export=dumptype=dump,guild=fg1,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=11 --time=4:00:00 --job-name=d2p2_95_1 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg2,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=12 --time=7:00:00:00 --job-name=d2p2_95_2 fitpiecewiseseed.sb
+sbatch --export=dumptype=ssdump,guild=fg3,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=13 --time=7:00:00:00 --job-name=d2p2_95_3 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg4,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=14 --time=3:00:00:00 --job-name=d2p2_95_4 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg5,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=15 --time=2:00:00:00 --job-name=d2p2_95_5 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=unclassified,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=16 --time=4:00:00 --job-name=d2p2_95_u fitpiecewiseseed.sb
+sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=17 --time=7:00:00:00 --job-name=d2p2_95_a fitpiecewiseseed.sb
+
+# D3P1
+
+sbatch --export=dumptype=dump,guild=fg1,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=11 --time=2:00:00:00 --job-name=d3p1_95_1 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg2,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=12 --time=4:00:00 --job-name=d3p1_95_2 fitpiecewiseseed.sb
+sbatch --export=dumptype=ssdump,guild=fg3,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=13 --time=7:00:00:00 --job-name=d3p1_95_3 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg4,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=14 --time=2:00:00:00 --job-name=d3p1_95_4 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg5,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=15 --time=4:00:00 --job-name=d3p1_95_5 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=unclassified,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=16 --time=4:00:00 --job-name=d3p1_95_u fitpiecewiseseed.sb
+sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=17 --time=7:00:00:00 --job-name=d3p1_95_a fitpiecewiseseed.sb
+
+# D3P2
+
+sbatch --export=dumptype=dump,guild=fg1,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=11 --time=4:00:00 --job-name=d3p2_95_1 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg2,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=12 --time=2:00:00:00 --job-name=d3p2_95_2 fitpiecewiseseed.sb
+sbatch --export=dumptype=ssdump,guild=fg3,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=13 --time=7:00:00:00 --job-name=d3p2_95_3 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg4,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=14 --time=7:00:00:00 --job-name=d3p2_95_4 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=fg5,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=15 --time=4:00:00:00 --job-name=d3p2_95_5 fitpiecewiseseed.sb
+sbatch --export=dumptype=dump,guild=unclassified,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=16 --time=4:00:00 --job-name=d3p2_95_u fitpiecewiseseed.sb
+sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=17 --time=7:00:00:00 --job-name=d3p2_95_a fitpiecewiseseed.sb
+
+# --------------------------------------------------------------------------------------
+
+# D1P2
+
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg1,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000 -N d1p2_1995_1 -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg2,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000 -N d1p2_1995_2 -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg3,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000 -N d1p2_1995_3 -l walltime=7:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000 -N d1p2_1995_4 -l walltime=7:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg5,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000 -N d1p2_1995_5 -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=unclassified,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000 -N d1p2_1995_u -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=alltree,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000 -N d1p2_1995_a -l walltime=7:00:00:00
+
+# D2P1
+
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg1,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000 -N d2p1_1995_1 -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg2,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000 -N d2p1_1995_2 -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg3,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000 -N d2p1_1995_3 -l walltime=2:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000 -N d2p1_1995_4 -l walltime=2:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg5,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000 -N d2p1_1995_5 -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=unclassified,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000 -N d2p1_1995_u -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=alltree,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000 -N d2p1_1995_a -l walltime=2:00:00:00
+
+# D2P2
+
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg1,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000 -N d2p2_1995_1 -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg2,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000 -N d2p2_1995_2 -l walltime=7:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg3,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000 -N d2p2_1995_3 -l walltime=7:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000 -N d2p2_1995_4 -l walltime=3:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg5,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000 -N d2p2_1995_5 -l walltime=2:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=unclassified,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000 -N d2p2_1995_u -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=alltree,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000 -N d2p2_1995_a -l walltime=7:00:00:00
+
+# D3P1
+
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg1,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000 -N d3p1_1995_1 -l walltime=2:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg2,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000 -N d3p1_1995_2 -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg3,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000 -N d3p1_1995_3 -l walltime=7:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000 -N d3p1_1995_4 -l walltime=2:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg5,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000 -N d3p1_1995_5 -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=unclassified,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000 -N d3p1_1995_u -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=alltree,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000 -N d3p1_1995_a -l walltime=7:00:00:00
+
+# D3P2
+
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg1,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000 -N d3p2_1995_1 -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg2,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000 -N d3p2_1995_2 -l walltime=2:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg3,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000 -N d3p2_1995_3 -l walltime=7:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000 -N d3p2_1995_4 -l walltime=7:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=fg5,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000 -N d3p2_1995_5 -l walltime=4:00:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=unclassified,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000 -N d3p2_1995_u -l walltime=4:00:00
+qsub fitpiecewise.sh -v dumptype=dump,guild=alltree,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000 -N d3p2_1995_a -l walltime=7:00:00:00
+
+# Separate ones for alltree and functional group 3 which have somewhat fewer warmups
+qsub fitpiecewiseseed.sh -v dumptype=dump,guild=fg3,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=2000,seed=555 -N d2p2_1995_3 -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=dump,guild=alltree,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=2000,seed=666 -N d2p2_1995_a -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=dump,guild=fg3,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=2000,seed=777 -N d3p2_1995_3 -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=dump,guild=alltree,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=2000,seed=888 -N d3p2_1995_a -l walltime=7:00:00:00
+
+# All the alltree and functional group 3, done with ssdump instead
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=fg3,year=1995,densitymodel=1,productionmodel=1,NS=1000,NW=5000,seed=1333 -N d1p1_1995_3 -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel=1,productionmodel=1,NS=1000,NW=5000,seed=1444 -N d1p1_1995_a -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=fg3,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000,seed=1555 -N d2p1_1995_3 -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000,seed=1666 -N d2p1_1995_a -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=fg3,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=1777 -N d3p1_1995_3 -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=1888 -N d3p1_1995_a -l walltime=7:00:00:00
+
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=fg3,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000,seed=333 -N d1p2_1995_3 -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel=1,productionmodel=2,NS=1000,NW=5000,seed=444 -N d1p2_1995_a -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=fg3,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=555 -N d2p2_1995_3 -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=666 -N d2p2_1995_a -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=fg3,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=777 -N d3p2_1995_3 -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=888 -N d3p2_1995_a -l walltime=7:00:00:00
+
+# One last one
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=2888 -N d3p1_1995_a -l walltime=7:00:00:00 -t 1
+qsub fitpiecewiseseed.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=2,productionmodel=1,NS=1000,NW=5000,seed=7777 -N d2p1_1995_4 -l walltime=2:00:00:00 -t 1
+
+# Redo the ones that are sort of screwed up or didn't converge. (27 Sep 2018)
+# all tree 3x1, 3x2; fg4 3x1, 3x2; fg5 3x2
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=7500,seed=99 -N d3p1_1995_a -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=7500,seed=999 -N d3p2_1995_a -l walltime=7:00:00:00
+
+qsub fitpiecewiseseed.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=7500,seed=1212 -N d3p1_1995_4 -l walltime=2:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=13131 -N d3p2_1995_4 -l walltime=7:00:00:00
+qsub fitpiecewiseseed.sh -v dumptype=dump,guild=fg5,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=10000,seed=1616 -N d3p2_1995_5 -l walltime=4:00:00:00
+
+# More redos (3 Oct 2018)
+qsub fitpiecewiseseed.sh -v dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=7500,seed=10101 -N d3p2_1995_a -l walltime=7:00:00:00 -t 3
+qsub fitpiecewiseseed.sh -v dumptype=dump,guild=fg4,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=7500,seed=66 -N d3p1_1995_4 -l walltime=2:00:00:00 -t 1
