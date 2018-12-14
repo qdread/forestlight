@@ -1,11 +1,15 @@
 # Plot of slopes in different segments by different functional groups.
+library(tidyverse)
+john_wd <- "/Users/jgradym/Google Drive/ForestLight"
+setwd(john_wd)
 
-fp <- '~/google_drive/ForestLight/data/data_piecewisefits'
-fpfig <- '~/google_drive/ForestLight/figs/piecewiseplots_27sep2018'
+#fp <- '~/google_drive/ForestLight/data/data_piecewisefits'
+fp <- 'data/data_piecewisefits'
+
+#fpfig <- '~/google_drive/ForestLight/figs/piecewiseplots_27sep2018'
+fpfig <- 'figs/piecewiseplots_27sep2018'
+
 ics <- read.csv(file.path(fp, 'piecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
-
-library(ggplot2)
-library(dplyr)
 
 # Density model
 
@@ -61,7 +65,8 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'unclassifie
 # Plot the fitted values on top of the observed histograms.
 
 # Read observed data
-fp_obs <- '~/google_drive/ForestLight/data/data_forplotting_aug2018'
+#fp_obs <- '~/google_drive/ForestLight/data/data_forplotting_aug2018'
+fp_obs <- 'data/data_forplotting_aug2018'
 
 for (i in dir(fp_obs, pattern = 'obs_')) {
   n <- gsub('.csv','',i)
@@ -75,31 +80,28 @@ for (i in dir(fp, pattern = 'pred_|fitted_')) {
   assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
 }
 
-source('stan/piecewise_workflow/plottingfunctionspiecewise.r')
-
+#source('stan/piecewise_workflow/plottingfunctionspiecewise.r')
+source('/Users/jgradym/Documents/GitHub/forestlight/stan/piecewise_workflow/plottingfunctionspiecewise.r')
 # Create plots.
 
 plot_dens(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
           model_fit = 3,
-          y_limits = c(0.001, 1000),
-          y_breaks = c(0.001, 0.01, 0.1, 1, 10, 100, 1000))
+          x_limits = c(1, 260),
+          y_limits = c(0.001, 3000),
+          y_labels = c(0.001, 0.1, 10,1000),
+          y_breaks = c(0.001, 0.1,  10, 1000))
 ggsave(file.path(fpfig, 'fits_3partdensity.pdf'), height = 5, width = 6)
 
 # Specify dodging with a certain width of error bar
-plot_prod(year_to_plot = 1995,
-          fg_names = c('fg1','fg2','fg3','fg4','fg5'),
-          model_fit = 1,
-          y_limits = c(0.01, 6000),
-          y_breaks = c(0.1, 10, 1000),
-          error_bar_width = 0.01,
-          dodge_width = 0.05)
 
 plot_prod(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           model_fit = 2,
-          y_limits = c(0.01, 6000),
-          y_breaks = c(0.1, 10, 1000),
+          x_limits = c(1, 280),
+          y_limits = c(0.001, 2000),
+          y_breaks = c(0.001,0.1, 10, 1000),
+          y_labels = c(0.001,0.1,10,1000),
           error_bar_width = 0.01,
           dodge_width = 0.05)
 ggsave(file.path(fpfig, 'fits_2partproduction.pdf'), height = 5, width = 6)
@@ -108,14 +110,9 @@ plot_totalprod(year_to_plot = 1995,
                fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                model_fit_density = 3, 
                model_fit_production = 2,
-               y_limits = c(0.01, 200),
+               x_limits = c(0.9,250),
+               y_limits = c(0.03, 200),
                y_breaks = c(0.1, 1, 10, 100),
+               y_labels = c(0.1, 1, 10, 100),
                preddat = fitted_totalprod)
 ggsave(file.path(fpfig, 'fits_3by2_totalproduction.pdf'), height = 5, width = 6)
-
-plot_totalprod(year_to_plot = 1995,
-               fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
-               model_fit_density = 3, 
-               model_fit_production = 1,
-               y_limits = c(0.01, 200),
-               y_breaks = c(0.1, 1, 10, 100))
