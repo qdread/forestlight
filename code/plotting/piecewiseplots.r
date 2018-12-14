@@ -10,57 +10,73 @@ fp <- 'data/data_piecewisefits'
 fpfig <- 'figs/piecewiseplots_27sep2018'
 
 ics <- read.csv(file.path(fp, 'piecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
+ics$fg <- factor(ics$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
 
 # Density model
 
 ggplot(ics %>% filter(prod_model == 1, criterion == 'LOOIC', variable == 'density', !fg %in% 'unclassified'), 
        aes(x = factor(dens_model), y = ic, ymin = ic - se_ic, ymax = ic + se_ic)) +
-  facet_wrap(~ fg, scales = 'free_y') +
+  facet_wrap(~ fg, labeller = label_value, scales = 'free_y') +
   geom_pointrange() +
   theme_bw() +
-  theme(strip.background = element_blank()) +
-  labs(x = 'Number of segments in density function')
+  theme(strip.background = element_blank(),panel.grid = element_blank()) +
+  labs(x = 'Number of Segments in Density Function')
 ggsave(file.path(fpfig, 'density_model_information_criteria.pdf'), height = 6, width = 9)
 
 # Production model
 
 ggplot(ics %>% filter(dens_model == 1, criterion == 'LOOIC', variable == 'production', !fg %in% 'unclassified'), aes(x = factor(prod_model), y = ic, ymin = ic - se_ic, ymax = ic + se_ic)) +
-  facet_wrap(~ fg, scales = 'free_y') +
+  facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
   geom_pointrange() +
   theme_bw() +
-  theme(strip.background = element_blank()) +
-  labs(x = 'Number of segments in production function')
+  theme(strip.background = element_blank(), panel.grid = element_blank()) +
+  labs(x = 'Number of Segments in Production Function')
 ggsave(file.path(fpfig, 'production_model_information_criteria.pdf'), height = 6, width = 9)
 
 # Plot the slopes of each one.
 
 slopes <- read.csv(file.path(fp, 'piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+slopes$fg <- factor(slopes$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
+slopes$variable <- factor(slopes$variable, labels = c("Density", "Individual Growth", "Total Growth"))
+colors <- c("sienna4", "yellowgreen", "springgreen4")
 
 # Using 3 segment density and 2 segment production
 ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
-  facet_wrap(~ fg) +
-  geom_hline(yintercept = 0, linetype = 'dotted') +
+  facet_wrap(~ fg,labeller = label_value) +
+  geom_hline(yintercept = 0, linetype = 'dotted', col = "springgreen4") +
+  geom_hline(yintercept = -2, linetype = 'dotted', col = "sienna4") +
+  geom_hline(yintercept = 2, linetype = 'dotted', col = "yellowgreen") +
+  scale_fill_manual(values = colors) +
+  scale_color_manual(values = colors) +
   geom_ribbon(alpha = 0.5) +
   geom_line() +
   scale_x_log10(name = 'Diameter (cm)', expand = c(0,0)) +
-  theme_bw() +
+  theme_bw() + theme(axis.text = element_text(color = "black"))+
   theme(strip.background = element_blank(), panel.grid = element_blank(), legend.position = 'bottom') +
-  labs(y = 'Fitted slope in log-log space') +
-  ggtitle('Fitted slopes', '3 segment density model and 2 segment production model')
+  labs(y = 'Fitted Slope') +  #coord_fixed(ratio = .1)+
+  ggtitle('Fitted slopes', '3 segment density model and 2 segment production model')+
+  theme(plot.title = element_text(hjust=0.5)) #wish I could get second title line centered too...
+
 ggsave(file.path(fpfig, 'fitted_slopes_3partdensity_2partproduction.pdf'), height = 6, width = 9)
 
 ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
-  facet_wrap(~ fg) +
+  facet_wrap(~ fg,labeller = label_value) +
   geom_hline(yintercept = 0, linetype = 'dotted') +
+  geom_hline(yintercept = 0, linetype = 'dotted', col = "springgreen4") +
+  geom_hline(yintercept = -2, linetype = 'dotted', col = "sienna4") +
+  geom_hline(yintercept = 2, linetype = 'dotted', col = "yellowgreen") +
   geom_ribbon(alpha = 0.5) +
   geom_line() +
+  scale_fill_manual(values = colors) +
+  scale_color_manual(values = colors) +
   scale_x_log10(name = 'Diameter (cm)', expand = c(0,0)) +
-  theme_bw() +
+  theme_bw() + theme(axis.text = element_text(color = "black"))+
   theme(strip.background = element_blank(), panel.grid = element_blank(), legend.position = 'bottom') +
-  labs(y = 'Fitted slope in log-log space') +
-  ggtitle('Fitted slopes', '3 segment density model and 1 segment production model')
+  labs(y = 'Slope') +
+  ggtitle('Fitted Slopes', '3 segment density model and 1 segment production model')+
+  theme(plot.title = element_text(hjust=0.5))
 
 # Plot the fitted values on top of the observed histograms.
 
@@ -83,6 +99,8 @@ for (i in dir(fp, pattern = 'pred_|fitted_')) {
 #source('stan/piecewise_workflow/plottingfunctionspiecewise.r')
 source('/Users/jgradym/Documents/GitHub/forestlight/stan/piecewise_workflow/plottingfunctionspiecewise.r')
 # Create plots.
+#Model fit 1 = pareto, 1 segment
+#Model Fit 2  = 2 segments, etc
 
 plot_dens(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
@@ -94,7 +112,8 @@ plot_dens(year_to_plot = 1995,
 ggsave(file.path(fpfig, 'fits_3partdensity.pdf'), height = 5, width = 6)
 
 # Specify dodging with a certain width of error bar
-
+# Model fit 1 = power law
+# Model fit 2 = power law exp
 plot_prod(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           model_fit = 2,

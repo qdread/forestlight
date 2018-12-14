@@ -1,28 +1,64 @@
-# Plotting functions for piecewise.
+# Working directory
 
+john_wd <- "/Users/jgradym/Google Drive/ForestLight"
+setwd(john_wd)
+
+# Plotting functions for piecewise.
 # Define plotting functions -----------------------------------------------
+# Plotting functions for piecewise.
+library(tidyverse)
+theme_plant <- theme(panel.grid = element_blank(), #for Density and Growth
+                     aspect.ratio = .60,
+                     axis.text = element_text(size = 19, color = "black"), 
+                     axis.ticks.length=unit(0.2,"cm"),
+                     axis.title = element_text(size = 19),
+                     axis.title.y = element_text(margin = margin(r = 10)),
+                     axis.title.x = element_text(margin = margin(t = 10)),
+                     axis.title.x.top = element_text(margin = margin(b = 5)),
+                     plot.title = element_text(size = 19, face = "plain", hjust = 10),
+                     panel.border = element_rect(color = "black", fill=NA,  size=1),
+                     panel.background = element_blank(),
+                     plot.margin = unit(c(1, 1, 1,1), "cm"),
+                     legend.position = "none",
+                     legend.key = element_rect(fill="transparent"),
+                     
+                     text = element_text(family = 'Helvetica')) 
+
+theme_plant2 <- theme(panel.grid = element_blank(), #for Total Production
+                      aspect.ratio = 1,
+                      axis.text = element_text(size = 19, color = "black"), 
+                      axis.ticks.length=unit(0.2,"cm"),
+                      axis.title = element_text(size = 19),
+                      axis.title.y = element_text(margin = margin(r = 10)),
+                      axis.title.x = element_text(margin = margin(t = 10)),
+                      axis.title.x.top = element_text(margin = margin(b = 5)),
+                      plot.title = element_text(size = 19, face = "plain", hjust = 10),
+                      panel.border = element_rect(color = "black", fill=NA,  size=1),
+                      panel.background = element_blank(),
+                      legend.position = "none",
+                      text = element_text(family = 'Helvetica')) 
 
 # Plot single model fit with multiple functional groups for density
-plot_dens <- function(year_to_plot = 1990,
+plot_dens <- function(year_to_plot = 1995,
                       fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
                       model_fit = 'pareto',
-                      x_limits = c(1, 316),
-                      x_breaks = c(1, 3, 10, 30, 100),
+                      x_limits,
+                      x_breaks = c(1, 3, 10, 30, 100,300),
                       y_limits,
                       y_breaks,
-                      color_names = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33"
-                      ),
+                      y_labels,
+                      color_names = c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "ivory"),
                       x_name = 'Diameter (cm)',
-                      y_name = 'Density (trees/ha/cm)',
+                      y_name = expression(paste('Density (trees ha'^-1,'cm'^-1,')')),
                       obsdat = obs_dens,
                       preddat = pred_dens
 ) {
   
   require(dplyr)
-  require(cowplot)
+  require(ggplot2)
   
   obsdat <- obsdat %>%
-    filter(fg %in% fg_names, year == year_to_plot) %>%
+    filter(fg %in% fg_names, year == year_to_plot, bin_count > 1) %>%
     filter(bin_value > 0)
   
   # Get minimum and maximum observed bin value for each group to be plotted
@@ -35,33 +71,34 @@ plot_dens <- function(year_to_plot = 1990,
     left_join(obs_limits) %>%
     filter(dens_model %in% model_fit, prod_model == 2, fg %in% fg_names, year == year_to_plot) %>%
     filter_at(vars(starts_with('q')), all_vars(. > min(y_limits))) %>%
-    filter(dbh >= min_obs & dbh <= max_obs)
+    filter(dbh >= min_obs & dbh <= max_obs) 
   
   ggplot() +
     geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
-    geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value, group = fg, color = fg)) +
+    geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
+    geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
+    geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value, group = fg, fill=fg,size=2), shape=21,color="black") +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
-    scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) +
-    scale_color_manual(values = color_names) +
-    scale_fill_manual(values = color_names) +
-    panel_border(colour = 'black')
+    scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks,labels = y_labels) +
+    scale_color_manual(values = color_names) +theme_plant+
+    scale_fill_manual(values = color_names) 
   
   
 }
 
 # Plot single model fit with multiple functional groups for individual production
-plot_prod <- function(year_to_plot = 1990,
+plot_prod <- function(year_to_plot = 1995,
                       fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
                       model_fit = 'powerlaw',
-                      x_limits = c(1, 316),
-                      x_breaks = c(1, 3, 10, 30, 100),
+                      x_limits,
+                      x_breaks = c(1, 3, 10, 30, 100,300),
                       y_limits,
+                      y_labels,
                       y_breaks,
-                      color_names = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33"
-                      ),
+                      color_names = c("#BFE046", "#267038", "#27408b", "#87Cefa", "ivory"),
                       x_name = 'Diameter (cm)',
-                      y_name = 'Production (kg/y)',
+                      y_name = expression(paste('Production (kg y'^-1,')')),
                       average = 'mean',
                       error_quantiles = c('ci_min', 'ci_max'),
                       error_bar_width = 0.03,
@@ -72,12 +109,12 @@ plot_prod <- function(year_to_plot = 1990,
 ) {
   
   require(dplyr)
-  require(cowplot)
+  require(ggplot2)
   
   pos <- if (dodge_errorbar) position_dodge(width = dodge_width) else 'identity'
   
   obsdat <- obsdat %>%
-    filter(fg %in% fg_names, year == year_to_plot, !is.na(mean), mean > 0) %>%
+    filter(fg %in% fg_names, year == year_to_plot, !is.na(mean), mean_n_individuals > 1) %>%
     group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup
   
   obs_limits <- obsdat %>%
@@ -93,37 +130,39 @@ plot_prod <- function(year_to_plot = 1990,
   ggplot() +
     geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
-    geom_errorbar(data = obsdat, aes_string(x = 'bin_midpoint', ymin = error_quantiles[1], ymax = error_quantiles[2], group = 'fg', color = 'fg', width = 'width'), position = pos) +
-    geom_point(data = obsdat, aes_string(x = 'bin_midpoint', y = average, group = 'fg', color = 'fg'), position = pos) +
+    #geom_errorbar(data = obsdat, aes_string(x = 'bin_midpoint', ymin = error_quantiles[1], ymax = error_quantiles[2], group = 'fg', color = 'fg', width = 'width'), position = pos) +
+    geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
+    geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
+    geom_point(data = obsdat, aes_string(x = 'bin_midpoint', y = average, group = 'fg', fill = 'fg'),size=4,color="black",shape=21,position = pos) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
-    scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) +
-    scale_color_manual(values = color_names) +
-    scale_fill_manual(values = color_names) +
-    panel_border(colour = 'black')
+    scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels=y_labels) +
+    scale_color_manual(values = color_names) +theme_plant+
+    scale_fill_manual(values = color_names) 
   
   
 }
 
 # Plot single model fit with multiple functional groups for total production
 # Specify both density and production type
-plot_totalprod <- function(year_to_plot = 1990,
+
+plot_totalprod <- function(year_to_plot = 1995,
                            fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
                            model_fit_density = 'pareto',
                            model_fit_production = 'powerlaw',
-                           x_limits = c(1, 316),
-                           x_breaks = c(1, 3, 10, 30, 100),
-                           y_limits,
-                           y_breaks,
-                           color_names = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33"
-                           ),
+                           x_limits,
+                           x_breaks = c(1, 3, 10, 30, 100,300),
+                           y_limits = c(0.03,100),
+                           y_breaks = c(0.01,0.1, 1, 10,100, 1000),
+                           y_labels,
+                           color_names = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "ivory"),
                            x_name = 'Diameter (cm)',
-                           y_name = 'Total production (kg/y/ha/cm)',
+                           y_name = expression(paste('Total production (kg ha'^-1,' y'^-1,')')),
                            obsdat = obs_totalprod,
                            preddat = fitted_totalprod
 ) {
   
   require(dplyr)
-  require(cowplot)
+  require(ggplot2)
   obsdat <- obsdat %>%
     filter(fg %in% fg_names, year == year_to_plot) %>%
     filter(bin_value > 0)
@@ -141,12 +180,14 @@ plot_totalprod <- function(year_to_plot = 1990,
   ggplot() +
     geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
-    geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value, group = fg, color = fg)) +
+    geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
+    geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
+    geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value, size=2,group = fg, fill=fg), color = "black",shape=21) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
-    scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) +
-    scale_color_manual(values = color_names) +
-    scale_fill_manual(values = color_names) +
-    panel_border(colour = 'black')
+    scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) +
+    scale_color_manual(values = color_names) +theme_plant2+
+    scale_fill_manual(values = color_names) 
   
   
 }  
+
