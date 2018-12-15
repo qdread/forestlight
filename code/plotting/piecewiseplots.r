@@ -41,33 +41,32 @@ slopes$variable <- factor(slopes$variable, labels = c("Density", "Individual Gro
 colors <- c("sienna4", "yellowgreen", "springgreen4")
 
 # Using 3 segment density and 2 segment production
-ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'unclassified'), 
+ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'Unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
   facet_wrap(~ fg,labeller = label_value) +
-  geom_hline(yintercept = 0, linetype = 'dotted', col = "springgreen4") +
-  geom_hline(yintercept = -2, linetype = 'dotted', col = "sienna4") +
-  geom_hline(yintercept = 2, linetype = 'dotted', col = "yellowgreen") +
+  geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
+  geom_hline(yintercept = -2, linetype = 'dashed', col = "sienna4", size = 0.3) +
+  geom_hline(yintercept = 2, linetype = 'dashed', col = "yellowgreen", size = 0.3) +
   scale_fill_manual(values = colors) +
   scale_color_manual(values = colors) +
-  geom_ribbon(alpha = 0.5) +
+  geom_ribbon(alpha = 0.4, size = 0.3) +
   geom_line() +
   scale_x_log10(name = 'Diameter (cm)', expand = c(0,0)) +
   theme_bw() + theme(axis.text = element_text(color = "black"))+
   theme(strip.background = element_blank(), panel.grid = element_blank(), legend.position = 'bottom') +
   labs(y = 'Fitted Slope') +  #coord_fixed(ratio = .1)+
-  ggtitle('Fitted slopes', '3 segment density model and 2 segment production model')+
-  theme(plot.title = element_text(hjust=0.5)) #wish I could get second title line centered too...
+  ggtitle('Fitted slopes \n 3 segment density model and 2 segment production model')+
+  theme(plot.title = element_text(hjust=0.5)) #+ theme(legend.title=element_blank())
 
 ggsave(file.path(fpfig, 'fitted_slopes_3partdensity_2partproduction.pdf'), height = 6, width = 9)
 
-ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'unclassified'), 
+ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
-  facet_wrap(~ fg,labeller = label_value) +
-  geom_hline(yintercept = 0, linetype = 'dotted') +
-  geom_hline(yintercept = 0, linetype = 'dotted', col = "springgreen4") +
-  geom_hline(yintercept = -2, linetype = 'dotted', col = "sienna4") +
-  geom_hline(yintercept = 2, linetype = 'dotted', col = "yellowgreen") +
-  geom_ribbon(alpha = 0.5) +
+  facet_wrap(~ fg,scale = "free_y", labeller = label_value) +
+  geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
+  geom_hline(yintercept = -2, linetype = 'dashed', col = "sienna4",size = 0.3) +
+  geom_hline(yintercept = 2, linetype = 'dashed', col = "yellowgreen",size = 0.3) +
+  geom_ribbon(alpha = 0.4, size = 0.3) +
   geom_line() +
   scale_fill_manual(values = colors) +
   scale_color_manual(values = colors) +
@@ -75,8 +74,8 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'unclassifie
   theme_bw() + theme(axis.text = element_text(color = "black"))+
   theme(strip.background = element_blank(), panel.grid = element_blank(), legend.position = 'bottom') +
   labs(y = 'Slope') +
-  ggtitle('Fitted Slopes', '3 segment density model and 1 segment production model')+
-  theme(plot.title = element_text(hjust=0.5))
+  ggtitle('Fitted Slopes \n 3 Segment Density Model & 2 Segment Production Model')+
+  theme(plot.title = element_text(hjust=0.5)) #+ theme(legend.title=element_blank())
 
 # Plot the fitted values on top of the observed histograms.
 
