@@ -8,6 +8,7 @@ github_path <- '~/Documents/GitHub/forestlight'
 gdrive_path <- '/Users/jgradym/Google Drive/ForestLight'
 github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
 
+library(tidyverse)
 #---------------------------------------------------------------------------------------------
 # Fig 1: hand drawn schematics 
 #---------------------------------------------------------------------------------------------
@@ -30,8 +31,7 @@ github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
 
 # Load Nadja's data (new functional groups 25 June)
 # fg5 is the new column (we originally used fg from the older df)
-fgbci <- read.table(file.path(gdrive_path, 'data/Ruger/fgroups_dynamics_new.txt', stringsAsFactors = FALSE))
-
+fgbci <- read.table(file.path(gdrive_path, 'data/Ruger/fgroups_dynamics_new.txt'), stringsAsFactors = FALSE)
 # Correct functional groups so that: 1 fast, 2 pioneer, 3 slow, 4 breeder, 5 intermediate
 # Old 1,2,3,4,5 --> New 2,3,1,4,5
 fgbci$fg5 <- match(fgbci$fg5, c(2,3,1,4,5))
@@ -42,9 +42,9 @@ fgbci$fg5 <- match(fgbci$fg5, c(2,3,1,4,5))
 fgbci$PC_slow_to_fast <- -fgbci$X1new
 fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 
-guild_colors <- RColorBrewer::brewer.pal(5, 'Set1')
+guild_colors <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")#RColorBrewer::brewer.pal(5, 'Set1')
 fg_names <- paste('fg', 1:5, sep = '')
-fg_labels <- c('fast','long-lived pioneer', 'slow', 'short-lived breeder', 'intermediate')
+fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 
 ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, color = factor(fg5))) +
   geom_point() +
@@ -56,9 +56,10 @@ ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, color = factor
 # Fig 3: Plotting functions for piecewise fits
 
 # Define plotting functions -----
-# Plotting functions for piecewise.
-library(tidyverse)
-theme_plant <- theme(panel.grid = element_blank(), #for Density and Growth
+
+# Some Plotting Code
+
+theme_plant_0.6 <- theme(panel.grid = element_blank(), #for Density and Growth
                      aspect.ratio = .60,
                      axis.text = element_text(size = 19, color = "black"), 
                      axis.ticks.length=unit(0.2,"cm"),
@@ -69,7 +70,7 @@ theme_plant <- theme(panel.grid = element_blank(), #for Density and Growth
                      plot.title = element_text(size = 19, face = "plain", hjust = 10),
                      panel.border = element_rect(color = "black", fill=NA,  size=1),
                      panel.background = element_blank(),
-                     plot.margin = unit(c(1, 1, 1,1), "cm"),
+                     #plot.margin = unit(c(1, 1, 1,1), "cm"),
                      legend.position = "none",
                      legend.key = element_rect(fill="transparent"),
                      
@@ -243,7 +244,7 @@ plot_totalprod <- function(year_to_plot = 1995,
 }  
 
 # Plot of slopes in different segments by different functional groups.
-library(tidyverse)
+
 
 fp <- file.path(gdrive_path, 'data/data_piecewisefits')
 fpfig <- file.path(gdrive_path, 'figs/piecewiseplots_27sep2018')
