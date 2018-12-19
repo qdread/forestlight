@@ -213,21 +213,21 @@ plot_totalprod <- function(year_to_plot = 1995,
 
 # Plot of slopes in different segments by different functional groups.
 library(tidyverse)
-john_wd <- "/Users/jgradym/Google Drive/ForestLight"
-setwd(john_wd)
+
+
 
 #fp <- '~/google_drive/ForestLight/data/data_piecewisefits'
-fp <- 'data/data_piecewisefits'
+fp <- '/Users/jgradym/Google Drive/ForestLight/data/data_piecewisefits'
 
 #fpfig <- '~/google_drive/ForestLight/figs/piecewiseplots_27sep2018'
-fpfig <- 'figs/piecewiseplots_27sep2018'
+fpfig <- '/Users/jgradym/Google Drive/ForestLight/figs/piecewiseplots_27sep2018'
 
 
 # Plot the fitted values on top of the observed histograms.
 
 # Read observed data
 #fp_obs <- '~/google_drive/ForestLight/data/data_forplotting_aug2018'
-fp_obs <- 'data/data_forplotting_aug2018'
+fp_obs <- '/Users/jgradym/Google Drive/ForestLight/data/data_forplotting_aug2018'
 
 for (i in dir(fp_obs, pattern = 'obs_')) {
   n <- gsub('.csv','',i)
@@ -288,6 +288,7 @@ ggsave(file.path(fpfig, 'fits_3by2_totalproduction.pdf'), height = 5, width = 6)
 
 ### Light Capture
 
+#filepath for light?
 
 lightreceivedbin_2census %>%
   filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
@@ -338,10 +339,11 @@ crownareabin_2census %>%
 # ------------------------------- Fig 5 Relative Abundance  ------------------------------------
 
 
-
 ###### Life history Relative Abundance by Size 
 
 # Fast vs Slow
+
+# Filepath for fast/slow ratios
 
 fastslowscore_bin_bydiam_2census %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
@@ -475,7 +477,7 @@ breederscore_bin_bylight_2census %>%
 # Life history Production Ratio by diameter
 
     # Fast vs Slow
-pdf("~/Google Drive/ForestLight/Plots_J/New/Prod_Diam/Fast vs Slow.pdf")
+#pdf("~/Google Drive/ForestLight/Plots_J/New/Prod_Diam/Fast vs Slow.pdf")
 fastslow_stats_bydiam_2census %>%
   filter(production_ratio_mean > 0) %>%
   mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
@@ -486,12 +488,12 @@ fastslow_stats_bydiam_2census %>%
   scale_x_log10(name = expression(paste('Diameter (cm)')), limits=c(1,150), breaks=c(1,3,10,30,100,300)) +
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100), limits=c(0.01,15),
                 name = expression(paste(frac("Fast","Slow")))) 
-dev.off()
+#dev.off()
 
    # Breeder vs Pioneer 
 breeder_stats_bydiam_2census
 str(breeder_stats_bydiam_2census)
-pdf("~/Google Drive/ForestLight/Plots_J/New/Prod_Diam/Breeder Production by Diameter.pdf")
+#pdf("~/Google Drive/ForestLight/Plots_J/New/Prod_Diam/Breeder Production by Diameter.pdf")
 breeder_stats_bydiam_2census %>%
   filter(production_ratio_mean > 0) %>%
   mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
@@ -504,7 +506,7 @@ breeder_stats_bydiam_2census %>%
   scale_x_log10(name = 'Diameter (cm)', limits=c(1,150), breaks=c(1, 3,10,30, 100,300)) + 
   scale_y_log10(labels = signif, limits=c(10^-2,10^3.35),breaks=c(0.01, 1, 100),
                 name = expression(paste(frac("Long-lived Pioneer","Short-Lived Breeder")))) 
-dev.off()
+#dev.off()
 
 
 ## Life history Production Ratio by Light
@@ -593,7 +595,7 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'Unclassifie
         legend.position = 'bottom',legend.spacing.x=unit(.2, "cm"),legend.title=element_blank(),
         legend.text=element_text(size = 12),axis.title = element_text(size = 15),
         axis.text = element_text(color = "black", size = 11)) +
-  labs(y = 'Slope') 
+  labs(y = 'Slope') +
 ggtitle('Fitted slopes \n 3 segment density model and 2 segment production model')+
   theme(plot.title = element_text(hjust=0.5)) #+ theme(legend.title=element_blank())
 
@@ -618,14 +620,14 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassifie
   labs(y = 'Slope') + theme(axis.title = element_text(size = 15)) +
   ggtitle('Fitted Slopes \n 3 Segment Density Model & 2 Segment Production Model')+
   theme(plot.title = element_text(hjust=0.5)) +
-  theme(legend.spacing.x=unit(.2, "cm"))+  theme(legend.title=element_blank())+ theme(legend.text=element_text(size = 12))+
+  theme(legend.spacing.x=unit(.2, "cm"))+  theme(legend.title=element_blank())+ theme(legend.text=element_text(size = 12))
   ggsave(file.path(fpfig, 'fitted_slopes_3partdensity_2partproduction.pdf'), height = 6, width = 9)
 #---------------------------------------------------------------------------------------------
 
 
 ######################## Hex Plot of Growth Scaling  ######################## 
 # note 'object 'alltreedat' not found'
-fp <- 'data/data_forplotting_12apr2018' ## CHANGE PATH AS NEEDED
+# Appropriate path needed 
 
 # Process the raw data to get one single data frame with a lot of rows.
 library(dplyr)
@@ -771,8 +773,8 @@ year_to_plot <- 1990 ### CHANGE THIS IF YOU WANT TO PLOT 1990
 
 # Load data ----
 
-fp <- 'data/data_forplotting_light_june2018'
-
+#fp <- 'data/data_forplotting_light_june2018'
+# New File path needed
 obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
 obs_light_raw <- read.csv(file.path(fp, 'obs_light_raw.csv'), stringsAsFactors = FALSE)
 pred_light <- read.csv(file.path(fp, 'pred_light.csv'), stringsAsFactors = FALSE)
