@@ -310,6 +310,15 @@ ggsave(file.path(fpfig, 'fits_3by2_totalproduction.pdf'), height = 5, width = 6)
 
 # ------------------------------- Fig 4 Light Plots ------------------------------------
 
+# Load precalculated bin data.
+# Loop through all the csv files and load them into R
+fpdata <- file.path(gdrive_path, 'data/data_june2018_alternativecluster')
+file_names <- c('densitybin_5census', 'indivproductionbin_5census', 'totalproductionbin_5census', 'crownareabin_2census', 'lightreceivedbin_2census', 'indivprodperareabin_2census', 'breeder_stats_bydiam_2census', 'breederscore_bin_bydiam_2census', 'breeder_stats_bylight_2census', 'breederscore_bin_bylight_2census', 'fastslow_stats_bydiam_2census', 'fastslowscore_bin_bydiam_2census', 'fastslow_stats_bylight_2census', 'fastslowscore_bin_bylight_2census')
+
+for (i in file_names) {
+  assign(i, read.csv(file.path(fpdata, paste0(i,'.csv')), stringsAsFactors = FALSE))
+}
+
 ### Light Capture
 
 #filepath for light?
