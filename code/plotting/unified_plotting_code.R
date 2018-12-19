@@ -1,4 +1,13 @@
  ### Plotting of main and supplemental figures
+
+# Set paths to google drive forest light folder, and github forest light folder
+# All paths below will be relative to these paths.
+gdrive_path <- '~/google_drive/ForestLight'
+github_path <- '~/Documents/GitHub/forestlight'
+
+gdrive_path <- '/Users/jgradym/Google Drive/ForestLight'
+github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
+
 #---------------------------------------------------------------------------------------------
 # Fig 1: hand drawn schematics 
 #---------------------------------------------------------------------------------------------
@@ -19,7 +28,29 @@
   #Otherwise, species were split at 45° angles between axes.
 
 
-PCA_class <- read.csv() # Quentin, can you add the appropriate path here?
+# Load Nadja's data (new functional groups 25 June)
+# fg5 is the new column (we originally used fg from the older df)
+fgbci <- read.table(file.path(gdrive_path, 'data/Ruger/fgroups_dynamics_new.txt', stringsAsFactors = FALSE))
+
+# Correct functional groups so that: 1 fast, 2 pioneer, 3 slow, 4 breeder, 5 intermediate
+# Old 1,2,3,4,5 --> New 2,3,1,4,5
+fgbci$fg5 <- match(fgbci$fg5, c(2,3,1,4,5))
+
+# Currently X1new is high for slow species and low for fast species
+# Currently X2new is high for pioneer species and low for breeder species
+# Correct these
+fgbci$PC_slow_to_fast <- -fgbci$X1new
+fgbci$PC_breeder_to_pioneer <- fgbci$X2new
+
+guild_colors <- RColorBrewer::brewer.pal(5, 'Set1')
+fg_names <- paste('fg', 1:5, sep = '')
+fg_labels <- c('fast','long-lived pioneer', 'slow', 'short-lived breeder', 'intermediate')
+
+ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, color = factor(fg5))) +
+  geom_point() +
+  labs(x = 'X1 slow to fast', y = 'X2 breeders to pioneers') +
+  scale_color_manual(values = guild_colors, labels = fg_labels, name = 'functional group')
+
 
 #---------------------------------------------------------------------------------------------
 # Fig 3: Plotting functions for piecewise fits
@@ -214,20 +245,14 @@ plot_totalprod <- function(year_to_plot = 1995,
 # Plot of slopes in different segments by different functional groups.
 library(tidyverse)
 
-
-
-#fp <- '~/google_drive/ForestLight/data/data_piecewisefits'
-fp <- '/Users/jgradym/Google Drive/ForestLight/data/data_piecewisefits'
-
-#fpfig <- '~/google_drive/ForestLight/figs/piecewiseplots_27sep2018'
-fpfig <- '/Users/jgradym/Google Drive/ForestLight/figs/piecewiseplots_27sep2018'
+fp <- file.path(gdrive_path, 'data/data_piecewisefits')
+fpfig <- file.path(gdrive_path, 'figs/piecewiseplots_27sep2018')
 
 
 # Plot the fitted values on top of the observed histograms.
 
 # Read observed data
-#fp_obs <- '~/google_drive/ForestLight/data/data_forplotting_aug2018'
-fp_obs <- '/Users/jgradym/Google Drive/ForestLight/data/data_forplotting_aug2018'
+fp_obs <- file.path(gdrive_path, 'data/data_forplotting_aug2018')
 
 for (i in dir(fp_obs, pattern = 'obs_')) {
   n <- gsub('.csv','',i)
@@ -241,8 +266,7 @@ for (i in dir(fp, pattern = 'pred_|fitted_')) {
   assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
 }
 
-#source('stan/piecewise_workflow/plottingfunctionspiecewise.r')
-source('/Users/jgradym/Documents/GitHub/forestlight/stan/piecewise_workflow/plottingfunctionspiecewise.r')
+source(file.path(github_path, 'stan/piecewise_workflow/plottingfunctionspiecewise.r'))
 # Create plots.
 #Model fit 1 = pareto, 1 segment
 #Model Fit 2  = 2 segments, etc
@@ -352,7 +376,7 @@ fastslowscore_bin_bydiam_2census %>%
   geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
   scale_x_log10(name = 'Diameter (cm)', limits = c(1,300)) + 
   scale_y_continuous(limits=c(-2,2.5),breaks=c(-2,0,2),name = 'Slow-Fast') 
-pdf("~/Google Drive/ForestLight/Plots_J/New/Ranks/Diameter/Fast Slow.pdf")
+pdf(file.path(gdrive_path, "Plots_J/New/Ranks/Diameter/Fast Slow.pdf"))
 dev.off()
 
 ### Breeder vs Pioneer
@@ -368,7 +392,7 @@ breederscore_bin_bydiam_2census %>%
         axis.ticks.x=element_blank())+
   scale_x_log10(limits=c(1,300), name = 'Diameter (cm)') + 
   scale_y_continuous(limits=c(-2,4),name = 'Breeder-Performer') 
-pdf("~/Google Drive/ForestLight/Plots_J/New/Ranks/Diameter/Breeders.pdf")
+pdf(file.path(gdrive_path, "Plots_J/New/Ranks/Diameter/Breeders.pdf"))
 dev.off()
 
 
@@ -386,7 +410,7 @@ fastslow_stats_bylight_2census %>%
   scale_x_log10(limits=c(1,450),breaks=c(1,10,100), name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
   scale_y_log10(breaks = c(0.1,1,10), labels=signif, limits=c(0.03,10),
                 name = expression(paste(frac("Fast","Slow"))))  
-pdf("~/Google Drive/ForestLight/Plots_J/New/Abun_Light/Slow to Fast Abundance by Light.pdf")
+pdf(file.path(gdrive_path, "Plots_J/New/Abun_Light/Slow to Fast Abundance by Light.pdf"))
 dev.off()
 
 
@@ -406,7 +430,7 @@ breeder_stats_bylight_2census %>%
   
   scale_y_log10(labels=signif, limits=c(10^-2,300),breaks=c(0.01, 0.1, 1, 10, 100),
                 name = expression(paste(frac("Short-Lived Breeder","Long-lived Pioneer")))) 
-#pdf("~/Google Drive/ForestLight/Plots_J/New/Abun_Light/Breeder Abundance Ratio by light.pdf")
+#pdf(file.path(gdrive_path, "Plots_J/New/Abun_Light/Breeder Abundance Ratio by light.pdf"))
 dev.off()
 
 # Ran
@@ -426,7 +450,7 @@ dev.off()
 
 # Fast vs Slow
 
-#pdf("~/Google Drive/ForestLight/Plots_J/New/Ranks/Diameter/Fast Slow.pdf")
+#pdf(file.path(gdrive_path, "Plots_J/New/Ranks/Diameter/Fast Slow.pdf"))
 fastslowscore_bin_bydiam_2census %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
   #geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
@@ -477,7 +501,7 @@ breederscore_bin_bylight_2census %>%
 # Life history Production Ratio by diameter
 
     # Fast vs Slow
-#pdf("~/Google Drive/ForestLight/Plots_J/New/Prod_Diam/Fast vs Slow.pdf")
+#pdf(file.path(gdrive_path, "Plots_J/New/Prod_Diam/Fast vs Slow.pdf"))
 fastslow_stats_bydiam_2census %>%
   filter(production_ratio_mean > 0) %>%
   mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
@@ -493,7 +517,7 @@ fastslow_stats_bydiam_2census %>%
    # Breeder vs Pioneer 
 breeder_stats_bydiam_2census
 str(breeder_stats_bydiam_2census)
-#pdf("~/Google Drive/ForestLight/Plots_J/New/Prod_Diam/Breeder Production by Diameter.pdf")
+#pdf(file.path(gdrive_path, "Plots_J/New/Prod_Diam/Breeder Production by Diameter.pdf"))
 breeder_stats_bydiam_2census %>%
   filter(production_ratio_mean > 0) %>%
   mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
@@ -512,7 +536,7 @@ breeder_stats_bydiam_2census %>%
 ## Life history Production Ratio by Light
 
       # Fast vs Slow
-#pdf("~/Google Drive/ForestLight/Plots_J/New/Prod_Light/Fast to slow Production by light.pdf")
+#pdf(file.path(gdrive_path, "Plots_J/New/Prod_Light/Fast to slow Production by light.pdf"))
 fastslow_stats_bylight_2census %>%
   filter(production_ratio_mean > 0) %>%
   mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
@@ -527,7 +551,7 @@ fastslow_stats_bylight_2census %>%
 
      # Breeder vs Pioneer
 
-#pdf("~/Google Drive/ForestLight/Plots_J/New/Prod_Light/Breeder Production Ratio by light2.pdf")
+#pdf(file.path(gdrive_path, "Plots_J/New/Prod_Light/Breeder Production Ratio by light2.pdf"))
 breeder_stats_bylight_2census %>%
   filter(production_ratio_mean > 0) %>%
   mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
@@ -727,7 +751,7 @@ p <-plot_prod(year_to_plot = 1990,
               hex_scale = hex_scale_log_colors,
               aspect_ratio = 0.7) 
 p
-#pdf("~/Google Drive/ForestLight/Plots_J/New/Supplementals/raw_growth_heat.pdf")
+#pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/raw_growth_heat.pdf"))
 #p
 #dev.off()       
 
@@ -769,7 +793,7 @@ theme_plant1.1 <- theme(panel.grid = element_blank(),
                         text = element_text(family = 'Helvetica')) 
 
 
-year_to_plot <- 1990 ### CHANGE THIS IF YOU WANT TO PLOT 1990
+year_to_plot <- 1995 ### CHANGE THIS IF YOU WANT TO PLOT 1990
 
 # Load data ----
 
@@ -830,7 +854,7 @@ p<-ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'log_slope', 
   scale_x_discrete(name = 'Life History Strategy', labels = fg_display) +
   scale_y_continuous(name = 'Maximum Slope', limits=c(.25,1.1),breaks = seq(0, 1.5, 0.25), labels = seq(0, 1.5, 0.25)) +theme_plant
 p
-pdf("~/Google Drive/ForestLight/Plots_J/New/Supplementals/slopes.pdf")
+pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/slopes.pdf"))
 p
 dev.off()
 # Plot of intercept by FG
@@ -873,7 +897,7 @@ p_mean_segments <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
 # 2. Plot with different panels for each functional group, and raw data
 
 # I attempted to set an alpha scale so that the amount of transparency is roughly the same but the numbers may need to be tweaked
-#pdf("~/Google Drive/ForestLight/Plots_J/New/Supplementals/p_raw_panels.pdf")
+#pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/p_raw_panels.pdf"))
 p_raw_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% 'unclassified')) +
   facet_wrap(~ fg, labeller = labeller(fg = fg_display)) +theme_plant+
   geom_point(shape=21,aes(x = light_area, y = production_area, alpha = fg)) +
@@ -915,7 +939,7 @@ p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
         axis.ticks.length=unit(0.2,"cm"),
         axis.title = element_text(size = 12))
 p_median_panels
-pdf("~/Google Drive/ForestLight/Plots_J/New/Supplementals/light_growth.pdf")
+pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/light_growth.pdf"))
 p_median_panels
 dev.off()
 # 4. Plot with different panels for each functional group, and means
@@ -1000,7 +1024,7 @@ p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% '
 p_hex_panels
 #p<-set_panel_size(p_hex_panels, width=unit(10,"cm"), height=unit(6,"cm"))
 #plot(p)
-pdf("~/Google Drive/ForestLight/Plots_J/New/Supplementals/growth_light_heat.pdf")
+pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/growth_light_heat.pdf"))
 p_hex_panels
 dev.off()
 
@@ -1029,7 +1053,7 @@ p_median_1panel <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
 p_median_1panel
 p<-set_panel_size(p_median_1panel, width=unit(11.8,"cm"), height=unit(8.26,"cm"))
 plot(p)
-pdf("~/Google Drive/ForestLight/Plots_J/New/Fig4/fig 4a.pdf")
+pdf(file.path(gdrive_path, "Plots_J/New/Fig4/fig 4a.pdf"))
 plot(p)
 dev.off()
 
