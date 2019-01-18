@@ -32,7 +32,7 @@ theme_plant2 <- theme(panel.grid = element_blank(), #for Total Production
                       legend.position = "none",
                       text = element_text(family = 'Helvetica')) 
 
- ### Plotting of main and supplemental figures
+### Plotting of main and supplemental figures
 
 # Set paths to google drive forest light folder, and github forest light folder
 # All paths below will be relative to these paths.
@@ -48,19 +48,19 @@ library(tidyverse)
 #---------------------------------------------------------------------------------------------
 # Fig 2: PCA Axes
 
- # Classification description: 
+# Classification description: 
 
-    # Quentin: I went through my email and found the explanation Nadja gave for how groups are defined. 
-    # So it's basically if you took a circle out of the middle of a pizza, then cut the remaining ring into four 90 degree slices. 
-    #I think the percentiles divided by 2 is a fine cutoff, since ultimately it is arbitrary, 
-    #and the way it's split seems fine. In any case all the analyses we did using the continuous variables show the same result, qualitatively.
+# Quentin: I went through my email and found the explanation Nadja gave for how groups are defined. 
+# So it's basically if you took a circle out of the middle of a pizza, then cut the remaining ring into four 90 degree slices. 
+#I think the percentiles divided by 2 is a fine cutoff, since ultimately it is arbitrary, 
+#and the way it's split seems fine. In any case all the analyses we did using the continuous variables show the same result, qualitatively.
 
-    # Nadja: I attach the new classification, it is column 'fg5'.
-    #The values to split between groups are -0.951 and 1.284 on the first axis 
-    #(these are 10th and 90th percentiles divided by 2), on axis 2 it's -0.976 and 1.097.
-    #Then, I divided species scores by the absolute value of these values and 
-    #included all species within a circle of radius 1 in the 'intermediate' group. 
-  #Otherwise, species were split at 45° angles between axes.
+# Nadja: I attach the new classification, it is column 'fg5'.
+#The values to split between groups are -0.951 and 1.284 on the first axis 
+#(these are 10th and 90th percentiles divided by 2), on axis 2 it's -0.976 and 1.097.
+#Then, I divided species scores by the absolute value of these values and 
+#included all species within a circle of radius 1 in the 'intermediate' group. 
+#Otherwise, species were split at 45° angles between axes.
 
 
 # Load Nadja's data (new functional groups 25 June)
@@ -376,7 +376,7 @@ indivprodperareabin_2census %>%
   scale_x_log10(limits = c(1, 450),breaks=c(1,10,100,1000),  
                 name = expression(paste('Light per Crown Area (W m'^-2,')')))+ 
   scale_y_log10(limits = c(.003, .5), breaks = c(0.003, 0.01, .03, 0.1, 0.3), labels = c(0.003, 0.01, .03, 0.1, 0.3),
-               name = expression(atop('Production per Crown',paste('Area (kg y'^-1, ' m'^-2,')')))) +
+                name = expression(atop('Production per Crown',paste('Area (kg y'^-1, ' m'^-2,')')))) +
   scale_color_manual(values = guild_colors_nb, labels = fg_labels, name = 'Functional Froup') +
   scale_fill_manual(values = guild_fills_nb, labels = fg_labels, name = 'Functional Froup') 
 #dev.off()
@@ -537,7 +537,7 @@ breederscore_bin_bylight_2census %>%
 
 # Life history Production Ratio by diameter
 
-    # Fast vs Slow
+# Fast vs Slow
 #pdf(file.path(gdrive_path, "Plots_J/New/Prod_Diam/Fast vs Slow.pdf"))
 fastslow_stats_bydiam_2census %>%
   filter(production_ratio_mean > 0) %>%
@@ -551,7 +551,7 @@ fastslow_stats_bydiam_2census %>%
                 name = expression(paste(frac("Fast","Slow")))) 
 #dev.off()
 
-   # Breeder vs Pioneer 
+# Breeder vs Pioneer 
 breeder_stats_bydiam_2census
 str(breeder_stats_bydiam_2census)
 #pdf(file.path(gdrive_path, "Plots_J/New/Prod_Diam/Breeder Production by Diameter.pdf"))
@@ -572,7 +572,7 @@ breeder_stats_bydiam_2census %>%
 
 ## Life history Production Ratio by Light
 
-      # Fast vs Slow
+# Fast vs Slow
 #pdf(file.path(gdrive_path, "Plots_J/New/Prod_Light/Fast to slow Production by light.pdf"))
 fastslow_stats_bylight_2census %>%
   filter(production_ratio_mean > 0) %>%
@@ -586,7 +586,7 @@ fastslow_stats_bylight_2census %>%
                 limits=c(0.003,2),breaks=c(0.01,.1,1, 10), labels=signif) 
 #dev.off()
 
-     # Breeder vs Pioneer
+# Breeder vs Pioneer
 
 #pdf(file.path(gdrive_path, "Plots_J/New/Prod_Light/Breeder Production Ratio by light2.pdf"))
 breeder_stats_bylight_2census %>%
@@ -610,7 +610,7 @@ breeder_stats_bylight_2census %>%
 ics <- read.csv(file.path(fp, 'piecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
 ics$fg <- factor(ics$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
 
-   # Density model
+# Density model
 
 ggplot(ics %>% filter(prod_model == 1, criterion == 'LOOIC', variable == 'density', !fg %in% 'unclassified'), 
        aes(x = factor(dens_model), y = ic, ymin = ic - se_ic, ymax = ic + se_ic)) +
@@ -621,13 +621,13 @@ ggplot(ics %>% filter(prod_model == 1, criterion == 'LOOIC', variable == 'densit
   labs(x = 'Number of Segments in Density Function')
 ggsave(file.path(fpfig, 'density_model_information_criteria.pdf'), height = 6, width = 9)
 
-  # Production model
+# Production model
 
 ggplot(ics %>% filter(dens_model == 1, criterion == 'LOOIC', variable == 'production', !fg %in% 'unclassified'), aes(x = factor(prod_model), y = ic, ymin = ic - se_ic, ymax = ic + se_ic)) +
   facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
   geom_pointrange() +
   theme_bw() +
-  theme(strip.background = element_blank(), panel.grid = element_blank()) +
+  theme(strip.background = element_blank(), panel.grid = element_blank(), strip.text = element_text(size=10)) +
   labs(x = 'Number of Segments in Production Function')
 ggsave(file.path(fpfig, 'production_model_information_criteria.pdf'), height = 6, width = 9)
 #---------------------------------------------------------------------------------------------
@@ -657,7 +657,7 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'Unclassifie
         legend.text=element_text(size = 12),axis.title = element_text(size = 15),
         axis.text = element_text(color = "black", size = 11)) +
   labs(y = 'Slope') +
-ggtitle('Fitted slopes \n 3 segment density model and 2 segment production model')+
+  ggtitle('Fitted slopes \n 3 segment density model and 2 segment production model')+
   theme(plot.title = element_text(hjust=0.5)) #+ theme(legend.title=element_blank())
 
 
@@ -682,45 +682,45 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassifie
   ggtitle('Fitted Slopes \n 3 Segment Density Model & 2 Segment Production Model')+
   theme(plot.title = element_text(hjust=0.5)) +
   theme(legend.spacing.x=unit(.2, "cm"))+  theme(legend.title=element_blank())+ theme(legend.text=element_text(size = 12))
-  ggsave(file.path(fpfig, 'fitted_slopes_3partdensity_2partproduction.pdf'), height = 6, width = 9)
+ggsave(file.path(fpfig, 'fitted_slopes_3partdensity_2partproduction.pdf'), height = 6, width = 9)
 #---------------------------------------------------------------------------------------------
 
 
-  
-  theme_plant <- theme(panel.grid = element_blank(), 
-                       aspect.ratio = .70,
-                       axis.text = element_text(size = 17, color = "black"), 
-                       axis.ticks.length=unit(0.15,"cm"),
-                       axis.title = element_text(size = 17),
-                       axis.title.y = element_text(margin = margin(r = 15)),
-                       axis.title.x = element_text(margin = margin(t = 15)),
-                       axis.title.x.top = element_text(margin = margin(b = 5)),
-                       plot.title = element_text(size = 19, face = "plain", hjust = 10),
-                       panel.border = element_rect(color = "black", fill=NA,  size=1),
-                       panel.background = element_blank(),
-                       plot.margin = unit(c(1, 1, 1,1), "cm"),
-                       legend.position = "none",
-                       legend.key = element_rect(fill="transparent"),
-                       text = element_text(family = 'Helvetica')) 
-  theme_plant1.1 <- theme(panel.grid = element_blank(), 
-                          aspect.ratio = .70,
-                          axis.text = element_text(size = 14, color = "black"), 
-                          axis.ticks.length=unit(0.15,"cm"),
-                          axis.title = element_text(size = 14),
-                          axis.title.y = element_text(margin = margin(r = 0)),
-                          axis.title.x = element_text(margin = margin(t = 10)),
-                          axis.title.x.top = element_text(margin = margin(b = 5)),
-                          plot.title = element_text(size = 14, face = "plain", hjust = 10),
-                          panel.border = element_rect(color = "black", fill=NA,  size=.7),
-                          panel.background = element_blank(),
-                          plot.margin = unit(c(1, 1, 1,1), "cm"),
-                          legend.position = "none",
-                          legend.key = element_rect(fill="transparent"),
-                          text = element_text(family = 'Helvetica')) 
-  
-  
-  
-  
+
+theme_plant <- theme(panel.grid = element_blank(), 
+                     aspect.ratio = .70,
+                     axis.text = element_text(size = 17, color = "black"), 
+                     axis.ticks.length=unit(0.15,"cm"),
+                     axis.title = element_text(size = 17),
+                     axis.title.y = element_text(margin = margin(r = 15)),
+                     axis.title.x = element_text(margin = margin(t = 15)),
+                     axis.title.x.top = element_text(margin = margin(b = 5)),
+                     plot.title = element_text(size = 19, face = "plain", hjust = 10),
+                     panel.border = element_rect(color = "black", fill=NA,  size=1),
+                     panel.background = element_blank(),
+                     plot.margin = unit(c(1, 1, 1,1), "cm"),
+                     legend.position = "none",
+                     legend.key = element_rect(fill="transparent"),
+                     text = element_text(family = 'Helvetica')) 
+theme_plant1.1 <- theme(panel.grid = element_blank(), 
+                        aspect.ratio = .70,
+                        axis.text = element_text(size = 14, color = "black"), 
+                        axis.ticks.length=unit(0.15,"cm"),
+                        axis.title = element_text(size = 14),
+                        axis.title.y = element_text(margin = margin(r = 0)),
+                        axis.title.x = element_text(margin = margin(t = 10)),
+                        axis.title.x.top = element_text(margin = margin(b = 5)),
+                        plot.title = element_text(size = 14, face = "plain", hjust = 10),
+                        panel.border = element_rect(color = "black", fill=NA,  size=.7),
+                        panel.background = element_blank(),
+                        plot.margin = unit(c(1, 1, 1,1), "cm"),
+                        legend.position = "none",
+                        legend.key = element_rect(fill="transparent"),
+                        text = element_text(family = 'Helvetica')) 
+
+
+
+
 ######################## Hex Plot of Growth Scaling  ######################## 
 # note 'object 'alltreedat' not found'
 # Appropriate path needed 
@@ -730,14 +730,14 @@ fp <- '~/Google Drive/ForestLight/data/data_forplotting_aug2018' ## CHANGE PATH 
 
 for (i in dir(fp, pattern = '.csv')) {
   n <- gsub('.csv','',i)
-    assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
-  }
-  
+  assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
+}
+
 # Load raw data
 load('~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
 load('~/Google Drive/ForestLight/data/rawdataobj_alternativecluster.r')
 
-  
+
 # Process the raw data to get one single data frame with a lot of rows.
 library(dplyr)
 library(purrr)
@@ -754,8 +754,8 @@ plot_prod <- function(year_to_plot = 1990,
                       fg_names = c('fg1','fg2','fg3','fg4','fg5','unclassified'),
                       full_names = c('Fast', 'Slow', 'Pioneer', 'Breeder', 'Medium', 'Unclassified'),
                       func_names = c('power law', 'power law\ntimes exponential'),
-                      x_limits = c(1, 316),
-                      x_breaks = c(1, 3, 10, 30, 100),
+                      x_limits = c(1, 300),
+                      x_breaks = c(1, 10, 100),
                       y_limits,
                       y_breaks,
                       x_name = 'Diameter (cm)',
@@ -793,7 +793,7 @@ plot_prod <- function(year_to_plot = 1990,
   
   ggplot() +
     geom_hex(data = obsdat, aes(x = dbh_corr, y = production)) +
-    geom_line(data = preddat, aes(x = dbh, y = q50, group = prod_model, linetype = prod_model),size=0.25) +
+    geom_line(data = preddat, aes(x = dbh, y = q50, group = prod_model, linetype = prod_model), size=0.25) +
     facet_wrap(~ fg, labeller = labeller(fg = labels)) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels=signif) +
@@ -801,7 +801,7 @@ plot_prod <- function(year_to_plot = 1990,
     scale_linetype_manual(values = line_types) +
     hex_scale +theme_plant1.1+
     coord_fixed(ratio = aspect_ratio) + guides(linetype = 'none')+
-    theme(legend.position = c(0.85, 0.15), strip.background = element_blank())#, legend.text = element_blank())
+    theme(legend.position = c(0.85, 0.15), strip.background = element_blank(), strip.text = element_text(size=16))#, legend.text = element_blank())
   
   
 }
@@ -826,16 +826,16 @@ hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RCol
                                              labels = c(1,10,100,1000), limits=c(1,5000))
 
 
-p <-plot_prod(year_to_plot = 1990,
-              fg_names = c('fg1','fg2','fg3','fg4','fg5'),
-              full_names = c('Fast', 'Slow', 'Pioneer', 'Breeder', 'Medium', 'Unclassified'),
-              x_limits = c(1, 316),
-              x_breaks = c(1, 10, 100),
-              y_limits = c(5e-03, 1e04),
-              y_breaks = c(.001, .1, 10, 1000),
-              line_types = c('dashed', 'solid'),
-              hex_scale = hex_scale_log_colors,
-              aspect_ratio = 0.7) 
+p <- plot_prod(year_to_plot = 1990,
+               fg_names = c('fg1','fg2','fg3','fg4','fg5'),
+               full_names = c('Fast', 'Slow', 'Pioneer', 'Breeder', 'Medium', 'Unclassified'),
+               x_limits = c(1, 316),
+               x_breaks = c(1,10, 100),
+               y_limits = c(0.001, 1000),
+               y_breaks = c(.001, .1, 10, 1000),
+               line_types = c('dashed', 'solid'),
+               hex_scale = hex_scale_log_colors,
+               aspect_ratio = 0.75) 
 p 
 #pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/raw_growth_heat.pdf"))
 #p
@@ -902,7 +902,7 @@ fg_colors2 <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87C
 
 # Remove all tree and unclassified groups
 
-p<-ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
+p <- ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
           aes(x = fg, y = q50, ymin = q025, ymax = q975)) +theme_plant+
   geom_hline(yintercept = 1, linetype = 'dotted', color = 'dodgerblue', size = 1) + 
   geom_errorbar(width = 0.1) + geom_point(size = 3) +
@@ -918,7 +918,7 @@ ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'G', !fg %in% c(
   geom_errorbar(width = 0.1) + geom_point() +
   scale_x_discrete(name = 'functional group', labels = fg_labels) +
   scale_y_continuous(name = 'growth vs light intercept', 
-                    breaks = seq(0, 1.25, 0.25))+#, labels = seq(0, 1.25, 0.25)) +
+                     breaks = seq(0, 1.25, 0.25))+#, labels = seq(0, 1.25, 0.25)) +
   theme_plant
 #panel_border(colour = 'black')
 
@@ -1042,15 +1042,15 @@ p_mean_1panel
 #col1 <-colorRampPalette(c('skyblue', 'goldenrod', 'indianred'))
 
 #hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=3)(50),
-    #                                  trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+#                                  trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
 
 #hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('khaki1', 'gold', 'red3'), bias=3)(50),
-    #                                  trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+#                                  trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
 
 #hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('aliceblue', 'skyblue','khaki1','red3'), bias=3)(50),
-              #                        trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+#                        trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
 #hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('skyblue', 'red3'), bias=3)(50),
-              #                        trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+#                        trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
 #hex_scale_3b <- scale_fill_gradientn(colours = rev(colorRampPalette(RColorBrewer::brewer.pal(9,'RdYlBu'), bias=0.1)(50)), guide = F)
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
                                              trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000), 
