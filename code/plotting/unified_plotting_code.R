@@ -42,14 +42,16 @@ fgbci$fg5 <- match(fgbci$fg5, c(2,3,1,4,5))
 fgbci$PC_slow_to_fast <- -fgbci$X1new
 fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 
-guild_colors <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")#RColorBrewer::brewer.pal(5, 'Set1')
+guild_fills <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")#RColorBrewer::brewer.pal(5, 'Set1')
+guild_colors <- c("black", "#99AF3C", "#1D5128", "#1e3160", "#6BA3BF", "#D6D6D6")
 fg_names <- paste('fg', 1:5, sep = '')
 fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 
-ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, color = factor(fg5))) +
-  geom_point() +
-  labs(x = 'X1 slow to fast', y = 'X2 breeders to pioneers') +
-  scale_color_manual(values = guild_colors, labels = fg_labels, name = 'functional group')
+ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
+  geom_point(shape = 21, size = 3.5, color = "black") + theme_plant_0.6 +theme(aspect.ratio = 0.8)+
+  labs(x = 'Slow to Fast', y = 'Breeders to Pioneers') +
+  scale_color_manual(values = guild_colors, labels = fg_labels, name = 'functional group')+
+  scale_fill_manual(values = guild_fills)
 
 
 #---------------------------------------------------------------------------------------------
@@ -321,8 +323,30 @@ for (i in file_names) {
 }
 
 ### Light Capture
+# Set options for error bar widths and dodge amounts for all the plots
+error_bar_width <- 0.13
+dodge_width <- 0
 
-#filepath for light?
+area_core <- 42.84 # Area of the plot without the edge strip and without the "young" forest area.
+global_diam_xlimits <- c(1, 316) # Maximum and minimum for x axis if it's diameter.
+guild_colors2 <- c("firebrick2","lightpink" , "royalblue4", "lightskyblue", "ivory" )
+guild_colors3 <- c("firebrick2","lightpink" , "lightskyblue","royalblue4", "ivory","black" )
+
+indivproductionbin_5census$fg <- factor(indivproductionbin_5census$fg, levels=c('fg1','fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'all'))
+densitybin_5census$fg <- factor(densitybin_5census$fg, levels=c('fg1','fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'all'))
+
+unique(densitybin_5census $fg)
+guild_colors <- RColorBrewer::brewer.pal(5, 'Set1')
+fg_names <- paste('fg', 1:5, sep = '')
+fg_labels <- c('Fast','Long-lived Pioneer', 'Slow', 'Short-lived Breeder', 'Intermediate')
+
+fg_names <- paste('fg', 1:5, sep = '')
+fg_labels2 <- c('Fast','Long-lived Pioneer', 'Slow', 'Short-lived Breeder', 'Intermediate','All')
+
+p_dodge <- position_dodge(width = dodge_width)
+
+
+#Quentin - need to update groups and add fitted line 
 
 lightreceivedbin_2census %>%
   filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
@@ -335,8 +359,8 @@ lightreceivedbin_2census %>%
   scale_x_log10(name = 'Diameter (cm)', limits = c(1, 350), breaks=c(1,3,10,30,100,300)) +  
   scale_y_log10(position="right", name = expression(atop('Total Light Capture',paste('(kW ha'^-1,')'))),labels = signif,
                 limits = c(0.04, 100), breaks=c(0.1, 1, 10, 100)) +
-  scale_color_manual(values = c('black', guild_colors2), labels = c('All', fg_labels), name = 'Functional group') +
-  scale_fill_manual(values = c('black', guild_colors2), labels = c('All', fg_labels), name = 'Functional group') 
+  scale_color_manual(values = c('black', guild_fills), labels = c('All', fg_labels), name = 'Functional group') +
+  scale_fill_manual(values = c('black', guild_fills), labels = c('All', fg_labels), name = 'Functional group') 
 
 ###  Growth vs Light
 indivprodperareabin_2census %>%
@@ -348,10 +372,10 @@ indivprodperareabin_2census %>%
   geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
   scale_x_log10(limits = c(1, 450),breaks=c(1,10,100,1000),  
                 name = expression(paste('Light per Crown Area (W m'^-2,')')))+ 
-  scale_y_log10(limits = c(.02, 1.1),breaks=c(0.01, .03,0.1, 0.3,1), labels = signif,
-                name = expression(atop('Production per Crown',paste('Area (kg y'^-1, ' m'^-2,')')))) +
-  scale_color_manual(values = guild_colors2, labels = fg_labels, name = 'Functional Froup') +
-  scale_fill_manual(values = guild_colors2, labels = fg_labels, name = 'Functional Froup') 
+  scale_y_log10(limits = c(.003, .5), breaks = c(0.003, 0.01, .03, 0.1, 0.3), labels = c(0.003, 0.01, .03, 0.1, 0.3),
+               name = expression(atop('Production per Crown',paste('Area (kg y'^-1, ' m'^-2,')')))) +
+  scale_color_manual(values = guild_colors, labels = fg_labels, name = 'Functional Froup') +
+  scale_fill_manual(values = guild_fills, labels = fg_labels, name = 'Functional Froup') 
 dev.off()
 
 ###  Crown Area
@@ -367,8 +391,8 @@ crownareabin_2census %>%
   scale_x_log10(name = 'Diameter (cm)', limits = c(1, 350), breaks=c(1,3,10,30,100,300)) +  
   scale_y_log10(limits = c(.1, 10000),breaks=c(0.1,1, 10, 100, 1000, 10000), labels = signif,
                 name = expression(atop('Total Crown Area',paste('(m'^2, ' ha'^-1,')'))))  +  
-  scale_color_manual(values = c('black', guild_colors2), labels = c('All', fg_labels), name = 'Functional group') +
-  scale_fill_manual(values = c('black', guild_colors2), labels = c('All', fg_labels), name = 'Functional group') 
+  scale_color_manual(values = c('black', guild_colors), labels = c('All', fg_labels), name = 'Functional group') +
+  scale_fill_manual(values = c('black', guild_fills), labels = c('All', fg_labels), name = 'Functional group') 
 
 # ------------------------------- Fig 5 Relative Abundance  ------------------------------------
 
