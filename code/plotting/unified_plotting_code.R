@@ -683,10 +683,27 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassifie
 #---------------------------------------------------------------------------------------------
 
 
+  
+  
+  
+  
 ######################## Hex Plot of Growth Scaling  ######################## 
 # note 'object 'alltreedat' not found'
 # Appropriate path needed 
 
+fp <- '~/google_drive/ForestLight/data/data_forplotting_aug2018' ## CHANGE PATH AS NEEDED
+fp <- '~/Google Drive/ForestLight/data/data_forplotting_aug2018' ## CHANGE PATH AS NEEDED
+
+for (i in dir(fp, pattern = '.csv')) {
+  n <- gsub('.csv','',i)
+    assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
+  }
+  
+# Load raw data
+load('~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
+load('~/Google Drive/ForestLight/data/rawdataobj_alternativecluster.r')
+
+  
 # Process the raw data to get one single data frame with a lot of rows.
 library(dplyr)
 library(purrr)
@@ -708,7 +725,7 @@ plot_prod <- function(year_to_plot = 1990,
                       y_limits,
                       y_breaks,
                       x_name = 'Diameter (cm)',
-                      y_name = expression(paste('Growth (kg yr'^-1,')')),                      line_types = c('dashed', 'solid'),
+                      y_name = expression(paste('Growth (kg yr'^-1,')')), line_types = c('dashed', 'solid'),
                       aspect_ratio = 1,
                       hex_scale = scale_fill_gradient(low = 'gray90', high = 'gray10', guide = FALSE),
                       obsdat = raw_prod,
@@ -720,7 +737,7 @@ plot_prod <- function(year_to_plot = 1990,
   #require(pracma)
   
   obsdat <- obsdat %>%
-    filter(fg %in% fg_names, year == year_to_plot)
+    filter(fg %in% fg_names, year == year_to_plot, mean_n_individuals > 1)
   
   obs_limits <- obsdat %>%
     group_by(fg) %>%
@@ -746,32 +763,33 @@ plot_prod <- function(year_to_plot = 1990,
     facet_wrap(~ fg, labeller = labeller(fg = labels)) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels=signif) +
-    scale_linetype_manual(values = line_types, name = 'Functional form') +
+    #scale_linetype_manual(values = line_types, name = 'Functional form') +
+    scale_linetype_manual(values = line_types) +
     hex_scale +theme_plant1.1+
     coord_fixed(ratio = aspect_ratio) +
-    theme(legend.position = c(0.8, 0.09), strip.background = element_blank())
+    theme(legend.position = c(0.88, -0.05), strip.background = element_blank())#, legend.text = element_blank())
   
   
 }
 # Original grayscale
-hex_scale_1 <- scale_fill_gradient(low = 'gray90', high = 'gray10', guide = FALSE)
+#hex_scale_1 <- scale_fill_gradient(low = 'gray90', high = 'gray10', guide = FALSE)
 
 # Biased grayscale to emphasize the variation in the hexagons with less data.
 # Bias >1 does this.
-hex_scale_2 <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=10)(50))
+#hex_scale_2 <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=10)(50))
 
 # Biased color scale of red yellow and blue to do the same, using a brewer palette
 # the bias is <1 this time because I had to reverse the scale.
-hex_scale_3 <- scale_fill_gradientn(colours = rev(colorRampPalette(RColorBrewer::brewer.pal(9,'RdYlBu'), bias=0.3)(50)), guide = FALSE)
+#hex_scale_3 <- scale_fill_gradientn(colours = rev(colorRampPalette(RColorBrewer::brewer.pal(9,'RdYlBu'), bias=0.3)(50)), guide = FALSE)
 
 # Biased and customized color scale
-hex_scale_4 <- scale_fill_gradientn(colours = colorRampPalette(c('skyblue', 'goldenrod', 'indianred'), bias = 3)(50), guide = FALSE)
+#hex_scale_4 <- scale_fill_gradientn(colours = colorRampPalette(c('skyblue', 'goldenrod', 'indianred'), bias = 3)(50), guide = FALSE)
 
 # Edit the hex scale argument to draw this with other color scales.
-hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=1)(50), trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=1)(50), trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
-                                             trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), 
-                                             labels = c(1,10,100,1000), limits=c(2,5000))
+                                             trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000), 
+                                             labels = c(1,10,100,1000), limits=c(1,5000))
 
 
 p <-plot_prod(year_to_plot = 1990,
@@ -784,7 +802,7 @@ p <-plot_prod(year_to_plot = 1990,
               line_types = c('dashed', 'solid'),
               hex_scale = hex_scale_log_colors,
               aspect_ratio = 0.7) 
-p
+p 
 #pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/raw_growth_heat.pdf"))
 #p
 #dev.off()       
@@ -827,10 +845,10 @@ theme_plant1.1 <- theme(panel.grid = element_blank(),
                         text = element_text(family = 'Helvetica')) 
 
 
-year_to_plot <- 1995 ### CHANGE THIS IF YOU WANT TO PLOT 1990
+year_to_plot <- 1990 ### CHANGE THIS IF YOU WANT TO PLOT 1990
 
 # Load data ----
-
+fp <- '/Users/jgradym/Google Drive/ForestLight/data/data_forplotting_light_june2018'
 #fp <- 'data/data_forplotting_light_june2018'
 # New File path needed
 obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
@@ -862,7 +880,7 @@ obs_light_binned <- obs_light_binned %>%
 ### SET THESE OPTIONS
 
 # Names of functional groups to display
-fg_display <- c(fg1 = 'Fast', fg2 = 'Slow', fg3 = 'Pioneer', fg4 = 'Breeder ', fg5 = 'Middle')
+
 
 # Axis titles
 title_x <- expression(paste('Light per Crown Area (W m'^-2,')',sep=''))
@@ -884,8 +902,8 @@ fg_colors2 <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87C
 p<-ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
           aes(x = fg, y = q50, ymin = q025, ymax = q975)) +theme_plant+
   geom_hline(yintercept = 1, linetype = 'dotted', color = 'dodgerblue', size = 1) + 
-  geom_errorbar(width = 0.1) + geom_point() +
-  scale_x_discrete(name = 'Life History Strategy', labels = fg_display) +
+  geom_errorbar(width = 0.1) + geom_point(size = 3) +
+  scale_x_discrete(name = 'Life History Strategy', labels = fg_labels) +
   scale_y_continuous(name = 'Maximum Slope', limits=c(.25,1.1),breaks = seq(0, 1.5, 0.25), labels = seq(0, 1.5, 0.25)) +theme_plant
 p
 pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/slopes.pdf"))
@@ -895,9 +913,9 @@ dev.off()
 ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'G', !fg %in% c('alltree','unclassified')),
        aes(x = fg, y = q50, ymin = q025, ymax = q975)) +theme_plant+
   geom_errorbar(width = 0.1) + geom_point() +
-  scale_x_discrete(name = 'functional group', labels = fg_display) +
+  scale_x_discrete(name = 'functional group', labels = fg_labels) +
   scale_y_continuous(name = 'growth vs light intercept', 
-                     breaks = seq(0, 1.25, 0.25), labels = seq(0, 1.25, 0.25)) +
+                    breaks = seq(0, 1.25, 0.25))+#, labels = seq(0, 1.25, 0.25)) +
   theme_plant
 #panel_border(colour = 'black')
 
@@ -915,7 +933,7 @@ segment_location <- pred_light_5groups %>%
 cast_pars <- left_join(cast_pars, segment_location)
 
 p_mean_segments <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_display)) +
+  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50), color = 'red') +
   geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max)) +
   geom_point(aes(x = bin_midpoint, y = mean)) +
@@ -927,13 +945,13 @@ p_mean_segments <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
   theme_classic() +
   theme(panel.border = element_rect(fill=NA),
         strip.background = element_rect(fill=NA))
-
+p_mean_segments
 # 2. Plot with different panels for each functional group, and raw data
 
 # I attempted to set an alpha scale so that the amount of transparency is roughly the same but the numbers may need to be tweaked
 #pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/p_raw_panels.pdf"))
 p_raw_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% 'unclassified')) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_display)) +theme_plant+
+  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +theme_plant+
   geom_point(shape=21,aes(x = light_area, y = production_area, alpha = fg)) +
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975, group=fg,color=NA,fill=fg), alpha = 0.5) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50, group=fg, color=fg), size=0.25) +
@@ -953,7 +971,7 @@ p_raw_panels
 #dev.off()
 # 3. Plot with different panels for each functional group, and quantiles
 p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_display)) +theme_plant+
+  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +theme_plant+
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975,group=fg,color=NA,fill=fg), alpha = 0.5) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50,group=fg, color=fg), size=0.25) +
   geom_segment(aes(x = bin_midpoint, xend = bin_midpoint, y = q25, yend = q75), size = 0.3) +
@@ -979,7 +997,7 @@ dev.off()
 # 4. Plot with different panels for each functional group, and means
 
 p_mean_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_display)) +
+  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975), alpha = 0.5, fill = 'red') +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50), color = 'red') +
   geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max)) +
@@ -998,17 +1016,17 @@ p_mean_panels
 dodge_width <- 0.03
 error_bar_width <- 0.03
 
-p_mean_1panel <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
+p_mean_1panel <- ggplot(obs_light_binned %>% filter(year == year_to_plot, mean_n_individuals > 10, !fg %in% c('alltree', 'unclassified'))) +
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.5) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50, color = fg)) +
   geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max, group = fg, color = fg, width = error_bar_width * width), position = position_dodge(width = dodge_width)) +
-  geom_point(aes(x = bin_midpoint, y = mean, group = fg, color = fg), position = position_dodge(width = dodge_width)) +
+  geom_point(aes(x = bin_midpoint, y = mean, group = fg, fill = fg), size = 3, shape = 21, position = position_dodge(width = dodge_width)) +
   
   scale_x_log10(name = title_x) + 
   scale_y_log10(name = title_y) +
-  scale_color_manual(name = 'Functional group', values = fg_colors, labels = fg_display) +
-  scale_fill_manual(values = fg_colors, labels = fg_display, guide = FALSE) +
-  theme_classic() +
+  scale_color_manual(name = 'Functional group', values = fg_colors, labels = fg_labels) +
+  scale_fill_manual(values = fg_colors, labels = fg_labels, guide = FALSE) +
+  theme_plant +
   theme(panel.border = element_rect(fill=NA),
         legend.position = c(0.2, 0.8))
 p_mean_1panel 
@@ -1018,26 +1036,26 @@ p_mean_1panel
 
 
 # 8. Raw data plot converted to hexbin instead of plain scatter
-col1 <-colorRampPalette(c('skyblue', 'goldenrod', 'indianred'))
+#col1 <-colorRampPalette(c('skyblue', 'goldenrod', 'indianred'))
 
-hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=3)(50),
-                                      trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=3)(50),
+    #                                  trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
 
-hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('khaki1', 'gold', 'red3'), bias=3)(50),
-                                      trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('khaki1', 'gold', 'red3'), bias=3)(50),
+    #                                  trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
 
-hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('aliceblue', 'skyblue','khaki1','red3'), bias=3)(50),
-                                      trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
-hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('skyblue', 'red3'), bias=3)(50),
-                                      trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
-hex_scale_3b <- scale_fill_gradientn(colours = rev(colorRampPalette(RColorBrewer::brewer.pal(9,'RdYlBu'), bias=0.1)(50)), guide = F)
+#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('aliceblue', 'skyblue','khaki1','red3'), bias=3)(50),
+              #                        trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('skyblue', 'red3'), bias=3)(50),
+              #                        trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+#hex_scale_3b <- scale_fill_gradientn(colours = rev(colorRampPalette(RColorBrewer::brewer.pal(9,'RdYlBu'), bias=0.1)(50)), guide = F)
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
-                                             trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), 
+                                             trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000), 
                                              labels = c(1,10,100,1000), limits=c(2,5000))
 
 
 p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% 'unclassified')) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_display)) +
+  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +
   geom_hex(aes(x = light_area, y = production_area)) +
   #geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
   #          aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
@@ -1048,8 +1066,8 @@ p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% '
   scale_x_log10(name = title_x) + 
   scale_y_log10(name = title_y, labels=signif) +
   hex_scale_log_colors + 
-  scale_color_manual(name = 'Functional group',values = fg_colors, labels = fg_display) +
-  #scale_fill_manual(values = fg_colors, labels = fg_display, guide = FALSE) +
+  scale_color_manual(name = 'Functional group',values = fg_colors, labels = fg_labels) +
+  #scale_fill_manual(values = fg_colors, labels = fg_labels, guide = FALSE) +
   theme_plant1.1+
   guides(color = FALSE) +
   theme(panel.border = element_rect(fill=NA),
@@ -1066,7 +1084,7 @@ dev.off()
 
 dodge_width <- 0.00
 
-p_median_1panel <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
+p_median_1panel <- ggplot(obs_light_binned %>% filter(year == year_to_plot, mean_n_individuals >= 10, !fg %in% c('alltree', 'unclassified'))) +
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50, color = fg)) +
   #geom_errorbar(aes(x = bin_midpoint, ymin = q25, ymax = q75, group = fg, color = fg), size = 0.75, width = 0, position = position_dodge(width = dodge_width)) +
@@ -1077,8 +1095,8 @@ p_median_1panel <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
   #geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), aes(x = xmax * 0.5, xend = xmax * 2, y = ymax * 0.5, yend = ymax * 2), color = 'brown1', size = 1) +
   scale_x_log10(name = title_x, breaks=c(1,3,10,30,100,300))+ 
   scale_y_log10(name =  expression(atop('Growth per Crown Area',paste('(kg y'^-1, ' m'^-2,')')))) +
-  scale_color_manual(name = 'Functional group', values = fg_colors, labels = fg_display) +
-  scale_fill_manual(values = fg_colors2, labels = fg_display, guide = FALSE) +
+  scale_color_manual(name = 'Functional group', values = fg_colors, labels = fg_labels) +
+  scale_fill_manual(values = fg_colors2, labels = fg_labels, guide = FALSE) +
   theme_plant #+
 # theme(panel.border = element_rect(fill=NA),
 #      legend.position = c(0.2, 0.8))
