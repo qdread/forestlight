@@ -1,3 +1,37 @@
+
+# Some Plotting Code
+
+theme_plant_0.6 <- theme(panel.grid = element_blank(), #for Density and Growth
+                         aspect.ratio = .60,
+                         axis.text = element_text(size = 19, color = "black"), 
+                         axis.ticks.length=unit(0.2,"cm"),
+                         axis.title = element_text(size = 19),
+                         axis.title.y = element_text(margin = margin(r = 10)),
+                         axis.title.x = element_text(margin = margin(t = 10)),
+                         axis.title.x.top = element_text(margin = margin(b = 5)),
+                         plot.title = element_text(size = 19, face = "plain", hjust = 10),
+                         panel.border = element_rect(color = "black", fill=NA,  size=1),
+                         panel.background = element_blank(),
+                         #plot.margin = unit(c(1, 1, 1,1), "cm"),
+                         legend.position = "none",
+                         legend.key = element_rect(fill="transparent"),
+                         
+                         text = element_text(family = 'Helvetica')) 
+
+theme_plant2 <- theme(panel.grid = element_blank(), #for Total Production
+                      aspect.ratio = 1,
+                      axis.text = element_text(size = 19, color = "black"), 
+                      axis.ticks.length=unit(0.2,"cm"),
+                      axis.title = element_text(size = 19),
+                      axis.title.y = element_text(margin = margin(r = 10)),
+                      axis.title.x = element_text(margin = margin(t = 10)),
+                      axis.title.x.top = element_text(margin = margin(b = 5)),
+                      plot.title = element_text(size = 19, face = "plain", hjust = 10),
+                      panel.border = element_rect(color = "black", fill=NA,  size=1),
+                      panel.background = element_blank(),
+                      legend.position = "none",
+                      text = element_text(family = 'Helvetica')) 
+
  ### Plotting of main and supplemental figures
 
 # Set paths to google drive forest light folder, and github forest light folder
@@ -44,11 +78,13 @@ fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 
 guild_fills <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")#RColorBrewer::brewer.pal(5, 'Set1')
 guild_colors <- c("black", "#99AF3C", "#1D5128", "#1e3160", "#6BA3BF", "#D6D6D6")
+guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")
+guild_colors_nb <- c("#99AF3C", "#1D5128", "#1e3160", "#6BA3BF", "#D6D6D6")
 fg_names <- paste('fg', 1:5, sep = '')
 fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 
 ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
-  geom_point(shape = 21, size = 3.5, color = "black") + theme_plant_0.6 +theme(aspect.ratio = 0.8)+
+  geom_point(shape = 21, size = 3.5, color = "black") + theme_plant_0.6 +theme(aspect.ratio = 0.75)+
   labs(x = 'Slow to Fast', y = 'Breeders to Pioneers') +
   scale_color_manual(values = guild_colors, labels = fg_labels, name = 'functional group')+
   scale_fill_manual(values = guild_fills)
@@ -59,38 +95,6 @@ ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(
 
 # Define plotting functions -----
 
-# Some Plotting Code
-
-theme_plant_0.6 <- theme(panel.grid = element_blank(), #for Density and Growth
-                     aspect.ratio = .60,
-                     axis.text = element_text(size = 19, color = "black"), 
-                     axis.ticks.length=unit(0.2,"cm"),
-                     axis.title = element_text(size = 19),
-                     axis.title.y = element_text(margin = margin(r = 10)),
-                     axis.title.x = element_text(margin = margin(t = 10)),
-                     axis.title.x.top = element_text(margin = margin(b = 5)),
-                     plot.title = element_text(size = 19, face = "plain", hjust = 10),
-                     panel.border = element_rect(color = "black", fill=NA,  size=1),
-                     panel.background = element_blank(),
-                     #plot.margin = unit(c(1, 1, 1,1), "cm"),
-                     legend.position = "none",
-                     legend.key = element_rect(fill="transparent"),
-                     
-                     text = element_text(family = 'Helvetica')) 
-
-theme_plant2 <- theme(panel.grid = element_blank(), #for Total Production
-                      aspect.ratio = 1,
-                      axis.text = element_text(size = 19, color = "black"), 
-                      axis.ticks.length=unit(0.2,"cm"),
-                      axis.title = element_text(size = 19),
-                      axis.title.y = element_text(margin = margin(r = 10)),
-                      axis.title.x = element_text(margin = margin(t = 10)),
-                      axis.title.x.top = element_text(margin = margin(b = 5)),
-                      plot.title = element_text(size = 19, face = "plain", hjust = 10),
-                      panel.border = element_rect(color = "black", fill=NA,  size=1),
-                      panel.background = element_blank(),
-                      legend.position = "none",
-                      text = element_text(family = 'Helvetica')) 
 
 # Plot single model fit with multiple functional groups for density
 plot_dens <- function(year_to_plot = 1995,
@@ -346,7 +350,6 @@ fg_labels2 <- c('Fast','Long-lived Pioneer', 'Slow', 'Short-lived Breeder', 'Int
 p_dodge <- position_dodge(width = dodge_width)
 
 
-#Quentin - need to update groups and add fitted line 
 
 lightreceivedbin_2census %>%
   filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
@@ -359,13 +362,13 @@ lightreceivedbin_2census %>%
   scale_x_log10(name = 'Diameter (cm)', limits = c(1, 350), breaks=c(1,3,10,30,100,300)) +  
   scale_y_log10(position="right", name = expression(atop('Total Light Capture',paste('(kW ha'^-1,')'))),labels = signif,
                 limits = c(0.04, 100), breaks=c(0.1, 1, 10, 100)) +
-  scale_color_manual(values = c('black', guild_fills), labels = c('All', fg_labels), name = 'Functional group') +
-  scale_fill_manual(values = c('black', guild_fills), labels = c('All', fg_labels), name = 'Functional group') 
+  scale_color_manual(values = c('black', guild_colors_nb), labels = c('All', fg_labels), name = 'Functional group') +
+  scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
 
 ###  Growth vs Light
 indivprodperareabin_2census %>%
   filter(fg %in% fg_names, !is.na(mean), mean > 0) %>%
-  filter(mean_n_individuals>9.999)%>%
+  filter(mean_n_individuals >= 10)%>%
   group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, group = fg, fill=fg,color = fg)) +
   theme_plant+geom_errorbar(aes(width = width), position=p_dodge) +
@@ -374,9 +377,9 @@ indivprodperareabin_2census %>%
                 name = expression(paste('Light per Crown Area (W m'^-2,')')))+ 
   scale_y_log10(limits = c(.003, .5), breaks = c(0.003, 0.01, .03, 0.1, 0.3), labels = c(0.003, 0.01, .03, 0.1, 0.3),
                name = expression(atop('Production per Crown',paste('Area (kg y'^-1, ' m'^-2,')')))) +
-  scale_color_manual(values = guild_colors, labels = fg_labels, name = 'Functional Froup') +
-  scale_fill_manual(values = guild_fills, labels = fg_labels, name = 'Functional Froup') 
-dev.off()
+  scale_color_manual(values = guild_colors_nb, labels = fg_labels, name = 'Functional Froup') +
+  scale_fill_manual(values = guild_fills_nb, labels = fg_labels, name = 'Functional Froup') 
+#dev.off()
 
 ###  Crown Area
 crownareabin_2census %>%
@@ -391,8 +394,8 @@ crownareabin_2census %>%
   scale_x_log10(name = 'Diameter (cm)', limits = c(1, 350), breaks=c(1,3,10,30,100,300)) +  
   scale_y_log10(limits = c(.1, 10000),breaks=c(0.1,1, 10, 100, 1000, 10000), labels = signif,
                 name = expression(atop('Total Crown Area',paste('(m'^2, ' ha'^-1,')'))))  +  
-  scale_color_manual(values = c('black', guild_colors), labels = c('All', fg_labels), name = 'Functional group') +
-  scale_fill_manual(values = c('black', guild_fills), labels = c('All', fg_labels), name = 'Functional group') 
+  scale_color_manual(values = c('black', guild_colors_nb), labels = c('All', fg_labels), name = 'Functional group') +
+  scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
 
 # ------------------------------- Fig 5 Relative Abundance  ------------------------------------
 
@@ -425,7 +428,7 @@ breederscore_bin_bydiam_2census %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())+
   scale_x_log10(limits=c(1,300), name = 'Diameter (cm)') + 
-  scale_y_continuous(limits=c(-2,4),name = 'Breeder-Performer') 
+  scale_y_continuous(limits=c(-4,2),name = 'Breeder-Performer') 
 pdf(file.path(gdrive_path, "Plots_J/New/Ranks/Diameter/Breeders.pdf"))
 dev.off()
 
@@ -442,7 +445,7 @@ fastslow_stats_bylight_2census %>%
   geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
   
   scale_x_log10(limits=c(1,450),breaks=c(1,10,100), name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
-  scale_y_log10(breaks = c(0.1,1,10), labels=signif, limits=c(0.03,10),
+  scale_y_log10(breaks = c(0.01,0.1,1,10), labels=signif, limits=c(0.003,2),
                 name = expression(paste(frac("Fast","Slow"))))  
 pdf(file.path(gdrive_path, "Plots_J/New/Abun_Light/Slow to Fast Abundance by Light.pdf"))
 dev.off()
@@ -462,7 +465,7 @@ breeder_stats_bylight_2census %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())+
   
-  scale_y_log10(labels=signif, limits=c(10^-2,300),breaks=c(0.01, 0.1, 1, 10, 100),
+  scale_y_log10(labels=signif, limits=c(0.1,400),breaks=c(0.01, 0.1, 1, 10, 100),
                 name = expression(paste(frac("Short-Lived Breeder","Long-lived Pioneer")))) 
 #pdf(file.path(gdrive_path, "Plots_J/New/Abun_Light/Breeder Abundance Ratio by light.pdf"))
 dev.off()
@@ -505,7 +508,7 @@ breederscore_bin_bydiam_2census %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())+
   scale_x_log10(limits=c(1,300), name = 'Diameter (cm)') + 
-  scale_y_continuous(limits=c(-2,4),name = 'Breeder-Performer') 
+  scale_y_continuous(limits=c(-4,2),name = 'Breeder-Performer') 
 
 
 ## by Light
@@ -580,7 +583,7 @@ fastslow_stats_bylight_2census %>%
   scale_x_log10(limits=c(1,450),breaks=c(1,10,100),
                 name = expression(paste('Light per Crown Area (W m'^-2,')')))+
   scale_y_log10(expression(paste(frac("Fast","Slow"))),
-                limits=c(0.005,12),breaks=c(0.01,.1,1, 10), labels=signif) 
+                limits=c(0.003,2),breaks=c(0.01,.1,1, 10), labels=signif) 
 #dev.off()
 
      # Breeder vs Pioneer
@@ -684,6 +687,37 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassifie
 
 
   
+  theme_plant <- theme(panel.grid = element_blank(), 
+                       aspect.ratio = .70,
+                       axis.text = element_text(size = 17, color = "black"), 
+                       axis.ticks.length=unit(0.15,"cm"),
+                       axis.title = element_text(size = 17),
+                       axis.title.y = element_text(margin = margin(r = 15)),
+                       axis.title.x = element_text(margin = margin(t = 15)),
+                       axis.title.x.top = element_text(margin = margin(b = 5)),
+                       plot.title = element_text(size = 19, face = "plain", hjust = 10),
+                       panel.border = element_rect(color = "black", fill=NA,  size=1),
+                       panel.background = element_blank(),
+                       plot.margin = unit(c(1, 1, 1,1), "cm"),
+                       legend.position = "none",
+                       legend.key = element_rect(fill="transparent"),
+                       text = element_text(family = 'Helvetica')) 
+  theme_plant1.1 <- theme(panel.grid = element_blank(), 
+                          aspect.ratio = .70,
+                          axis.text = element_text(size = 14, color = "black"), 
+                          axis.ticks.length=unit(0.15,"cm"),
+                          axis.title = element_text(size = 14),
+                          axis.title.y = element_text(margin = margin(r = 0)),
+                          axis.title.x = element_text(margin = margin(t = 10)),
+                          axis.title.x.top = element_text(margin = margin(b = 5)),
+                          plot.title = element_text(size = 14, face = "plain", hjust = 10),
+                          panel.border = element_rect(color = "black", fill=NA,  size=.7),
+                          panel.background = element_blank(),
+                          plot.margin = unit(c(1, 1, 1,1), "cm"),
+                          legend.position = "none",
+                          legend.key = element_rect(fill="transparent"),
+                          text = element_text(family = 'Helvetica')) 
+  
   
   
   
@@ -737,7 +771,7 @@ plot_prod <- function(year_to_plot = 1990,
   #require(pracma)
   
   obsdat <- obsdat %>%
-    filter(fg %in% fg_names, year == year_to_plot, mean_n_individuals > 1)
+    filter(fg %in% fg_names, year == year_to_plot)
   
   obs_limits <- obsdat %>%
     group_by(fg) %>%
@@ -766,8 +800,8 @@ plot_prod <- function(year_to_plot = 1990,
     #scale_linetype_manual(values = line_types, name = 'Functional form') +
     scale_linetype_manual(values = line_types) +
     hex_scale +theme_plant1.1+
-    coord_fixed(ratio = aspect_ratio) +
-    theme(legend.position = c(0.88, -0.05), strip.background = element_blank())#, legend.text = element_blank())
+    coord_fixed(ratio = aspect_ratio) + guides(linetype = 'none')+
+    theme(legend.position = c(0.85, 0.15), strip.background = element_blank())#, legend.text = element_blank())
   
   
 }
@@ -796,7 +830,7 @@ p <-plot_prod(year_to_plot = 1990,
               fg_names = c('fg1','fg2','fg3','fg4','fg5'),
               full_names = c('Fast', 'Slow', 'Pioneer', 'Breeder', 'Medium', 'Unclassified'),
               x_limits = c(1, 316),
-              x_breaks = c(1, 3, 10, 30, 100,300),
+              x_breaks = c(1, 10, 100),
               y_limits = c(5e-03, 1e04),
               y_breaks = c(.001, .1, 10, 1000),
               line_types = c('dashed', 'solid'),
@@ -812,37 +846,6 @@ p
 library(tidyverse)
 library(egg)
 library(scales)
-
-theme_plant <- theme(panel.grid = element_blank(), 
-                     aspect.ratio = .70,
-                     axis.text = element_text(size = 17, color = "black"), 
-                     axis.ticks.length=unit(0.15,"cm"),
-                     axis.title = element_text(size = 17),
-                     axis.title.y = element_text(margin = margin(r = 15)),
-                     axis.title.x = element_text(margin = margin(t = 15)),
-                     axis.title.x.top = element_text(margin = margin(b = 5)),
-                     plot.title = element_text(size = 19, face = "plain", hjust = 10),
-                     panel.border = element_rect(color = "black", fill=NA,  size=1),
-                     panel.background = element_blank(),
-                     plot.margin = unit(c(1, 1, 1,1), "cm"),
-                     legend.position = "none",
-                     legend.key = element_rect(fill="transparent"),
-                     text = element_text(family = 'Helvetica')) 
-theme_plant1.1 <- theme(panel.grid = element_blank(), 
-                        aspect.ratio = .70,
-                        axis.text = element_text(size = 14, color = "black"), 
-                        axis.ticks.length=unit(0.15,"cm"),
-                        axis.title = element_text(size = 14),
-                        axis.title.y = element_text(margin = margin(r = 0)),
-                        axis.title.x = element_text(margin = margin(t = 10)),
-                        axis.title.x.top = element_text(margin = margin(b = 5)),
-                        plot.title = element_text(size = 14, face = "plain", hjust = 10),
-                        panel.border = element_rect(color = "black", fill=NA,  size=.7),
-                        panel.background = element_blank(),
-                        plot.margin = unit(c(1, 1, 1,1), "cm"),
-                        legend.position = "none",
-                        legend.key = element_rect(fill="transparent"),
-                        text = element_text(family = 'Helvetica')) 
 
 
 year_to_plot <- 1990 ### CHANGE THIS IF YOU WANT TO PLOT 1990
