@@ -43,6 +43,8 @@ gdrive_path <- '/Users/jgradym/Google Drive/ForestLight'
 github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
 
 library(tidyverse)
+library(egg)
+library(scales)
 #---------------------------------------------------------------------------------------------
 # Fig 1: hand drawn schematics 
 #---------------------------------------------------------------------------------------------
@@ -79,15 +81,16 @@ fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 guild_fills <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")#RColorBrewer::brewer.pal(5, 'Set1')
 guild_colors <- c("black", "#99AF3C", "#1D5128", "#1e3160", "#6BA3BF", "#D6D6D6")
 guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")
-guild_colors_nb <- c("#99AF3C", "#1D5128", "#1e3160", "#6BA3BF", "#D6D6D6")
+guild_colors_nb0 <- c("#99AF3C", "#1D5128", "#1e3160", "#6BA3BF", "#D6D6D6")
+guild_colors_nb <- c("#3B4403", "#02330A", "#031a49", "#02394F", "#595A5B")
 fg_names <- paste('fg', 1:5, sep = '')
 fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 
 ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
   geom_point(shape = 21, size = 3.5, color = "black") + theme_plant_0.6 +theme(aspect.ratio = 0.75)+
   labs(x = 'Slow to Fast', y = 'Breeders to Pioneers') +
-  scale_color_manual(values = guild_colors, labels = fg_labels, name = 'functional group')+
-  scale_fill_manual(values = guild_fills)
+  scale_color_manual(values = guild_colors_nb, labels = fg_labels, name = 'functional group')+
+  scale_fill_manual(values = guild_fills_nb)
 
 
 #---------------------------------------------------------------------------------------------
@@ -301,6 +304,7 @@ plot_prod(year_to_plot = 1995,
           dodge_width = 0.05)
 ggsave(file.path(fpfig, 'fits_2partproduction.pdf'), height = 5, width = 6)
 
+
 plot_totalprod(year_to_plot = 1995,
                fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                model_fit_density = 3, 
@@ -333,19 +337,16 @@ dodge_width <- 0
 
 area_core <- 42.84 # Area of the plot without the edge strip and without the "young" forest area.
 global_diam_xlimits <- c(1, 316) # Maximum and minimum for x axis if it's diameter.
-guild_colors2 <- c("firebrick2","lightpink" , "royalblue4", "lightskyblue", "ivory" )
-guild_colors3 <- c("firebrick2","lightpink" , "lightskyblue","royalblue4", "ivory","black" )
 
 indivproductionbin_5census$fg <- factor(indivproductionbin_5census$fg, levels=c('fg1','fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'all'))
 densitybin_5census$fg <- factor(densitybin_5census$fg, levels=c('fg1','fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'all'))
 
 unique(densitybin_5census $fg)
-guild_colors <- RColorBrewer::brewer.pal(5, 'Set1')
 fg_names <- paste('fg', 1:5, sep = '')
-fg_labels <- c('Fast','Long-lived Pioneer', 'Slow', 'Short-lived Breeder', 'Intermediate')
+fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate')
 
 fg_names <- paste('fg', 1:5, sep = '')
-fg_labels2 <- c('Fast','Long-lived Pioneer', 'Slow', 'Short-lived Breeder', 'Intermediate','All')
+fg_labels2 <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate','All')
 
 p_dodge <- position_dodge(width = dodge_width)
 
@@ -362,22 +363,23 @@ lightreceivedbin_2census %>%
   scale_x_log10(name = 'Diameter (cm)', limits = c(1, 350), breaks=c(1,3,10,30,100,300)) +  
   scale_y_log10(position="right", name = expression(atop('Total Light Capture',paste('(kW ha'^-1,')'))),labels = signif,
                 limits = c(0.04, 100), breaks=c(0.1, 1, 10, 100)) +
-  scale_color_manual(values = c('black', guild_colors_nb), labels = c('All', fg_labels), name = 'Functional group') +
+  scale_color_manual(values = c('black', guild_colors_nb0), labels = c('All', fg_labels), name = 'Functional group') +
   scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
 
 ###  Growth vs Light
+factor(indivprodperareabin_2census$fg)
 indivprodperareabin_2census %>%
   filter(fg %in% fg_names, !is.na(mean), mean > 0) %>%
   filter(mean_n_individuals >= 10)%>%
   group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, group = fg, fill=fg,color = fg)) +
   theme_plant+geom_errorbar(aes(width = width), position=p_dodge) +
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
+  geom_point(shape = 21, size = 4.5, color = "black", stroke = .5)+
   scale_x_log10(limits = c(1, 450),breaks=c(1,10,100,1000),  
                 name = expression(paste('Light per Crown Area (W m'^-2,')')))+ 
-  scale_y_log10(limits = c(.003, .5), breaks = c(0.003, 0.01, .03, 0.1, 0.3), labels = c(0.003, 0.01, .03, 0.1, 0.3),
+  scale_y_log10(limits = c(.003, .15), breaks = c(0.003, 0.01, .03, 0.1, 0.3), labels = c(0.003, 0.01, .03, 0.1, 0.3),
                 name = expression(atop('Production per Crown',paste('Area (kg y'^-1, ' m'^-2,')')))) +
-  scale_color_manual(values = guild_colors_nb, labels = fg_labels, name = 'Functional Froup') +
+  scale_color_manual(values = guild_colors_nb0, labels = fg_labels, name = 'Functional Froup') +
   scale_fill_manual(values = guild_fills_nb, labels = fg_labels, name = 'Functional Froup') 
 #dev.off()
 
@@ -547,7 +549,7 @@ fastslow_stats_bydiam_2census %>%
   geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
   theme_plant+
   scale_x_log10(name = expression(paste('Diameter (cm)')), limits=c(1,150), breaks=c(1,3,10,30,100,300)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100), limits=c(0.01,15),
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100), limits=c(0.01,2),
                 name = expression(paste(frac("Fast","Slow")))) 
 #dev.off()
 
@@ -600,7 +602,7 @@ breeder_stats_bylight_2census %>%
         axis.ticks.x=element_blank())+
   scale_x_log10(limits = c(1,450),breaks=c(1,10,100),
                 name = expression(paste('Light per Crown Area (W m'^-2,')')))+
-  scale_y_log10(labels = signif, limits=c(10^-2.2,10^6),breaks=c(10^-2, 10^0, 10^2, 10^4, 10^6),
+  scale_y_continuous(labels = scales::trans_format('log10', scales::math_format(10^.x)), trans = "log10" ,limits=c(10^-1,10^6),breaks=c(10^-2, 10^0, 10^2, 10^4, 10^6),
                 name = expression(paste(frac("Long-lived Pioneer","Short-Lived Breeder")))) 
 #dev.off()
 #---------------------------------------------------------------------------------------------
@@ -618,7 +620,7 @@ ggplot(ics %>% filter(prod_model == 1, criterion == 'LOOIC', variable == 'densit
   geom_pointrange() +
   theme_bw() +
   theme(strip.background = element_blank(),panel.grid = element_blank()) +
-  labs(x = 'Number of Segments in Density Function')
+  labs(x = 'Segments in Density Function', y = "LOO Information Criterion")
 ggsave(file.path(fpfig, 'density_model_information_criteria.pdf'), height = 6, width = 9)
 
 # Production model
@@ -628,7 +630,7 @@ ggplot(ics %>% filter(dens_model == 1, criterion == 'LOOIC', variable == 'produc
   geom_pointrange() +
   theme_bw() +
   theme(strip.background = element_blank(), panel.grid = element_blank(), strip.text = element_text(size=10)) +
-  labs(x = 'Number of Segments in Production Function')
+  labs(x = 'Segments in Production Function',  y = "LOO Information Criterion")
 ggsave(file.path(fpfig, 'production_model_information_criteria.pdf'), height = 6, width = 9)
 #---------------------------------------------------------------------------------------------
 
@@ -717,6 +719,21 @@ theme_plant1.1 <- theme(panel.grid = element_blank(),
                         legend.position = "none",
                         legend.key = element_rect(fill="transparent"),
                         text = element_text(family = 'Helvetica')) 
+theme_panel <- theme(panel.grid = element_blank(), 
+                     aspect.ratio = .70,
+                     axis.text = element_text(size = 12, color = "black"), 
+                     axis.ticks.length=unit(0.15,"cm"),
+                     axis.title = element_text(size = 17),
+                     axis.title.y = element_text(margin = margin(r = 12)),
+                     axis.title.x = element_text(margin = margin(t = 12)),
+                     axis.title.x.top = element_text(margin = margin(b = 5)),
+                     plot.title = element_text(size = 14, face = "plain", hjust = 10),
+                     panel.border = element_rect(color = "black", fill=NA,  size=1),
+                     panel.background = element_blank(),
+                     plot.margin = unit(c(1, 1, 1,1), "cm"),
+                     legend.position = "none",
+                     legend.key = element_rect(fill="transparent"),
+                     text = element_text(family = 'Helvetica')) 
 
 
 
@@ -732,6 +749,7 @@ for (i in dir(fp, pattern = '.csv')) {
   n <- gsub('.csv','',i)
   assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
 }
+
 
 # Load raw data
 load('~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
@@ -753,7 +771,7 @@ raw_prod <- raw_prod %>%
 plot_prod <- function(year_to_plot = 1990,
                       fg_names = c('fg1','fg2','fg3','fg4','fg5','unclassified'),
                       full_names = c('Fast', 'Slow', 'Pioneer', 'Breeder', 'Medium', 'Unclassified'),
-                      func_names = c('power law', 'power law\ntimes exponential'),
+                      func_names = c('power law', 'Power Law\ntimes Exponential'),
                       x_limits = c(1, 300),
                       x_breaks = c(1, 10, 100),
                       y_limits,
@@ -793,7 +811,7 @@ plot_prod <- function(year_to_plot = 1990,
   
   ggplot() +
     geom_hex(data = obsdat, aes(x = dbh_corr, y = production)) +
-    geom_line(data = preddat, aes(x = dbh, y = q50, group = prod_model, linetype = prod_model), size=0.25) +
+    #geom_line(data = preddat, aes(x = dbh, y = q50, group = prod_model, linetype = prod_model), size=0.25) +
     facet_wrap(~ fg, labeller = labeller(fg = labels)) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels=signif) +
@@ -801,7 +819,7 @@ plot_prod <- function(year_to_plot = 1990,
     scale_linetype_manual(values = line_types) +
     hex_scale +theme_plant1.1+
     coord_fixed(ratio = aspect_ratio) + guides(linetype = 'none')+
-    theme(legend.position = c(0.85, 0.15), strip.background = element_blank(), strip.text = element_text(size=16))#, legend.text = element_blank())
+    theme(legend.position = c(0.85, 0.15), strip.background = element_blank(), strip.text = element_text(size=12))#, legend.text = element_blank())
   
   
 }
@@ -843,9 +861,7 @@ p
 
 #-----------------------------------------------------------------------------------
 ###################### Additional Light Plots  ########################
-library(tidyverse)
-library(egg)
-library(scales)
+
 
 
 year_to_plot <- 1990 ### CHANGE THIS IF YOU WANT TO PLOT 1990
@@ -858,9 +874,6 @@ obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFac
 obs_light_raw <- read.csv(file.path(fp, 'obs_light_raw.csv'), stringsAsFactors = FALSE)
 pred_light <- read.csv(file.path(fp, 'pred_light.csv'), stringsAsFactors = FALSE)
 param_ci <- read.csv(file.path(fp, 'lightbyarea_paramci_by_fg.csv'), stringsAsFactors = FALSE)
-
-library(dplyr)
-library(ggplot2)
 
 # Get rid of the predicted points that are outside the limits of the observed data for each FG
 obs_limits <- obs_light_binned %>%
@@ -892,7 +905,7 @@ title_y <- expression(paste('Growth (kg yr'^-1, ' m'^-2,')', sep=''))
 # Colors
 # these are shit colors but I just put them in as a placeholder
 colors <- c('black',"#BFE046","#267038" , "#27408b", "#87Cefa", "ivory" ) # #BFE046= light green,#267038=dark green,27408b=dark blue,"#87Cefa" = light blue,    
-year_to_plot = 1995
+year_to_plot = 1990
 fg_colors <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87Cefa", fg5 = "gray70",  alltree = 'black') #unclassified = 'brown',
 fg_colors2 <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87Cefa", fg5 = "ivory",  alltree = 'black') #unclassified = 'brown',
 
@@ -903,11 +916,11 @@ fg_colors2 <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87C
 # Remove all tree and unclassified groups
 
 p <- ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
-          aes(x = fg, y = q50, ymin = q025, ymax = q975)) +theme_plant+
+          aes(x = fg, y = q50, ymin = q025, ymax = q975)) +theme_panel+
   geom_hline(yintercept = 1, linetype = 'dotted', color = 'dodgerblue', size = 1) + 
   geom_errorbar(width = 0.1) + geom_point(size = 3) +
   scale_x_discrete(name = 'Life History Strategy', labels = fg_labels) +
-  scale_y_continuous(name = 'Maximum Slope', limits=c(.25,1.1),breaks = seq(0, 1.5, 0.25), labels = seq(0, 1.5, 0.25)) +theme_plant
+  scale_y_continuous(name = 'Maximum Slope', limits=c(.25,1.2),breaks = seq(0, 1.5, 0.25), labels = seq(0, 1.5, 0.25)) +theme_plant
 p
 pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/slopes.pdf"))
 p
@@ -939,13 +952,13 @@ p_mean_segments <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
   facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50), color = 'red') +
   geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max)) +
-  geom_point(aes(x = bin_midpoint, y = mean)) +
+  geom_point(aes(x = bin_midpoint, y = mean), shape = 21, size = 2) +
   
   geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), aes(x = xmax * 0.5, xend = xmax * 2, y = ymax * 0.5, yend = ymax * 2), color = 'green', size = 1) +
   scale_x_log10(name = title_x) + 
   geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), aes(x = xmax * 0.5, xend = xmax * 2, y = ymax * 0.5^log_slope_q50 , yend = ymax * 2^log_slope_q50) , color = 'blue', size = 1) +
   scale_y_log10(name = title_y) +
-  theme_classic() +
+  theme_panel+
   theme(panel.border = element_rect(fill=NA),
         strip.background = element_rect(fill=NA))
 p_mean_segments
@@ -975,8 +988,10 @@ p_raw_panels
 # 3. Plot with different panels for each functional group, and quantiles
 p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
   facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +theme_plant+
-  geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975,group=fg,color=NA,fill=fg), alpha = 0.5) +
-  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50,group=fg, color=fg), size=0.25) +
+  geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
+              aes(x = light_area, ymin = q025, ymax = q975,group=fg,color=NA,fill=fg), alpha = 0.5) +
+  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
+            aes(x = light_area, y = q50,group=fg, color=fg), size=0.5) +
   geom_segment(aes(x = bin_midpoint, xend = bin_midpoint, y = q25, yend = q75), size = 0.3) +
   #geom_segment(aes(x = bin_midpoint, xend = bin_midpoint, y = q025, yend = q975)) +
   geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
@@ -994,6 +1009,7 @@ p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
         axis.ticks.length=unit(0.2,"cm"),
         axis.title = element_text(size = 12))
 p_median_panels
+
 pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/light_growth.pdf"))
 p_median_panels
 dev.off()
