@@ -1,36 +1,4 @@
 
-# Some Plotting Code
-
-theme_plant_0.6 <- theme(panel.grid = element_blank(), #for Density and Growth
-                         aspect.ratio = .60,
-                         axis.text = element_text(size = 19, color = "black"), 
-                         axis.ticks.length=unit(0.2,"cm"),
-                         axis.title = element_text(size = 19),
-                         axis.title.y = element_text(margin = margin(r = 10)),
-                         axis.title.x = element_text(margin = margin(t = 10)),
-                         axis.title.x.top = element_text(margin = margin(b = 5)),
-                         plot.title = element_text(size = 19, face = "plain", hjust = 10),
-                         panel.border = element_rect(color = "black", fill=NA,  size=1),
-                         panel.background = element_blank(),
-                         #plot.margin = unit(c(1, 1, 1,1), "cm"),
-                         legend.position = "none",
-                         legend.key = element_rect(fill="transparent"),
-                         
-                         text = element_text(family = 'Helvetica')) 
-
-theme_plant2 <- theme(panel.grid = element_blank(), #for Total Production
-                      aspect.ratio = 1,
-                      axis.text = element_text(size = 19, color = "black"), 
-                      axis.ticks.length=unit(0.2,"cm"),
-                      axis.title = element_text(size = 19),
-                      axis.title.y = element_text(margin = margin(r = 10)),
-                      axis.title.x = element_text(margin = margin(t = 10)),
-                      axis.title.x.top = element_text(margin = margin(b = 5)),
-                      plot.title = element_text(size = 19, face = "plain", hjust = 10),
-                      panel.border = element_rect(color = "black", fill=NA,  size=1),
-                      panel.background = element_blank(),
-                      legend.position = "none",
-                      text = element_text(family = 'Helvetica')) 
 
 ### Plotting of main and supplemental figures
 
@@ -45,6 +13,25 @@ github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
 library(tidyverse)
 library(egg)
 library(scales)
+
+# Some Plotting Code
+
+
+theme_plant <- theme(panel.grid = element_blank(), #for Total Production
+                      aspect.ratio = 1,
+                      axis.text = element_text(size = 19, color = "black"), 
+                      axis.ticks.length=unit(0.2,"cm"),
+                      axis.title = element_text(size = 19),
+                      axis.title.y = element_text(margin = margin(r = 10)),
+                      axis.title.x = element_text(margin = margin(t = 10)),
+                      axis.title.x.top = element_text(margin = margin(b = 5)),
+                      plot.title = element_text(size = 19, face = "plain", hjust = 10),
+                      panel.border = element_rect(color = "black", fill=NA,  size=1),
+                      panel.background = element_blank(),
+                      legend.position = "none",
+                      rect = element_rect(fill = "transparent"),
+                      text = element_text(family = 'Helvetica')) 
+
 #---------------------------------------------------------------------------------------------
 # Fig 1: hand drawn schematics 
 #---------------------------------------------------------------------------------------------
@@ -86,12 +73,17 @@ guild_colors_nb <- c("#3B4403", "#02330A", "#031a49", "#02394F", "#595A5B")
 fg_names <- paste('fg', 1:5, sep = '')
 fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 
-ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
+p <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
   geom_point(shape = 21, size = 3.5, color = "black") + theme_plant_0.6 +theme(aspect.ratio = 0.75)+
   labs(x = 'Slow to Fast', y = 'Breeders to Pioneers') +
+  scale_y_continuous(limits = c(-6,6), breaks = seq(-6,6,3))+
+  scale_x_continuous(limits = c(-6,6), breaks = seq(-6,6,3))+
   scale_color_manual(values = guild_colors_nb, labels = fg_labels, name = 'functional group')+
   scale_fill_manual(values = guild_fills_nb)
-
+p
+pdf('~/Desktop/Fig1.pdf')
+p
+dev.off()
 
 #---------------------------------------------------------------------------------------------
 # Fig 3: Plotting functions for piecewise fits
@@ -136,13 +128,14 @@ plot_dens <- function(year_to_plot = 1995,
   
   ggplot() +
     geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
+    geom_abline(intercept=4, slope = -2, color ="gray72",linetype="dashed", size=.75)+   
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
     geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
     geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value, group = fg, fill=fg,size=2), shape=21,color="black") +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks,labels = y_labels) +
-    scale_color_manual(values = color_names) +theme_plant+
+    scale_color_manual(values = color_names) +theme_plant + 
     scale_fill_manual(values = color_names) 
   
   
@@ -190,15 +183,20 @@ plot_prod <- function(year_to_plot = 1995,
   
   ggplot() +
     geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
+    geom_abline(intercept= -1.6, slope = 2, color ="gray72",linetype="dashed", size=.75)+   
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     #geom_errorbar(data = obsdat, aes_string(x = 'bin_midpoint', ymin = error_quantiles[1], ymax = error_quantiles[2], group = 'fg', color = 'fg', width = 'width'), position = pos) +
     geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
     geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
     geom_point(data = obsdat, aes_string(x = 'bin_midpoint', y = average, group = 'fg', fill = 'fg'),size=4,color="black",shape=21,position = pos) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
+    theme(axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank(),
+          rect = element_rect(fill = "transparent"))+ # all rectangles
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels=y_labels) +
-    scale_color_manual(values = color_names) +theme_plant+
-    scale_fill_manual(values = color_names) 
+    scale_color_manual(values = color_names) +
+    scale_fill_manual(values = color_names) + theme_plant
   
   
 }
@@ -240,13 +238,15 @@ plot_totalprod <- function(year_to_plot = 1995,
   
   ggplot() +
     geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
+    geom_abline(intercept= 2, slope = 0, color ="gray72",linetype="dashed", size=.75)+   
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
     geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
     geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value, size=2,group = fg, fill=fg), color = "black",shape=21) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
-    scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) +
-    scale_color_manual(values = color_names) +theme_plant2+
+    
+    scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels, position = "right") +
+    scale_color_manual(values = color_names) +theme_plant+
     scale_fill_manual(values = color_names) 
   
   
@@ -281,19 +281,25 @@ source(file.path(github_path, 'stan/piecewise_workflow/plottingfunctionspiecewis
 #Model fit 1 = pareto, 1 segment
 #Model Fit 2  = 2 segments, etc
 
-plot_dens(year_to_plot = 1995,
+p <- plot_dens(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
           model_fit = 3,
           x_limits = c(1, 260),
           y_limits = c(0.001, 3000),
           y_labels = c(0.001, 0.1, 10,1000),
           y_breaks = c(0.001, 0.1,  10, 1000))
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path,'Final Figures/Fig_2/Density.pdf'))
+plot(p1)
+dev.off()
 ggsave(file.path(fpfig, 'fits_3partdensity.pdf'), height = 5, width = 6)
 
 # Specify dodging with a certain width of error bar
 # Model fit 1 = power law
 # Model fit 2 = power law exp
-plot_prod(year_to_plot = 1995,
+p <- plot_prod(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           model_fit = 2,
           x_limits = c(1, 280),
@@ -302,10 +308,13 @@ plot_prod(year_to_plot = 1995,
           y_labels = c(0.001,0.1,10,1000),
           error_bar_width = 0.01,
           dodge_width = 0.05)
-ggsave(file.path(fpfig, 'fits_2partproduction.pdf'), height = 5, width = 6)
-
-
-plot_totalprod(year_to_plot = 1995,
+p
+#ggsave(file.path(fpfig, 'fits_2partproduction.pdf'), height = 5, width = 6)
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+pdf(file.path(gdrive_path,'Final Figures/Fig_2/Production.pdf'))
+plot(p1)
+dev.off()
+p <- plot_totalprod(year_to_plot = 1995,
                fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                model_fit_density = 3, 
                model_fit_production = 2,
@@ -314,9 +323,12 @@ plot_totalprod(year_to_plot = 1995,
                y_breaks = c(0.1, 1, 10, 100),
                y_labels = c(0.1, 1, 10, 100),
                preddat = fitted_totalprod)
-ggsave(file.path(fpfig, 'fits_3by2_totalproduction.pdf'), height = 5, width = 6)
-
-
+p
+#ggsave(file.path(fpfig, 'fits_3by2_totalproduction.pdf'), height = 5, width = 6)
+p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+pdf(file.path(gdrive_path,'Final Figures/Fig_2/Total_Production.pdf'))
+plot(p1)
+dev.off()
 
 
 # ------------------------------- Fig 4 Light Plots ------------------------------------
@@ -344,8 +356,6 @@ densitybin_5census$fg <- factor(densitybin_5census$fg, levels=c('fg1','fg2', 'fg
 unique(densitybin_5census $fg)
 fg_names <- paste('fg', 1:5, sep = '')
 fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate')
-
-fg_names <- paste('fg', 1:5, sep = '')
 fg_labels2 <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate','All')
 
 p_dodge <- position_dodge(width = dodge_width)
@@ -621,7 +631,7 @@ ggplot(ics %>% filter(prod_model == 1, criterion == 'LOOIC', variable == 'densit
   theme_bw() +
   theme(strip.background = element_blank(),panel.grid = element_blank()) +
   labs(x = 'Segments in Density Function', y = "LOO Information Criterion")
-ggsave(file.path(fpfig, 'density_model_information_criteria.pdf'), height = 6, width = 9)
+#ggsave(file.path(fpfig, 'density_model_information_criteria.pdf'), height = 6, width = 9)
 
 # Production model
 
@@ -631,7 +641,7 @@ ggplot(ics %>% filter(dens_model == 1, criterion == 'LOOIC', variable == 'produc
   theme_bw() +
   theme(strip.background = element_blank(), panel.grid = element_blank(), strip.text = element_text(size=10)) +
   labs(x = 'Segments in Production Function',  y = "LOO Information Criterion")
-ggsave(file.path(fpfig, 'production_model_information_criteria.pdf'), height = 6, width = 9)
+#ggsave(file.path(fpfig, 'production_model_information_criteria.pdf'), height = 6, width = 9)
 #---------------------------------------------------------------------------------------------
 
 ######################## Plot Slopes vs Size for each life history group  ####################### 
@@ -684,7 +694,7 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassifie
   ggtitle('Fitted Slopes \n 3 Segment Density Model & 2 Segment Production Model')+
   theme(plot.title = element_text(hjust=0.5)) +
   theme(legend.spacing.x=unit(.2, "cm"))+  theme(legend.title=element_blank())+ theme(legend.text=element_text(size = 12))
-ggsave(file.path(fpfig, 'fitted_slopes_3partdensity_2partproduction.pdf'), height = 6, width = 9)
+#ggsave(file.path(fpfig, 'fitted_slopes_3partdensity_2partproduction.pdf'), height = 6, width = 9)
 #---------------------------------------------------------------------------------------------
 
 
@@ -703,6 +713,7 @@ theme_plant <- theme(panel.grid = element_blank(),
                      plot.margin = unit(c(1, 1, 1,1), "cm"),
                      legend.position = "none",
                      legend.key = element_rect(fill="transparent"),
+                     rect = element_rect(fill = "transparent"),
                      text = element_text(family = 'Helvetica')) 
 theme_plant1.1 <- theme(panel.grid = element_blank(), 
                         aspect.ratio = .70,
@@ -718,6 +729,7 @@ theme_plant1.1 <- theme(panel.grid = element_blank(),
                         plot.margin = unit(c(1, 1, 1,1), "cm"),
                         legend.position = "none",
                         legend.key = element_rect(fill="transparent"),
+                        rect = element_rect(fill = "transparent"),
                         text = element_text(family = 'Helvetica')) 
 theme_panel <- theme(panel.grid = element_blank(), 
                      aspect.ratio = .70,
@@ -733,6 +745,7 @@ theme_panel <- theme(panel.grid = element_blank(),
                      plot.margin = unit(c(1, 1, 1,1), "cm"),
                      legend.position = "none",
                      legend.key = element_rect(fill="transparent"),
+                     rect = element_rect(fill = "transparent"),
                      text = element_text(family = 'Helvetica')) 
 
 
@@ -864,11 +877,12 @@ p
 
 
 
-year_to_plot <- 1990 ### CHANGE THIS IF YOU WANT TO PLOT 1990
+year_to_plot <- 1995 ### CHANGE THIS IF YOU WANT TO PLOT 1990
 
 # Load data ----
+fp <- 'data/data_forplotting_light_june2018'
 fp <- '/Users/jgradym/Google Drive/ForestLight/data/data_forplotting_light_june2018'
-#fp <- 'data/data_forplotting_light_june2018'
+
 # New File path needed
 obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
 obs_light_raw <- read.csv(file.path(fp, 'obs_light_raw.csv'), stringsAsFactors = FALSE)
@@ -905,7 +919,7 @@ title_y <- expression(paste('Growth (kg yr'^-1, ' m'^-2,')', sep=''))
 # Colors
 # these are shit colors but I just put them in as a placeholder
 colors <- c('black',"#BFE046","#267038" , "#27408b", "#87Cefa", "ivory" ) # #BFE046= light green,#267038=dark green,27408b=dark blue,"#87Cefa" = light blue,    
-year_to_plot = 1990
+year_to_plot = 1995
 fg_colors <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87Cefa", fg5 = "gray70",  alltree = 'black') #unclassified = 'brown',
 fg_colors2 <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87Cefa", fg5 = "ivory",  alltree = 'black') #unclassified = 'brown',
 
@@ -937,6 +951,7 @@ ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'G', !fg %in% c(
 
 library(reshape2)
 melt_pars <- melt(param_ci, id.vars=1:3)
+#melt_pars$fg <- factor(melt_pars$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
 cast_pars <- dcast(melt_pars, fg+year~parameter+variable)
 
 # Version from 27 Apr. Manually find x and y locations for the slope segment to be plotted.
@@ -949,7 +964,9 @@ segment_location <- pred_light_5groups %>%
 cast_pars <- left_join(cast_pars, segment_location)
 
 p_mean_segments <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +
+  #facet_wrap(~ fg, labeller = fg_labels) +
+  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) + 
+  
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50), color = 'red') +
   geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max)) +
   geom_point(aes(x = bin_midpoint, y = mean), shape = 21, size = 2) +
@@ -986,8 +1003,17 @@ p_raw_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% '
 p_raw_panels
 #dev.off()
 # 3. Plot with different panels for each functional group, and quantiles
+
+ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassified'), 
+       aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
+  facet_wrap(~ fg,scale = "free_y", labeller = label_value) 
+
+unique(obs_light_binned$fg)
+unique(slopes$fg)
+
 p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +theme_plant+
+  #facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +theme_plant+
+  facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
               aes(x = light_area, ymin = q025, ymax = q975,group=fg,color=NA,fill=fg), alpha = 0.5) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
