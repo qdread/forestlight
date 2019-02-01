@@ -81,7 +81,7 @@ p <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = fa
   scale_color_manual(values = guild_colors_nb, labels = fg_labels, name = 'functional group')+
   scale_fill_manual(values = guild_fills_nb)
 p
-pdf('~/Desktop/Fig1.pdf')
+pdf(file.path(gdrive_path, 'Figures/Fig_1/Life_Histories.pdf'))
 p
 dev.off()
 
@@ -132,7 +132,7 @@ plot_dens <- function(year_to_plot = 1995,
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
     geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
-    geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value, group = fg, fill=fg,size=2), shape=21,color="black") +
+    geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value, group = fg, fill=fg), size = geom_size, shape=21,color="black") +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks,labels = y_labels) +
     scale_color_manual(values = color_names) +theme_plant + 
@@ -188,7 +188,7 @@ plot_prod <- function(year_to_plot = 1995,
     #geom_errorbar(data = obsdat, aes_string(x = 'bin_midpoint', ymin = error_quantiles[1], ymax = error_quantiles[2], group = 'fg', color = 'fg', width = 'width'), position = pos) +
     geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
     geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
-    geom_point(data = obsdat, aes_string(x = 'bin_midpoint', y = average, group = 'fg', fill = 'fg'),size=4,color="black",shape=21,position = pos) +
+    geom_point(data = obsdat, aes_string(x = 'bin_midpoint', y = average, group = 'fg', fill = 'fg'),size = geom_size,color="black",shape=21,position = pos) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     theme(axis.title.x=element_blank(),
           axis.text.x=element_blank(),
@@ -242,7 +242,7 @@ plot_totalprod <- function(year_to_plot = 1995,
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
     geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
-    geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value, size=2,group = fg, fill=fg), color = "black",shape=21) +
+    geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value,group = fg, fill=fg), size = geom_size, color = "black",shape=21) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels, position = "right") +
@@ -280,6 +280,7 @@ source(file.path(github_path, 'stan/piecewise_workflow/plottingfunctionspiecewis
 # Create plots.
 #Model fit 1 = pareto, 1 segment
 #Model Fit 2  = 2 segments, etc
+geom_size = 4
 
 p <- plot_dens(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
@@ -291,10 +292,9 @@ p <- plot_dens(year_to_plot = 1995,
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
-pdf(file.path(gdrive_path,'Final Figures/Fig_2/Density.pdf'))
+pdf(file.path(gdrive_path,'Figures/Fig_3/Density.pdf'))
 plot(p1)
 dev.off()
-ggsave(file.path(fpfig, 'fits_3partdensity.pdf'), height = 5, width = 6)
 
 # Specify dodging with a certain width of error bar
 # Model fit 1 = power law
@@ -309,9 +309,9 @@ p <- plot_prod(year_to_plot = 1995,
           error_bar_width = 0.01,
           dodge_width = 0.05)
 p
-#ggsave(file.path(fpfig, 'fits_2partproduction.pdf'), height = 5, width = 6)
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-pdf(file.path(gdrive_path,'Final Figures/Fig_2/Production.pdf'))
+plot(p1)
+pdf(file.path(gdrive_path,'Figures/Fig_3/Production.pdf'))
 plot(p1)
 dev.off()
 p <- plot_totalprod(year_to_plot = 1995,
@@ -326,7 +326,8 @@ p <- plot_totalprod(year_to_plot = 1995,
 p
 #ggsave(file.path(fpfig, 'fits_3by2_totalproduction.pdf'), height = 5, width = 6)
 p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
-pdf(file.path(gdrive_path,'Final Figures/Fig_2/Total_Production.pdf'))
+plot(p1)
+pdf(file.path(gdrive_path,'Figures/Fig_2/Total_Production.pdf'))
 plot(p1)
 dev.off()
 
@@ -360,41 +361,50 @@ fg_labels2 <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate','All')
 
 p_dodge <- position_dodge(width = dodge_width)
 
-
-
-lightreceivedbin_2census %>%
+p <- lightreceivedbin_2census %>%
   filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
   mutate(bin_ymin = ifelse(bin_ymin == 0, bin_yvalue, bin_ymin)) %>%
   mutate(bin_yvalue = (bin_yvalue/area_core)/1000, bin_ymin = (bin_ymin/area_core)/1000, bin_ymax = (bin_ymax/area_core)/1000) %>%
   group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
   ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, color = fg,fill=fg)) +
   theme_plant2+ geom_errorbar(aes(width = width), position=p_dodge)+#geom_pointrange()  +
-  geom_point(position=p_dodge,shape = 21, size = 4.5,  stroke = .5, color = "black")+
+  geom_point(position=p_dodge,shape = 21, size = geom_size,  stroke = .5, color = "black")+
   scale_x_log10(name = 'Diameter (cm)', limits = c(1, 350), breaks=c(1,3,10,30,100,300)) +  
-  scale_y_log10(position="right", name = expression(atop('Total Light Capture',paste('(kW ha'^-1,')'))),labels = signif,
+  scale_y_log10(position="left", name = expression(atop('Total Light Capture',paste('(kW ha'^-1,')'))),labels = signif,
                 limits = c(0.04, 100), breaks=c(0.1, 1, 10, 100)) +
   scale_color_manual(values = c('black', guild_colors_nb0), labels = c('All', fg_labels), name = 'Functional group') +
   scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
-
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_4/Total_Light_Capture.pdf'))
+plot(p1)
+dev.off()
 ###  Growth vs Light
 factor(indivprodperareabin_2census$fg)
-indivprodperareabin_2census %>%
+p <- indivprodperareabin_2census %>%
   filter(fg %in% fg_names, !is.na(mean), mean > 0) %>%
   filter(mean_n_individuals >= 10)%>%
   group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, group = fg, fill=fg,color = fg)) +
   theme_plant+geom_errorbar(aes(width = width), position=p_dodge) +
-  geom_point(shape = 21, size = 4.5, color = "black", stroke = .5)+
+  geom_point(shape = 21, size = geom_size, color = "black", stroke = .5)+
   scale_x_log10(limits = c(1, 450),breaks=c(1,10,100,1000),  
                 name = expression(paste('Light per Crown Area (W m'^-2,')')))+ 
   scale_y_log10(limits = c(.003, .15), breaks = c(0.003, 0.01, .03, 0.1, 0.3), labels = c(0.003, 0.01, .03, 0.1, 0.3),
-                name = expression(atop('Production per Crown',paste('Area (kg y'^-1, ' m'^-2,')')))) +
+                name = expression(atop('Growth per Crown',paste('Area (kg y'^-1, ' m'^-2,')')))) +
   scale_color_manual(values = guild_colors_nb0, labels = fg_labels, name = 'Functional Froup') +
+  geom_abline(intercept=-3.85, slope = 1, color ="darkgray",linetype="dashed", size=1)+
   scale_fill_manual(values = guild_fills_nb, labels = fg_labels, name = 'Functional Froup') 
-#dev.off()
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_4/Growth_per_Light.pdf'))
+plot(p1)
+dev.off()
 
 ###  Crown Area
-crownareabin_2census %>%
+p <- crownareabin_2census %>%
   filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
   mutate(bin_ymin = ifelse(bin_ymin == 0, bin_yvalue, bin_ymin)) %>%
   mutate(bin_yvalue = bin_yvalue/area_core, bin_ymin = bin_ymin/area_core, bin_ymax = bin_ymax/area_core) %>%
@@ -402,13 +412,19 @@ crownareabin_2census %>%
   ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, fill=fg,color = fg)) +
   theme_plant+geom_errorbar(aes(width = width), position=p_dodge) +
   #geom_abline(intercept=4, slope = -2/3, color ="darkgray",linetype="dashed", size=1.5)+
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
+  geom_point(shape = 21, size = geom_size,  stroke = .5, color = "black")+
   scale_x_log10(name = 'Diameter (cm)', limits = c(1, 350), breaks=c(1,3,10,30,100,300)) +  
   scale_y_log10(limits = c(.1, 10000),breaks=c(0.1,1, 10, 100, 1000, 10000), labels = signif,
                 name = expression(atop('Total Crown Area',paste('(m'^2, ' ha'^-1,')'))))  +  
   scale_color_manual(values = c('black', guild_colors_nb), labels = c('All', fg_labels), name = 'Functional group') +
   scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
 
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_4/extra_crown_area_size.pdf'))
+plot(p1)
+dev.off()
 # ------------------------------- Fig 5 Relative Abundance  ------------------------------------
 
 
@@ -416,205 +432,222 @@ crownareabin_2census %>%
 
 # Fast vs Slow
 
-# Filepath for fast/slow ratios
+# Combine fast-slow and breeder-pioneer to make one plot
 
-fastslowscore_bin_bydiam_2census %>%
-  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
-  #geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
-  geom_errorbar(width = error_bar_width) +theme_plant+
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
-  scale_x_log10(name = 'Diameter (cm)', limits = c(1,300)) + 
-  scale_y_continuous(limits=c(-2,2.5),breaks=c(-2,0,2),name = 'Slow-Fast') 
-pdf(file.path(gdrive_path, "Plots_J/New/Ranks/Diameter/Fast Slow.pdf"))
-dev.off()
-
-### Breeder vs Pioneer
-
-# Relative Abundance
-breederscore_bin_bydiam_2census %>%
-  ggplot(aes(x = bin_midpoint, y = mean*-1, ymin = ci_min*-1, ymax = ci_max*-1)) +
-  #geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
-  geom_errorbar(width = error_bar_width) +theme_plant+
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())+
-  scale_x_log10(limits=c(1,300), name = 'Diameter (cm)') + 
-  scale_y_continuous(limits=c(-4,2),name = 'Breeder-Performer') 
-pdf(file.path(gdrive_path, "Plots_J/New/Ranks/Diameter/Breeders.pdf"))
-dev.off()
-
-
-
-###### Life history Relative Abundance by Light
-
-### Fast vs Slow
-fastslow_stats_bylight_2census %>%
+# First reverse direction for breeder response variables; otherwise going in opposite direction
+breeder_stats_bydiam_2censusb <- breeder_stats_bydiam_2census
+breeder_stats_bydiam_2censusb[,2:7] <- 1/breeder_stats_bydiam_2censusb[,2:7]
+breeder_stats_bydiam_2censusb <- as.matrix(breeder_stats_bydiam_2censusb )
+# Get rid of infinite values
+breeder_stats_bydiam_2censusb[!is.finite(breeder_stats_bydiam_2censusb)] <- NA
+breeder_stats_bydiam_2censusb <- as.data.frame(breeder_stats_bydiam_2censusb )
+# Add ID for combining
+reeder_stats_bydiam_2census_id <- breeder_stats_bydiam_2censusb %>%
+  mutate(ID = "Breeder")
+fastslow_bydiam_2census_shape <- fastslow_stats_bydiam_2census %>%
+  mutate(ID = "Fast-Slow")
+# Combine
+fastslow_stats_breeder_bydiam_2census <-rbind(breeder_stats_bydiam_2census_id,fastslow_bydiam_2census_id)
+# Plot by diameter
+fill_ <- c("grey", "grey25")
+fastslow_stats_breeder_bydiam_2census$ID <- as.factor(fastslow_stats_breeder_bydiam_2census$ID)
+str(fastslow_stats_breeder_bydiam_2census)
+p <- fastslow_stats_breeder_bydiam_2census  %>%
   filter(density_ratio_mean > 0) %>%
   mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = density_ratio_mean, ymin = density_ratio_min, ymax = density_ratio_max)) +
+  ggplot(aes(x = bin_midpoint, y = density_ratio_mean, 
+             ymin = density_ratio_min, ymax = density_ratio_max, fill = ID)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   geom_errorbar(width = error_bar_width) +theme_plant+
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
+  scale_fill_manual(values = c("Breeder" = "black", "Fast-Slow" = "grey"))+
   
-  scale_x_log10(limits=c(1,450),breaks=c(1,10,100), name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
-  scale_y_log10(breaks = c(0.01,0.1,1,10), labels=signif, limits=c(0.003,2),
-                name = expression(paste(frac("Fast","Slow"))))  
-pdf(file.path(gdrive_path, "Plots_J/New/Abun_Light/Slow to Fast Abundance by Light.pdf"))
+  scale_x_log10(limits=c(1,150),breaks=c(1,3, 10, 30, 100), name = expression(paste('Diameter (cm)'))) + 
+  scale_y_log10(breaks = c(0.01,0.1,1,10,100), labels=signif, limits=c(0.003,500),
+                name = expression("Abundance Ratio"))
+
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_5/Abun_ratio_diameter.pdf'))
+plot(p1)
 dev.off()
+#name = expression(paste(frac("Fast","Slow"))))  
 
 
-### Breeder vs Pioneer
+# Combine fast-slow and breeder by Light 
 
-breeder_stats_bylight_2census %>%
+fastslow_stats_bylight_2census_id <- fastslow_stats_bylight_2census %>%
+  mutate(ID = "Fast-Slow")
+# Reverse direction of breeder/pioneer 
+breeder_stats_bylight_2census_b <- as.matrix(breeder_stats_bylight_2census)
+breeder_stats_bylight_2census_b[, 2:7] <- 1/breeder_stats_bylight_2census_b[, 2:7]
+# Get rid of infinite values
+breeder_stats_bylight_2census_b[!is.finite(breeder_stats_bylight_2census_b)] <- NA
+breeder_stats_bylight_2census_b <- as.data.frame(breeder_stats_bylight_2census_b)
+# Add ID for combining
+breeder_stats_bylight_2census_id <- breeder_stats_bylight_2census_b%>%
+  mutate(ID = "Breeder-Pioneer")
+# Combine
+bylight_2census <- as.data.frame(rbind(fastslow_stats_bylight_2census_id,breeder_stats_bylight_2census_id))
+
+
+p <- bylight_2census    %>%
   filter(density_ratio_mean > 0) %>%
   mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = 1/density_ratio_mean, ymin = 1/density_ratio_min, ymax = 1/density_ratio_max)) +
+  ggplot(aes(x = bin_midpoint, y = density_ratio_mean, 
+             ymin = density_ratio_min, ymax = density_ratio_max, fill = ID)) +
   geom_errorbar(width = error_bar_width) +theme_plant+
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
-  scale_x_log10(limits = c(1,450),breaks=c(1,10,100),
-                name = expression(paste('Light per Crown Area (W m'^-2,')')))+
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())+
-  
-  scale_y_log10(labels=signif, limits=c(0.1,400),breaks=c(0.01, 0.1, 1, 10, 100),
-                name = expression(paste(frac("Short-Lived Breeder","Long-lived Pioneer")))) 
-#pdf(file.path(gdrive_path, "Plots_J/New/Abun_Light/Breeder Abundance Ratio by light.pdf"))
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
+  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
+  scale_x_log10(limits=c(1,400),breaks=c(1,10,100), name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
+  #scale_y_log10(breaks = c(0.01,0.1,1,10,100), labels=signif, limits=c(0.003,500),
+   #             name = expression("Abundance Ratio"))
+  scale_y_log10() + theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_5/Abun_ratio_light.pdf'))
+plot(p1)
 dev.off()
-
-# Ran
-
-
-
 
 
 ############################# SUPPLEMENTAL PLOTS #############################
 
 #### Relative Abundance & Life history Ranks #####
-
-
-###### Life history PCA Scores
-
 ## by Diameter
 
-# Fast vs Slow
+# Combine
+fastslowscore_bin_bydiam_2census_id <- fastslowscore_bin_bydiam_2census %>%
+  mutate(ID = "Fast-Slow")
+breederscore_bin_bydiam_2census_id <- breederscore_bin_bydiam_2census %>%
+  mutate(ID = "Breeder-Pioneer")
+score_bin_bydiam <- as.data.frame(rbind(fastslowscore_bin_bydiam_2census_id, breederscore_bin_bydiam_2census_id))
 
-#pdf(file.path(gdrive_path, "Plots_J/New/Ranks/Diameter/Fast Slow.pdf"))
-fastslowscore_bin_bydiam_2census %>%
-  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
+
+p <- score_bin_bydiam   %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
   #geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
   geom_errorbar(width = error_bar_width) +theme_plant+
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
+  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   scale_x_log10(name = 'Diameter (cm)', limits = c(1,300)) + 
-  scale_y_continuous(limits=c(-2,2.5),breaks=c(-2,0,2),name = 'Slow-Fast') 
+  scale_y_continuous(limits=c(-2,2.5),breaks=c(-2,0,2),name = 'Slow-Fast PCA') 
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/PCAs/PCA_rank_diam.pdf'))
+plot(p1)
 dev.off()
-
-# Breeder vs Pioneer
-
-breederscore_bin_bydiam_2census %>%
-  ggplot(aes(x = bin_midpoint, y = mean*-1, ymin = ci_min*-1, ymax = ci_max*-1)) +
-  #geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
-  geom_errorbar(width = error_bar_width) +theme_plant+
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())+
-  scale_x_log10(limits=c(1,300), name = 'Diameter (cm)') + 
-  scale_y_continuous(limits=c(-4,2),name = 'Breeder-Performer') 
 
 
 ## by Light
-# Fast vs Slow
-fastslowscore_bin_bylight_2census %>%
-  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
-  #geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
-  geom_errorbar(width = error_bar_width) +theme_plant+
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
-  scale_x_log10(limits=c(1,450),name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
-  scale_y_continuous(limits=c(-2.2,0.5),name = 'Slow-Fast') 
 
-# Breeder vs Pioneer
-breederscore_bin_bylight_2census %>%
-  ggplot(aes(x = bin_midpoint, y = mean*-1, ymin = ci_min*-1, ymax = ci_max*-1)) +
+# Combine
+fastslowscore_bin_bylight_2census_id <- fastslowscore_bin_bylight_2census %>%
+  mutate(ID = "Fast-Slow")
+breederscore_bin_bylight_2census_id <- breederscore_bin_bylight_2census  %>%
+  mutate(ID = "Breeder-Pioneer")
+PCA_score_by_light <- as.data.frame(rbind(fastslowscore_bin_bylight_2census_id,breederscore_bin_bylight_2census_id))
+
+p <- PCA_score_by_light %>%
+  #filter(mean_n_individuals > 10) %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
   #geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
   geom_errorbar(width = error_bar_width) +theme_plant+
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
-  scale_x_log10(limits=c(1,450),name = expression(paste('Light per Crown Area (W m'^-2,')'))) +
-  scale_y_continuous(breaks=c(-1,0,1),name = 'Breeder-Performer') +
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank()) 
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
+  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
+  scale_x_log10(limits=c(1,450),name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
+  scale_y_continuous(limits=c(-2.2,1.5),name = 'Slow-Fast') 
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/PCAs/PCA_rank_per_light.pdf'))
+plot(p1)
+dev.off()
+
 #---------------------------------------------------------------------------------------------
 
 
 # Life history Production Ratio by diameter
 
-# Fast vs Slow
-#pdf(file.path(gdrive_path, "Plots_J/New/Prod_Diam/Fast vs Slow.pdf"))
-fastslow_stats_bydiam_2census %>%
+
+fastslow_stats_bydiam_2census_id <- fastslow_stats_bydiam_2census %>%
+  mutate(ID = "Fast-Slow")
+
+breeder_stats_bydiam_2census_b <- breeder_stats_bydiam_2census
+breeder_stats_bydiam_2census_b[, 2:7] <- 1/breeder_stats_bydiam_2census_b[, 2:7]
+breeder_stats_bydiam_2census_b <- as.matrix(breeder_stats_bydiam_2census_b)
+breeder_stats_bydiam_2census_b[!is.finite(breeder_stats_bydiam_2census_b )] <- NA
+breeder_stats_bydiam_2census_b <- as.data.frame(breeder_stats_bydiam_2census_b)
+breeder_stats_bydiam_2census_id <- breeder_stats_bydiam_2census_b  %>%
+  mutate(ID = "Breeder-Pioneer")
+
+production_ratio_diam <- as.data.frame(rbind(fastslow_stats_bydiam_2census_id, breeder_stats_bydiam_2census_id))
+
+
+p <- production_ratio_diam  %>%
   filter(production_ratio_mean > 0) %>%
   mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = production_ratio_mean, ymin =production_ratio_min, ymax = production_ratio_max)) +
+  ggplot(aes(x = bin_midpoint, y = production_ratio_mean, 
+             ymin =production_ratio_min, ymax = production_ratio_max, fill = ID)) +
   geom_errorbar(width = error_bar_width) +
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
+  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
+  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   theme_plant+
   scale_x_log10(name = expression(paste('Diameter (cm)')), limits=c(1,150), breaks=c(1,3,10,30,100,300)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100), limits=c(0.01,2),
-                name = expression(paste(frac("Fast","Slow")))) 
-#dev.off()
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100), limits=c(0.01,200),
+                name = expression("Growth Ratio")) 
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Ex_ratios/Production_diam.pdf'))
+plot(p1)
+dev.off()
 
-# Breeder vs Pioneer 
-breeder_stats_bydiam_2census
-str(breeder_stats_bydiam_2census)
-#pdf(file.path(gdrive_path, "Plots_J/New/Prod_Diam/Breeder Production by Diameter.pdf"))
-breeder_stats_bydiam_2census %>%
+# Production Ratio by Light
+
+
+fastslow_stats_bylight_2census_id <- fastslow_stats_bylight_2census %>%
+  mutate(ID = "Fast-Slow")
+breeder_stats_bydiam_2census_b <- breeder_stats_bydiam_2census
+breeder_stats_bydiam_2census_b[,2:7] <- 1/breeder_stats_bydiam_2census_b[,2:7] 
+breeder_stats_bydiam_2census_b <- as.matrix(breeder_stats_bydiam_2census_b)
+breeder_stats_bydiam_2census_b[!is.finite(breeder_stats_bydiam_2census_b)] <- NA
+breeder_stats_bydiam_2census_b <- as.data.frame(breeder_stats_bydiam_2census_b)
+breeder_stats_bydiam_2census_id <- breeder_stats_bydiam_2census_b %>%
+  mutate(ID = "Breeder-Pioneer")
+
+prod_ratio_light <- as.data.frame(rbind(fastslow_stats_bylight_2census_id,breeder_stats_bydiam_2census_id))
+
+
+
+p <- prod_ratio_light   %>%
   filter(production_ratio_mean > 0) %>%
   mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = 1/production_ratio_mean, ymin = 1/production_ratio_min, ymax = 1/production_ratio_max)) +
+  ggplot(aes(x = bin_midpoint, y = production_ratio_mean, 
+             ymin =production_ratio_min, ymax = production_ratio_max, fill = ID)) +
   geom_errorbar(width = error_bar_width) +
-  theme_plant+ theme(axis.title.x=element_blank(),
-                     axis.text.x=element_blank(),
-                     axis.ticks.x=element_blank())+
-  geom_point(shape = 21, size = 5.5,  stroke = .5, color = "black", fill = "grey25")+
-  scale_x_log10(name = 'Diameter (cm)', limits=c(1,150), breaks=c(1, 3,10,30, 100,300)) + 
-  scale_y_log10(labels = signif, limits=c(10^-2,10^3.35),breaks=c(0.01, 1, 100),
-                name = expression(paste(frac("Long-lived Pioneer","Short-Lived Breeder")))) 
-#dev.off()
+  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
+  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
+  theme_plant+
+  scale_x_log10(name = expression(paste('Diameter (cm)')), limits=c(1,150), breaks=c(1,3,10,30,100,300)) +
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100), limits=c(0.01,200),
+                name = expression("Growth Ratio")) 
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Ex_ratios/Production_light.pdf'))
+plot(p1)
+dev.off()
 
-
-## Life history Production Ratio by Light
-
-# Fast vs Slow
-#pdf(file.path(gdrive_path, "Plots_J/New/Prod_Light/Fast to slow Production by light.pdf"))
-fastslow_stats_bylight_2census %>%
-  filter(production_ratio_mean > 0) %>%
-  mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = production_ratio_mean, ymin = production_ratio_min, ymax = production_ratio_max)) +
-  geom_errorbar(width = error_bar_width) +theme_plant+
-  geom_point(shape = 21, size = 5.5,  stroke = .5, color = "black", fill = "grey25")+
-  scale_x_log10(limits=c(1,450),breaks=c(1,10,100),
-                name = expression(paste('Light per Crown Area (W m'^-2,')')))+
-  scale_y_log10(expression(paste(frac("Fast","Slow"))),
-                limits=c(0.003,2),breaks=c(0.01,.1,1, 10), labels=signif) 
-#dev.off()
-
-# Breeder vs Pioneer
-
-#pdf(file.path(gdrive_path, "Plots_J/New/Prod_Light/Breeder Production Ratio by light2.pdf"))
-breeder_stats_bylight_2census %>%
-  filter(production_ratio_mean > 0) %>%
-  mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = 1/production_ratio_mean, ymin = 1/production_ratio_min, ymax = 1/production_ratio_max)) +
-  geom_errorbar(width = error_bar_width) +theme_plant+
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black", fill = "grey25")+
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())+
-  scale_x_log10(limits = c(1,450),breaks=c(1,10,100),
-                name = expression(paste('Light per Crown Area (W m'^-2,')')))+
-  scale_y_continuous(labels = scales::trans_format('log10', scales::math_format(10^.x)), trans = "log10" ,limits=c(10^-1,10^6),breaks=c(10^-2, 10^0, 10^2, 10^4, 10^6),
-                name = expression(paste(frac("Long-lived Pioneer","Short-Lived Breeder")))) 
-#dev.off()
 #---------------------------------------------------------------------------------------------
 
 ######################## LOOIC of Piecewise Models  ########################
@@ -623,24 +656,39 @@ ics <- read.csv(file.path(fp, 'piecewise_ics_by_fg.csv'), stringsAsFactors = FAL
 ics$fg <- factor(ics$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
 
 # Density model
-
-ggplot(ics %>% filter(prod_model == 1, criterion == 'LOOIC', variable == 'density', !fg %in% 'unclassified'), 
+base_size <- 11
+p <- ggplot(ics %>% filter(prod_model == 1, criterion == 'LOOIC', 
+                           variable == 'density', !fg %in% 'unclassified'), 
        aes(x = factor(dens_model), y = ic, ymin = ic - se_ic, ymax = ic + se_ic)) +
   facet_wrap(~ fg, labeller = label_value, scales = 'free_y') +
   geom_pointrange() +
-  theme_bw() +
-  theme(strip.background = element_blank(),panel.grid = element_blank()) +
-  labs(x = 'Segments in Density Function', y = "LOO Information Criterion")
+  theme_bw(base_size = base_size, base_family = "",
+           base_line_size = base_size/22, base_rect_size = base_size/11)+
+  theme(strip.background = element_blank(),panel.grid = element_blank(), 
+        text = element_text(size = 14),strip.text = element_text(size=12)) +
+  labs(x = 'Segments in Density Function', y = "Leave One Out Information Criterion")
+p
+pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_density.pdf"))
+p
+dev.off()
 #ggsave(file.path(fpfig, 'density_model_information_criteria.pdf'), height = 6, width = 9)
 
 # Production model
 
-ggplot(ics %>% filter(dens_model == 1, criterion == 'LOOIC', variable == 'production', !fg %in% 'unclassified'), aes(x = factor(prod_model), y = ic, ymin = ic - se_ic, ymax = ic + se_ic)) +
+p <- ggplot(ics %>% filter(dens_model == 1, criterion == 'LOOIC', 
+                           variable == 'production', !fg %in% 'unclassified'), 
+            aes(x = factor(prod_model), y = ic, ymin = ic - se_ic, ymax = ic + se_ic)) +
   facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
   geom_pointrange() +
-  theme_bw() +
-  theme(strip.background = element_blank(), panel.grid = element_blank(), strip.text = element_text(size=10)) +
-  labs(x = 'Segments in Production Function',  y = "LOO Information Criterion")
+  theme_bw(base_size = base_size, base_family = "",
+           base_line_size = base_size/22, base_rect_size = base_size/11)+
+  theme(strip.background = element_blank(),panel.grid = element_blank(), 
+        text = element_text(size = 14),strip.text = element_text(size=12)) +
+  labs(x = 'Segments in Production Function',  y = "Leave One Out Information Criterion")
+p
+pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_production.pdf"))
+p
+dev.off()
 #ggsave(file.path(fpfig, 'production_model_information_criteria.pdf'), height = 6, width = 9)
 #---------------------------------------------------------------------------------------------
 
@@ -652,7 +700,7 @@ slopes$variable <- factor(slopes$variable, labels = c("Density", "Individual Gro
 colors <- c("sienna4", "yellowgreen", "springgreen4")
 
 # Using 3 segment density and 1 segment production
-ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'Unclassified'), 
+p <- ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'Unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
   facet_wrap(~ fg,labeller = label_value) +
   geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
@@ -669,12 +717,15 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'Unclassifie
         legend.text=element_text(size = 12),axis.title = element_text(size = 15),
         axis.text = element_text(color = "black", size = 11)) +
   labs(y = 'Slope') +
-  ggtitle('Fitted slopes \n 3 segment density model and 2 segment production model')+
+  ggtitle('Fitted slopes: \n 3 segment density model and 2 segment production model')+
   theme(plot.title = element_text(hjust=0.5)) #+ theme(legend.title=element_blank())
+p 
+pdf(file.path(gdrive_path, "Figures/Slopes/fitted_slopes_1_seg_production.pdf"))
+p
+dev.off()
 
-
-# Using 3 segment density and 1 segment production
-ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassified'), 
+# Using 3 segment density and 2 segment production
+p <- ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
   facet_wrap(~ fg,scale = "free_y", labeller = label_value) +
   geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
@@ -694,6 +745,10 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassifie
   ggtitle('Fitted Slopes \n 3 Segment Density Model & 2 Segment Production Model')+
   theme(plot.title = element_text(hjust=0.5)) +
   theme(legend.spacing.x=unit(.2, "cm"))+  theme(legend.title=element_blank())+ theme(legend.text=element_text(size = 12))
+p 
+pdf(file.path(gdrive_path, "Figures/slopes/fitted_slopes_2_seg_production.pdf"))
+p
+dev.off()
 #ggsave(file.path(fpfig, 'fitted_slopes_3partdensity_2partproduction.pdf'), height = 6, width = 9)
 #---------------------------------------------------------------------------------------------
 
@@ -825,14 +880,16 @@ plot_prod <- function(year_to_plot = 1990,
   ggplot() +
     geom_hex(data = obsdat, aes(x = dbh_corr, y = production)) +
     #geom_line(data = preddat, aes(x = dbh, y = q50, group = prod_model, linetype = prod_model), size=0.25) +
-    facet_wrap(~ fg, labeller = labeller(fg = labels)) +
+    geom_abline(slope = 2, intercept = -2.1, linetype = "dashed")+
+    facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = labels)) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels=signif) +
     #scale_linetype_manual(values = line_types, name = 'Functional form') +
     scale_linetype_manual(values = line_types) +
-    hex_scale +theme_plant1.1+
+    hex_scale + theme_plant1.1+
     coord_fixed(ratio = aspect_ratio) + guides(linetype = 'none')+
-    theme(legend.position = c(0.85, 0.15), strip.background = element_blank(), strip.text = element_text(size=12))#, legend.text = element_blank())
+    theme(legend.position = c(0.7, 0.15), strip.background = element_blank(),
+          strip.text = element_text(size=12))#, legend.text = element_blank())
   
   
 }
@@ -853,13 +910,13 @@ plot_prod <- function(year_to_plot = 1990,
 # Edit the hex scale argument to draw this with other color scales.
 #hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=1)(50), trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
-                                             trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000), 
-                                             labels = c(1,10,100,1000), limits=c(1,5000))
+                                             trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
+                                             labels = c(1,10,100,1000,10000), limits=c(1,10000))
 
 
 p <- plot_prod(year_to_plot = 1990,
                fg_names = c('fg1','fg2','fg3','fg4','fg5'),
-               full_names = c('Fast', 'Slow', 'Pioneer', 'Breeder', 'Medium', 'Unclassified'),
+               full_names = c('Fast', 'Pioneer', 'Slow', 'Breeder', 'Medium', 'Unclassified'),
                x_limits = c(1, 316),
                x_breaks = c(1,10, 100),
                y_limits = c(0.001, 1000),
@@ -868,6 +925,9 @@ p <- plot_prod(year_to_plot = 1990,
                hex_scale = hex_scale_log_colors,
                aspect_ratio = 0.75) 
 p 
+pdf(file.path(gdrive_path, 'Figures/Growth_hex/growth_hex.pdf'))
+p
+dev.off()
 #pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/raw_growth_heat.pdf"))
 #p
 #dev.off()       
@@ -928,26 +988,18 @@ fg_colors2 <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87C
 # 1. Plot of maximum slope by functional group
 
 # Remove all tree and unclassified groups
-
-p <- ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
+param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg3", "fg4"))
+fg_labels2 <- c("Fast", "LL Pioneer", "Intermediate", "Slow", "SL Breeder")
+p <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
           aes(x = fg, y = q50, ymin = q025, ymax = q975)) +theme_panel+
   geom_hline(yintercept = 1, linetype = 'dotted', color = 'dodgerblue', size = 1) + 
-  geom_errorbar(width = 0.1) + geom_point(size = 3) +
-  scale_x_discrete(name = 'Life History Strategy', labels = fg_labels) +
-  scale_y_continuous(name = 'Maximum Slope', limits=c(.25,1.2),breaks = seq(0, 1.5, 0.25), labels = seq(0, 1.5, 0.25)) +theme_plant
+  geom_errorbar(width = 0.4) + geom_point(size = 4) +theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
+  scale_x_discrete(name = 'Life History Strategy', labels = fg_labels2) +
+  scale_y_continuous(name = 'Max. Growth~Light Slope', limits=c(.6,1.2),breaks = seq(0, 1.5, 0.2), labels = seq(0, 1.5, 0.2)) +theme_plant
 p
-pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/slopes.pdf"))
+pdf(file.path(gdrive_path, "Figures/Growth~light_slopes/Growth~light_slopes.pdf"))
 p
 dev.off()
-# Plot of intercept by FG
-ggplot(param_ci %>% filter(year == year_to_plot, parameter %in% 'G', !fg %in% c('alltree','unclassified')),
-       aes(x = fg, y = q50, ymin = q025, ymax = q975)) +theme_plant+
-  geom_errorbar(width = 0.1) + geom_point() +
-  scale_x_discrete(name = 'functional group', labels = fg_labels) +
-  scale_y_continuous(name = 'growth vs light intercept', 
-                     breaks = seq(0, 1.25, 0.25))+#, labels = seq(0, 1.25, 0.25)) +
-  theme_plant
-#panel_border(colour = 'black')
 
 library(reshape2)
 melt_pars <- melt(param_ci, id.vars=1:3)
@@ -1012,8 +1064,8 @@ unique(obs_light_binned$fg)
 unique(slopes$fg)
 
 p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
-  #facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +theme_plant+
-  facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
+  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +theme_plant+
+  #facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
               aes(x = light_area, ymin = q025, ymax = q975,group=fg,color=NA,fill=fg), alpha = 0.5) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
@@ -1023,7 +1075,7 @@ p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
   geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
                aes(x = xmax * 0.5, xend = xmax * 2, y = ymax * 0.5, yend = ymax * 2), color = 'brown1', size = .5) +
   geom_point(shape=21, aes(x = bin_midpoint, y = median)) +
-  scale_color_manual(values = fg_colors) +
+  scale_color_manual(values = guild_fills_nb ) +
   scale_fill_manual(values = fg_colors)+
   scale_x_log10(name = title_x, breaks=c(1,10,100)) + 
   scale_y_log10(name = title_y, labels=signif, breaks=c(0.01,0.1,1,10)) +
@@ -1069,8 +1121,8 @@ p_mean_1panel <- ggplot(obs_light_binned %>% filter(year == year_to_plot, mean_n
   
   scale_x_log10(name = title_x) + 
   scale_y_log10(name = title_y) +
-  scale_color_manual(name = 'Functional group', values = fg_colors, labels = fg_labels) +
-  scale_fill_manual(values = fg_colors, labels = fg_labels, guide = FALSE) +
+  scale_color_manual(name = 'Functional group', values = fg_colors2, labels = fg_labels) +
+  scale_fill_manual(values = guild_fills_nb, labels = fg_labels, guide = FALSE) +
   theme_plant +
   theme(panel.border = element_rect(fill=NA),
         legend.position = c(0.2, 0.8))
