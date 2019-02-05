@@ -74,7 +74,7 @@ fg_names <- paste('fg', 1:5, sep = '')
 fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 
 p <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
-  geom_point(shape = 21, size = 3.5, color = "black") + theme_plant_0.6 +theme(aspect.ratio = 0.75)+
+  geom_point(shape = 21, size = 4.5, color = "black") + theme_plant_0.6 +theme(aspect.ratio = 0.75)+
   labs(x = 'Slow to Fast', y = 'Breeders to Pioneers') +
   scale_y_continuous(limits = c(-6,6), breaks = seq(-6,6,3))+
   scale_x_continuous(limits = c(-6,6), breaks = seq(-6,6,3))+
@@ -187,14 +187,17 @@ plot_prod <- function(year_to_plot = 1995,
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     #geom_errorbar(data = obsdat, aes_string(x = 'bin_midpoint', ymin = error_quantiles[1], ymax = error_quantiles[2], group = 'fg', color = 'fg', width = 'width'), position = pos) +
     geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
-    geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
-    geom_point(data = obsdat, aes_string(x = 'bin_midpoint', y = average, group = 'fg', fill = 'fg'),size = geom_size,color="black",shape=21,position = pos) +
+    geom_ribbon(data = preddat[preddat$fg == "fg5",], 
+                aes(x = dbh, ymin = q025, ymax = q975), 
+                fill = "gray", alpha = 0.4) +
+    geom_point(data = obsdat, aes_string(x = 'bin_midpoint', y = average, group = 'fg', fill = 'fg'),
+               size = geom_size,color="black",shape=21,position = pos) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     theme(axis.title.x=element_blank(),
           axis.text.x=element_blank(),
           axis.ticks.x=element_blank(),
           rect = element_rect(fill = "transparent"))+ # all rectangles
-    scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels=y_labels) +
+    scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) +
     scale_color_manual(values = color_names) +
     scale_fill_manual(values = color_names) + theme_plant
   
@@ -244,7 +247,6 @@ plot_totalprod <- function(year_to_plot = 1995,
     geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
     geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value,group = fg, fill=fg), size = geom_size, color = "black",shape=21) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
-    
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels, position = "right") +
     scale_color_manual(values = color_names) +theme_plant+
     scale_fill_manual(values = color_names) 
@@ -497,7 +499,7 @@ p <- bylight_2census    %>%
   mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
   ggplot(aes(x = bin_midpoint, y = density_ratio_mean, 
              ymin = density_ratio_min, ymax = density_ratio_max, fill = ID)) +
-  geom_errorbar(width = error_bar_width) +theme_plant+
+  geom_errorbar(width = error_bar_width) + theme_plant+
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
@@ -1111,7 +1113,7 @@ p_mean_panels
 # 6. Plot with all functional groups on the same panel, and means
 
 dodge_width <- 0.03
-error_bar_width <- 0.03
+error_bar_width <- 0.04
 
 p_mean_1panel <- ggplot(obs_light_binned %>% filter(year == year_to_plot, mean_n_individuals > 10, !fg %in% c('alltree', 'unclassified'))) +
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.5) +
@@ -1181,20 +1183,32 @@ dev.off()
 
 dodge_width <- 0.00
 
-p_median_1panel <- ggplot(obs_light_binned %>% filter(year == year_to_plot, mean_n_individuals >= 10, !fg %in% c('alltree', 'unclassified'))) +
-  geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
-  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50, color = fg)) +
+p_median_1panel <- ggplot(obs_light_binned %>% 
+                            filter(year == year_to_plot,mean_n_individuals >= 10, 
+                                   !fg %in% c('alltree', 'unclassified'))) +
+  geom_ribbon(data = pred_light_5groups %>% 
+                filter(year == year_to_plot),
+              aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
+  geom_line(data = pred_light_5groups %>% 
+              filter(year == year_to_plot), 
+            aes(x = light_area, y = q50, color = fg)) +
+  geom_line(data = pred_light_5groups[pred_light_5groups$fg == "fg5",]  %>% 
+            filter(year == year_to_plot), aes(x = light_area, y = q50), color = "gray")+ 
   #geom_errorbar(aes(x = bin_midpoint, ymin = q25, ymax = q75, group = fg, color = fg), size = 0.75, width = 0, position = position_dodge(width = dodge_width)) +
-  geom_errorbar(aes(x = bin_midpoint, ymin =ci_min, ymax = ci_max, group = fg, color = fg),size = 0.5, width = 0.75, position = position_dodge(width = dodge_width)) +
+  geom_errorbar(aes(x = bin_midpoint, ymin =ci_min, ymax = ci_max, group = fg,
+                    color = fg),size = 0.5, width = 0.75, position = position_dodge(width = dodge_width)) +
   
   #geom_errorbar(aes(x = bin_midpoint, ymin = q025, ymax = q975, group = fg, color = fg), width = 0, position = position_dodge(width = dodge_width)) +
-  geom_point(size=5, shape=21,color='black',aes(x = bin_midpoint, y = median, group = fg, fill = fg), position = position_dodge(width = dodge_width)) +
+  geom_point(size=3.5, shape=21,color='black',aes(x = bin_midpoint,
+                                                y = median, group = fg, fill = fg),
+             position = position_dodge(width = dodge_width)) +
   #geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), aes(x = xmax * 0.5, xend = xmax * 2, y = ymax * 0.5, yend = ymax * 2), color = 'brown1', size = 1) +
   scale_x_log10(name = title_x, breaks=c(1,3,10,30,100,300))+ 
-  scale_y_log10(name =  expression(atop('Growth per Crown Area',paste('(kg y'^-1, ' m'^-2,')')))) +
+  scale_y_log10(name =  expression(atop('Growth per Crown Area',
+                                        paste('(kg y'^-1, ' m'^-2,')')))) +
   scale_color_manual(name = 'Functional group', values = fg_colors, labels = fg_labels) +
   scale_fill_manual(values = fg_colors2, labels = fg_labels, guide = FALSE) +
-  theme_plant #+
+  theme_plant +theme(aspect.ratio = 0.7) #+
 # theme(panel.border = element_rect(fill=NA),
 #      legend.position = c(0.2, 0.8))
 
