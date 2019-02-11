@@ -153,9 +153,9 @@ plot_prod <- function(year_to_plot = 1995,
                       y_limits,
                       y_labels,
                       y_breaks,
-                      fill_names = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "ivory"),
-                      fill_names0 = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
-                      x_name = 'Diameter (cm)',
+                      fill_names = c("#BFE046", "#267038", "#27408b", "#87Cefa", "ivory"),
+                      fill_names0 = c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
+                      #x_name = 'Diameter (cm)',
                       y_name = expression(paste('Production (kg y'^-1,')')),
                       average = 'mean',
                       error_quantiles = c('ci_min', 'ci_max'),
@@ -196,12 +196,12 @@ plot_prod <- function(year_to_plot = 1995,
                 fill = "gray", alpha = 0.4) +
     geom_point(data = obsdat, aes_string(x = 'bin_midpoint', y = average, group = 'fg', fill = 'fg'),
                size = geom_size,color="black",shape=21, position = pos) +
-    scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
-    theme(axis.title.x=element_blank(),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank(),
-          rect = element_rect(fill = "transparent"))+ # all rectangles
+    scale_x_log10()+#name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          rect = element_rect(fill = "transparent"))+ # all rectangles
     scale_color_manual(values = fill_names0) +
     scale_fill_manual(values = fill_names) + theme_plant
   
@@ -269,21 +269,21 @@ fpfig <- file.path(gdrive_path, 'figs/piecewiseplots_27sep2018')
 # Plot the fitted values on top of the observed histograms.
 
 # Read observed data
-fp_obs <- file.path(gdrive_path, 'data/data_forplotting_aug2018')
+#fp_obs <- file.path(gdrive_path, 'data/data_forplotting_aug2018')
 
-for (i in dir(fp_obs, pattern = 'obs_')) {
-  n <- gsub('.csv','',i)
-  assign(n, read.csv(file.path(fp_obs, i), stringsAsFactors = FALSE))
-}
+#for (i in dir(fp_obs, pattern = 'obs_')) {
+ # n <- gsub('.csv','',i)
+  #assign(n, read.csv(file.path(fp_obs, i), stringsAsFactors = FALSE))
+#}
 
 # Read modeled data (CIs)
 
-for (i in dir(fp, pattern = 'pred_|fitted_')) {
-  n <- gsub('.csv','',i)
-  assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
-}
+#for (i in dir(fp, pattern = 'pred_|fitted_')) {
+  #n <- gsub('.csv','',i)
+  #assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
+#}
 
-source(file.path(github_path, 'stan/piecewise_workflow/plottingfunctionspiecewise.r'))
+#source(file.path(github_path, 'stan/piecewise_workflow/plottingfunctionspiecewise.r'))
 # Create plots.
 #Model fit 1 = pareto, 1 segment
 #Model Fit 2  = 2 segments, etc
@@ -321,6 +321,7 @@ plot(p1)
 pdf(file.path(gdrive_path,'Figures/Fig_3/Production.pdf'))
 plot(p1)
 dev.off()
+
 p <- plot_totalprod(year_to_plot = 1995,
                fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                model_fit_density = 3, 
@@ -331,10 +332,11 @@ p <- plot_totalprod(year_to_plot = 1995,
                y_labels = c(0.1, 1, 10, 100),
                preddat = fitted_totalprod)
 p
-#ggsave(file.path(fpfig, 'fits_3by2_totalproduction.pdf'), height = 5, width = 6)
+p <- p +geom_abline(intercept= 2, slope = 0, color ="gray72",linetype="dashed", size=.75)
 p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
 plot(p1)
-pdf(file.path(gdrive_path,'Figures/Fig_2/Total_Production.pdf'))
+
+pdf(file.path(gdrive_path,'Figures/Fig_3/Total_Production.pdf'))
 plot(p1)
 dev.off()
 
@@ -463,6 +465,10 @@ fastslow_stats_breeder_bydiam_2census <-rbind(breeder_stats_bydiam_2census_id,fa
 fill_ <- c("grey", "grey25")
 fastslow_stats_breeder_bydiam_2census$ID <- as.factor(fastslow_stats_breeder_bydiam_2census$ID)
 str(fastslow_stats_breeder_bydiam_2census)
+
+
+# Abundance by Diameter
+
 p <- fastslow_stats_breeder_bydiam_2census  %>%
   filter(density_ratio_mean > 0) %>%
   mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
@@ -473,14 +479,43 @@ p <- fastslow_stats_breeder_bydiam_2census  %>%
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
   scale_fill_manual(values = c("Breeder" = "black", "Fast-Slow" = "grey"))+
   
-  scale_x_log10(limits=c(1,150),breaks=c(1,3, 10, 30, 100), name = expression(paste('Diameter (cm)'))) + 
-  scale_y_log10(breaks = c(0.01,0.1,1,10,100), labels=signif, limits=c(0.01,500),
-                name = expression("Abundance Ratio"))
+  scale_x_log10(limits=c(.7,330),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.006,100),
+                name = expression("Ratio")) +
+  theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+
 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_5/Abun_ratio_diameter.pdf'))
+plot(p1)
+dev.off()
+
+
+# Production by Light
+
+p <- prod_ratio_light   %>%
+  #filter(mean_n_individuals > 10) %>%
+  filter(production_ratio_mean > 0) %>%
+  mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
+  ggplot(aes(x = bin_midpoint, y = production_ratio_mean, 
+             ymin =production_ratio_min, ymax = production_ratio_max, fill = ID)) +
+  geom_errorbar(width = error_bar_width) +
+  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
+  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
+  theme_plant+
+  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(.7,330), breaks=c(1,10,100)) +
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.006,100),
+                name = expression("Ratio"))
+  
+
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Ex_ratios/Production_light.pdf'))
 plot(p1)
 dev.off()
 #name = expression(paste(frac("Fast","Slow"))))  
@@ -514,17 +549,18 @@ p <- bylight_2census    %>%
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
   
   scale_x_log10(limits=c(1,400),breaks=c(1,10,100), name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
-  #scale_y_log10(breaks = c(0.01,0.1,1,10,100), labels=signif, limits=c(0.003,500),
-   #             name = expression("Abundance Ratio"))
-  scale_y_log10() + theme(axis.title.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank())
+  scale_y_log10(breaks = c(0.01,0.1,1,10,100), labels=signif, limits=c(0.003,500),
+                name = expression("Abundance Ratio"))
+  #scale_y_log10() + theme(axis.title.y = element_blank(),
+   #     axis.text.y = element_blank(),
+    #    axis.ticks.y = element_blank())
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_5/Abun_ratio_light.pdf'))
 plot(p1)
 dev.off()
+
 
 
 ############################# SUPPLEMENTAL PLOTS #############################
@@ -640,6 +676,7 @@ prod_ratio_light <- as.data.frame(rbind(fastslow_stats_bylight_2census_id,breede
 
 
 p <- prod_ratio_light   %>%
+  #filter(mean_n_individuals > 10) %>%
   filter(production_ratio_mean > 0) %>%
   mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
   ggplot(aes(x = bin_midpoint, y = production_ratio_mean, 
@@ -650,8 +687,11 @@ p <- prod_ratio_light   %>%
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   theme_plant+
   scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(1,330), breaks=c(1,3,10,30,100,300)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100), limits=c(0.003,200),
-                name = expression("Growth Ratio")) 
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.06,100),
+                name = expression("Production Ratio"))+
+  scale_y_log10(limits=c(0.006,100)) + theme(axis.title.y = element_blank(),
+       axis.text.y = element_blank(),
+      axis.ticks.y = element_blank())
 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
@@ -825,7 +865,7 @@ plot_prod <- function(year_to_plot = 1990,
                       x_breaks = c(1, 10, 100),
                       y_limits,
                       y_breaks,
-                      x_name = 'Diameter (cm)',
+                      #x_name = 'Diameter (cm)',
                       y_name = expression(paste('Growth (kg yr'^-1,')')), line_types = c('dashed', 'solid'),
                       aspect_ratio = 1,
                       hex_scale = scale_fill_gradient(low = 'gray90', high = 'gray10', guide = FALSE),
@@ -863,11 +903,11 @@ plot_prod <- function(year_to_plot = 1990,
     #geom_line(data = preddat, aes(x = dbh, y = q50, group = prod_model, linetype = prod_model), size=0.25) +
     geom_abline(slope = 2, intercept = -2.1, linetype = "dashed")+
     facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = labels)) +
-    scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
+    scale_x_log10()#name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels=signif) +
     #scale_linetype_manual(values = line_types, name = 'Functional form') +
     scale_linetype_manual(values = line_types) +
-    hex_scale + theme_plant1.1+
+    hex_scale + theme_plant+
     coord_fixed(ratio = aspect_ratio) + guides(linetype = 'none')+
     theme(legend.position = c(0.7, 0.15), strip.background = element_blank(),
           strip.text = element_text(size=12))#, legend.text = element_blank())
@@ -958,7 +998,6 @@ title_x <- expression(paste('Light per Crown Area (W m'^-2,')',sep=''))
 title_y <- expression(paste('Growth (kg yr'^-1, ' m'^-2,')', sep=''))
 
 # Colors
-# these are shit colors but I just put them in as a placeholder
 colors <- c('black',"#BFE046","#267038" , "#27408b", "#87Cefa", "ivory" ) # #BFE046= light green,#267038=dark green,27408b=dark blue,"#87Cefa" = light blue,    
 year_to_plot = 1995
 fg_colors <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87Cefa", fg5 = "gray70",  alltree = 'black') #unclassified = 'brown',
@@ -1146,7 +1185,7 @@ p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% '
   hex_scale_log_colors + 
   scale_color_manual(name = 'Functional group',values = fg_colors, labels = fg_labels) +
   #scale_fill_manual(values = fg_colors, labels = fg_labels, guide = FALSE) +
-  theme_plant1.1+
+  theme_plant_+
   guides(color = FALSE) +
   theme(panel.border = element_rect(fill=NA),
         strip.background = element_rect(fill=NA),
@@ -1200,22 +1239,7 @@ plot(p)
 dev.off()
 
 
-#get rid of
 
-theme_plant1.1 <- theme(panel.grid = element_blank(), 
-                        aspect.ratio = .70,
-                        axis.text = element_text(size = 14, color = "black"), 
-                        axis.ticks.length=unit(0.15,"cm"),
-                        axis.title = element_text(size = 14),
-                        axis.title.y = element_text(margin = margin(r = 0)),
-                        axis.title.x = element_text(margin = margin(t = 10)),
-                        axis.title.x.top = element_text(margin = margin(b = 5)),
-                        plot.title = element_text(size = 14, face = "plain", hjust = 10),
-                        panel.border = element_rect(color = "black", fill=NA,  size=.7),
-                        panel.background = element_blank(),
-                        plot.margin = unit(c(1, 1, 1,1), "cm"),
-                        legend.position = "none",
-                        legend.key = element_rect(fill="transparent"),
-                        rect = element_rect(fill = "transparent"),
-                        text = element_text(family = 'Helvetica')) 
+
+
 
