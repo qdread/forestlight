@@ -1,0 +1,121 @@
+---
+title: "Ratio of two power laws"
+author: "Quentin D. Read"
+date: "February 7, 2019"
+output: pdf_document
+---
+
+# Derivation
+
+The Pareto probability density function of abundance in functional group 1 as a function of diameter is:
+
+$$ y_{1} = \frac { \alpha_{1} x_{min1}^{\alpha_{1}} } { x^{\alpha_{1} + 1} } $$
+
+Take the logarithm of the ratio of the density functions of two functional groups:
+
+$$ \log \frac {y_{1}}{y_{2}} = \log \frac {\frac { \alpha_{1} x_{min1}^{\alpha_{1}} } { x^{\alpha_{1} + 1} }} {\frac { \alpha_{2} x_{min2}^{\alpha_{2}} } { x^{\alpha_{2} + 1} }} $$
+Simplify:
+
+$$ \log \frac {y_{1}}{y_{2}} = \log \frac {\alpha_{1} x_{min1}^{\alpha_{1}}} {\alpha_{2} x_{min2}^{\alpha_{2}}} + \log {x ^ {\alpha_{2} - \alpha_{1}} } $$
+$$ \log \frac {y_{1}}{y_{2}} = \log \frac {\alpha_{1} x_{min1}^{\alpha_{1}}} {\alpha_{2} x_{min2}^{\alpha_{2}}} + ({\alpha_{2} - \alpha_{1}}) \log x  $$
+The first term is a constant so the slope of the ratio of the two functional groups in log space is ${\alpha_{2} - \alpha_{1}}$. Obviously this slope could also be calculated piecewise if the two functional groups have piecewise powerlaw fits, or the scaling variable $x$ could represent light per area instead of diameter.
+
+# Example
+
+Generate 100000 random draws from two Pareto distributions one with parameter $\alpha_{1}=1$ (slope of -2) and the other with $\alpha_{2}=2$ (slope of -3), and both with $x_{min}=1$. The ratio of the bins should have slope 1.
+
+```{r, message=FALSE, warning=FALSE}
+library(actuar)
+n <- 100000
+alpha <- c(1, 2)
+xmin <- 1
+
+set.seed(111)
+y1 <- rpareto1(n = n, shape = alpha[1], min = xmin)
+y2 <- rpareto1(n = n, shape = alpha[2], min = xmin)
+```
+
+This is the log bin function, described in great detail elsewhere.
+
+```{r}
+logbin_setedges <- function(x, y = NULL, edges) {
+  logx <- log10(x)                                        
+  bin_edges <- log10(c(edges$bin_min, edges$bin_max[length(edges$bin_max)]))
+  n <- length(edges$bin_min)
+  logxbin <- rep(NA, length(logx))                          
+  b <- bin_edges                                            
+  b[length(b)] <- b[length(b)] + 1                          
+  for (i in 1:length(logx)) {
+    logxbin[i] <- sum(logx[i] >= b)                          
+  }
+  bin_midpoints <- edges$bin_midpoint
+  bin_widths <- diff(10^bin_edges)                          
+  bin_factor <- factor(logxbin, levels=1:n)                  
+  bin_counts <- table(bin_factor)                           
+  if (!is.null(y)) {
+    rawy <- tapply(y, bin_factor, sum)                      
+    rawy[is.na(rawy)] <- 0                                   
+    bin_values <- as.numeric(rawy/bin_widths)                
+  }
+  else {
+    bin_values <- as.numeric(bin_counts/bin_widths)         
+  }
+  
+  return(data.frame(bin_midpoint = bin_midpoints,            
+                    bin_value = bin_values,                  
+                    bin_count = as.numeric(bin_counts),
+                    bin_min = 10^bin_edges[1:n],
+                    bin_max = 10^bin_edges[2:(n+1)]))
+  
+}
+```
+
+Calculate the log bins.
+
+```{r}
+n_bins <- 10
+bin_bounds <- exp(seq(log(1), log(min(max(y1), max(y2))), length.out = n_bins + 1))
+bin_data <- data.frame(bin_min = bin_bounds[1:n_bins], 
+                       bin_max = bin_bounds[2:length(bin_bounds)],
+                       bin_midpoint = exp(diff(log(bin_bounds))/2 + log(bin_bounds[1:n_bins])))
+
+y1bins <- logbin_setedges(y1, edges = bin_data)
+y2bins <- logbin_setedges(y2, edges = bin_data)
+```
+
+\newpage
+
+Plot the log bins with a reference line of slope 1. Note that the intercept of the reference line is equal to $\log \frac {\alpha_{1} x_{min1}^{\alpha_{1}}} {\alpha_{2} x_{min2}^{\alpha_{2}}}$ as in the equation above. Aspect ratio is set to 1:1.
+
+```{r, message = FALSE}
+library(ggplot2)
+
+plotdat <- data.frame(x = y1bins$bin_midpoint, 
+                      ratio = y1bins$bin_value/y2bins$bin_value)
+
+ggplot(plotdat, aes(x = x, y = ratio)) +
+  geom_point() +
+  scale_x_log10(limits = c(0.5, 250)) +
+  scale_y_log10(limits = c(0.5, 250)) +
+  geom_abline(slope = 1, intercept = log10(1/2), color = 'red') +
+  theme_bw() +
+  theme(aspect.ratio = 1)
+
+```
+
+Here is the ratio plotted directly, along with the actual power laws.
+
+```{r}
+f <- function(x, alpha1, alpha2, xmin1, xmin2) dpareto1(x,alpha1,xmin1)/dpareto1(x,alpha2,xmin2)
+
+ggplot(data.frame(x=c(1,100))) +
+  stat_function(fun=dpareto1, args=list(shape=1, min=1), color = 'red') +
+  stat_function(fun=dpareto1, args=list(shape=2, min=1), color = 'blue') +
+  stat_function(fun=f, args=list(alpha1=1,alpha2=2,xmin1=1,xmin2=1)) +
+  theme_bw() +
+  theme(aspect.ratio = 1) +
+  scale_x_log10() +
+  scale_y_log10()
+
+```
+
