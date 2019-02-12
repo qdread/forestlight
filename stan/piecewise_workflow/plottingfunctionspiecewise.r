@@ -1,42 +1,8 @@
-# Working directory
-
-john_wd <- "/Users/jgradym/Google Drive/ForestLight"
-setwd(john_wd)
 
 # Plotting functions for piecewise.
 # Define plotting functions -----------------------------------------------
 # Plotting functions for piecewise.
 library(tidyverse)
-theme_plant <- theme(panel.grid = element_blank(), #for Density and Growth
-                     aspect.ratio = .60,
-                     axis.text = element_text(size = 19, color = "black"), 
-                     axis.ticks.length=unit(0.2,"cm"),
-                     axis.title = element_text(size = 19),
-                     axis.title.y = element_text(margin = margin(r = 10)),
-                     axis.title.x = element_text(margin = margin(t = 10)),
-                     axis.title.x.top = element_text(margin = margin(b = 5)),
-                     plot.title = element_text(size = 19, face = "plain", hjust = 10),
-                     panel.border = element_rect(color = "black", fill=NA,  size=1),
-                     panel.background = element_blank(),
-                     plot.margin = unit(c(1, 1, 1,1), "cm"),
-                     legend.position = "none",
-                     legend.key = element_rect(fill="transparent"),
-                     
-                     text = element_text(family = 'Helvetica')) 
-
-theme_plant2 <- theme(panel.grid = element_blank(), #for Total Production
-                      aspect.ratio = 1,
-                      axis.text = element_text(size = 19, color = "black"), 
-                      axis.ticks.length=unit(0.2,"cm"),
-                      axis.title = element_text(size = 19),
-                      axis.title.y = element_text(margin = margin(r = 10)),
-                      axis.title.x = element_text(margin = margin(t = 10)),
-                      axis.title.x.top = element_text(margin = margin(b = 5)),
-                      plot.title = element_text(size = 19, face = "plain", hjust = 10),
-                      panel.border = element_rect(color = "black", fill=NA,  size=1),
-                      panel.background = element_blank(),
-                      legend.position = "none",
-                      text = element_text(family = 'Helvetica')) 
 
 # Plot single model fit with multiple functional groups for density
 plot_dens <- function(year_to_plot = 1995,
