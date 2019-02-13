@@ -18,5 +18,5 @@ module load GNU/6.2
 
 ((seed=seed+SLURM_ARRAY_TASK_ID))
 
-~/forestlight/stancode/model_d${densitymodel}p${productionmodel} sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 random seed=${seed} data file=~/forestlight/stanrdump/${dumptype}_${guild}_${year}.r output file=~/forestlight/stanoutput/lightfits/fit_d${densitymodel}p${productionmodel}_${guild}_${year}_${SLURM_ARRAY_TASK_ID}.csv
+~/forestlight/stancode/model_d${densitymodel}p${productionmodel} sample algorithm=hmc engine=nuts max_depth=20 num_samples=${NS} num_warmup=${NW} thin=1 adapt delta=0.9 random seed=${seed} data file=~/forestlight/stanrdump/${dumptype}_lightscaling_${guild}_${year}.r output file=~/forestlight/stanoutput/lightfits/fit_d${densitymodel}p${productionmodel}_${guild}_${year}_${SLURM_ARRAY_TASK_ID}.csv
 
