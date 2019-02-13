@@ -60,7 +60,7 @@ with(dat95_all, stan_rdump(names(dat90_all), file=file.path(fpdata, 'dump_light_
 
 # Data dump with unnormalized production ----------------------------------
 
-make_light_scaling_data <- function(x, n_sub) {
+make_light_scaling_data <- function(x, n_sub, LL = 1.08, UL = 412.2) {
   if (n_sub < nrow(x)) {
     sample_rows <- sample(nrow(x), n_sub)
   } else {
@@ -68,7 +68,7 @@ make_light_scaling_data <- function(x, n_sub) {
     n_sub <- nrow(x)
   }
   with(x[sample_rows, ],
-       list(N = n_sub, x = light_received/crownarea, y = production))
+       list(N = n_sub, x = light_received/crownarea, y = production, x_min = min(light_received/crownarea), x_max = max(light_received/crownarea), LL = LL, UL = UL))
 }
 
 # Do with subsampling.
