@@ -2,11 +2,11 @@
 # Plots the functional fits over the raw data
 # Also plots the functional fits over the medians and quantiles, and the means and confidence intervals of each bin.
 
-year_to_plot <- 1990 ### CHANGE THIS IF YOU WANT TO PLOT 1990
+year_to_plot <- 1995 ### CHANGE THIS IF YOU WANT TO PLOT 1990
 
 # Load data ---------------------------------------------------------------
 
-fp <- 'C:/Users/Q/google_drive/ForestLight/data/data_forplotting_light_june2018'
+fp <- '~/google_drive/ForestLight/data/data_forplotting_light_june2018'
 
 obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
 obs_light_raw <- read.csv(file.path(fp, 'obs_light_raw.csv'), stringsAsFactors = FALSE)
@@ -176,6 +176,7 @@ p_mean_segments <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
   theme(panel.border = element_rect(fill=NA),
         strip.background = element_rect(fill=NA))
 
+ggsave('~/google_drive/ForestLight/figs/5slopes.png', p_mean_segments, height = 5, width = 9, dpi = 300)
 
 # 8. Raw data plot converted to hexbin instead of plain scatter
 
