@@ -94,3 +94,34 @@ pwalk(dat95_fg, function(fg, data) with(data, stan_rdump(names(data), file=file.
 
 with(dat90_all, stan_rdump(names(dat90_all), file=file.path(fpdata, 'ssdump_lightscaling_alltree_1990.r')))
 with(dat95_all, stan_rdump(names(dat90_all), file=file.path(fpdata, 'ssdump_lightscaling_alltree_1995.r')))
+
+
+# Minima, n individuals, and total production -----------------------------
+
+# Get minimum x values and numbers of individuals that are used for plotting.
+
+valall <- data.frame(fg = 'alltree', year = 1995, xmin = with(alltree_light_95, min(light_received/crownarea)), n = nrow(alltree_light_95))
+valfg <- alltree_light_95 %>%
+  group_by(fg) %>%
+  summarize(xmin = min(light_received/crownarea),
+            n = n())
+
+min_n <- data.frame(fg = c('alltree', 'fg1','fg2','fg3','fg4','fg5','unclassified'),
+                    year = 1995,
+                    xmin = c(valall$xmin, valfg$xmin),
+                    n = c(valall$n, valfg$n))
+
+write.csv(min_n, '~/Dropbox/projects/forestlight/stanrdump_final/min_n_lighttrees.csv', row.names = FALSE)
+
+# Total production for all trees
+library(purrr)
+alltreeprod <- sum(alltree_light_95$production)
+fgprod <- alltree_light_95 %>%
+  mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg',fg))) %>%
+  group_by(fg) %>%
+  summarize(production = sum(production))
+
+prodtotals <- data.frame(year = 1995, 
+                         rbind(c(fg = 'alltree', production = alltreeprod), fgprod))
+
+write.csv(prodtotals, file = '~/Dropbox/projects/forestlight/stanrdump_final/production_total_lighttrees.csv', row.names = FALSE)
