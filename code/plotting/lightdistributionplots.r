@@ -45,9 +45,14 @@ fakebin_across_years <- function(dat_values, dat_classes, edges, mean_type = 'ge
 }
 
 # Create bins.
+area_core <- 42.84
+
 lightrange <- with(alltree_light_95, range(light_received/crownarea)) # 1.09 to 412
 
 lightbinbounds <- exp(seq(log(lightrange[1]), log(lightrange[2]), length.out = 21))
+
+alltree_light_95 <- alltree_light_95 %>%
+  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), as.character(NA)))
 
 lightabundbins_all <- with(alltree_light_95, logbin(x = light_received/crownarea, n = 20))
 lightproductionbins_all <- with(alltree_light_95, logbin_setedges(x = light_received/crownarea, y = production, edges = lightabundbins_all))
@@ -65,8 +70,10 @@ lightindivprodbins_fg <- alltree_light_95 %>%
   group_by(fg) %>%
   do(fakebin_across_years(dat_values = .$production, dat_classes = .$light_received/.$crownarea, edges = lightabundbins_all, mean_type = 'geometric', n_census = 1))
 
-lightabundbins_fg <- rbind(data.frame(fg = 'all', lightabundbins_all, stringsAsFactors = FALSE), as.data.frame(lightabundbins_fg))
-lightproductionbins_fg <- rbind(data.frame(fg = 'all', lightproductionbins_all, stringsAsFactors = FALSE), as.data.frame(lightproductionbins_fg))
+lightabundbins_fg <- rbind(data.frame(fg = 'all', lightabundbins_all, stringsAsFactors = FALSE), as.data.frame(lightabundbins_fg)) %>%
+  mutate(bin_value = bin_value / area_core)
+lightproductionbins_fg <- rbind(data.frame(fg = 'all', lightproductionbins_all, stringsAsFactors = FALSE), as.data.frame(lightproductionbins_fg)) %>%
+  mutate(bin_value = bin_value / area_core)
 lightindivprodbins_fg <- rbind(data.frame(fg = 'all', lightindivprodbins_all, stringsAsFactors = FALSE), as.data.frame(lightindivprodbins_fg))
 
 
@@ -126,3 +133,72 @@ ggsave(file.path(fpfig, 'productionindividualbylight_separate.png'), p2, height 
 ggsave(file.path(fpfig, 'productionindividuallight_together.png'), p2b, height = 5, width = 5, dpi = 300)
 ggsave(file.path(fpfig, 'productiontotalbylight_separate.png'), p3, height = 5, width = 9, dpi = 300)
 ggsave(file.path(fpfig, 'productiontotalbylight_together.png'), p3b, height = 5, width = 5, dpi = 300)
+
+
+# Add fitted lines --------------------------------------------------------
+
+light_ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/lightpiecewise/lightpiecewise_ci_by_fg.csv', stringsAsFactors = FALSE) %>%
+  rename(lightperarea = dbh)
+area_core <- 42.84
+
+light_ci_df$fg[light_ci_df$fg == 'alltree'] <- 'all'
+
+light_pred_dens <- light_ci_df %>%
+  filter(variable == 'density') %>%
+  select(-variable) %>%
+  mutate_at(vars(starts_with('q')), funs(./area_core)) 
+
+light_fitted_indivprod <- light_ci_df %>%
+  filter(variable == 'production_fitted') %>%
+  select(-variable)
+
+light_fitted_totalprod <- light_ci_df %>%
+  filter(variable == 'total_production_fitted') %>%
+  select(-variable) %>%
+  mutate_at(vars(starts_with('q')), funs(./area_core)) 
+
+light_pred_indivprod <- light_ci_df %>%
+  filter(variable == 'production') %>%
+  select(-variable)
+
+light_pred_totalprod <- light_ci_df %>%
+  filter(variable == 'total_production') %>%
+  select(-variable) %>%
+  mutate_at(vars(starts_with('q')), funs(./area_core)) 
+
+
+p1fits <- ggplot(lightabundbins_fg %>% filter(!is.na(fg))) +
+  geom_ribbon(data = light_pred_dens %>% filter(prod_model == 1, !dens_model %in% '1', !fg %in% 'unclassified'), aes(x = lightperarea, ymin = q025, ymax = q975, group = dens_model), fill = 'gray80') +
+  geom_line(data = light_pred_dens %>% filter(prod_model == 1, !dens_model %in% '1', !fg %in% 'unclassified'), aes(x = lightperarea, y = q50, group = dens_model, color = dens_model)) +
+  geom_point(aes(x = bin_midpoint, y = bin_value)) +
+  facet_wrap(~ fg) +
+  scale_x_log10(name = 'Light received per unit crown area (Wm-2)') +
+  scale_y_log10(name = 'Density (trees ha-1 per watt)') +
+  theme_bw() +
+  ggtitle('Density')
+
+p2fits <- ggplot() +
+  geom_ribbon(data = light_fitted_indivprod %>% filter(dens_model == '1', !fg %in% 'unclassified'), aes(x = lightperarea, ymin = q025, ymax = q975, group = factor(prod_model)), fill = 'gray80') +
+  geom_line(data = light_fitted_indivprod %>% filter(dens_model == '1', !fg %in% 'unclassified'), aes(x = lightperarea, y = q50, group = factor(prod_model), color = factor(prod_model))) +
+  geom_pointrange(data = lightindivprodbins_fg %>% filter(!is.na(fg)), aes(x = bin_midpoint, y = median, ymin = q25, ymax = q75)) +
+  facet_wrap(~ fg) +
+  scale_x_log10(name = 'Light received per unit crown area (Wm-2)') +
+  scale_y_log10(name = 'Individual production (kg y-1)') +
+  theme_bw() +
+  ggtitle('Production (individual)') 
+
+p3fits <- ggplot(lightproductionbins_fg %>% filter(!is.na(fg))) +
+  geom_ribbon(data = light_fitted_totalprod %>% filter(!dens_model %in% '1', !fg %in% 'unclassified') %>% mutate(combo = paste(dens_model,prod_model,sep='x')), aes(x = lightperarea, ymin = q025, ymax = q975, group = combo), fill = 'gray80') +
+  geom_line(data = light_fitted_totalprod %>% filter(!dens_model %in% '1', !fg %in% 'unclassified') %>% mutate(combo = paste(dens_model,prod_model,sep='x')), aes(x = lightperarea, y = q50, group = combo, color = combo)) +
+  geom_point(aes(x = bin_midpoint, y = bin_value)) +
+  facet_wrap(~ fg) +
+  scale_x_log10(name = 'Light received per unit crown area (Wm-2)') +
+  scale_y_log10(name = 'Total production (kg y-1 ha-1 per watt)') +
+  theme_bw() +
+  ggtitle('Production (total)')
+
+fpfig <- '~/google_drive/ForestLight/figs/lightpowerlaws_feb2019'
+
+ggsave(file.path(fpfig, 'withfits_densitybylight_separate.png'), p1fits, height = 5, width = 9, dpi = 300)
+ggsave(file.path(fpfig, 'withfits_productionindividualbylight_separate.png'), p2fits, height = 5, width = 9, dpi = 300)
+ggsave(file.path(fpfig, 'withfits_productiontotalbylight_separate.png'), p3fits, height = 5, width = 9, dpi = 300)

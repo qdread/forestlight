@@ -50,7 +50,8 @@ fit_info <- extract_all_fit(dens_model = mod_df$dens_model[task],
 							fitprefix = 'fit_d',
 							dumpprefix = 'ssdump_lightscaling_',
 							LL = 1.08,
-							UL = 412.2
+							UL = 412.2,
+							scaling.var = 'lightperarea'
 							)
 
 save(fit_info, file = paste0('~/forestlight/stanoutput/lightfitinfo/pw_info_',task,'.r'))
