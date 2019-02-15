@@ -65,8 +65,9 @@ r2s <- cbind(mod_df, r2s)
 
 write.csv(r2s, file = '~/forestlight/piecewise_r2_by_fg.csv', row.names = FALSE)
 
-
-### ADDED 14 FEB 2019: Do the same for light.
+##############################################
+### ADDED 14 FEB 2019: Do the same for light.#
+##############################################
 
 fp <- '~/forestlight/stanoutput/lightfitinfo'
 

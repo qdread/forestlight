@@ -35,7 +35,7 @@ sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=2,productio
 # D2P2
 
 sbatch --export=dumptype=ssdump,guild=fg1,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=41 --time=4:00:00 --job-name=d2p2_95_1 fitpiecewiselight.sb
-sbatch --export=dumptype=ssdump,guild=fg2,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=4242 --time=7-00:00:00 --job-name=d2p2_95_2 fitpiecewiselight.sb # rerun with different initial cond. because it did not work.
+sbatch --export=dumptype=ssdump,guild=fg2,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=10000,seed=42424 --time=7-00:00:00 --job-name=d2p2_95_2 fitpiecewiselight.sb # rerun with different initial cond. because it did not work.
 sbatch --export=dumptype=ssdump,guild=fg3,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=43 --time=7-00:00:00 --job-name=d2p2_95_3 fitpiecewiselight.sb
 sbatch --export=dumptype=ssdump,guild=fg4,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=44 --time=3-00:00:00 --job-name=d2p2_95_4 fitpiecewiselight.sb
 sbatch --export=dumptype=ssdump,guild=fg5,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=5000,seed=45 --time=2-00:00:00 --job-name=d2p2_95_5 fitpiecewiselight.sb
@@ -61,6 +61,9 @@ sbatch --export=dumptype=ssdump,guild=fg4,year=1995,densitymodel=w,productionmod
 sbatch --export=dumptype=ssdump,guild=fg5,year=1995,densitymodel=w,productionmodel=2,NS=1000,NW=5000,seed=65 --time=4-00:00:00 --job-name=dwp2_95_5 fitpiecewiselight.sb
 sbatch --export=dumptype=ssdump,guild=unclassified,year=1995,densitymodel=w,productionmodel=2,NS=1000,NW=5000,seed=66 --time=4:00:00 --job-name=dwp2_95_u fitpiecewiselight.sb
 sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=w,productionmodel=2,NS=1000,NW=5000,seed=67 --time=7-00:00:00 --job-name=dwp2_95_a fitpiecewiselight.sb
+
+# Final redo of #11 tasks 2 and 3
+sbatch --export=dumptype=ssdump,guild=fg2,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=10000,seed=4224 --time=1-00:00:00 --job-name=d2p2_95_2 --array=2-3 fitpiecewiselight.sb # rerun with different initial cond. because it did not work.
 
 # Extraction job array
 sbatch --export=script=extract_ci_piecewiselightfits --mem=16gb --array=1-42 --job-name=pwlightextract jobarray.sb
