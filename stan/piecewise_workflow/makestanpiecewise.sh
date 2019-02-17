@@ -9,3 +9,5 @@ make O=3 ~/forestlight/stancode/model_d3p1
 make O=3 ~/forestlight/stancode/model_d3p2
 make O=3 ~/forestlight/stancode/model_dwp1
 make O=3 ~/forestlight/stancode/model_dwp2
+make O=3 ~/forestlight/stancode/model_dlnp1
+make O=3 ~/forestlight/stancode/model_dlnp2

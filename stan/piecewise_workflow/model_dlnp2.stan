@@ -48,8 +48,8 @@ model {
 	
 	sigma ~ exponential(0.1);
 	
-	// Likelihood: Pareto density
-	x ~ lognormal(x_min, alpha);
+	// Likelihood: Lognormal density
+	x ~ lognormal(mu_logn, sigma_logn);
 	
 	// Likelihood: hinged production
 	{

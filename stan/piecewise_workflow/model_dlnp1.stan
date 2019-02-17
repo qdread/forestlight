@@ -35,7 +35,7 @@ model {
 	
 	sigma ~ exponential(0.1);
 	
-	// Likelihood: Pareto density
+	// Likelihood: Lognormal density
 	x ~ lognormal(mu_logn, sigma_logn);
 	
 	// Likelihood: Loglinear production
