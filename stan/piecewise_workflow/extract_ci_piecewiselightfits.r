@@ -17,7 +17,7 @@ library(purrr)
 library(dplyr)
 library(rstan, lib.loc = '/mnt/home/qdr/R/x86_64-pc-linux-gnu-library/3.5') # Ensure newest version is loaded.
 
-mod_df <- expand.grid(dens_model = c('1','2','w'),
+mod_df <- expand.grid(dens_model = c('1','2','w','3','ln'),
                       prod_model = c('1','2'),
                       fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
                       year = 1995, 

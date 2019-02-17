@@ -2,6 +2,7 @@
 # Part of the final stan workflow
 # QDR / Forestlight / 10 Sep 2018
 # Edited 14 Feb 2019: also expand this to handle the piecewise by light received fits.
+# Edited 17 Feb 2019: Add lognormal distribution too.
 
 # Information to get:
 # Parameter values and credible intervals
@@ -98,6 +99,9 @@ fitted_predicted_values <- function(fit, dbh_pred, dens_form, prod_form, total_p
       x
       }))
   }
+  if (dens_form == 'ln') {
+	dens_fitted <- sapply(dbh_pred, dlnorm, meanlog = pars[,'mu_logn'], sdlog = pars[,'sigma_logn']) 
+  }
   if (prod_form == '1') {
     prod_fitted <- sapply(dbh_pred, powerlaw_log, beta0 = pars[,'beta0'], beta1 = pars[,'beta1'])
   }
@@ -169,6 +173,9 @@ fitted_slope_ci <- function(fit, dbh_pred, dens_form, prod_form, total_prod, x_m
       x <- dens_fitted[i,]/diff(trunc_pts[[i]])
       x
       }))
+  }
+  if (dens_form == 'ln') {
+	dens_fitted <- sapply(dbh_pred, dlnorm, meanlog = pars[,'mu_logn'], sdlog = pars[,'sigma_logn']) 
   }
   if (prod_form == '1') {
     prod_fitted <- sapply(dbh_pred, powerlaw_log, beta0 = pars[,'beta0'], beta1 = pars[,'beta1'])
@@ -264,7 +271,8 @@ extract_all_fit <- function(dens_model, prod_model, fg, year, xmin, n, total_pro
   density_par <- list('1' = c('alpha'),
 					  '2' = c('alpha_low', 'alpha_high', 'tau'),
 					  '3' = c('alpha_low', 'alpha_mid', 'alpha_high', 'tau_low', 'tau_high'),
-					  'w' = c('m','n'))
+					  'w' = c('m','n'),
+					  'ln' = c('mu_logn', 'sigma_logn'))
   production_par <- list('1' = c('beta0', 'beta1'),
 						 '2' = c('beta0', 'beta1_low', 'beta1_high', 'x0', 'delta'))
   
