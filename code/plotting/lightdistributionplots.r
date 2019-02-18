@@ -137,8 +137,7 @@ ggsave(file.path(fpfig, 'productiontotalbylight_together.png'), p3b, height = 5,
 
 # Add fitted lines --------------------------------------------------------
 
-light_ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/lightpiecewise/lightpiecewise_ci_by_fg.csv', stringsAsFactors = FALSE) %>%
-  rename(lightperarea = dbh)
+light_ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/lightpiecewise/lightpiecewise_ci_by_fg.csv', stringsAsFactors = FALSE) 
 area_core <- 42.84
 
 light_ci_df$fg[light_ci_df$fg == 'alltree'] <- 'all'
@@ -167,38 +166,38 @@ light_pred_totalprod <- light_ci_df %>%
   mutate_at(vars(starts_with('q')), funs(./area_core)) 
 
 
-p1fits <- ggplot(lightabundbins_fg %>% filter(!is.na(fg))) +
+p1fits <- ggplot(lightabundbins_fg %>% filter(!is.na(fg), bin_count > 10)) +
   geom_ribbon(data = light_pred_dens %>% filter(prod_model == 1, !dens_model %in% '1', !fg %in% 'unclassified'), aes(x = lightperarea, ymin = q025, ymax = q975, group = dens_model), fill = 'gray80') +
   geom_line(data = light_pred_dens %>% filter(prod_model == 1, !dens_model %in% '1', !fg %in% 'unclassified'), aes(x = lightperarea, y = q50, group = dens_model, color = dens_model)) +
   geom_point(aes(x = bin_midpoint, y = bin_value)) +
   facet_wrap(~ fg) +
   scale_x_log10(name = 'Light received per unit crown area (Wm-2)') +
-  scale_y_log10(name = 'Density (trees ha-1 per watt)') +
+  scale_y_log10(name = 'Density (trees ha-1 per watt)', limits = c(1e-5, 1e2)) +
   theme_bw() +
   ggtitle('Density')
 
 p2fits <- ggplot() +
   geom_ribbon(data = light_fitted_indivprod %>% filter(dens_model == '1', !fg %in% 'unclassified'), aes(x = lightperarea, ymin = q025, ymax = q975, group = factor(prod_model)), fill = 'gray80') +
   geom_line(data = light_fitted_indivprod %>% filter(dens_model == '1', !fg %in% 'unclassified'), aes(x = lightperarea, y = q50, group = factor(prod_model), color = factor(prod_model))) +
-  geom_pointrange(data = lightindivprodbins_fg %>% filter(!is.na(fg)), aes(x = bin_midpoint, y = median, ymin = q25, ymax = q75)) +
+  geom_pointrange(data = lightindivprodbins_fg %>% filter(!is.na(fg), mean_n_individuals > 10), aes(x = bin_midpoint, y = median, ymin = q25, ymax = q75)) +
   facet_wrap(~ fg) +
   scale_x_log10(name = 'Light received per unit crown area (Wm-2)') +
   scale_y_log10(name = 'Individual production (kg y-1)') +
   theme_bw() +
   ggtitle('Production (individual)') 
 
-p3fits <- ggplot(lightproductionbins_fg %>% filter(!is.na(fg))) +
-  geom_ribbon(data = light_fitted_totalprod %>% filter(!dens_model %in% '1', !fg %in% 'unclassified') %>% mutate(combo = paste(dens_model,prod_model,sep='x')), aes(x = lightperarea, ymin = q025, ymax = q975, group = combo), fill = 'gray80') +
-  geom_line(data = light_fitted_totalprod %>% filter(!dens_model %in% '1', !fg %in% 'unclassified') %>% mutate(combo = paste(dens_model,prod_model,sep='x')), aes(x = lightperarea, y = q50, group = combo, color = combo)) +
+p3fits <- ggplot(lightproductionbins_fg %>% filter(!is.na(fg), bin_count > 10)) +
+  geom_ribbon(data = light_fitted_totalprod %>% filter(!dens_model %in% '1', prod_model == 2, !fg %in% 'unclassified') %>% mutate(combo = paste(dens_model,prod_model,sep='x')), aes(x = lightperarea, ymin = q025, ymax = q975, group = combo), fill = 'gray80') +
+  geom_line(data = light_fitted_totalprod %>% filter(!dens_model %in% '1', prod_model == 2, !fg %in% 'unclassified') %>% mutate(combo = paste(dens_model,prod_model,sep='x')), aes(x = lightperarea, y = q50, group = combo, color = combo)) +
   geom_point(aes(x = bin_midpoint, y = bin_value)) +
   facet_wrap(~ fg) +
   scale_x_log10(name = 'Light received per unit crown area (Wm-2)') +
-  scale_y_log10(name = 'Total production (kg y-1 ha-1 per watt)') +
+  scale_y_log10(name = 'Total production (kg y-1 ha-1 per watt)', limits = c(1e-4, 5e1)) +
   theme_bw() +
   ggtitle('Production (total)')
 
 fpfig <- '~/google_drive/ForestLight/figs/lightpowerlaws_feb2019'
 
-ggsave(file.path(fpfig, 'withfits_densitybylight_separate.png'), p1fits, height = 5, width = 9, dpi = 300)
-ggsave(file.path(fpfig, 'withfits_productionindividualbylight_separate.png'), p2fits, height = 5, width = 9, dpi = 300)
-ggsave(file.path(fpfig, 'withfits_productiontotalbylight_separate.png'), p3fits, height = 5, width = 9, dpi = 300)
+ggsave(file.path(fpfig, 'withfits_densitybylight_separate.png'), p1fits, height = 5, width = 7.5, dpi = 300)
+ggsave(file.path(fpfig, 'withfits_productionindividualbylight_separate.png'), p2fits, height = 5, width = 7.5, dpi = 300)
+ggsave(file.path(fpfig, 'withfits_productiontotalbylight_separate.png'), p3fits, height = 5, width = 7.5, dpi = 300)

@@ -74,7 +74,7 @@ fp <- '~/forestlight/stanoutput/lightfitinfo'
 library(dplyr)
 library(purrr)
 
-mod_df <- expand.grid(dens_model = c('1','2','w'),
+mod_df <- expand.grid(dens_model = c('1','2','w','3','ln'),
                       prod_model = c('1','2'),
                       fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
                       year = 1995, 

@@ -66,7 +66,7 @@ sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=w,productio
 sbatch --export=dumptype=ssdump,guild=fg2,year=1995,densitymodel=2,productionmodel=2,NS=1000,NW=10000,seed=4224 --time=1-00:00:00 --job-name=d2p2_95_2 --array=2-3 fitpiecewiselight.sb # rerun with different initial cond. because it did not work.
 
 # Extraction job array
-sbatch --export=script=extract_ci_piecewiselightfits --mem=16gb --array=1-42 --job-name=pwlightextract jobarray.sb
+sbatch --export=script=extract_ci_piecewiselightfits --mem=16gb --array=1-70 --job-name=pwlightextract jobarray.sb
 
 ################ Additional density distributions: 3 piece and lognormal
 
