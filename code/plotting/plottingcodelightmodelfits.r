@@ -3,10 +3,11 @@
 # Also plots the functional fits over the medians and quantiles, and the means and confidence intervals of each bin.
 
 year_to_plot <- 1995 ### CHANGE THIS IF YOU WANT TO PLOT 1990
+gdrive_path <- '~/google_drive'
 
 # Load data ---------------------------------------------------------------
 
-fp <- '~/google_drive/ForestLight/data/data_forplotting_light_june2018'
+fp <- file.path(gdrive_path, 'ForestLight/data/data_forplotting_light_june2018')
 
 obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
 obs_light_raw <- read.csv(file.path(fp, 'obs_light_raw.csv'), stringsAsFactors = FALSE)
