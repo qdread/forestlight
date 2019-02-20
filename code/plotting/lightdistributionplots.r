@@ -1,7 +1,10 @@
 # Make initial plots of power laws
 
-load('~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
-source('code/allfunctions27july.r')
+gdrive_path <- '~/google_drive'
+github_path <- '~/Documents/GitHub'
+
+load(file.path(gdrive_path, 'ForestLight/data/rawdataobj_alternativecluster.r'))
+source(file.path(github_path, 'GitHub/code/allfunctions27july.r'))
 
 library(dplyr)
 library(ggplot2)
