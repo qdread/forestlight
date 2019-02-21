@@ -109,3 +109,26 @@ sbatch --export=dumptype=ssdump,guild=fg4,year=1995,densitymodel=ln,productionmo
 sbatch --export=dumptype=ssdump,guild=fg5,year=1995,densitymodel=ln,productionmodel=2,NS=1000,NW=5000,seed=105 --time=4-00:00:00 --job-name=dlnp2_95_5 fitpiecewiselight.sb
 sbatch --export=dumptype=ssdump,guild=unclassified,year=1995,densitymodel=ln,productionmodel=2,NS=1000,NW=5000,seed=106 --time=4:00:00 --job-name=dlnp2_95_u fitpiecewiselight.sb
 sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=ln,productionmodel=2,NS=1000,NW=5000,seed=107 --time=7-00:00:00 --job-name=dlnp2_95_a fitpiecewiselight.sb
+
+
+######################### SCALING: DIAMETER (x) AND RAW INCOMING LIGHT ENERGY (y)
+
+# D3P1
+
+sbatch --export=dumptype=ssdump,guild=fg1,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=111 --time=2-00:00:00 --job-name=d3p1_95_1 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg2,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=112 --time=4:00:00 --job-name=d3p1_95_2 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg3,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=113 --time=7-00:00:00 --job-name=d3p1_95_3 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg4,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=114 --time=2-00:00:00 --job-name=d3p1_95_4 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg5,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=115 --time=4:00:00 --job-name=d3p1_95_5 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=unclassified,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=116 --time=4:00:00 --job-name=d3p1_95_u fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=117 --time=7-00:00:00 --job-name=d3p1_95_a fitpiecewiserawlight.sb
+
+# D3P2
+
+sbatch --export=dumptype=ssdump,guild=fg1,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=121 --time=4:00:00 --job-name=d3p2_95_1 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg2,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=122 --time=2-00:00:00 --job-name=d3p2_95_2 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg3,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=123 --time=7-00:00:00 --job-name=d3p2_95_3 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg4,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=124 --time=7-00:00:00 --job-name=d3p2_95_4 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg5,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=125 --time=4-00:00:00 --job-name=d3p2_95_5 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=unclassified,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=126 --time=4:00:00 --job-name=d3p2_95_u fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=127 --time=7-00:00:00 --job-name=d3p2_95_a fitpiecewiserawlight.sb
