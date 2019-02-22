@@ -119,3 +119,38 @@ ggplot(data.frame(x=c(1,100))) +
 
 ```
 
+\newpage
+
+# Ratio of two log-normals: Derivation
+
+The ratio of two log-normal distributions has a log slope that increases as $O(\log n)$, as opposed to the constant log slope, or $O(1)$, shown above for the ratio of two power laws. Therefore we can say that the ratio of two log-normal distributions increases faster than a power law.
+
+The derivation is as follows. First this is the definition of the log-normal probability density function. Note in all cases $\log$ is the natural logarithm.
+
+$$P = \frac {e^{\frac{-(\log x - \mu)^2}{2\sigma^2}}}{x\sigma\sqrt{2\pi}}$$
+
+The function we are interested in is the ratio of two of these distributions, each with its own mean and standard deviation.
+
+$$y = \frac{P_1}{P_2} = \frac{\frac {e^{\frac{-(\log x - \mu_1)^2}{2\sigma_{1}^2}}}{x\sigma_1\sqrt{2\pi}}}{\frac {e^{\frac{-(\log x - \mu_2)^2}{2\sigma_2^2}}}{x\sigma_{2}\sqrt{2\pi}}}$$
+
+Simplify.
+
+$$y = \frac{\sigma_2}{\sigma_1}e^{\frac{(\log x - \mu_2)^2}{2\sigma_2^2}-\frac{(\log x - \mu_1)^2}{2\sigma_1^2}}$$
+
+The slope of this function in log space is defined as:
+
+$$ \frac {d \log y}{d \log x} = \frac{x}{y}\frac{dy}{dx}$$
+
+Find $\frac{dy}{dx}$ with the chain rule. Because of the exponential function, it contains $y$ which makes our life easier since that will cancel out later.
+
+$$\frac{dy}{dx} = y\Big(\frac{\log x - \mu_2}{\sigma_2^2x}-\frac{\log x - \mu_1}{\sigma_1^2x}\Big)$$
+
+Next find $\frac{x}{y}\frac{dy}{dx}$.
+
+$$\frac{x}{y}\frac{dy}{dx} = \frac{xy}{y}\Big(\frac{\log x - \mu_2}{\sigma_2^2x}-\frac{\log x - \mu_1}{\sigma_1^2x}\Big) = \frac{\log x - \mu_2}{\sigma_2^2}-\frac{\log x - \mu_1}{\sigma_1^2}$$
+
+Combine like terms.
+
+$$\frac{x}{y}\frac{dy}{dx} = \Big(\frac{\sigma_1^2 - \sigma_2^2}{\sigma_1^2\sigma_2^2}\Big)\log x + \Big(\frac{\sigma_2^2\mu_1 - \sigma_1^2\mu_2}{\sigma_1^2\sigma_2^2}\Big)$$
+
+As you can see this is a constant times $\log x$ plus another constant. Since $\sigma_1 > 0$ and $\sigma_2 > 0$, the first constant is positive if $\sigma_1 > \sigma_2$. Therefore as $x$ gets large the slope increases as $O(\log x)$.
