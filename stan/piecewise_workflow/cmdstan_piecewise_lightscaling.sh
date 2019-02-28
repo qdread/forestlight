@@ -132,3 +132,16 @@ sbatch --export=dumptype=ssdump,guild=fg4,year=1995,densitymodel=3,productionmod
 sbatch --export=dumptype=ssdump,guild=fg5,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=125 --time=4-00:00:00 --job-name=d3p2_95_5 fitpiecewiserawlight.sb
 sbatch --export=dumptype=ssdump,guild=unclassified,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=126 --time=4:00:00 --job-name=d3p2_95_u fitpiecewiserawlight.sb
 sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=127 --time=7-00:00:00 --job-name=d3p2_95_a fitpiecewiserawlight.sb
+
+# Extraction jobarray
+sbatch --export=script=extract_ci_rawlight --mem=16gb --array=1-14 --job-name=rawlightextract jobarray.sb
+
+# Redo ones that did not converge
+sbatch --export=dumptype=ssdump,guild=fg3,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=1130 --time=7-00:00:00 --job-name=d3p1_95_3 --array=1 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg3,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=12300 --time=7-00:00:00 --job-name=d3p2_95_3 --array=2 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg2,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=12200 --time=2-00:00:00 --job-name=d3p2_95_2 --array=3 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg4,year=1995,densitymodel=3,productionmodel=1,NS=1000,NW=5000,seed=1140 --time=2-00:00:00 --job-name=d3p1_95_4 --array=2 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=1270 --time=7-00:00:00 --job-name=d3p2_95_a --array=1 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg1,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=1210 --time=2-00:00:00 --job-name=d3p2_95_1 fitpiecewiserawlight.sb
+
+sbatch --export=dumptype=ssdump,guild=fg2,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=12201 --time=2-00:00:00 --job-name=d3p2_95_2 --array=1-3 fitpiecewiserawlight.sb
