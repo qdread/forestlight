@@ -144,4 +144,6 @@ sbatch --export=dumptype=ssdump,guild=fg4,year=1995,densitymodel=3,productionmod
 sbatch --export=dumptype=ssdump,guild=alltree,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=1270 --time=7-00:00:00 --job-name=d3p2_95_a --array=1 fitpiecewiserawlight.sb
 sbatch --export=dumptype=ssdump,guild=fg1,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=1210 --time=2-00:00:00 --job-name=d3p2_95_1 fitpiecewiserawlight.sb
 
-sbatch --export=dumptype=ssdump,guild=fg2,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=12201 --time=2-00:00:00 --job-name=d3p2_95_2 --array=1-3 fitpiecewiserawlight.sb
+# Last 2 that didn't converge
+sbatch --export=dumptype=ssdump,guild=fg2,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=12202 --time=2-00:00:00 --job-name=d3p2_95_2 --array=3 fitpiecewiserawlight.sb
+sbatch --export=dumptype=ssdump,guild=fg3,year=1995,densitymodel=3,productionmodel=2,NS=1000,NW=5000,seed=12302 --time=7-00:00:00 --job-name=d3p2_95_3 --array=2 fitpiecewiserawlight.sb
