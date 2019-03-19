@@ -441,6 +441,14 @@ plot(p1)
 dev.off()
 
 
+crownareabin_2census_mid <- crownareabin_2census %>%
+  filter(bin_midpoint > 4) %>%
+  filter(bin_midpoint < 40) 
+fitted_models = crownareabin_2census_mid %>% group_by(fg) %>% do(model = lm(log10(bin_yvalue) ~ log10(bin_midpoint), data = .))
+
+fitted_models %>% tidy(model)
+fitted_models %>% glance(model)
+summary(lm1)
 ###  Crown Volume
 
 crownareabin_2census <- crownareabin_2census %>%
@@ -473,13 +481,15 @@ plot(p1)
 dev.off()
 library(broom)
 crownareabin_2census_mid <- crownareabin_2census %>%
-  filter(bin_midpoint > 3) %>%
-  filter(bin_midpoint < 30) 
+  filter(bin_midpoint > 4) %>%
+  filter(bin_midpoint < 40) 
 fitted_models = crownareabin_2census_mid %>% group_by(fg) %>% do(model = lm(log10(crown_vol) ~ log10(bin_midpoint), data = .))
 
 fitted_models %>% tidy(model)
 fitted_models %>% glance(model)
 summary(lm1)
+
+
 # ------------------------------- Fig 5 Relative Abundance  ------------------------------------
 
 
