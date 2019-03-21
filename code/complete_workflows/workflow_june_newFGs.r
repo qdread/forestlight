@@ -164,6 +164,7 @@ for (i in 2:3) {
   
   crowndim <- tp(bcicensusdat[[i]]$dbh_corr) 
   bcicensusdat[[i]]$crownarea <- pi * crowndim$cr^2
+  bcicensusdat[[i]]$crownvolume <- crowndim$cV
   bcicensusdat[[i]] <- transform(bcicensusdat[[i]], light_received = light * crownarea * insol_bci)
   
 }
@@ -207,13 +208,14 @@ light_fg_95 <- lapply(fgdat, function(x) subset(x[[3]], !is.na(light)))
 
 
 # Save raw data as an object
-save(alltreedat, fgdat, alltree_light_90, alltree_light_95, light_fg_90, light_fg_95, file = 'C:/Users/Q/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
+save(alltreedat, fgdat, alltree_light_90, alltree_light_95, light_fg_90, light_fg_95, file = '~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
 
 ####################################################################
 
 # Binning and error bars: all years combined ------------------------------
 
 # Script copied and modified on 22 Jan 2018. 
+# Crown volume added on 21 March 2019.
 # Procedure: use all 5 FGs (but not unclassified) together to get the bin edges
 # Then apply those bin edges to each FG in isolation.
 # That way each FG are given the same bin edges.
@@ -371,6 +373,23 @@ crownareabin_fg_2census <- lapply(crownareabin_fg_byyear, bin_across_years)
 crownareabin_2census <- cbind(fg = rep(group_names, each = numbins), 
                                     rbind(crownareabin_all_2census, crownareabin_allclassified_2census, do.call('rbind', crownareabin_fg_2census)))
 
+## crown volume
+crownvolumebin_alltree_byyear <- lapply(alltreedat[2:3], function(z) logbin_setedges(x = z$dbh_corr, y = z$crownvolume, edges = dbhbin_all))
+crownvolumebin_allclassified_byyear <- lapply(alltreedat_classified[2:3], function(z) logbin_setedges(x = z$dbh_corr, y = z$crownvolume, edges = dbhbin_allclassified))
+
+crownvolumebin_fg_byyear <- list()
+
+for (i in 1:6) {
+  crownvolumebin_fg_byyear[[i]] <- lapply(fgdat[[i]][2:3], function(z) logbin_setedges(x = z$dbh_corr, y = z$crownvolume, edges = dbhbin_allclassified))
+}
+
+crownvolumebin_all_2census <- bin_across_years(crownvolumebin_alltree_byyear)
+crownvolumebin_allclassified_2census <- bin_across_years(crownvolumebin_allclassified_byyear)
+crownvolumebin_fg_2census <- lapply(crownvolumebin_fg_byyear, bin_across_years)
+
+crownvolumebin_2census <- cbind(fg = rep(group_names, each = numbins), 
+                              rbind(crownvolumebin_all_2census, crownvolumebin_allclassified_2census, do.call('rbind', crownvolumebin_fg_2census)))
+
 ## light received
 lightreceivedbin_alltree_byyear <- lapply(alltreedat[2:3], function(z) with(subset(z, !is.na(light_received)), logbin_setedges(x = dbh_corr, y = light_received, edges = dbhbin_all)))
 lightreceivedbin_allclassified_byyear <- lapply(alltreedat_classified[2:3], function(z) with(subset(z, !is.na(light_received)), logbin_setedges(x = dbh_corr, y = light_received, edges = dbhbin_allclassified)))
@@ -387,6 +406,42 @@ lightreceivedbin_fg_2census <- lapply(lightreceivedbin_fg_byyear, bin_across_yea
 
 lightreceivedbin_2census <- cbind(fg = rep(group_names, each = numbins), 
                               rbind(lightreceivedbin_all_2census, lightreceivedbin_allclassified_2census, do.call('rbind', lightreceivedbin_fg_2census)))
+
+## light received per unit crown area
+lightperareabin_alltree_byyear <- lapply(alltreedat[2:3], function(z) logbin_setedges(x = z$dbh_corr, y = z$light_received/z$crownarea, edges = dbhbin_all))
+lightperareabin_allclassified_byyear <- lapply(alltreedat_classified[2:3], function(z) logbin_setedges(x = z$dbh_corr, y = z$light_received/z$crownarea, edges = dbhbin_allclassified))
+
+lightperareabin_fg_byyear <- list()
+
+for (i in 1:6) {
+  lightperareabin_fg_byyear[[i]] <- lapply(fgdat[[i]][2:3], function(z) logbin_setedges(x = z$dbh_corr, y = z$light_received/z$crownarea, edges = dbhbin_allclassified))
+}
+
+## light received per unit crown volume
+lightpervolumebin_alltree_byyear <- lapply(alltreedat[2:3], function(z) logbin_setedges(x = z$dbh_corr, y = z$light_received/z$crownvolume, edges = dbhbin_all))
+lightpervolumebin_allclassified_byyear <- lapply(alltreedat_classified[2:3], function(z) logbin_setedges(x = z$dbh_corr, y = z$light_received/z$crownvolume, edges = dbhbin_allclassified))
+
+lightpervolumebin_fg_byyear <- list()
+
+for (i in 1:6) {
+  lightpervolumebin_fg_byyear[[i]] <- lapply(fgdat[[i]][2:3], function(z) logbin_setedges(x = z$dbh_corr, y = z$light_received/z$crownvolume, edges = dbhbin_allclassified))
+}
+
+## Combine the individual 1995 bins to data frames and then write them to R object.
+library(purrr)
+crownareabins1995 <- rbind(data.frame(year = 1995, fg = 'all', crownareabin_allclassified_byyear[[2]]),
+                              map2_dfr(crownareabin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
+crownvolumebins1995 <- rbind(data.frame(year = 1995, fg = 'all', crownvolumebin_allclassified_byyear[[2]]),
+                              map2_dfr(crownvolumebin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
+lightreceivedbins1995 <- rbind(data.frame(year = 1995, fg = 'all', lightreceivedbin_allclassified_byyear[[2]]),
+                              map2_dfr(lightreceivedbin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
+lightperareabins1995 <- rbind(data.frame(year = 1995, fg = 'all', lightperareabin_allclassified_byyear[[2]]),
+                              map2_dfr(lightperareabin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
+lightpervolumebins1995 <- rbind(data.frame(year = 1995, fg = 'all', lightpervolumebin_allclassified_byyear[[2]]),
+                              map2_dfr(lightpervolumebin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
+
+save(crownareabins1995, crownvolumebins1995, lightreceivedbins1995, lightperareabins1995, lightpervolumebins1995,
+     file = '~/google_drive/ForestLight/data/area_and_volume_bins_1995.RData')
 
 # Production and light received per meter squared of crown area.
 # Divide production by crown area and bin (1990 and 1995)
