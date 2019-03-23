@@ -1,4 +1,5 @@
-# Make initial plots of power laws
+# Plot light received by crown area and volume, with individual and binned production
+# Volume added 23 Mar 2019
 
 gdrive_path <- '~/google_drive'
 github_path <- '~/Documents/GitHub/forestlight'
@@ -9,57 +10,42 @@ source(file.path(github_path, 'code/allfunctions27july.r'))
 library(dplyr)
 library(ggplot2)
 
-fakebin_across_years <- function(dat_values, dat_classes, edges, mean_type = 'geometric', n_census = 5) {
-  qprobs <- c(0.025, 0.25, 0.5, 0.75, 0.975)
-  # add some padding just in case
-  mins <- edges$bin_min
-  mins[1] <- 0
-  maxes <- edges$bin_max
-  maxes[length(maxes)] <- Inf
-  
-  binstats <- t(sapply(1:length(mins), function(x) {
-    indivs <- dat_values[dat_classes >= mins[x] & dat_classes < maxes[x]]
-    if (mean_type == 'geometric') {
-      mean_n <- exp(mean(log(indivs)))
-      sd_n <- exp(sd(log(indivs)))
-      ci_width <- qnorm(0.975) * sd(log(indivs)) / sqrt(length(indivs))
-      ci_min <- exp(mean(log(indivs)) - ci_width)
-      ci_max <- exp(mean(log(indivs)) + ci_width)
-      
-    } else {
-      mean_n <- mean(indivs)
-      sd_n <- sd(indivs)
-      ci_width <- qnorm(0.975) * sd(indivs) / sqrt(length(indivs))
-      ci_min <- mean_n - ci_width
-      ci_max <- mean_n + ci_width
-    }
-    c(mean = mean_n, 
-      sd = sd_n,
-      quantile(indivs, probs = qprobs),
-      ci_min = ci_min,
-      ci_max = ci_max)
-  }))
-  dimnames(binstats)[[2]] <- c('mean', 'sd', 'q025', 'q25', 'median', 'q75', 'q975', 'ci_min', 'ci_max')
-  data.frame(bin_midpoint = edges$bin_midpoint,
-             bin_min = edges$bin_min,
-             bin_max = edges$bin_max,
-             mean_n_individuals = edges$bin_count / n_census,
-             binstats)
-}
-
-# Create bins.
+# Create bins
+# -----------
 area_core <- 42.84
+num_bins <- 20
 
-lightrange <- with(alltree_light_95, range(light_received/crownarea)) # 1.09 to 412
+log_midpoints <- function(a) exp(log(a)[-length(a)] + diff(log(a))/2)
 
-lightbinbounds <- exp(seq(log(lightrange[1]), log(lightrange[2]), length.out = 21))
+lightperarearange <- with(alltree_light_95, range(light_received/crownarea)) # 1.09 to 412
+lightperarearange[2] <- lightperarearange[2] + 1
+
+lightperareabinbounds <- exp(seq(log(lightperarearange[1]), log(lightperarearange[2]), length.out = num_bins + 1))
+
+lightperareabinedges <- data.frame(bin_min = lightperareabinbounds[-(num_bins+1)], bin_max = lightperareabinbounds[-1], bin_midpoint = log_midpoints(lightperareabinbounds))
+
+lightpervolumerange <- with(alltree_light_95, range(light_received/crownvolume)) # 2.30 to 316
+lightpervolumerange[2] <- lightpervolumerange[2] + 1
+
+lightpervolumebinbounds <- exp(seq(log(lightpervolumerange[1]), log(lightpervolumerange[2]), length.out = num_bins + 1))
+
+lightpervolumebinedges <- data.frame(bin_min = lightpervolumebinbounds[-(num_bins+1)], bin_max = lightpervolumebinbounds[-1], bin_midpoint = log_midpoints(lightpervolumebinbounds))
+
 
 alltree_light_95 <- alltree_light_95 %>%
   mutate(fg = if_else(!is.na(fg), paste0('fg',fg), as.character(NA)))
 
+# Area bins
+# ---------
 lightabundbins_all <- with(alltree_light_95, logbin(x = light_received/crownarea, n = 20))
 lightproductionbins_all <- with(alltree_light_95, logbin_setedges(x = light_received/crownarea, y = production, edges = lightabundbins_all))
-lightindivprodbins_all <- with(alltree_light_95, fakebin_across_years(dat_values = production, dat_classes = light_received/crownarea, edges = lightabundbins_all, mean_type = 'geometric', n_census = 1))
+lightindivprodbins_all <- alltree_light_95 %>%
+  mutate(lightperarea_bin = cut(light_received/crownarea, breaks = c(lightperareabinedges$bin_min[1], lightperareabinedges$bin_max), labels = lightperareabinedges$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(lightperarea_bin) %>%
+  do(c(n = nrow(.), quantile(.$production, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
 
 lightabundbins_fg <- alltree_light_95 %>%
   group_by(fg) %>%
@@ -70,62 +56,118 @@ lightproductionbins_fg <- alltree_light_95 %>%
   do(logbin_setedges(x = .$light_received/.$crownarea, y = .$production, edges = lightabundbins_all))
 
 lightindivprodbins_fg <- alltree_light_95 %>%
-  group_by(fg) %>%
-  do(fakebin_across_years(dat_values = .$production, dat_classes = .$light_received/.$crownarea, edges = lightabundbins_all, mean_type = 'geometric', n_census = 1))
+  mutate(lightperarea_bin = cut(light_received/crownarea, breaks = c(lightperareabinedges$bin_min[1], lightperareabinedges$bin_max), labels = lightperareabinedges$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(fg, lightperarea_bin) %>%
+  do(c(n = nrow(.), quantile(.$production, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
+
 
 lightabundbins_fg <- rbind(data.frame(fg = 'all', lightabundbins_all, stringsAsFactors = FALSE), as.data.frame(lightabundbins_fg)) %>%
   mutate(bin_value = bin_value / area_core)
 lightproductionbins_fg <- rbind(data.frame(fg = 'all', lightproductionbins_all, stringsAsFactors = FALSE), as.data.frame(lightproductionbins_fg)) %>%
   mutate(bin_value = bin_value / area_core)
-lightindivprodbins_fg <- rbind(data.frame(fg = 'all', lightindivprodbins_all, stringsAsFactors = FALSE), as.data.frame(lightindivprodbins_fg))
+lightindivprodbins_fg <- data.frame(fg = 'all', lightindivprodbins_all, stringsAsFactors = FALSE) %>%
+  rbind(as.data.frame(lightindivprodbins_fg)) %>%
+  mutate(lightperarea_bin = as.numeric(as.character(lightperarea_bin))) %>%
+  rename(bin_midpoint = lightperarea_bin)
+           
 
+# Volume bins
+# -----------
+lightpervolabundbins_all <- with(alltree_light_95, logbin(x = light_received/crownvolume, n = 20))
+lightpervolproductionbins_all <- with(alltree_light_95, logbin_setedges(x = light_received/crownvolume, y = production, edges = lightpervolabundbins_all))
+lightpervolindivprodbins_all <- alltree_light_95 %>%
+  mutate(lightpervol_bin = cut(light_received/crownvolume, breaks = c(lightpervolumebinedges$bin_min[1], lightpervolumebinedges$bin_max), labels = lightpervolumebinedges$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(lightpervol_bin) %>%
+  do(c(n = nrow(.), quantile(.$production, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
+
+lightpervolabundbins_fg <- alltree_light_95 %>%
+  group_by(fg) %>%
+  do(logbin_setedges(x = .$light_received/.$crownvolume, edges = lightpervolabundbins_all))
+
+lightpervolproductionbins_fg <- alltree_light_95 %>%
+  group_by(fg) %>%
+  do(logbin_setedges(x = .$light_received/.$crownvolume, y = .$production, edges = lightpervolabundbins_all))
+
+lightpervolindivprodbins_fg <- alltree_light_95 %>%
+  mutate(lightpervol_bin = cut(light_received/crownvolume, breaks = c(lightpervolumebinedges$bin_min[1], lightpervolumebinedges$bin_max), labels = lightpervolumebinedges$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(fg, lightpervol_bin) %>%
+  do(c(n = nrow(.), quantile(.$production, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
+
+
+lightpervolabundbins_fg <- rbind(data.frame(fg = 'all', lightpervolabundbins_all, stringsAsFactors = FALSE), as.data.frame(lightpervolabundbins_fg)) %>%
+  mutate(bin_value = bin_value / area_core)
+lightpervolproductionbins_fg <- rbind(data.frame(fg = 'all', lightpervolproductionbins_all, stringsAsFactors = FALSE), as.data.frame(lightpervolproductionbins_fg)) %>%
+  mutate(bin_value = bin_value / area_core)
+lightpervolindivprodbins_fg <- data.frame(fg = 'all', lightpervolindivprodbins_all, stringsAsFactors = FALSE) %>%
+  rbind(as.data.frame(lightpervolindivprodbins_fg)) %>%
+  mutate(lightpervol_bin = as.numeric(as.character(lightpervol_bin))) %>%
+  rename(bin_midpoint = lightpervol_bin)
+
+
+# Area plots --------------------------------------------------------------
+
+# Expressions for axis labels
+exlpa <- expression(paste('Light received per unit crown area (W m'^-2,')', sep = ''))
+exlpv <- expression(paste('Light received per unit crown volume (W m'^-3,')', sep = ''))
+exd <- expression(paste('Density (trees ha'^-1,')', sep = ''))
+exindp <- expression(paste('Growth (kg y'^-1, ')', sep = ''))
+extotp <- expression(paste('Growth (kg y'^-1, ' ha'^-1,  ')', sep = ''))
 
 
 p1 <- ggplot(lightabundbins_fg %>% filter(!is.na(fg)), aes(x = bin_midpoint, y = bin_value)) +
   geom_point() +
   facet_wrap(~ fg) +
-  scale_x_log10(name = 'Light received per unit crown area') +
-  scale_y_log10() +
+  scale_x_log10(name = exlpa) +
+  scale_y_log10(name = exd) +
   theme_bw() +
   ggtitle('Density')
   
 p1b <- ggplot(lightabundbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(x = bin_midpoint, y = bin_value, color = fg)) +
   geom_point() +
-  scale_x_log10(name = 'Light received per unit crown area') +
-  scale_y_log10() +
+  scale_x_log10(name = exlpa) +
+  scale_y_log10(exd) +
   theme_bw() +
   ggtitle('Density')
 
 p2 <- ggplot(alltree_light_95 %>% filter(!is.na(fg)), aes(x = light_received/crownarea, y = production)) +
   geom_hex(alpha = 0.4) +
   geom_hex(data = alltree_light_95 %>% mutate(fg = 'all'), alpha = 0.4) +
-  geom_pointrange(data = lightindivprodbins_fg %>% filter(!is.na(fg)), aes(x = bin_midpoint, y = median, ymin = q25, ymax = q75)) +
+  geom_pointrange(data = lightindivprodbins_fg %>% filter(!is.na(fg)), aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75)) +
   facet_wrap(~ fg) +
-  scale_x_log10(name = 'Light received per unit crown area') +
-  scale_y_log10() +
+  scale_x_log10(name = exlpa) +
+  scale_y_log10(exindp) +
   theme_bw() +
   ggtitle('Production (individual)') +
-  scale_fill_gradient(trans = 'log', low = 'skyblue', high = 'darkblue')
+  scale_fill_gradient(trans = 'log', low = 'skyblue', high = 'darkblue', breaks = c(1, 10, 100))
 
-p2b <- ggplot(lightindivprodbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(x = bin_midpoint, y = median, ymin = q25, ymax = q75, color = fg)) +
+p2b <- ggplot(lightindivprodbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75, color = fg)) +
   geom_pointrange() +
-  scale_x_log10(name = 'Light received per unit crown area') +
-  scale_y_log10() +
+  scale_x_log10(name = exlpa) +
+  scale_y_log10(exindp) +
   theme_bw() +
   ggtitle('Production (individual)')
 
 p3 <- ggplot(lightproductionbins_fg %>% filter(!is.na(fg)), aes(x = bin_midpoint, y = bin_value)) +
   geom_point() +
   facet_wrap(~ fg) +
-  scale_x_log10(name = 'Light received per unit crown area') +
-  scale_y_log10() +
+  scale_x_log10(name = exlpa) +
+  scale_y_log10(extotp) +
   theme_bw() +
   ggtitle('Production (total)')
 
 p3b <- ggplot(lightproductionbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(x = bin_midpoint, y = bin_value, color = fg)) +
   geom_point() +
-  scale_x_log10(name = 'Light received per unit crown area') +
-  scale_y_log10() +
+  scale_x_log10(name = exlpa) +
+  scale_y_log10(extotp) +
   theme_bw() +
   ggtitle('Production (total)')
 
@@ -138,7 +180,7 @@ ggsave(file.path(fpfig, 'productiontotalbylight_separate.png'), p3, height = 5, 
 ggsave(file.path(fpfig, 'productiontotalbylight_together.png'), p3b, height = 5, width = 5, dpi = 300)
 
 
-# Add fitted lines --------------------------------------------------------
+# Area plots with fitted lines --------------------------------------------------------
 
 light_ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/lightpiecewise/lightpiecewise_ci_by_fg.csv', stringsAsFactors = FALSE) 
 area_core <- 42.84
@@ -174,18 +216,18 @@ p1fits <- ggplot(lightabundbins_fg %>% filter(!is.na(fg), bin_count > 10)) +
   geom_line(data = light_pred_dens %>% filter(prod_model == 1, !dens_model %in% '1', !fg %in% 'unclassified'), aes(x = lightperarea, y = q50, group = dens_model, color = dens_model)) +
   geom_point(aes(x = bin_midpoint, y = bin_value)) +
   facet_wrap(~ fg) +
-  scale_x_log10(name = 'Light received per unit crown area (Wm-2)') +
-  scale_y_log10(name = 'Density (trees ha-1 per watt)', limits = c(1e-5, 1e2)) +
+  scale_x_log10(name = exlpa) +
+  scale_y_log10(name = exd, limits = c(1e-5, 1e2)) +
   theme_bw() +
   ggtitle('Density')
 
 p2fits <- ggplot() +
   geom_ribbon(data = light_fitted_indivprod %>% filter(dens_model == '1', !fg %in% 'unclassified'), aes(x = lightperarea, ymin = q025, ymax = q975, group = factor(prod_model)), fill = 'gray80') +
   geom_line(data = light_fitted_indivprod %>% filter(dens_model == '1', !fg %in% 'unclassified'), aes(x = lightperarea, y = q50, group = factor(prod_model), color = factor(prod_model))) +
-  geom_pointrange(data = lightindivprodbins_fg %>% filter(!is.na(fg), mean_n_individuals > 10), aes(x = bin_midpoint, y = median, ymin = q25, ymax = q75)) +
+  geom_pointrange(data = lightindivprodbins_fg %>% filter(!is.na(fg), mean_n_individuals > 10), aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75)) +
   facet_wrap(~ fg) +
-  scale_x_log10(name = 'Light received per unit crown area (Wm-2)') +
-  scale_y_log10(name = 'Individual production (kg y-1)') +
+  scale_x_log10(name = exlpa) +
+  scale_y_log10(name = exindp) +
   theme_bw() +
   ggtitle('Production (individual)') 
 
@@ -194,8 +236,8 @@ p3fits <- ggplot(lightproductionbins_fg %>% filter(!is.na(fg), bin_count > 10)) 
   geom_line(data = light_fitted_totalprod %>% filter(!dens_model %in% '1', prod_model == 2, !fg %in% 'unclassified') %>% mutate(combo = paste(dens_model,prod_model,sep='x')), aes(x = lightperarea, y = q50, group = combo, color = combo)) +
   geom_point(aes(x = bin_midpoint, y = bin_value)) +
   facet_wrap(~ fg) +
-  scale_x_log10(name = 'Light received per unit crown area (Wm-2)') +
-  scale_y_log10(name = 'Total production (kg y-1 ha-1 per watt)', limits = c(1e-4, 5e1)) +
+  scale_x_log10(name = exlpa) +
+  scale_y_log10(name = extotp, limits = c(1e-4, 5e1)) +
   theme_bw() +
   ggtitle('Production (total)')
 
@@ -204,3 +246,56 @@ fpfig <- '~/google_drive/ForestLight/figs/lightpowerlaws_feb2019'
 ggsave(file.path(fpfig, 'withfits_densitybylight_separate.png'), p1fits, height = 5, width = 7.5, dpi = 300)
 ggsave(file.path(fpfig, 'withfits_productionindividualbylight_separate.png'), p2fits, height = 5, width = 7.5, dpi = 300)
 ggsave(file.path(fpfig, 'withfits_productiontotalbylight_separate.png'), p3fits, height = 5, width = 7.5, dpi = 300)
+
+
+
+# Volume plots ------------------------------------------------------------
+
+p1vol <- ggplot(lightpervolabundbins_fg %>% filter(!is.na(fg), bin_value > 0), aes(x = bin_midpoint, y = bin_value)) +
+  geom_point() +
+  facet_wrap(~ fg) +
+  scale_x_log10(name = exlpv) +
+  scale_y_log10(name = exd) +
+  theme_bw() +
+  ggtitle('Density')
+
+p1bvol <- ggplot(lightpervolabundbins_fg %>% filter(!is.na(fg), !fg %in% 'all', bin_value > 0), aes(x = bin_midpoint, y = bin_value, color = fg)) +
+  geom_point() +
+  scale_x_log10(name = exlpv) +
+  scale_y_log10(name = exd) +
+  theme_bw() +
+  ggtitle('Density')
+
+p2vol <- ggplot(alltree_light_95 %>% filter(!is.na(fg)), aes(x = light_received/crownvolume, y = production)) +
+  geom_hex(alpha = 0.4) +
+  geom_hex(data = alltree_light_95 %>% mutate(fg = 'all'), alpha = 0.4) +
+  geom_pointrange(data = lightpervolindivprodbins_fg %>% filter(!is.na(fg)), aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75)) +
+  facet_wrap(~ fg) +
+  scale_x_log10(name = exlpv) +
+  scale_y_log10(exindp) +
+  theme_bw() +
+  ggtitle('Production (individual)') +
+  scale_fill_gradient(trans = 'log', low = 'skyblue', high = 'darkblue', breaks = c(1,10,100))
+
+p2bvol <- ggplot(lightpervolindivprodbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75, color = fg)) +
+  geom_pointrange() +
+  scale_x_log10(name = exlpv) +
+  scale_y_log10(exindp) +
+  theme_bw() +
+  ggtitle('Production (individual)')
+
+p3vol <- ggplot(lightpervolproductionbins_fg %>% filter(!is.na(fg), bin_value > 0), aes(x = bin_midpoint, y = bin_value)) +
+  geom_point() +
+  facet_wrap(~ fg) +
+  scale_x_log10(name = exlpv) +
+  scale_y_log10(name = extotp) +
+  theme_bw() +
+  ggtitle('Production (total)')
+
+p3bvol <- ggplot(lightpervolproductionbins_fg %>% filter(!is.na(fg), !fg %in% 'all', bin_value > 0), aes(x = bin_midpoint, y = bin_value, color = fg)) +
+  geom_point() +
+  scale_x_log10(name = exlpv) +
+  scale_y_log10(name = extotp) +
+  theme_bw() +
+  ggtitle('Production (total)')
+
