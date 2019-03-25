@@ -1,5 +1,6 @@
 # Plot light received by crown area and volume, with individual and binned production
 # Volume added 23 Mar 2019
+# Growth/volume vs. light/volume added 25 Mar 2019
 
 gdrive_path <- '~/google_drive'
 github_path <- '~/Documents/GitHub/forestlight'
@@ -112,6 +113,25 @@ lightpervolindivprodbins_fg <- data.frame(fg = 'all', lightpervolindivprodbins_a
   mutate(lightpervol_bin = as.numeric(as.character(lightpervol_bin))) %>%
   rename(bin_midpoint = lightpervol_bin)
 
+# Added 25 Mar: production *per unit volume* as binned quantity
+lightpervolprodpervolbins_all <- alltree_light_95 %>%
+  mutate(lightpervol_bin = cut(light_received/crownvolume, breaks = c(lightpervolumebinedges$bin_min[1], lightpervolumebinedges$bin_max), labels = lightpervolumebinedges$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(lightpervol_bin) %>%
+  do(c(n = nrow(.), quantile(.$production/.$crownvolume, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
+lightpervolprodpervolbins_fg <- alltree_light_95 %>%
+  mutate(lightpervol_bin = cut(light_received/crownvolume, breaks = c(lightpervolumebinedges$bin_min[1], lightpervolumebinedges$bin_max), labels = lightpervolumebinedges$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(fg, lightpervol_bin) %>%
+  do(c(n = nrow(.), quantile(.$production/.$crownvolume, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
+lightpervolprodpervolbins_fg <- data.frame(fg = 'all', lightpervolprodpervolbins_all, stringsAsFactors = FALSE) %>%
+  rbind(as.data.frame(lightpervolprodpervolbins_fg)) %>%
+  mutate(lightpervol_bin = as.numeric(as.character(lightpervol_bin))) %>%
+  rename(bin_midpoint = lightpervol_bin)
 
 # Area plots --------------------------------------------------------------
 
@@ -299,3 +319,43 @@ p3bvol <- ggplot(lightpervolproductionbins_fg %>% filter(!is.na(fg), !fg %in% 'a
   theme_bw() +
   ggtitle('Production (total)')
 
+
+# Growth per volume vs light per volume plots (indiv) ---------------------
+
+exppv <- expression(paste('Growth per unit crown volume (kg y'^-1, ' m'^-3,')', sep = ''))
+
+# Plot with medians and central 50% interval, faceted
+ggplot(lightpervolprodpervolbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75)) +
+  geom_pointrange() +
+  facet_wrap(~ fg) +
+  scale_x_log10(name = exlpv) +
+  scale_y_log10(name = exppv) +
+  theme_bw() 
+
+# Plot with medians and central 50% interval, all together
+# Dodge the positions of the bars.
+ggplot(lightpervolprodpervolbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75, color = fg)) +
+  geom_pointrange(position = position_dodge(width = 0.1)) +
+  scale_x_log10(name = exlpv) +
+  scale_y_log10(name = exppv) +
+  theme_bw() 
+
+# Plot with medians & interval, over hexagons, faceted
+ggplot(lightpervolprodpervolbins_fg %>% filter(!is.na(fg), !fg %in% 'all')) +
+  geom_hex(data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = light_received/crownvolume, y = production/crownvolume)) +
+  geom_pointrange(aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75)) +
+  facet_wrap(~ fg) +
+  scale_x_log10(name = exlpv) +
+  scale_y_log10(name = exppv) +
+  scale_fill_gradient(trans = 'log', low = 'skyblue', high = 'darkblue', breaks = c(1,10,100,1000)) +
+  theme_bw() 
+
+
+# Plot with medians & interval, over point cloud, faceted
+ggplot(lightpervolprodpervolbins_fg %>% filter(!is.na(fg), !fg %in% 'all')) +
+  geom_point(data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = light_received/crownvolume, y = production/crownvolume), color = 'skyblue', alpha = 0.05) +
+  geom_pointrange(aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75)) +
+  facet_wrap(~ fg) +
+  scale_x_log10(name = exlpv) +
+  scale_y_log10(name = exppv) +
+  theme_bw() 
