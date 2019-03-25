@@ -2,10 +2,13 @@
 # Volume added 23 Mar 2019
 # Growth/volume vs. light/volume added 25 Mar 2019
 
-gdrive_path <- '~/google_drive'
+gdrive_path <- '~/google_drive/ForestLight'
 github_path <- '~/Documents/GitHub/forestlight'
 
-load(file.path(gdrive_path, 'ForestLight/data/rawdataobj_alternativecluster.r'))
+gdrive_path <- '/Users/jgradym/Google Drive/ForestLight'
+github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
+
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
 source(file.path(github_path, 'code/allfunctions27july.r'))
 
 library(dplyr)
@@ -150,13 +153,15 @@ p1 <- ggplot(lightabundbins_fg %>% filter(!is.na(fg)), aes(x = bin_midpoint, y =
   scale_y_log10(name = exd) +
   theme_bw() +
   ggtitle('Density')
-  
+p1  
+
 p1b <- ggplot(lightabundbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(x = bin_midpoint, y = bin_value, color = fg)) +
   geom_point() +
   scale_x_log10(name = exlpa) +
   scale_y_log10(exd) +
   theme_bw() +
   ggtitle('Density')
+p1b
 
 p2 <- ggplot(alltree_light_95 %>% filter(!is.na(fg)), aes(x = light_received/crownarea, y = production)) +
   geom_hex(alpha = 0.4) +
@@ -168,6 +173,7 @@ p2 <- ggplot(alltree_light_95 %>% filter(!is.na(fg)), aes(x = light_received/cro
   theme_bw() +
   ggtitle('Production (individual)') +
   scale_fill_gradient(trans = 'log', low = 'skyblue', high = 'darkblue', breaks = c(1, 10, 100))
+p2
 
 p2b <- ggplot(lightindivprodbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75, color = fg)) +
   geom_pointrange() +
@@ -175,6 +181,7 @@ p2b <- ggplot(lightindivprodbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(
   scale_y_log10(exindp) +
   theme_bw() +
   ggtitle('Production (individual)')
+p2b
 
 p3 <- ggplot(lightproductionbins_fg %>% filter(!is.na(fg)), aes(x = bin_midpoint, y = bin_value)) +
   geom_point() +
@@ -183,6 +190,7 @@ p3 <- ggplot(lightproductionbins_fg %>% filter(!is.na(fg)), aes(x = bin_midpoint
   scale_y_log10(extotp) +
   theme_bw() +
   ggtitle('Production (total)')
+p3
 
 p3b <- ggplot(lightproductionbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(x = bin_midpoint, y = bin_value, color = fg)) +
   geom_point() +
@@ -190,8 +198,9 @@ p3b <- ggplot(lightproductionbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes
   scale_y_log10(extotp) +
   theme_bw() +
   ggtitle('Production (total)')
+p3b
 
-fpfig <- '~/google_drive/ForestLight/figs/lightpowerlaws_feb2019'
+fpfig <- file.path(gdrive_path, '/figs/lightpowerlaws_feb2019')
 ggsave(file.path(fpfig, 'densitybylight_separate.png'), p1, height = 5, width = 9, dpi = 300)
 ggsave(file.path(fpfig, 'densitybylight_together.png'), p1b, height = 5, width = 5, dpi = 300)
 ggsave(file.path(fpfig, 'productionindividualbylight_separate.png'), p2, height = 5, width = 9, dpi = 300)
@@ -202,7 +211,7 @@ ggsave(file.path(fpfig, 'productiontotalbylight_together.png'), p3b, height = 5,
 
 # Area plots with fitted lines --------------------------------------------------------
 
-light_ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/lightpiecewise/lightpiecewise_ci_by_fg.csv', stringsAsFactors = FALSE) 
+light_ci_df <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/lightpiecewise/lightpiecewise_ci_by_fg.csv'), stringsAsFactors = FALSE) 
 area_core <- 42.84
 
 light_ci_df$fg[light_ci_df$fg == 'alltree'] <- 'all'
@@ -240,7 +249,7 @@ p1fits <- ggplot(lightabundbins_fg %>% filter(!is.na(fg), bin_count > 10)) +
   scale_y_log10(name = exd, limits = c(1e-5, 1e2)) +
   theme_bw() +
   ggtitle('Density')
-
+p1fits
 p2fits <- ggplot() +
   geom_ribbon(data = light_fitted_indivprod %>% filter(dens_model == '1', !fg %in% 'unclassified'), aes(x = lightperarea, ymin = q025, ymax = q975, group = factor(prod_model)), fill = 'gray80') +
   geom_line(data = light_fitted_indivprod %>% filter(dens_model == '1', !fg %in% 'unclassified'), aes(x = lightperarea, y = q50, group = factor(prod_model), color = factor(prod_model))) +
@@ -250,6 +259,7 @@ p2fits <- ggplot() +
   scale_y_log10(name = exindp) +
   theme_bw() +
   ggtitle('Production (individual)') 
+p2fits
 
 p3fits <- ggplot(lightproductionbins_fg %>% filter(!is.na(fg), bin_count > 10)) +
   geom_ribbon(data = light_fitted_totalprod %>% filter(!dens_model %in% '1', prod_model == 2, !fg %in% 'unclassified') %>% mutate(combo = paste(dens_model,prod_model,sep='x')), aes(x = lightperarea, ymin = q025, ymax = q975, group = combo), fill = 'gray80') +
@@ -260,8 +270,8 @@ p3fits <- ggplot(lightproductionbins_fg %>% filter(!is.na(fg), bin_count > 10)) 
   scale_y_log10(name = extotp, limits = c(1e-4, 5e1)) +
   theme_bw() +
   ggtitle('Production (total)')
+p3fits 
 
-fpfig <- '~/google_drive/ForestLight/figs/lightpowerlaws_feb2019'
 
 ggsave(file.path(fpfig, 'withfits_densitybylight_separate.png'), p1fits, height = 5, width = 7.5, dpi = 300)
 ggsave(file.path(fpfig, 'withfits_productionindividualbylight_separate.png'), p2fits, height = 5, width = 7.5, dpi = 300)
@@ -278,6 +288,7 @@ p1vol <- ggplot(lightpervolabundbins_fg %>% filter(!is.na(fg), bin_value > 0), a
   scale_y_log10(name = exd) +
   theme_bw() +
   ggtitle('Density')
+p1vol
 
 p1bvol <- ggplot(lightpervolabundbins_fg %>% filter(!is.na(fg), !fg %in% 'all', bin_value > 0), aes(x = bin_midpoint, y = bin_value, color = fg)) +
   geom_point() +
@@ -285,6 +296,7 @@ p1bvol <- ggplot(lightpervolabundbins_fg %>% filter(!is.na(fg), !fg %in% 'all', 
   scale_y_log10(name = exd) +
   theme_bw() +
   ggtitle('Density')
+p1bvol
 
 p2vol <- ggplot(alltree_light_95 %>% filter(!is.na(fg)), aes(x = light_received/crownvolume, y = production)) +
   geom_hex(alpha = 0.4) +
@@ -296,6 +308,7 @@ p2vol <- ggplot(alltree_light_95 %>% filter(!is.na(fg)), aes(x = light_received/
   theme_bw() +
   ggtitle('Production (individual)') +
   scale_fill_gradient(trans = 'log', low = 'skyblue', high = 'darkblue', breaks = c(1,10,100))
+p2vol
 
 p2bvol <- ggplot(lightpervolindivprodbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75, color = fg)) +
   geom_pointrange() +
@@ -303,6 +316,7 @@ p2bvol <- ggplot(lightpervolindivprodbins_fg %>% filter(!is.na(fg), !fg %in% 'al
   scale_y_log10(exindp) +
   theme_bw() +
   ggtitle('Production (individual)')
+p2bvol
 
 p3vol <- ggplot(lightpervolproductionbins_fg %>% filter(!is.na(fg), bin_value > 0), aes(x = bin_midpoint, y = bin_value)) +
   geom_point() +
@@ -311,6 +325,7 @@ p3vol <- ggplot(lightpervolproductionbins_fg %>% filter(!is.na(fg), bin_value > 
   scale_y_log10(name = extotp) +
   theme_bw() +
   ggtitle('Production (total)')
+p3vol
 
 p3bvol <- ggplot(lightpervolproductionbins_fg %>% filter(!is.na(fg), !fg %in% 'all', bin_value > 0), aes(x = bin_midpoint, y = bin_value, color = fg)) +
   geom_point() +
@@ -318,7 +333,7 @@ p3bvol <- ggplot(lightpervolproductionbins_fg %>% filter(!is.na(fg), !fg %in% 'a
   scale_y_log10(name = extotp) +
   theme_bw() +
   ggtitle('Production (total)')
-
+p3bvol
 
 # Growth per volume vs light per volume plots (indiv) ---------------------
 
@@ -328,6 +343,7 @@ exppv <- expression(paste('Growth per unit crown volume (kg y'^-1, ' m'^-3,')', 
 ggplot(lightpervolprodpervolbins_fg %>% filter(!is.na(fg), !fg %in% 'all'), aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75)) +
   geom_pointrange() +
   facet_wrap(~ fg) +
+  geom_abline(intercept=-3, slope = 1, color ="darkgray",linetype="dashed", size=1.5)+
   scale_x_log10(name = exlpv) +
   scale_y_log10(name = exppv) +
   theme_bw() 
@@ -355,6 +371,7 @@ ggplot(lightpervolprodpervolbins_fg %>% filter(!is.na(fg), !fg %in% 'all')) +
 ggplot(lightpervolprodpervolbins_fg %>% filter(!is.na(fg), !fg %in% 'all')) +
   geom_point(data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = light_received/crownvolume, y = production/crownvolume), color = 'skyblue', alpha = 0.05) +
   geom_pointrange(aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75)) +
+  geom_abline(intercept=-3, slope = 1, color ="darkgray",linetype="dashed", size=1.5)+
   facet_wrap(~ fg) +
   scale_x_log10(name = exlpv) +
   scale_y_log10(name = exppv) +

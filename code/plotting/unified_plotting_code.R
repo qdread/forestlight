@@ -449,41 +449,49 @@ fitted_models = crownareabin_2census_mid %>% group_by(fg) %>% do(model = lm(log1
 fitted_models %>% tidy(model)
 fitted_models %>% glance(model)
 summary(lm1)
+
+
+load(file.path(gdrive_path, 'data/area_and_volume_bins_1995.RData'))
+
+
 ###  Crown Volume
 
-crownareabin_2census <- crownareabin_2census %>%
-  mutate(crown_vol = exp(-0.681 + 2.02 * log(bin_yvalue)),
-         crown_vol_min =  exp(-0.681 + 2.02 * log(bin_ymin)),
-         crown_vol_max =  exp(-0.681 + 2.02 * log(bin_ymax)))
-crownareabin_2census$crown_vol[!is.finite(crownareabin_2census$crown_vol)] <- NA
 error_bar_width <- 0.13
-p <- crownareabin_2census %>%
-  filter(fg %in% c('all', fg_names), !is.na(crown_vol), crown_vol > 0) %>%
-  filter(mean_n_individuals > 10) %>%
-  mutate(crown_vol_min = ifelse(crown_vol_min == 0, crown_vol, crown_vol_min)) %>%
-  mutate(crown_vol = crown_vol/area_core, crown_vol_min = crown_vol_min/area_core, crown_vol_max = crown_vol_max/area_core) %>%
+p <- crownvolumebins1995 %>%
+  filter(fg %in% c('all', fg_names), !is.na(bin_value), bin_value > 0) %>%
+  filter(bin_count > 10) %>%
+  mutate(bin_min = ifelse(bin_min == 0, bin_value, bin_min)) %>%
+  mutate(bin_value = bin_value/area_core, bin_min = bin_min/area_core, bin_max = bin_max/area_core) %>%
   group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
-  ggplot(aes(x = bin_midpoint, y = crown_vol, ymin = crown_vol_min, ymax = crown_vol_max, group = fg, fill=fg,color = fg)) +
-  theme_plant+geom_errorbar(aes(width = width), position=p_dodge) +
+  ggplot(aes(x = bin_midpoint, y = bin_value, ymin = bin_min, ymax = bin_max, group = fg, fill=fg,color = fg)) +
+  theme_plant+#geom_errorbar(aes(width = width), position=p_dodge) +
   #geom_abline(intercept=4, slope = -2/3, color ="darkgray",linetype="dashed", size=1.5)+
   geom_point(shape = 21, size = geom_size,  stroke = .5, color = "black")+
-  scale_x_log10(name = 'Diameter (cm)', limits = c(1, 350), breaks=c(1,3,10,30,100,300)) +  
-  scale_y_log10(#limits = c(.2, 0.6),breaks=c(0.1, 0.2, 0.3, 0.4, 0.6), labels = signif,
-    labels = signif, name = expression(atop('Total Crown Volume',paste('(m'^3, ' ha'^-1,')'))))  +  
+  scale_x_log10(name = 'Diameter (cm)', limits = c(1, 200), breaks=c(1,3,10,30,100,300)) +  
+  scale_y_log10(limits = c(3, 3000),breaks=c(1, 10, 100, 1000, 10000), labels = signif,
+  #scale_y_log10(labels = trans_format("log10", math_format(10^.x)), #limits = c(.2, 0.6),breaks=c(0.1, 0.2, 0.3, 0.4, 0.6), labels = signif,
+     name = expression(atop('Total Crown Volume',paste('(m'^3, ' ha'^-1,')'))))  +  
   scale_color_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') +
   scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_4/extra_crown_vol_size.pdf'))
+pdf(file.path(gdrive_path, 'Figures/Fig_4/total_crown_vol.pdf'))
 plot(p1)
 dev.off()
 library(broom)
-crownareabin_2census_mid <- crownareabin_2census %>%
-  filter(bin_midpoint > 4) %>%
-  filter(bin_midpoint < 40) 
-fitted_models = crownareabin_2census_mid %>% group_by(fg) %>% do(model = lm(log10(crown_vol) ~ log10(bin_midpoint), data = .))
+crownvolumebins1995_mid <- crownvolumebins1995 %>%
+  filter(bin_midpoint > 3) %>%
+  filter(bin_midpoint < 30) %>%
+  filter(fg == "all")
+
+lm1 <- lm(log10(crownvolumebins1995_mid$bin_value)~ log10(crownvolumebins1995_mid$bin_midpoint))
+summary(lm1)
+plot(log10(crownvolumebins1995_mid$bin_value)~ log10(crownvolumebins1995_mid$bin_midpoint))
+
+fitted_models = crownvolumebins1995_mid %>% group_by(fg) %>% 
+  do(model = lm(log10(bin_value) ~ log10(bin_midpoint), data = .))
 
 fitted_models %>% tidy(model)
 fitted_models %>% glance(model)
@@ -1318,7 +1326,7 @@ ggplot(rawlightslopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unc
   geom_ribbon(alpha = 0.4, size = 0.3) +
   geom_line() +
   scale_x_log10(name = 'Diameter (cm)', expand = c(0,0)) +
-  theme_bw() + theme(axis.text = element_text(color = "black"))+
+  theme_bw() + theme(axis.text = element_text(color = "black", size = 12))+
   theme(strip.background = element_blank(), panel.grid = element_blank(), legend.position = 'bottom') +
   labs(y = 'Fitted Slope') +  #coord_fixed(ratio = .1)+
   ggtitle('Fitted slopes \n 3 segment density model and 2 segment incoming energy model')+
@@ -1430,6 +1438,255 @@ fpfig <- '~/google_drive/ForestLight/figs/lightpowerlaws_feb2019'
 ggsave(file.path(fpfig, 'totallightscaling_separateplots.png'), prawlightfits, height = 5, width = 8, dpi = 300)
 ggsave(file.path(fpfig, 'totallightscaling_oneplot.png'), prawlightfits_onefig, height = 5, width = 6, dpi = 300)
 
+# light per volume
+
+  # Light Vs Size Plot
+  # Edited 21 March: include volume in addition to area.
+
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
+source(file.path(github_path, 'code/allfunctions27july.r'))
+  
+alltree_light_95 <- alltree_light_95 %>%
+  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), as.character(NA)))
+
+dbhbin1995 <- with(alltree_light_95, logbin(x = dbh_corr, n = 20))
+
+lightperareafakebin_fg <- alltree_light_95 %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(fg, dbh_bin) %>%
+  do(quantile(.$light_received/.$crownarea, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975')))
+
+lightperareafakebin_all <- alltree_light_95 %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(dbh_bin) %>%
+  do(quantile(.$light_received/.$crownarea, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975')))
+
+lightperareafakebin_fg <- data.frame(fg = 'all', lightperareafakebin_all, stringsAsFactors = FALSE) %>%
+  rbind(as.data.frame(lightperareafakebin_fg)) %>%
+  mutate(dbh_bin = as.numeric(as.character(dbh_bin)))
+
+lightpervolfakebin_fg <- alltree_light_95 %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(fg, dbh_bin) %>%
+  do(quantile(.$light_received/.$crownvolume, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975')))
+
+lightpervolfakebin_all <- alltree_light_95 %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(dbh_bin) %>%
+  do(quantile(.$light_received/.$crownvolume, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975')))
+
+lightpervolfakebin_fg <- data.frame(fg = 'all', lightpervolfakebin_all, stringsAsFactors = FALSE) %>%
+  rbind(as.data.frame(lightpervolfakebin_fg)) %>%
+  mutate(dbh_bin = as.numeric(as.character(dbh_bin)))
+
+# Plot: raw data ----------------------------------------------------------
+
+exl <- expression(paste('Light received per crown area (W m'^-2, ')', sep = ''))
+exl <- expression(atop('Light per Crown Area',paste('(W m'^2, ' ha'^-1,')')))  
+
+exv <- expression(atop('Light per Crown Volume',paste('(W m'^3, ' ha'^-1,')')))  
+exd <- 'Diameter (cm)'
+
+####### by area ######
+# Each group
+label_fg <- labeller(fg = c(all = "All", fg1 = 'Fast', fg2 = 'LL Pioneer',fg3 = "Slow", fg4 = "SL Breeder", fg5 = "Medium"))
+
+p <- ggplot() +
+  geom_point(alpha = 0.05, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received/crownarea, color = fg)) +
+  geom_pointrange(data = lightperareafakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  facet_wrap(~ fg, labeller = label_fg)+ #labeller(fg = c(all = "all", fg1 = 'Fast', fg2 = 'LL Pioneer',fg3 = "Slow", fg4 = "SL Breeder", fg5 = "Medium"))) +#labeller = label_value) +
+  #labeller(lightperareafakebin_fg$fg = c(fg1 = 'Fast', fg2 = 'LL Pioneer', fg3 = "Slow", fg4 = "SL Breeder", fg5 = "Medium")) +
+  scale_color_manual(values = guild_fills_nb2)+
+  scale_x_log10(name = exd) +
+  scale_y_log10(name = exl, limits = c(1, 1000), breaks = c(1, 10, 100, 1000)) +
+  theme(axis.title = element_text(size = 12)) +
+  theme_bw() + 
+  theme(axis.text = element_text(color = "black", size = 12), axis.title = element_text(size = 13)) + 
+  theme(legend.position="none") +
+  theme(strip.background = element_blank(), 
+        panel.border = element_rect(color = "black", fill = NA, size = .75),
+        strip.text.x = element_text(size = 12, face = "italic"),
+        panel.grid = element_blank(), legend.position = 'none')
+p
+lapdf(file.path(gdrive_path, 'Figures/Growth_light/light_crown_area_fg.pdf'))
+p
+dev.off()
+lightperareafakebin_fg$fg
+# All together
+p <- ggplot() +
+  geom_point(alpha = 0.01, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownarea), color = 'chartreuse3') +
+  geom_pointrange(data = lightperareafakebin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  scale_x_log10(name = exd) +
+  scale_y_log10(name = exl, limits = c(1, 1000), breaks = c(1, 10, 100, 1000)) +
+  theme_plant 
+
+p
+pdf(file.path(gdrive_path, 'Figures/Growth_light/light_crown_area_all.pdf'))
+p
+dev.off()
+
+####### by vol #######
+# Each group
+alltree_light_95$fg <- factor(alltree_light_95$fg , labels = c("Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium"))
+lightpervolfakebin_fg$fg <- factor(lightpervolfakebin_fg$fg , labels = c( "all", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium"))
+
+axis.title = element_text(size = 12)
+p <- ggplot() +
+  geom_point( alpha = 0.05, data = alltree_light_95 %>% filter(!is.na(fg)), 
+             aes(x = dbh_corr, y = light_received/crownvolume,color = fg)) +
+  geom_pointrange(data = lightpervolfakebin_fg %>% 
+                    filter(!fg %in% 'all', !is.na(fg)), size = 0.3, 
+                  aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  facet_wrap(~ fg,labeller = label_value) +
+  scale_x_log10(name = exd, breaks = c(1, 3, 10, 30, 100)) +
+  scale_y_log10(name = exv) +
+  theme(axis.title = element_text(size = 12)) +
+  theme_bw() + 
+  theme(axis.text = element_text(color = "black", size = 12), axis.title = element_text(size = 13)) + 
+          theme(legend.position="none") +
+  theme(strip.background = element_blank(), 
+        panel.border = element_rect(color = "black", fill = NA, size = .75),
+        strip.text.x = element_text(size = 12, face = "italic"),
+        panel.grid = element_blank(), legend.position = 'none') +
+scale_color_manual(values = guild_fills_nb2)
+p
+  
+pdf(file.path(gdrive_path, 'Figures/Growth_light/light_crown_vol_fg.pdf'))
+p
+dev.off()
+
+colors <- c("sienna4", "yellowgreen", "springgreen4")
 
 
+
+# All together
+p <- ggplot() +
+  geom_point(alpha = 0.01, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownvolume), color = 'chartreuse3') +
+  geom_pointrange(data = lightpervolfakebin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  scale_x_log10(name = exd, breaks = c(1, 3, 10, 30, 100)) +
+  scale_y_log10(name = exv) +
+  theme_plant 
+p
+pdf(file.path(gdrive_path, 'Figures/Growth_light/light_crown_vol_all.pdf'))
+p
+dev.off()
+
+
+
+# Plot: hexagon plot ------------------------------------------------------
+
+alpha_value <- 0.6
+hexfill <- scale_fill_gradient(low = 'skyblue', high = 'navy', trans = 'log', breaks = c(1,3,10,30,100,300))
+
+####### by area #######
+# Each group
+ggplot() +
+  geom_hex(alpha = alpha_value, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received/crownarea)) +
+  geom_pointrange(data = lightperareafakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  facet_wrap(~ fg) +
+  scale_x_log10(name = exd) +
+  scale_y_log10(name = exl) +
+  theme_bw() +
+  hexfill +
+  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
+
+# All together
+ggplot() +
+  geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownarea)) +
+  geom_pointrange(data = lightperareafakebin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  scale_x_log10(name = exd) +
+  scale_y_log10(name = exl) +
+  theme_bw() +
+  hexfill +
+  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
+
+####### by vol #######
+# Each group
+ggplot() +
+  geom_hex(alpha = alpha_value, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received/crownvolume)) +
+  geom_pointrange(data = lightpervolfakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  facet_wrap(~ fg) +
+  scale_x_log10(name = exd) +
+  scale_y_log10(name = exv) +
+  theme_bw() +
+  hexfill +
+  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
+
+# All together
+ggplot() +
+  geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownvolume)) +
+  geom_pointrange(data = lightpervolfakebin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  scale_x_log10(name = exd) +
+  scale_y_log10(name = exv) +
+  theme_bw() +
+  hexfill +
+  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
+
+# Plot: total unscaled light energy by dbh --------------------------------
+
+
+unscaledlightbydbhfakebin_fg <- alltree_light_95 %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(fg, dbh_bin) %>%
+  do(quantile(.$light_received, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975')))
+
+unscaledlightbydbhfakebin_all <- alltree_light_95 %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(dbh_bin) %>%
+  do(quantile(.$light_received, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975')))
+
+unscaledlightbydbhfakebin_fg <- data.frame(fg = 'all', unscaledlightbydbhfakebin_all, stringsAsFactors = FALSE) %>%
+  rbind(as.data.frame(unscaledlightbydbhfakebin_fg)) %>%
+  mutate(dbh_bin = as.numeric(as.character(dbh_bin)))
+
+alpha_value <- 0.6
+hexfill2 <- scale_fill_gradient(low = 'skyblue', high = 'navy', trans = 'log', breaks = c(1,3,10,30,100,300))
+exl <- 'Light received (W)'
+exd <- 'Diameter (cm)'
+
+# Each group
+ggplot() +
+  geom_hex(alpha = alpha_value, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received)) +
+  geom_pointrange(data = unscaledlightbydbhfakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  facet_wrap(~ fg) +
+  scale_x_log10(name = exd) +
+  scale_y_log10(name = exl) +
+  theme_bw() +
+  hexfill2 +
+  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
+
+# All together
+ggplot() +
+  geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received)) +
+  geom_pointrange(data = unscaledlightbydbhfakebin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  scale_x_log10(name = exd) +
+  scale_y_log10(name = exl) +
+  theme_bw() +
+  hexfill2 +
+  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
+
+# Very simple model
+loglogregressions <- alltree_light_95 %>%
+  group_by(fg) %>%
+  do(model = lm(log10(light_received) ~ log10(dbh_corr), data = .))
+
+lapply(loglogregressions$model, summary)
 
