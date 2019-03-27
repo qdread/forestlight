@@ -56,12 +56,15 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'Unclassifie
 prod_slopes_10cm <- slopes %>% filter(variable == 'Total Growth', dbh == unique(slopes$dbh)[38], dens_model == 3, prod_model == 2)
 light_slopes_10cm <- rawlightslopes %>% filter(variable == 'Total Incoming Energy', dbh == unique(rawlightslopes$dbh)[38], dens_model == 3, prod_model == 2)
 
-ggplot(rbind(prod_slopes_10cm, light_slopes_10cm) %>% filter(!fg %in% c('All','Unclassified')), aes(x = fg, y = q50, ymin = q025, ymax = q975, group = variable, color = variable)) +
+ggplot(rbind(prod_slopes_10cm, light_slopes_10cm) %>% filter(!fg %in% c('Unclassified')), aes(x = fg, y = q50, ymin = q025, ymax = q975, group = variable, color = variable)) +
   geom_hline(yintercept = 0, linetype = 'dotted') +
   geom_errorbar(position = position_dodge(width = 0.1), width = 0.2) +
   geom_point(position = position_dodge(width = 0.1)) +
   theme_classic() +
   ggtitle('Symmetry of total growth and total incoming energy patterns', 'Slope of scaling relationship at 10 cm dbh')
+
+fpfig <- '~/google_drive/ForestLight/figs/lightpowerlaws_feb2019'
+ggsave(file.path(fpfig, 'compareslopes.png'), height = 5, width = 6, dpi = 300)
 
 ###
 # Observed values with fitted lines superimposed (update to Figure 4)

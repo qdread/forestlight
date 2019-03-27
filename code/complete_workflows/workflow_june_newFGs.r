@@ -165,7 +165,8 @@ for (i in 2:3) {
   crowndim <- tp(bcicensusdat[[i]]$dbh_corr) 
   bcicensusdat[[i]]$crownarea <- pi * crowndim$cr^2
   bcicensusdat[[i]]$crownvolume <- crowndim$cV
-  bcicensusdat[[i]] <- transform(bcicensusdat[[i]], light_received = light * crownarea * insol_bci)
+  bcicensusdat[[i]] <- transform(bcicensusdat[[i]], light_received = light * crownarea * insol_bci,
+                                                    light_received_byvolume = light * crownvolume * insol_bci)
   
 }
 
