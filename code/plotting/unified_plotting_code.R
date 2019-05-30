@@ -283,7 +283,7 @@ for (i in dir(fp, pattern = 'pred_|fitted_')) {
   assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
 }
 
-source(file.path(github_path, 'stan/piecewise_workflow/plottingfunctionspiecewise.r'))
+#source(file.path(github_path, 'stan/piecewise_workflow/plottingfunctionspiecewise.r'))
 # Create plots.
 #Model fit 1 = pareto, 1 segment
 #Model Fit 2  = 2 segments, etc
@@ -334,9 +334,10 @@ p <- plot_totalprod(year_to_plot = 1995,
 p
 p <- p +geom_abline(intercept= 2, slope = 0, color ="gray72",linetype="dashed", size=.75)
 p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
 
-pdf(file.path(gdrive_path,'Figures/Fig_3/Total_Production.pdf'))
+pdf(file.path(gdrive_path,'Figures/Fig_3/Total_Production2.pdf'))
 plot(p1)
 dev.off()
 
@@ -415,6 +416,12 @@ pdf(file.path(gdrive_path, 'Figures/Fig_4/Growth_per_Light.pdf'))
 plot(p1)
 dev.off()
 
+# growth by light, normalized for volume
+github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
+light_growth <- source(file.path(github_path,'code/plotting/lightdistributionplots.r'))
+github_path
+
+load(file.path(github_path, 'code/plotting/lightdistributionplots.r'))
 ###  Crown Area
 error_bar_width <- 0.13
 p <- crownareabin_2census %>%
