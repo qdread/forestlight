@@ -376,3 +376,15 @@ ggplot(lightpervolprodpervolbins_fg %>% filter(!is.na(fg), !fg %in% 'all')) +
   scale_x_log10(name = exlpv) +
   scale_y_log10(name = exppv) +
   theme_bw() 
+
+str(alltree_light_95)
+# Very simple model
+loglogregressions <- alltree_light_95 %>%
+  #filter(light_received/crownvolume > 10)
+  group_by(fg) %>%
+  do(model = lm(log10(production/crownvolume) ~ log10(light_received/crownvolume), data = .))
+
+lapply(loglogregressions$model, summary)
+
+lm1 <- lm(log10(production/crownvolume) ~ log10(light_received/crownvolume), data = alltree_light_95)
+summary(lm1)
