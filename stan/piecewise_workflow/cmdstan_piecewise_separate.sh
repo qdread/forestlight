@@ -16,21 +16,21 @@ sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density1,NS=1000,NW=
 
 sbatch --export=dumptype=dump,guild=fg1,year=1995,model=density2,NS=1000,NW=5000,seed=211 --time=4:00:00 --job-name=d2_1 fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=fg2,year=1995,model=density2,NS=1000,NW=5000,seed=212 --time=4:00:00 --job-name=d2_2 fitpiecewiseseparate.sb
-sbatch --export=dumptype=dump,guild=fg3,year=1995,model=density2,NS=1000,NW=5000,seed=213 --time=4:00:00 --job-name=d2_3 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=fg3,year=1995,model=density2,NS=1000,NW=5000,seed=213 --time=7-00:00:00 --job-name=d2_3 fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=fg4,year=1995,model=density2,NS=1000,NW=5000,seed=214 --time=4:00:00 --job-name=d2_4 fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=fg5,year=1995,model=density2,NS=1000,NW=5000,seed=215 --time=4:00:00 --job-name=d2_5 fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=unclassified,year=1995,model=density2,NS=1000,NW=5000,seed=216 --time=4:00:00 --job-name=d2_u fitpiecewiseseparate.sb
-sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density2,NS=1000,NW=5000,seed=217 --time=4:00:00 --job-name=d2_a fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density2,NS=1000,NW=5000,seed=217 --time=7-00:00:00 --job-name=d2_a fitpiecewiseseparate.sb
 
 # D3
 
 sbatch --export=dumptype=dump,guild=fg1,year=1995,model=density3,NS=1000,NW=5000,seed=311 --time=4:00:00 --job-name=d3_1 fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=fg2,year=1995,model=density3,NS=1000,NW=5000,seed=312 --time=4:00:00 --job-name=d3_2 fitpiecewiseseparate.sb
-sbatch --export=dumptype=dump,guild=fg3,year=1995,model=density3,NS=1000,NW=5000,seed=313 --time=4:00:00 --job-name=d3_3 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=fg3,year=1995,model=density3,NS=1000,NW=5000,seed=313 --time=7-00:00:00 --job-name=d3_3 fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=fg4,year=1995,model=density3,NS=1000,NW=5000,seed=314 --time=4:00:00 --job-name=d3_4 fitpiecewiseseparate.sb
-sbatch --export=dumptype=dump,guild=fg5,year=1995,model=density3,NS=1000,NW=5000,seed=315 --time=4:00:00 --job-name=d3_5 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=fg5,year=1995,model=density3,NS=1000,NW=5000,seed=315 --time=7-00:00:00 --job-name=d3_5 fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=unclassified,year=1995,model=density3,NS=1000,NW=5000,seed=316 --time=4:00:00 --job-name=d3_u fitpiecewiseseparate.sb
-sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=5000,seed=317 --time=4:00:00 --job-name=d3_a fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=5000,seed=317 --time=7-00:00:00 --job-name=d3_a fitpiecewiseseparate.sb
 
 # P1
 
@@ -46,8 +46,12 @@ sbatch --export=dumptype=dump,guild=alltree,year=1995,model=production1,NS=1000,
 
 sbatch --export=dumptype=dump,guild=fg1,year=1995,model=production2,NS=1000,NW=5000,seed=511 --time=4:00:00 --job-name=p2_1 fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=fg2,year=1995,model=production2,NS=1000,NW=5000,seed=512 --time=4:00:00 --job-name=p2_2 fitpiecewiseseparate.sb
-sbatch --export=dumptype=dump,guild=fg3,year=1995,model=production2,NS=1000,NW=5000,seed=513 --time=4:00:00 --job-name=p2_3 fitpiecewiseseparate.sb
-sbatch --export=dumptype=dump,guild=fg4,year=1995,model=production2,NS=1000,NW=5000,seed=514 --time=4:00:00 --job-name=p2_4 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=fg3,year=1995,model=production2,NS=1000,NW=5000,seed=513 --time=7-00:00:00 --job-name=p2_3 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=fg4,year=1995,model=production2,NS=1000,NW=5000,seed=514 --time=7-00:00:00 --job-name=p2_4 fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=fg5,year=1995,model=production2,NS=1000,NW=5000,seed=515 --time=4:00:00 --job-name=p2_5 fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=unclassified,year=1995,model=production2,NS=1000,NW=5000,seed=516 --time=4:00:00 --job-name=p2_u fitpiecewiseseparate.sb
-sbatch --export=dumptype=dump,guild=alltree,year=1995,model=production2,NS=1000,NW=5000,seed=517 --time=4:00:00 --job-name=p2_a fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=production2,NS=1000,NW=5000,seed=517 --time=7-00:00:00 --job-name=p2_a fitpiecewiseseparate.sb
+
+# Rerun unfinished jobs (chains that got stuck).
+sbatch --export=dumptype=dump,guild=fg5,year=1995,model=density3,NS=1000,NW=5000,seed=3151 --time=7-00:00:00 --job-name=d3_5 --array=1 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=5000,seed=3172 --time=7-00:00:00 --job-name=d3_a --array=1 fitpiecewiseseparate.sb
