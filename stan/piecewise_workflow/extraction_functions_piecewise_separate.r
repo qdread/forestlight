@@ -327,12 +327,12 @@ extract_density <- function(dens_model, fg, year, xmin, n, use_subset = FALSE, n
   # Get WAIC and LOOIC
   ll_dens <- extract_log_lik(fit[['density']], 'log_lik')
   print('Calculating WAIC . . .')
-  waic_dens <- waic(ll_dens)
+  waic_dens <- waic(ll_dens)$estimates
   print('Calculating LOOIC . . .')
-  loo_dens <- loo(ll_dens)
+  loo_dens <- loo(ll_dens)$estimates
 
-  list(waic_dens = waic_dens, 
-       loo_dens = loo_dens, 
+  list(waic = waic_dens, 
+       loo = loo_dens, 
        param_cis = param_cis, 
        pred_interval = pred_interval,
 	   fitted_slopes = fitted_slopes)
@@ -371,9 +371,9 @@ extract_production <- function(prod_model, fg, year, xmin, n, total_production, 
   # Get WAIC and LOOIC
   ll_prod <- extract_log_lik(fit[['production']], 'log_lik')
   print('Calculating WAIC . . .')
-  waic_prod <- waic(ll_prod)
+  waic_prod <- waic(ll_prod)$estimates
   print('Calculating LOOIC . . .')
-  loo_prod <- loo(ll_prod)
+  loo_prod <- loo(ll_prod)$estimates
   
   # Calculate R-squared
   print('Calculating Bayesian R-squared . . .')
@@ -384,8 +384,8 @@ extract_production <- function(prod_model, fg, year, xmin, n, total_production, 
   
   r2s <- bayesian_rsquared_production(fit[['production']], x, y, prod_model)
   
-  list(waic_prod = waic_prod, 
-       loo_prod = loo_prod, 
+  list(waic = waic_prod, 
+       loo = loo_prod, 
        param_cis = param_cis, 
        pred_interval = pred_interval,
 	   fitted_slopes = fitted_slopes,

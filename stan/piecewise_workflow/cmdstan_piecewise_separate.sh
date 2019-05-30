@@ -54,4 +54,4 @@ sbatch --export=dumptype=dump,guild=alltree,year=1995,model=production2,NS=1000,
 
 # Rerun unfinished jobs (chains that got stuck).
 sbatch --export=dumptype=dump,guild=fg5,year=1995,model=density3,NS=1000,NW=5000,seed=3151 --time=7-00:00:00 --job-name=d3_5 --array=1 fitpiecewiseseparate.sb
-sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=5000,seed=3172 --time=7-00:00:00 --job-name=d3_a --array=1 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=5000,seed=666 --time=7-00:00:00 --job-name=d3_a --array=1 fitpiecewiseseparate.sb

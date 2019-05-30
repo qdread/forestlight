@@ -40,16 +40,11 @@ fit_info_list <- map(1:nrow(mod_df), function(i) {
 
 # Extract WAIC and LOOIC for density and production from each one.
 # ----------------------------------------------------------------
+
 get_ics <- function(x) {
-  ic_stats <- c('elpd_', 'p_', '', 'se_elpd_', 'se_p_', 'se_') # Names of stats to extract from each model fit
-  wd <- unname(do.call(c, x$waic_dens[paste0(ic_stats, 'waic')]))
-  wp <- unname(do.call(c, x$waic_prod[paste0(ic_stats, 'waic')]))
-  ld <- unname(do.call(c, x$loo_dens[paste0(ic_stats, 'looic')]))
-  lp <- unname(do.call(c, x$loo_prod[paste0(ic_stats, 'looic')]))
-  out <- data.frame(variable = c('density', 'production'),
-             criterion = c('WAIC','WAIC','LOOIC','LOOIC'),
-             rbind(wd, wp, ld, lp))
-  setNames(out, nm = c('variable','criterion','elpd','p','ic','se_elpd','se_p','se_ic'))
+	ics <- data.frame(IC_value = c(x$waic['waic','Estimate'], x$loo['looic','Estimate']),
+					  IC_stderr = c(x$waic['waic','SE'], x$loo['looic','SE']))
+	return(ics)
 }
 
 idx <- which(mod_df$variable %in% c('density', 'production'))

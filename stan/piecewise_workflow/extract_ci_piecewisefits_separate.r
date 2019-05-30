@@ -50,7 +50,7 @@ mod_df <- mod_df %>%
 dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
 
 
-registerDoParallel(cores = 4)
+registerDoParallel(cores = 8)
 
 tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 
