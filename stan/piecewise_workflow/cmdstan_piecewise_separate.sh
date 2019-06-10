@@ -52,6 +52,41 @@ sbatch --export=dumptype=dump,guild=fg5,year=1995,model=production2,NS=1000,NW=5
 sbatch --export=dumptype=dump,guild=unclassified,year=1995,model=production2,NS=1000,NW=5000,seed=516 --time=4:00:00 --job-name=p2_u fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=alltree,year=1995,model=production2,NS=1000,NW=5000,seed=517 --time=7-00:00:00 --job-name=p2_a fitpiecewiseseparate.sb
 
+# Additional chains to rerun
+# ==========================
+
 # Rerun unfinished jobs (chains that got stuck).
 sbatch --export=dumptype=dump,guild=fg5,year=1995,model=density3,NS=1000,NW=5000,seed=3151 --time=7-00:00:00 --job-name=d3_5 --array=1 fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=5000,seed=666 --time=7-00:00:00 --job-name=d3_a --array=1 fitpiecewiseseparate.sb
+
+# More chains that got stuck (see traceplots)
+sbatch --export=dumptype=dump,guild=fg3,year=1995,model=density3,NS=1000,NW=5000,seed=3131 --time=7-00:00:00 --job-name=d3_3 --array=2 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density2,NS=1000,NW=5000,seed=2171 --time=7-00:00:00 --job-name=d2_a fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=fg4,year=1995,model=density3modprior,NS=1000,NW=5000,seed=3141 --time=4:00:00 --job-name=d3_4 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=5000,seed=6 --time=7-00:00:00 --job-name=d3_a fitpiecewiseseparate.sb
+
+# This chain just got stuck
+sbatch --export=dumptype=dump,guild=fg3,year=1995,model=density3,NS=1000,NW=5000,seed=3132 --time=7-00:00:00 --job-name=d3_3 --array=2 fitpiecewiseseparate.sb
+
+sbatch --export=dumptype=dump,guild=fg4,year=1995,model=density3modprior,NS=1000,NW=10000,seed=6 --time=8:00:00 --job-name=d3_4 fitpiecewiseseparate.sb
+
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density2,NS=1000,NW=7500,seed=99 --time=7-00:00:00 --job-name=d2_a fitpiecewiseseparate.sb
+
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=5000,seed=20 --time=7-00:00:00 --job-name=d3_a --array=3 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=5000,seed=61 --time=7-00:00:00 --job-name=d3_a --array=1 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=5000,seed=60 --time=7-00:00:00 --job-name=d3_a --array=2 fitpiecewiseseparate.sb
+
+# Runs for June 6th.
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density2,NS=1000,NW=7500,seed=100 --time=7-00:00:00 --job-name=d2_a --array=2 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=7500,seed=200 --time=7-00:00:00 --job-name=d3_a --array=1-3 fitpiecewiseseparate.sb
+
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=7500,seed=208 --time=7-00:00:00 --job-name=d3_a --array=1 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=7500,seed=200 --time=7-00:00:00 --job-name=d3_a --array=2 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=7500,seed=204 --time=7-00:00:00 --job-name=d3_a --array=3 fitpiecewiseseparate.sb
+
+
+# Ensure that the modified prior ones replace the old ones for FG4, D3.
+mv fit_density3modprior_fg4_1995_1.csv fit_density3_fg4_1995_1.csv
+mv fit_density3modprior_fg4_1995_2.csv fit_density3_fg4_1995_2.csv
+mv fit_density3modprior_fg4_1995_3.csv fit_density3_fg4_1995_3.csv
+
