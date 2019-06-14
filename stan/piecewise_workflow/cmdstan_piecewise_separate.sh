@@ -81,9 +81,11 @@ sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density2,NS=1000,NW=
 sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=7500,seed=200 --time=7-00:00:00 --job-name=d3_a --array=1-3 fitpiecewiseseparate.sb
 
 sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=7500,seed=208 --time=7-00:00:00 --job-name=d3_a --array=1 fitpiecewiseseparate.sb
-sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=7500,seed=200 --time=7-00:00:00 --job-name=d3_a --array=2 fitpiecewiseseparate.sb
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=7500,seed=212 --time=7-00:00:00 --job-name=d3_a --array=2 fitpiecewiseseparate.sb
 sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=7500,seed=204 --time=7-00:00:00 --job-name=d3_a --array=3 fitpiecewiseseparate.sb
 
+# chain 4 to run simultaneously and replace chain 2 if needed
+sbatch --export=dumptype=dump,guild=alltree,year=1995,model=density3,NS=1000,NW=7500,seed=313 --time=7-00:00:00 --job-name=d3_a --array=4 fitpiecewiseseparate.sb
 
 # Ensure that the modified prior ones replace the old ones for FG4, D3.
 mv fit_density3modprior_fg4_1995_1.csv fit_density3_fg4_1995_1.csv

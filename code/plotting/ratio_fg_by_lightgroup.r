@@ -1,6 +1,8 @@
 # Plots of density, growth, total growth, and ratios of different functional groups, split up by light quantile
 # QDR / Forestlight / 10 June 2019
 
+# Modified 11 June 2019: directly regress pca axis 1 on light and size. (see bottom of script)
+
 # Load all the raw data.
 library(tidyverse)
 
@@ -57,14 +59,14 @@ dat95_abundance_ratios <- dat95_binned %>%
   group_by(light_group) %>%
   spread(fg, abundance, fill = 0)  %>%
   mutate(fast_slow_ratio = fg1/fg3,
-         breeder_pioneer_ratio = fg2/fg4)
+         pioneer_breeder_ratio = fg2/fg4)
 
 dat95_production_ratios <- dat95_binned %>%
   select(-abundance) %>%
   group_by(light_group) %>%
   spread(fg, production, fill = 0)  %>%
   mutate(fast_slow_ratio = fg1/fg3,
-         breeder_pioneer_ratio = fg2/fg4)
+         pioneer_breeder_ratio = fg2/fg4)
 
 ratiosbylight1995 <- rbind(data.frame(variable = 'density', dat95_abundance_ratios),
                            data.frame(variable = 'total growth', dat95_production_ratios)) %>%
@@ -77,12 +79,40 @@ ggplot(ratiosbylight1995 %>% filter(is.finite(fast_slow_ratio), fast_slow_ratio 
   geom_point() +
   scale_x_log10(name = 'Diameter (cm)') + scale_y_log10('Fast to slow ratio') +
   theme_bw()
-ggsave(file.path(gdrive_path, 'ForestLight/figs/ratio_bylightenvironment_fasttoslow.pdf'), height = 6, width = 9, )
+ggsave(file.path(gdrive_path, 'ForestLight/figs/ratio_bylightenvironment_fasttoslow.pdf'), height = 6, width = 9)
 
-ggplot(ratiosbylight1995 %>% filter(is.finite(breeder_pioneer_ratio), breeder_pioneer_ratio > 0), aes(x = bin_midpoint, y = breeder_pioneer_ratio)) +
+ggplot(ratiosbylight1995 %>% filter(is.finite(pioneer_breeder_ratio), pioneer_breeder_ratio > 0), aes(x = bin_midpoint, y = pioneer_breeder_ratio)) +
   facet_grid(variable ~ light_group) +
   geom_point() +
-  scale_x_log10(name = 'Diameter (cm)') + scale_y_log10('Breeder to pioneer ratio') +
+  scale_x_log10(name = 'Diameter (cm)') + scale_y_log10('Pioneer to breeder ratio') +
   theme_bw()         
-ggsave(file.path(gdrive_path, 'ForestLight/figs/ratio_bylightenvironment_breedertopioneer.pdf'), height = 6, width = 9, )
+ggsave(file.path(gdrive_path, 'ForestLight/figs/ratio_bylightenvironment_pioneertobreeder.pdf'), height = 6, width = 9)
 
+
+# Regressions with axis X1 ------------------------------------------------
+
+# Slow-fast axis by log dbh
+# Note: this is probably not the greatest statistically speaking because they treat all individuals' PCA scores as independent
+
+fast_by_size <- lm(X1 ~ log10(dbh_corr), data = dat95)
+summary(fast_by_size)
+confint(fast_by_size) # Coefficient on size is between 1.04 and 1.09
+
+fast_by_size_light <- lm(X1 ~ log10(dbh_corr) + log10(light), data = dat95)
+summary(fast_by_size_light)
+confint(fast_by_size_light) # Coefficient on size increases because coefficient on light is actually negative
+
+# What we see is that the larger the tree, the faster the score tends to be. 
+# This is because of the large number of small saplings in the slow grouping.
+# Adding light to the regression makes the trend even stronger. The more light, the slower the score tends to be.
+
+library(lavaan)
+simplemodel <- '
+  X1 ~ light + size
+  light ~ size
+'
+
+semdat <- dat95 %>%
+  transmute(size = log10(dbh_corr), light = log10(light), X1 = X1)
+
+sem1 <- sem(model = simplemodel, data = semdat)
