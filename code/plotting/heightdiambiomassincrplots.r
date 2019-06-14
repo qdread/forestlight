@@ -119,3 +119,47 @@ phex3 <- ggplot(growthdat95, aes(x = dbh_corr, y = height_growth)) +
 pdf(file.path(gdrive_path, 'figs/height_diameter_biomass_increments.pdf'), height = 6, width = 6)
 pbin1; pbin2; pbin3; phex1; phex2; phex3
 dev.off()
+
+
+# Plots with bins, by FG --------------------------------------------------
+
+# Get quantiles from each bin for each fg
+fg_growthdat95_binned <- growthdat95 %>%
+  select(fg, dbh_corr, height_growth, diameter_growth, biomass_growth) %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = bin_edges, include.lowest = TRUE),
+         fg = factor(fg)) %>%
+  gather(variable, growth, -fg, -dbh_corr, -dbh_bin) %>%
+  group_by(fg, dbh_bin, variable) %>%
+  summarize(n = n(),
+            median = quantile(growth, 0.5),
+            minimum = quantile(growth, 0.025),
+            maximum = quantile(growth, 0.975)) %>%
+  filter(n >= 3) %>%
+  mutate(bin_midpoint = bin_midpoints[as.numeric(dbh_bin)])
+
+cols <- c("#BFE046", "#27408b", "#267038", "#87Cefa", "ivory")
+dodge_width <- 0.03
+
+fgpbin1 <- ggplot(fg_growthdat95_binned %>% filter(variable == 'biomass_growth', !is.na(fg)), aes(x = bin_midpoint, y = median, ymin = minimum, ymax = maximum, group = fg, fill = fg)) +
+  geom_errorbar(width = 0, color = 'black', position = position_dodge(width = dodge_width)) +
+  geom_point(pch = 21, position = position_dodge(width = dodge_width)) +
+  scale_x_log10(name = 'Diameter (cm)') +
+  scale_y_log10(name = 'Biomass growth (kg/y)') +
+  scale_fill_manual(values = cols) +
+  theme_bw()
+
+fgpbin2 <- ggplot(fg_growthdat95_binned %>% filter(variable == 'diameter_growth', !is.na(fg)), aes(x = bin_midpoint, y = median, ymin = minimum, ymax = maximum, group = fg, fill = fg)) +
+  geom_errorbar(width = 0, color = 'black', position = position_dodge(width = dodge_width)) +
+  geom_point(pch = 21, position = position_dodge(width = dodge_width)) +
+  scale_x_log10(name = 'Diameter (cm)') +
+  scale_y_log10(name = 'Diameter growth (cm/y)') +
+  scale_fill_manual(values = cols) +
+  theme_bw()
+
+fgpbin3 <- ggplot(fg_growthdat95_binned %>% filter(variable == 'height_growth', !is.na(fg)), aes(x = bin_midpoint, y = median, ymin = minimum, ymax = maximum, group = fg, fill = fg)) +
+  geom_errorbar(width = 0, color = 'black', position = position_dodge(width = dodge_width)) +
+  geom_point(pch = 21, position = position_dodge(width = dodge_width)) +
+  scale_x_log10(name = 'Diameter (cm)') +
+  scale_y_log10(name = 'Height growth (m/y)') +
+  scale_fill_manual(values = cols) +
+  theme_bw()
