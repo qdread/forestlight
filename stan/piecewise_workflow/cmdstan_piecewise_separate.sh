@@ -115,27 +115,6 @@ sbatch --export=scaling=rawlightscaling,dumptype=dump,guild=fg5,year=1995,model=
 sbatch --export=scaling=rawlightscaling,dumptype=dump,guild=unclassified,year=1995,model=production2,NS=1000,NW=5000,seed=1116 --time=4:00:00 --job-name=l2_u fitpiecewisegeneral.sb
 sbatch --export=scaling=rawlightscaling,dumptype=dump,guild=alltree,year=1995,model=production2,NS=1000,NW=5000,seed=1117 --time=7-00:00:00 --job-name=l2_a fitpiecewisegeneral.sb
 
-# Individual power laws: DIAMETER (x) AND CROWN VOLUME (y)
-# ========================================================
-
-# 1 segment
-
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=fg1,year=1995,model=production1,NS=1000,NW=5000,seed=811 --time=4:00:00 --job-name=v1_1 fitpiecewisegeneral.sb
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=fg2,year=1995,model=production1,NS=1000,NW=5000,seed=812 --time=4:00:00 --job-name=v1_2 fitpiecewisegeneral.sb
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=fg3,year=1995,model=production1,NS=1000,NW=5000,seed=813 --time=4:00:00 --job-name=v1_3 fitpiecewisegeneral.sb
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=fg4,year=1995,model=production1,NS=1000,NW=5000,seed=814 --time=4:00:00 --job-name=v1_4 fitpiecewisegeneral.sb
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=fg5,year=1995,model=production1,NS=1000,NW=5000,seed=815 --time=4:00:00 --job-name=v1_5 fitpiecewisegeneral.sb
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=unclassified,year=1995,model=production1,NS=1000,NW=5000,seed=816 --time=4:00:00 --job-name=v1_u fitpiecewisegeneral.sb
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=alltree,year=1995,model=production1,NS=1000,NW=5000,seed=817 --time=4:00:00 --job-name=v1_a fitpiecewisegeneral.sb
-
-# 2 segment
-
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=fg1,year=1995,model=production2,NS=1000,NW=5000,seed=911 --time=4:00:00 --job-name=v2_1 fitpiecewisegeneral.sb
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=fg2,year=1995,model=production2,NS=1000,NW=5000,seed=912 --time=4:00:00 --job-name=v2_2 fitpiecewisegeneral.sb
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=fg3,year=1995,model=production2,NS=1000,NW=5000,seed=913 --time=7-00:00:00 --job-name=v2_3 fitpiecewisegeneral.sb
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=fg4,year=1995,model=production2,NS=1000,NW=5000,seed=914 --time=7-00:00:00 --job-name=v2_4 fitpiecewisegeneral.sb
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=fg5,year=1995,model=production2,NS=1000,NW=5000,seed=915 --time=4:00:00 --job-name=v2_5 fitpiecewisegeneral.sb
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=unclassified,year=1995,model=production2,NS=1000,NW=5000,seed=916 --time=4:00:00 --job-name=v2_u fitpiecewisegeneral.sb
-sbatch --export=scaling=volumescaling,dumptype=dump,guild=alltree,year=1995,model=production2,NS=1000,NW=5000,seed=917 --time=7-00:00:00 --job-name=v2_a fitpiecewisegeneral.sb
-
-
+# Ones that did not converge (rerun)
+# Light: FG2, 2 segments. 2&3
+sbatch --export=scaling=rawlightscaling,dumptype=dump,guild=fg2,year=1995,model=production2,NS=1000,NW=5000,seed=1912 --time=4:00:00 --job-name=l2_2 --array=2-3 fitpiecewisegeneral.sb

@@ -7,6 +7,10 @@
 
 
 # Alternate version created 30 May 2019 for fits where density and production are done separately.
+# Modified 17 June 2019 to do separate extractions for the ones where (a) crown volume and (b) incoming light are used as the y variables instead of production.
+
+# DENSITY - PRODUCTION SCALINGS
+# =============================
 
 source('~/forestlight/stancode/extraction_functions_piecewise_separate.r')
 
@@ -86,3 +90,73 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 	message('Fit ', i, ' saved')
 
 }
+
+# DENSITY - INCOMING LIGHT SCALINGS
+# =================================
+
+source('~/forestlight/stancode/extraction_functions_piecewise_separate.r')
+
+library(purrr)
+library(dplyr)
+library(foreach)
+library(doParallel)
+
+prod_df <- expand.grid(variable = 'production',
+					   dens_model = as.numeric(NA),
+					   prod_model = 1:2,
+					   fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
+					   year = 1995,
+					   stringsAsFactors = FALSE)
+					   					   
+mod_df <- expand.grid(variable = 'total_production',
+					  dens_model = 1:3,
+                      prod_model = 1:2,
+                      fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
+                      year = 1995, 
+                      stringsAsFactors = FALSE)
+
+mod_df <- rbind(prod_df, mod_df)
+					  
+min_n <- read.csv('~/forestlight/stanrdump/min_n.csv', stringsAsFactors = FALSE)
+
+total_prod <- read.csv('~/forestlight/stanrdump/lightrec_total.csv', stringsAsFactors = FALSE)
+
+mod_df <- mod_df %>%
+  left_join(total_prod) %>%
+  rename(total_production = light_received) %>%
+  left_join(min_n)
+
+dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
+
+
+registerDoParallel(cores = 8)
+
+tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
+
+	if (mod_df$variable[i] == 'production') {
+		fit_info <- extract_production(prod_model = mod_df$prod_model[i],
+									fg = mod_df$fg[i],
+									year = mod_df$year[i],
+									xmin = mod_df$xmin[i],
+									n = mod_df$n[i],
+									total_production = mod_df$total_production[i],
+									infix = 'rawlightscaling_',
+									use_subset = FALSE)
+	}
+	if (mod_df$variable[i] == 'total_production') {
+		fit_info <- extract_totalproduction(dens_model = mod_df$dens_model[i],
+									prod_model = mod_df$prod_model[i],
+									fg = mod_df$fg[i],
+									year = mod_df$year[i],
+									xmin = mod_df$xmin[i],
+									n = mod_df$n[i],
+									total_production = mod_df$total_production[i],
+									infix = 'rawlightscaling_',
+									use_subset = FALSE)
+	}
+
+	save(fit_info, file = paste0('~/forestlight/stanoutput/fitinfo/lightpw_info_',mod_df$variable[i],'_',i,'.r'))
+	message('Fit ', i, ' saved')
+
+}
+

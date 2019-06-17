@@ -3,6 +3,10 @@
 # Version created for piecewise. Only done 1995.
 
 # Alternate version created for the ones where density and production are fit separately.
+# Edited 17 June 2019 to accommodate the ones with total light and crown volume used as scaling.
+
+# DENSITY-PRODUCTION SCALINGS
+# ===========================
 
 fp <- '~/forestlight/stanoutput/fitinfo'
 
@@ -82,3 +86,68 @@ r2s <- do.call(rbind, map(fit_info_list[idx_p], 'r2s'))
 r2s <- cbind(prod_df, r2s)
 
 write.csv(r2s, file = '~/forestlight/newpiecewise_r2_by_fg.csv', row.names = FALSE)
+
+
+# DENSITY-TOTAL LIGHT SCALINGS
+# ============================
+
+mod_df <- rbind(prod_df, totalprod_df)
+					  
+
+fit_info_list <- map(1:nrow(mod_df), function(i) {
+  load(file.path(fp, paste0('lightpw_info_',mod_df$variable[i],'_',i,'.r')))
+  fit_info
+})
+
+# Extract WAIC and LOOIC for total light from each one.
+# ----------------------------------------------------------------
+
+get_ics <- function(x) {
+	ics <- data.frame(criterion = c('WAIC', 'LOOIC'),
+					  IC_value = c(x$waic['waic','Estimate'], x$loo['looic','Estimate']),
+					  IC_stderr = c(x$waic['waic','SE'], x$loo['looic','SE']))
+	return(ics)
+}
+
+idx <- which(mod_df$variable %in% c('production'))
+fit_ics <- map_dfr(fit_info_list[idx], get_ics)
+fit_ics <- cbind(mod_df[idx,][rep(1:nrow(mod_df[idx,]), each=2),], fit_ics)
+fit_ics$variable <- 'incoming light individual'
+write.csv(fit_ics, file = '~/forestlight/light_piecewise_ics_by_fg.csv', row.names = FALSE)
+
+# Combine parameter credible intervals into single data frame.
+# ------------------------------------------------------------
+
+param_cis <- map_dfr(fit_info_list[idx], 'param_cis')
+param_cis$variable <- 'incoming light individual'
+
+write.csv(param_cis, file = '~/forestlight/light_piecewise_paramci_by_fg.csv', row.names = FALSE)
+
+# Combine predicted values into single data frame.
+# ------------------------------------------------
+
+pred_values <- map_dfr(fit_info_list, 'pred_interval')
+pred_values$variable <- factor(pred_values$variable, levels = c('production', 'production_fitted', 'total_production', 'total_production_fitted'), labels = c('incoming_light', 'incoming_light_fitted', 'total_incoming_light', 'total_incoming_light_fitted'))
+
+write.csv(pred_values, file = '~/forestlight/light_piecewise_ci_by_fg.csv', row.names = FALSE)
+
+# Combine fitted slopes into single data frame.
+# ---------------------------------------------
+
+fitted_slopes <- map_dfr(fit_info_list, 'fitted_slopes')
+fitted_slopes$variable <- factor(fitted_slopes$variable, levels = c('production', 'total_production'), labels = c('incoming_light', 'total_incoming_light'))
+
+write.csv(fitted_slopes, file = '~/forestlight/light_piecewise_fitted_slopes_by_fg.csv', row.names = FALSE)
+
+# Combine R-squared values into single data frame.
+# ------------------------------------------------
+
+idx_p <- which(mod_df$variable %in% c('production'))
+r2s <- do.call(rbind, map(fit_info_list[idx_p], 'r2s'))
+r2s <- cbind(prod_df, r2s)
+r2s$variable <- 'incoming light individual'
+
+write.csv(r2s, file = '~/forestlight/lightpiecewise_r2_by_fg.csv', row.names = FALSE)
+
+
+
