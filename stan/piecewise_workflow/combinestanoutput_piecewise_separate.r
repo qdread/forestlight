@@ -34,7 +34,7 @@ mod_df <- rbind(dens_df, prod_df, totalprod_df)
 					  
 
 fit_info_list <- map(1:nrow(mod_df), function(i) {
-  load(file.path(fp, paste0('pw_info_'mod_df$variable[i],'_',i,'.r')))
+  load(file.path(fp, paste0('pw_info_',mod_df$variable[i],'_',i,'.r')))
   fit_info
 })
 
@@ -42,14 +42,15 @@ fit_info_list <- map(1:nrow(mod_df), function(i) {
 # ----------------------------------------------------------------
 
 get_ics <- function(x) {
-	ics <- data.frame(IC_value = c(x$waic['waic','Estimate'], x$loo['looic','Estimate']),
+	ics <- data.frame(criterion = c('WAIC', 'LOOIC'),
+					  IC_value = c(x$waic['waic','Estimate'], x$loo['looic','Estimate']),
 					  IC_stderr = c(x$waic['waic','SE'], x$loo['looic','SE']))
 	return(ics)
 }
 
 idx <- which(mod_df$variable %in% c('density', 'production'))
 fit_ics <- map_dfr(fit_info_list[idx], get_ics)
-fit_ics <- cbind(mod_df[idx,][rep(1:nrow(mod_df[idx,]), each=4),], fit_ics)
+fit_ics <- cbind(mod_df[idx,][rep(1:nrow(mod_df[idx,]), each=2),], fit_ics)
 write.csv(fit_ics, file = '~/forestlight/newpiecewise_ics_by_fg.csv', row.names = FALSE)
 
 # Combine parameter credible intervals into single data frame.
@@ -64,14 +65,14 @@ write.csv(param_cis, file = '~/forestlight/newpiecewise_paramci_by_fg.csv', row.
 
 pred_values <- map_dfr(fit_info_list, 'pred_interval')
 
-write.csv(pred_values, file = '~/forestlight/piecewise_ci_by_fg.csv', row.names = FALSE)
+write.csv(pred_values, file = '~/forestlight/newpiecewise_ci_by_fg.csv', row.names = FALSE)
 
 # Combine fitted slopes into single data frame.
 # ---------------------------------------------
 
 fitted_slopes <- map_dfr(fit_info_list, 'fitted_slopes')
 
-write.csv(fitted_slopes, file = '~/forestlight/piecewise_fitted_slopes_by_fg.csv', row.names = FALSE)
+write.csv(fitted_slopes, file = '~/forestlight/newpiecewise_fitted_slopes_by_fg.csv', row.names = FALSE)
 
 # Combine R-squared values into single data frame.
 # ------------------------------------------------
