@@ -10,8 +10,7 @@ github_path <- '~/Documents/GitHub/forestlight'
 gdrive_path <- '/Users/jgradym/Google Drive/ForestLight'
 github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
 
-library(ggplot2)
-library(dplyr)
+library(tidyverse)
 library(egg)
 library(scales)
 
@@ -92,7 +91,7 @@ dev.off()
 
 # Define plotting functions -----
 
-
+geom_size = 4
 # Plot single model fit with multiple functional groups for density
 plot_dens <- function(year_to_plot = 1995,
                       fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
@@ -105,7 +104,7 @@ plot_dens <- function(year_to_plot = 1995,
                       fill_names = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "ivory"),
                       fill_names0 = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
                       x_name = 'Diameter (cm)',
-                      y_name = expression(paste('Density (trees ha'^-1,'cm'^-1,')')),
+                      y_name = expression(paste('Density (n ha'^-1,'cm'^-1,')')),
                       obsdat = obs_dens,
                       preddat = pred_dens
 ) {
@@ -155,8 +154,8 @@ plot_prod <- function(year_to_plot = 1995,
                       y_breaks,
                       fill_names = c("#BFE046", "#267038", "#27408b", "#87Cefa", "ivory"),
                       fill_names0 = c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
-                      #x_name = 'Diameter (cm)',
-                      y_name = expression(paste('Production (kg y'^-1,')')),
+                      x_name = 'Diameter (cm)',
+                      y_name = expression(paste('Growth (kg y'^-1,')')),
                       average = 'mean',
                       error_quantiles = c('ci_min', 'ci_max'),
                       error_bar_width = 0.03,
@@ -223,7 +222,7 @@ plot_totalprod <- function(year_to_plot = 1995,
                            fill_names = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "ivory"),
                            fill_names0 = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
                            x_name = 'Diameter (cm)',
-                           y_name = expression(paste('Total production (kg ha'^-1,' y'^-1,')')),
+                           y_name = expression(paste('Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),
                            obsdat = obs_totalprod,
                            preddat = fitted_totalprod
 ) {
@@ -287,7 +286,7 @@ for (i in dir(fp, pattern = 'pred_|fitted_')) {
 # Create plots.
 #Model fit 1 = pareto, 1 segment
 #Model Fit 2  = 2 segments, etc
-geom_size = 4
+
 
 p <- plot_dens(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
@@ -318,7 +317,7 @@ p <- plot_prod(year_to_plot = 1995,
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
-pdf(file.path(gdrive_path,'Figures/Fig_3/Production.pdf'))
+pdf(file.path(gdrive_path,'Figures/Fig_3/Growth.pdf'))
 plot(p1)
 dev.off()
 
@@ -332,12 +331,12 @@ p <- plot_totalprod(year_to_plot = 1995,
                y_labels = c(0.1, 1, 10, 100),
                preddat = fitted_totalprod)
 p
-p <- p +geom_abline(intercept= 2, slope = 0, color ="gray72",linetype="dashed", size=.75)
+p <- p + geom_abline(intercept= 2, slope = 0, color ="gray72",linetype="dashed", size=.75)
 p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+#p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
 
-pdf(file.path(gdrive_path,'Figures/Fig_3/Total_Production2.pdf'))
+pdf(file.path(gdrive_path,'Figures/Fig_3/Total_Production.pdf'))
 plot(p1)
 dev.off()
 
