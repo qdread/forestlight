@@ -32,3 +32,25 @@ dbh_rad_slope <- 0.658
 dbh_vol_slope <- 2.02
 
 dbh_vol_slope - 2*dbh_rad_slope # Should be exactly equal to the difference between the two regression slopes. Works out.
+
+# Save the fitted values, with intervals, to a CSV to load and plot.
+dbh_pred <- exp(seq(log(1.1), log(315), length.out = 101))
+pred_area <- fitted(reg_area, newdata = data.frame(dbh = dbh_pred), summary = TRUE)
+pred_area <- data.frame(dbh = dbh_pred, fitted = 10^pred_area[,'Estimate'], cimin = 10^pred_area[,'Q2.5'], cimax = 10^pred_area[,'Q97.5'])
+
+ggplot(regdata, aes(x=dbh, y=light_area)) + geom_point(alpha = 0.05) + scale_x_log10() + scale_y_log10() +
+  geom_line(data = pred_area, aes(x=dbh, y=fitted), size = 1, color = 'red') +
+  geom_line(data = pred_area, aes(x=dbh, y=cimin), linetype = 'dotted', color = 'red') +
+  geom_line(data = pred_area, aes(x=dbh, y=cimax), linetype = 'dotted', color = 'red') 
+
+
+pred_volume <- fitted(reg_volume, newdata = data.frame(dbh = dbh_pred), summary = TRUE)
+pred_volume <- data.frame(dbh = dbh_pred, fitted = 10^pred_volume[,'Estimate'], cimin = 10^pred_volume[,'Q2.5'], cimax = 10^pred_volume[,'Q97.5'])
+
+ggplot(regdata, aes(x=dbh, y=light_volume)) + geom_point(alpha = 0.05) + scale_x_log10() + scale_y_log10() +
+  geom_line(data = pred_volume, aes(x=dbh, y=fitted), size = 1, color = 'red') +
+  geom_line(data = pred_volume, aes(x=dbh, y=cimin), linetype = 'dotted', color = 'red') +
+  geom_line(data = pred_volume, aes(x=dbh, y=cimax), linetype = 'dotted', color = 'red') 
+
+write.csv(pred_area, '~/google_drive/ForestLight/data/fig5areafit.csv', row.names = FALSE)
+write.csv(pred_volume, '~/google_drive/ForestLight/data/fig5volumefit.csv', row.names = FALSE)
