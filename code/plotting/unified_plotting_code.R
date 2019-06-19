@@ -124,7 +124,7 @@ plot_dens <- function(year_to_plot = 1995,
   
   preddat <- preddat %>%
     left_join(obs_limits) %>%
-    filter(dens_model %in% model_fit, prod_model == 2, fg %in% fg_names, year == year_to_plot) %>%
+    filter(dens_model %in% model_fit, fg %in% fg_names, year == year_to_plot) %>%
     filter_at(vars(starts_with('q')), all_vars(. > min(y_limits))) %>%
     filter(dbh >= min_obs & dbh <= max_obs) 
   
@@ -180,7 +180,7 @@ plot_prod <- function(year_to_plot = 1995,
   
   preddat <- preddat %>%
     left_join(obs_limits) %>%
-    filter(prod_model %in% model_fit, dens_model == 1, fg %in% fg_names, year == year_to_plot) %>%
+    filter(prod_model %in% model_fit, fg %in% fg_names, year == year_to_plot) %>%
     filter_at(vars(starts_with('q')), all_vars(. > min(y_limits))) %>%
     filter(dbh >= min_obs & dbh <= max_obs)
   
