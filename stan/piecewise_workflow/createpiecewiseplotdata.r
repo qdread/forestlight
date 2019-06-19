@@ -2,7 +2,7 @@
 
 library(dplyr)
 
-ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/piecewise_ci_by_fg.csv', stringsAsFactors = FALSE)
+ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/newpiecewise_ci_by_fg.csv', stringsAsFactors = FALSE)
 area_core <- 42.84
 
 ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
