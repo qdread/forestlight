@@ -118,3 +118,6 @@ sbatch --export=scaling=rawlightscaling,dumptype=dump,guild=alltree,year=1995,mo
 # Ones that did not converge (rerun)
 # Light: FG2, 2 segments. 2&3
 sbatch --export=scaling=rawlightscaling,dumptype=dump,guild=fg2,year=1995,model=production2,NS=1000,NW=5000,seed=1912 --time=4:00:00 --job-name=l2_2 --array=2-3 fitpiecewisegeneral.sb
+
+# FG all, 2 segments, do all chains to see if they finish faster with different initial values.
+sbatch --export=scaling=rawlightscaling,dumptype=dump,guild=alltree,year=1995,model=production2,NS=1000,NW=5000,seed=2117 --time=7-00:00:00 --job-name=l2_a --array=4-6 fitpiecewisegeneral.sb
