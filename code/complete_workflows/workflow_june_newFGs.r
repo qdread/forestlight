@@ -493,20 +493,20 @@ binscore <- function(dat, bindat, score_column, class_column) {
 }
 
 
-totalprodbin_byyear_bydiam <- lapply(fgdat, function(w) lapply(w[2:3], function(z) logbin_setedges(x = z$dbh_corr, y = z$production, edges = dbhbin_allclassified)))
+totalprodbin_byyear_bydiam <- lapply(fgdat, function(w) lapply(w[2:6], function(z) logbin_setedges(x = z$dbh_corr, y = z$production, edges = dbhbin_allclassified)))
 
-densitybin_byyear_bydiam <- lapply(fgdat, function(w) lapply(w[2:3], function(z) logbin_setedges(x = z$dbh_corr, y = NULL, edges = dbhbin_allclassified)))
+densitybin_byyear_bydiam <- lapply(fgdat, function(w) lapply(w[2:6], function(z) logbin_setedges(x = z$dbh_corr, y = NULL, edges = dbhbin_allclassified)))
 
-totalprodbin_byyear_bylight <- lapply(fgdat, function(w) lapply(w[2:3], function(z) logbin_setedges(x = z$light_received/z$crownarea, y = z$production, edges = light_per_area_bins_allclassified)))
+totalprodbin_byyear_bylight <- lapply(fgdat, function(w) lapply(w[2:6], function(z) logbin_setedges(x = z$light_received/z$crownarea, y = z$production, edges = light_per_area_bins_allclassified)))
 
-densitybin_byyear_bylight <- lapply(fgdat, function(w) lapply(w[2:3], function(z) logbin_setedges(x = z$light_received/z$crownarea, y = NULL, edges = light_per_area_bins_allclassified)))
+densitybin_byyear_bylight <- lapply(fgdat, function(w) lapply(w[2:6], function(z) logbin_setedges(x = z$light_received/z$crownarea, y = NULL, edges = light_per_area_bins_allclassified)))
 
 # Breeder to pioneer by diameter
 breeder_stats_bydiam <- list() # fg4 to fg2
 
-for (i in 1:2) {
+for (i in 1:5) {
   breeder_stats_bydiam[[i]] <- data.frame(bin = 1:numbins,
-                                    year = c(1990,1995)[i],
+                                    year = c(1990,1995,2000,2005,2010)[i],
                                     breeder_production_ratio = totalprodbin_byyear_bydiam[[4]][[i]]$bin_value/totalprodbin_byyear_bydiam[[2]][[i]]$bin_value,
                                     breeder_density_ratio = densitybin_byyear_bydiam[[4]][[i]]$bin_value/densitybin_byyear_bydiam[[2]][[i]]$bin_value)  
 }
@@ -516,6 +516,7 @@ breeder_stats_bydiam <- do.call('rbind', breeder_stats_bydiam)
 breeder_stats_bydiam[breeder_stats_bydiam == Inf | is.na(breeder_stats_bydiam)] <- NA
 
 breeder_stats_bydiam_2census <- breeder_stats_bydiam %>% 
+  filter(year %in% c(1990, 1995)) %>%
   group_by(bin) %>%
   summarize(production_ratio_mean = mean(breeder_production_ratio),
             density_ratio_mean = mean(breeder_density_ratio),
@@ -527,6 +528,18 @@ breeder_stats_bydiam_2census <- breeder_stats_bydiam %>%
   cbind(mean_n_individuals = densitybin_byyear_bydiam[[2]][[1]]$bin_count + densitybin_byyear_bydiam[[2]][[2]]$bin_count + densitybin_byyear_bydiam[[4]][[1]]$bin_count + densitybin_byyear_bydiam[[4]][[2]]$bin_count / 2)
 
 breederscore_bin_bydiam_2census <- binscore(dat = alltreedat[2:3], bindat = dbhbin_allclassified, score_column = 'X2', class_column = 'dbh_corr')
+
+breeder_stats_bydiam_5census <- breeder_stats_bydiam %>% 
+  group_by(bin) %>%
+  summarize(production_ratio_mean = mean(breeder_production_ratio),
+            density_ratio_mean = mean(breeder_density_ratio),
+            production_ratio_min = min(breeder_production_ratio),
+            production_ratio_max = max(breeder_production_ratio),
+            density_ratio_min = min(breeder_density_ratio),
+            density_ratio_max = max(breeder_density_ratio)) %>%
+  cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) %>%
+  cbind(mean_n_individuals = densitybin_byyear_bydiam[[2]][[1]]$bin_count + densitybin_byyear_bydiam[[2]][[2]]$bin_count + densitybin_byyear_bydiam[[4]][[1]]$bin_count + densitybin_byyear_bydiam[[4]][[2]]$bin_count / 2)
+
 
 # Breeder to pioneer by light received per unit crown area
 breeder_stats_bylight <- list() # fg2 to fg4
@@ -560,9 +573,9 @@ breederscore_bin_bylight_2census <- binscore(dat = alltreedat[2:3], bindat = lig
 
 fastslow_stats_bydiam <- list() # fg1 to fg3
 
-for (i in 1:2) {
+for (i in 1:5) {
   fastslow_stats_bydiam[[i]] <- data.frame(bin = 1:numbins,
-                                           year = c(1990,1995)[i],
+                                           year = c(1990,1995,2000,2005,2010)[i],
                                            fastslow_production_ratio = totalprodbin_byyear_bydiam[[1]][[i]]$bin_value/totalprodbin_byyear_bydiam[[3]][[i]]$bin_value,
                                            fastslow_density_ratio = densitybin_byyear_bydiam[[1]][[i]]$bin_value/densitybin_byyear_bydiam[[3]][[i]]$bin_value)  
 }
@@ -572,6 +585,18 @@ fastslow_stats_bydiam <- do.call('rbind', fastslow_stats_bydiam)
 fastslow_stats_bydiam[fastslow_stats_bydiam == Inf | is.na(fastslow_stats_bydiam)] <- NA
 
 fastslow_stats_bydiam_2census <- fastslow_stats_bydiam %>% 
+  filter(year %in% c(1990,1995)) %>%
+  group_by(bin) %>%
+  summarize(production_ratio_mean = mean(fastslow_production_ratio),
+            density_ratio_mean = mean(fastslow_density_ratio),
+            production_ratio_min = min(fastslow_production_ratio),
+            production_ratio_max = max(fastslow_production_ratio),
+            density_ratio_min = min(fastslow_density_ratio),
+            density_ratio_max = max(fastslow_density_ratio)) %>%
+  cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) %>%
+  cbind(mean_n_individuals = densitybin_byyear_bydiam[[1]][[1]]$bin_count + densitybin_byyear_bydiam[[1]][[2]]$bin_count + densitybin_byyear_bydiam[[3]][[1]]$bin_count + densitybin_byyear_bydiam[[3]][[2]]$bin_count / 2)
+
+fastslow_stats_bydiam_5census <- fastslow_stats_bydiam %>% 
   group_by(bin) %>%
   summarize(production_ratio_mean = mean(fastslow_production_ratio),
             density_ratio_mean = mean(fastslow_density_ratio),
@@ -614,12 +639,16 @@ fastslowscore_bin_bylight_2census <- binscore(dat = alltreedat[2:3], bindat = li
 
 # Export binned data
 
-fpdata <- 'C:/Users/Q/google_drive/ForestLight/data/data_june2018_alternativecluster'
+fpdata <- '~/google_drive/ForestLight/data/data_june2018_alternativecluster'
 file_names <- c('densitybin_5census', 'indivproductionbin_5census', 'totalproductionbin_5census', 'crownareabin_2census', 'lightreceivedbin_2census', 'indivprodperareabin_2census', 'breeder_stats_bydiam_2census', 'breederscore_bin_bydiam_2census', 'breeder_stats_bylight_2census', 'breederscore_bin_bylight_2census', 'fastslow_stats_bydiam_2census', 'fastslowscore_bin_bydiam_2census', 'fastslow_stats_bylight_2census', 'fastslowscore_bin_bylight_2census')
 
 for (i in file_names) {
   write.csv(get(i), file=file.path(fpdata, paste0(i,'.csv')), row.names = FALSE)
 }
+
+write.csv(fastslow_stats_bydiam_5census, file.path(fpdata, 'fastslow_stats_bydiam_5census.csv'), row.names = FALSE)
+write.csv(breeder_stats_bydiam_5census, file.path(fpdata, 'breeder_stats_bydiam_5census.csv'), row.names = FALSE)
+
 
 save(list = file_names, file = file.path(fpdata, 'bin_object.RData'))
 

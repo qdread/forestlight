@@ -624,6 +624,10 @@ summary(lm1)
 
 ###### Life history Relative Abundance by Size 
 
+# Load the 5 census ones, can be used if needed
+fastslow_stats_bydiam_5census <- read.csv(file.path(gdrive_path, 'data/data_june2018_alternativecluster/fastslow_stats_bydiam_5census.csv'), stringsAsFactors = FALSE)
+breeder_stats_bydiam_5census <- read.csv(file.path(gdrive_path, 'data/data_june2018_alternativecluster/breeder_stats_bydiam_5census.csv'), stringsAsFactors = FALSE)
+
 # Fast vs Slow
 
 # Combine fast-slow and breeder-pioneer to make one plot
