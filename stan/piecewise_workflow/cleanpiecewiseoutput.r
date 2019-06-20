@@ -1,6 +1,8 @@
 # Script to clean up all new piecewise output and put in tidy CSVs
 # QDR / Forestlight / 14 June 2019
 
+# Modified 20 June: add light params and R2s.
+
 library(tidyverse)
 
 params <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/newpiecewise_paramci_by_fg.csv', stringsAsFactors = FALSE)
@@ -87,3 +89,61 @@ ics <- ics %>%
   select(year, variable, fg, model, WAIC, stderr_WAIC)
 
 write.csv(ics, '~/google_drive/ForestLight/data/data_piecewisefits/clean_WAIC_by_functionalgroup.csv', row.names = FALSE)
+
+
+# Individual light output -------------------------------------------------
+
+library(tidyverse)
+
+params <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/totallightscaling/light_piecewise_paramci_by_fg.csv', stringsAsFactors = FALSE)
+
+production_params <- c('beta0','beta1','beta1_low','beta1_high','x0','delta')
+
+# Alternative names.
+production_params_names <- c('intercept', 'slope', 'slope small trees', 'slope large trees', 'cutoff', 'smoothing parameter')
+
+# Full names of functional groups
+fg_full_names <- c('fast', 'large pioneer', 'slow', 'small breeder', 'medium', 'all trees', 'unclassified')
+fgs <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified')
+
+# correct to alternative names
+indivlight_param_df <- params %>%
+  mutate(parameter_description = production_params_names[match(parameter, production_params)],
+         fg = fg_full_names[match(fg, fgs)],
+         model = case_when(model == 1 ~ 'one segment',
+                           model == 2 ~ 'two segment')) %>%
+  select(-parameter) %>%
+  select(year, fg, model, parameter_description, everything())
+
+
+write.csv(indivlight_param_df, '~/google_drive/ForestLight/data/data_piecewisefits/clean_parameters_individuallight.csv', row.names = FALSE)
+
+# Clean output of r-squared for production fits
+r2df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/totallightscaling/light_piecewise_r2_by_fg.csv', stringsAsFactors = FALSE)
+
+r2df <- r2df %>%
+  mutate(
+    model = case_when(prod_model == 1 ~ 'one segment',
+                      prod_model == 2 ~ 'two segment'),
+    fg = fg_full_names[match(fg, fgs)],
+    r2 = paste0(round(q50, 3), ' [', round(q025, 3), ',', round(q975, 3), ']')) %>%
+  select(year, fg, model, r2)
+
+write.csv(r2df, '~/google_drive/ForestLight/data/data_piecewisefits/clean_rsquared_individuallight.csv', row.names = FALSE)
+
+# Clean output of informatiion criteria
+ics <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/totallightscaling/light_piecewise_ics_by_fg.csv', stringsAsFactors = FALSE)
+
+ics <- ics %>%
+  filter(criterion == 'WAIC') %>%
+  mutate(
+    model = case_when(prod_model == 1 ~ 'one segment',
+                      prod_model == 2 ~ 'two segment'
+                      ),
+    fg = fg_full_names[match(fg, fgs)]
+  ) %>%
+  rename(WAIC = IC_value,
+         stderr_WAIC = IC_stderr) %>%
+  select(year, variable, fg, model, WAIC, stderr_WAIC)
+
+write.csv(ics, '~/google_drive/ForestLight/data/data_piecewisefits/clean_WAIC_by_functionalgroup_individuallight.csv', row.names = FALSE)
