@@ -160,3 +160,63 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 
 }
 
+# DENSITY x CROWN VOLUME SCALING
+# FITTED VALUES ONLY
+# ==============================
+
+source('~/forestlight/stancode/extraction_functions_piecewise_separate.r')
+source('~/forestlight/stancode/fittedcrownvolumefunction.r')
+
+library(purrr)
+library(dplyr)
+library(foreach)
+library(doParallel)
+
+mod_df <- expand.grid(variable = 'total_production',
+					  dens_model = 1:3,
+                      fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
+                      year = 1995, 
+                      stringsAsFactors = FALSE)
+					  
+min_n <- read.csv('~/forestlight/stanrdump/min_n.csv', stringsAsFactors = FALSE)
+
+total_prod <- read.csv('~/forestlight/stanrdump/crownvol_total.csv', stringsAsFactors = FALSE)
+
+mod_df <- mod_df %>%
+  left_join(total_prod) %>%
+  rename(total_production = crownvolume) %>%
+  left_join(min_n)
+  
+
+dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
+density_par <- list('1' = c('alpha'),
+					  '2' = c('alpha_low', 'alpha_high', 'tau'),
+					  '3' = c('alpha_low', 'alpha_mid', 'alpha_high', 'tau_low', 'tau_high'),
+					  'w' = c('m','n'),
+					  'ln' = c('mu_logn', 'sigma_logn'))
+
+registerDoParallel(cores = 8)
+
+tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
+	
+  require(rstan)
+  require(Brobdingnag)
+
+  # Load CSVs as stanfit object
+  message('Loading stan fit ', i, ' . . .')
+  files <- paste0('fit_density', mod_df$dens_model[i], '_', mod_df$fg[i], '_1995_', 1:3, '.csv')
+  fit <- list(density = read_stan_csv(file.path('~/forestlight/stanoutput',files)))
+
+  fitted_totalvolume_values <- fitted_totalvolume(fit = fit[['density']], 
+												  dbh_pred = dbh_pred,
+												  dens_form = mod_df$dens_model[i],
+												  total_prod = mod_df$total_production[i],
+												  x_min = mod_df$xmin[i],
+												  n_indiv = mod_df$n[i],
+												  pars_to_get = density_par[[mod_df$dens_model[i]]])
+  
+	save(fitted_totalvolume_values, file = paste0('~/forestlight/stanoutput/fitinfo/volumepw_fittedvalues_',i,'.r'))
+	message('Fit ', i, ' saved')
+
+}
+ 

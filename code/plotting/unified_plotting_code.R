@@ -227,7 +227,8 @@ plot_totalprod <- function(year_to_plot = 1995,
                            x_name = 'Diameter (cm)',
                            y_name = expression(paste('Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),
                            obsdat = obs_totalprod,
-                           preddat = fitted_totalprod
+                           preddat = fitted_totalprod,
+                           plot_abline = TRUE
 ) {
   
   require(dplyr)
@@ -246,9 +247,9 @@ plot_totalprod <- function(year_to_plot = 1995,
     filter_at(vars(starts_with('q')), all_vars(. > min(y_limits))) %>%
     filter(dbh >= min_obs & dbh <= max_obs)
   
-  ggplot() +
+  p <- ggplot() +
     geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
-    geom_abline(intercept= 2, slope = 0, color ="gray72",linetype="dashed", size=.75)+   
+       
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     #geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
     geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
@@ -258,6 +259,8 @@ plot_totalprod <- function(year_to_plot = 1995,
     scale_color_manual(values = fill_names0) + theme_plant + theme(aspect.ratio = 1) +
     scale_fill_manual(values = fill_names) 
   
+  if (plot_abline) p <- p + geom_abline(intercept= 2, slope = 0, color ="gray72",linetype="dashed", size=.75)
+  p
   
 }  
 
@@ -346,6 +349,106 @@ dev.off()
 ########################################################################################
 # ------------------------------- Fig 4 Light Plots ------------------------------------
 ########################################################################################
+
+
+# Section added by QDR 20 June 2019: new plots of total light scalings and total volume scalings, including fits and CIs
+
+# Fitted values for individual light, total light, and total volume
+fp <- file.path(gdrive_path, 'data/data_piecewisefits')
+fitted_indivlight <- read.csv(file.path(fp, 'fitted_indivlight.csv'), stringsAsFactors = FALSE)
+fitted_totallight <- read.csv(file.path(fp, 'fitted_totallight.csv'), stringsAsFactors = FALSE)
+fitted_totalvol <- read.csv(file.path(fp, 'fitted_totalvol.csv'), stringsAsFactors = FALSE)
+
+# Observed (binned) values for 1995 for individual light, total light, and total volume
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
+source(file.path(github_path, 'code/allfunctions27july.r'))
+fp_obs <- file.path(gdrive_path, 'data/data_forplotting_aug2018')
+binedgedata <- read.csv(file.path(fp_obs,'obs_dens.csv'),stringsAsFactors = FALSE) %>% filter(fg == 'all', year == 1995) 
+area_core <- 42.84
+
+totallightbins_all <- with(alltree_light_95, logbin_setedges(x = dbh_corr, y = light_received, edges = binedgedata))
+totalvolbins_all <- with(alltree_light_95, logbin_setedges(x = dbh_corr, y = crownvolume, edges = binedgedata))
+
+totallightbins_fg <- alltree_light_95 %>%
+  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), 'unclassified')) %>%
+  group_by(fg) %>%
+  do(logbin_setedges(x = .$dbh_corr, y = .$light_received, edges = binedgedata)) %>%
+  ungroup %>%
+  rbind(data.frame(fg = 'all', totallightbins_all)) %>%
+  mutate(bin_value = bin_value / area_core, year = 1995)
+totalvolbins_fg <- alltree_light_95 %>%
+  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), 'unclassified')) %>%
+  group_by(fg) %>%
+  do(logbin_setedges(x = .$dbh_corr, y = .$crownvolume, edges = binedgedata)) %>%
+  ungroup %>%
+  rbind(data.frame(fg = 'all', totalvolbins_all)) %>%
+  mutate(bin_value = bin_value / area_core, year = 1995)
+
+indivlightbins_all <- alltree_light_95 %>%
+  mutate(indivlight_bin = cut(dbh_corr, breaks = c(binedgedata$bin_min[1], binedgedata$bin_max), labels = binedgedata$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(indivlight_bin) %>%
+  do(c(n = nrow(.), quantile(.$light_received, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
+indivlightbins_fg <- alltree_light_95 %>%
+  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), 'unclassified')) %>%
+  mutate(indivlight_bin =cut(dbh_corr, breaks = c(binedgedata$bin_min[1], binedgedata$bin_max), labels = binedgedata$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(fg, indivlight_bin) %>%
+  do(c(n = nrow(.), quantile(.$light_received, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
+indivlightbins_fg <- data.frame(fg = 'all', indivlightbins_all, stringsAsFactors = FALSE) %>%
+  rbind(as.data.frame(indivlightbins_fg)) %>%
+  mutate(indivlight_bin = as.numeric(as.character(indivlight_bin))) %>%
+  rename(bin_midpoint = indivlight_bin)
+
+# Plot total light using the "totalprod" function
+plot_totalprod(year_to_plot = 1995,
+               fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
+               model_fit_density = 3, 
+               model_fit_production = 2,
+               x_limits = c(0.9,250),
+               y_limits = c(5, 100000),
+               y_breaks = c(10, 1000, 100000),
+               y_labels = c(10, 1000, 100000),
+               y_name = expression(paste('Total light received (W ha'^-1,')')),
+               preddat = fitted_totallight,
+               obsdat = totallightbins_fg,
+               plot_abline = FALSE)
+
+# Plot total volume using the "totalprod" function
+plot_totalprod(year_to_plot = 1995,
+               fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
+               model_fit_density = 3, 
+               model_fit_production = 2,
+               x_limits = c(0.9,250),
+               y_limits = c(1, 2500),
+               y_breaks = c(1, 10, 1000),
+               y_labels = c(1, 10, 1000),
+               y_name = expression(paste('Total crown volume (m'^3, ' ha'^-1,')')),
+               preddat = fitted_totalvol %>% mutate(prod_model = 2),
+               obsdat = totalvolbins_fg, 
+               plot_abline = FALSE)
+
+# Plot individual light using the modified "prod" function
+source(file.path(github_path, 'code/plotting/plot_prod_fixed.R'))
+
+plot_prod_fixed(year_to_plot = 1995,
+          fg_names = c('fg1','fg2','fg3','fg4','fg5'),
+          model_fit = 2,
+          x_limits = c(1, 280),
+          y_limits = c(10, 1e6),
+          y_breaks = c(10, 1000,1e5),
+          y_labels = c(10,1000,1e5),
+          x_name = 'Diameter (cm)',
+          y_name = 'Individual light received (W)',
+          error_bar_width = 0.01,
+          dodge_width = 0.05,
+          preddat = fitted_indivlight,
+          obsdat = indivlightbins_fg %>% mutate(year = 1995, mean = q50) %>% rename(mean_n_individuals = bin_count))
+
 
 ####### Fig 4a Total Crown Volume ############
 light_growth <- source(file.path(github_path,'code/plotting/lightdistributionplots.r'))

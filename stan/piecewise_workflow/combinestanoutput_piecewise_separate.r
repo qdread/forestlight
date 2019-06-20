@@ -150,4 +150,20 @@ r2s$variable <- 'incoming light individual'
 write.csv(r2s, file = '~/forestlight/light_piecewise_r2_by_fg.csv', row.names = FALSE)
 
 
+# DENSITY x CROWN VOLUME SCALING
+# FITTED VALUES ONLY
+# ==============================
 
+mod_df <- expand.grid(variable = 'total_production',
+					  dens_model = 1:3,
+                      fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
+                      year = 1995, 
+                      stringsAsFactors = FALSE)
+
+fit_info_list <- map(1:nrow(mod_df), function(i) {
+  load(paste0('~/forestlight/stanoutput/fitinfo/volumepw_fittedvalues_',i,'.r'))
+  fitted_totalvolume_values
+})
+
+pred_values <- imap_dfr(fit_info_list, ~ data.frame(mod_df[.y,-1], .x))
+write.csv(pred_values, file = '~/forestlight/volume_piecewise_ci_by_fg.csv', row.names = FALSE)
