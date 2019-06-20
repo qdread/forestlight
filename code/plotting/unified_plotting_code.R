@@ -4,9 +4,12 @@
 
 # Set paths to google drive forest light folder, and github forest light folder
 # All paths below will be relative to these paths.
+
+#Q Dog
 gdrive_path <- '~/google_drive/ForestLight'
 github_path <- '~/Documents/GitHub/forestlight'
 
+#Grady
 gdrive_path <- '/Users/jgradym/Google Drive/ForestLight'
 github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
 
@@ -340,9 +343,41 @@ pdf(file.path(gdrive_path,'Figures/Fig_3/Total_Production.pdf'))
 plot(p1)
 dev.off()
 
-
+########################################################################################
 # ------------------------------- Fig 4 Light Plots ------------------------------------
+########################################################################################
 
+####### Fig 4a Total Crown Volume ############
+light_growth <- source(file.path(github_path,'code/plotting/lightdistributionplots.r'))
+load(file.path(github_path, 'code/plotting/lightdistributionplots.r'))
+###  Crown Area
+error_bar_width <- 0.13
+
+p <- crownvolumebins1995 %>%
+  filter(fg %in% c('all', fg_names), !is.na(bin_value), bin_value > 0) %>%
+  filter(bin_count > 10) %>%
+  mutate(bin_min = ifelse(bin_min == 0, bin_value, bin_min)) %>%
+  mutate(bin_value = bin_value/area_core, bin_min = bin_min/area_core, bin_max = bin_max/area_core) %>%
+  group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
+  ggplot(aes(x = bin_midpoint, y = bin_value, ymin = bin_min, ymax = bin_max, group = fg, fill=fg,color = fg)) +
+  theme_plant+#geom_errorbar(aes(width = width), position=p_dodge) +
+  #geom_abline(intercept=4, slope = -2/3, color ="darkgray",linetype="dashed", size=1.5)+
+  geom_point(shape = 21, size = geom_size,  stroke = .5, color = "black")+
+  scale_x_log10(name = 'Diameter (cm)', limits = c(1, 200), breaks=c(1,3,10,30,100,300)) +  
+  scale_y_log10(limits = c(3, 3000),breaks=c(1, 10, 100, 1000, 10000), labels = signif,
+                #scale_y_log10(labels = trans_format("log10", math_format(10^.x)), #limits = c(.2, 0.6),breaks=c(0.1, 0.2, 0.3, 0.4, 0.6), labels = signif,
+                name = expression(atop('Total Crown Volume',paste('(m'^3, ' ha'^-1,')'))))  +  
+  scale_color_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') +
+  scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
+
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_4/total_crown_vol.pdf'))
+plot(p1)
+dev.off()
+
+##### Fig 4b
 # Load precalculated bin data.
 # Loop through all the csv files and load them into R
 fpdata <- file.path(gdrive_path, 'data/data_june2018_alternativecluster')
@@ -352,8 +387,7 @@ for (i in file_names) {
   assign(i, read.csv(file.path(fpdata, paste0(i,'.csv')), stringsAsFactors = FALSE))
 }
 
-### Light Capture
-# Set options for error bar widths and dodge amounts for all the plots
+
 error_bar_width <- 0.13
 dodge_width <- 0
 
@@ -369,6 +403,10 @@ fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate')
 fg_labels2 <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate','All')
 
 p_dodge <- position_dodge(width = dodge_width)
+
+geom_size = 3.5
+
+##### Fig 4b ########
 
 p <- lightreceivedbin_2census %>%
   filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
@@ -391,7 +429,7 @@ plot(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_4/Total_Light_Capture.pdf'))
 plot(p1)
 dev.off()
-###  Growth vs Light
+###  Individual Growth vs Light [deprecated]
 factor(indivprodperareabin_2census$fg)
 
 p <- indivprodperareabin_2census %>%
@@ -460,32 +498,6 @@ summary(lm1)
 load(file.path(gdrive_path, 'data/area_and_volume_bins_1995.RData'))
 
 
-###  Crown Volume
-
-error_bar_width <- 0.13
-p <- crownvolumebins1995 %>%
-  filter(fg %in% c('all', fg_names), !is.na(bin_value), bin_value > 0) %>%
-  filter(bin_count > 10) %>%
-  mutate(bin_min = ifelse(bin_min == 0, bin_value, bin_min)) %>%
-  mutate(bin_value = bin_value/area_core, bin_min = bin_min/area_core, bin_max = bin_max/area_core) %>%
-  group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
-  ggplot(aes(x = bin_midpoint, y = bin_value, ymin = bin_min, ymax = bin_max, group = fg, fill=fg,color = fg)) +
-  theme_plant+#geom_errorbar(aes(width = width), position=p_dodge) +
-  #geom_abline(intercept=4, slope = -2/3, color ="darkgray",linetype="dashed", size=1.5)+
-  geom_point(shape = 21, size = geom_size,  stroke = .5, color = "black")+
-  scale_x_log10(name = 'Diameter (cm)', limits = c(1, 200), breaks=c(1,3,10,30,100,300)) +  
-  scale_y_log10(limits = c(3, 3000),breaks=c(1, 10, 100, 1000, 10000), labels = signif,
-  #scale_y_log10(labels = trans_format("log10", math_format(10^.x)), #limits = c(.2, 0.6),breaks=c(0.1, 0.2, 0.3, 0.4, 0.6), labels = signif,
-     name = expression(atop('Total Crown Volume',paste('(m'^3, ' ha'^-1,')'))))  +  
-  scale_color_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') +
-  scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
-
-p
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_4/total_crown_vol.pdf'))
-plot(p1)
-dev.off()
 library(broom)
 crownvolumebins1995_mid <- crownvolumebins1995 %>%
   filter(bin_midpoint > 3) %>%
