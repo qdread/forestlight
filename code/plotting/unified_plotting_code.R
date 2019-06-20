@@ -770,55 +770,60 @@ dev.off()
 
 ######################## LOOIC of Piecewise Models  ########################
 
-ics <- read.csv(file.path(fp, 'piecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
+# This section was edited by QDR, 20 Jun 2019, for the updated model fits.
+# We are now using WAIC as the information criterion because the LOOIC unfortunately returned errors for some groups. Results are the same though.
+
+ics <- read.csv(file.path(fp, 'newpiecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
 ics$fg <- factor(ics$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
 
 # Density model
 base_size <- 11
-p <- ggplot(ics %>% filter(prod_model == 1, criterion == 'LOOIC', 
-                           variable == 'density', !fg %in% 'unclassified'), 
-       aes(x = factor(dens_model), y = ic, ymin = ic - se_ic, ymax = ic + se_ic)) +
+p <- ggplot(ics %>% filter(criterion == 'WAIC', 
+                           variable == 'density', !fg %in% 'Unclassified'), 
+       aes(x = factor(dens_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
   facet_wrap(~ fg, labeller = label_value, scales = 'free_y') +
   geom_pointrange() +
   theme_bw(base_size = base_size, base_family = "",
            base_line_size = base_size/22, base_rect_size = base_size/11)+
   theme(strip.background = element_blank(),panel.grid = element_blank(), 
         text = element_text(size = 14), strip.text = element_text(size=12)) +
-  labs(x = 'Segments in Density Function', y = "Leave One Out Information Criterion")
+  labs(x = 'Segments in Density Function', y = "Widely Applicable Information Criterion (WAIC)")
 p
-pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_density.pdf"))
-p
-dev.off()
+ggsave(file.path(gdrive_path, 'Figures/LOOIC/WAIC_density.pdf'), p)
+# pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_density.pdf"))
+# p
+# dev.off()
 #ggsave(file.path(fpfig, 'density_model_information_criteria.pdf'), height = 6, width = 9)
 
 # Production model
 
-p <- ggplot(ics %>% filter(dens_model == 1, criterion == 'LOOIC', 
-                           variable == 'production', !fg %in% 'unclassified'), 
-            aes(x = factor(prod_model), y = ic, ymin = ic - se_ic, ymax = ic + se_ic)) +
+p <- ggplot(ics %>% filter(criterion == 'WAIC', 
+                           variable == 'production', !fg %in% 'Unclassified'), 
+            aes(x = factor(prod_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
   facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
   geom_pointrange() +
   theme_bw(base_size = base_size, base_family = "",
            base_line_size = base_size/22, base_rect_size = base_size/11)+
   theme(strip.background = element_blank(),panel.grid = element_blank(), 
         text = element_text(size = 14),strip.text = element_text(size=12)) +
-  labs(x = 'Segments in Production Function',  y = "Leave One Out Information Criterion")
+  labs(x = 'Segments in Production Function',  y = "Widely Applicable Information Criterion (WAIC)")
 p
-pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_production.pdf"))
-p
-dev.off()
+ggsave(file.path(gdrive_path, 'Figures/LOOIC/WAIC_production.pdf'), p)
+# pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_production.pdf"))
+# p
+# dev.off()
 #ggsave(file.path(fpfig, 'production_model_information_criteria.pdf'), height = 6, width = 9)
 #---------------------------------------------------------------------------------------------
 
 ######################## Plot Slopes vs Size for each life history group  ####################### 
 
-slopes <- read.csv(file.path(fp, 'piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+slopes <- read.csv(file.path(fp, 'newpiecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 slopes$fg <- factor(slopes$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
 slopes$variable <- factor(slopes$variable, labels = c("Density", "Individual Growth", "Total Growth"))
 colors <- c("sienna4", "yellowgreen", "springgreen4")
 
 # Using 3 segment density and 1 segment production
-p <- ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'Unclassified'), 
+p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) | (is.na(dens_model) & prod_model == 1) | (dens_model == 3 & prod_model == 1), !fg %in% 'Unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
   facet_wrap(~ fg,labeller = label_value) +
   geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
@@ -835,7 +840,7 @@ p <- ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'Unclas
         legend.text=element_text(size = 12),axis.title = element_text(size = 15),
         axis.text = element_text(color = "black", size = 11)) +
   labs(y = 'Slope') +
-  ggtitle('Fitted slopes: \n 3 segment density model and 2 segment production model')+
+  ggtitle('Fitted slopes: \n 3 segment density model and 1 segment production model')+
   theme(plot.title = element_text(hjust=0.5)) #+ theme(legend.title=element_blank())
 p 
 pdf(file.path(gdrive_path, "Figures/Slopes/fitted_slopes_1_seg_production.pdf"))
@@ -843,7 +848,7 @@ p
 dev.off()
 
 # Using 3 segment density and 2 segment production
-p <- ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassified'), 
+p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) | (is.na(dens_model) & prod_model == 2) | (dens_model == 3 & prod_model == 2), !fg %in% 'Unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
   facet_wrap(~ fg,scale = "free_y", labeller = label_value) +
   geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +

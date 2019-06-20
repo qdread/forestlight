@@ -147,7 +147,7 @@ r2s <- do.call(rbind, map(fit_info_list[idx_p], 'r2s'))
 r2s <- cbind(prod_df, r2s)
 r2s$variable <- 'incoming light individual'
 
-write.csv(r2s, file = '~/forestlight/lightpiecewise_r2_by_fg.csv', row.names = FALSE)
+write.csv(r2s, file = '~/forestlight/light_piecewise_r2_by_fg.csv', row.names = FALSE)
 
 
 
