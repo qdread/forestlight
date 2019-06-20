@@ -404,8 +404,28 @@ indivlightbins_fg <- data.frame(fg = 'all', indivlightbins_all, stringsAsFactors
   mutate(indivlight_bin = as.numeric(as.character(indivlight_bin))) %>%
   rename(bin_midpoint = indivlight_bin)
 
+#------Fig 4a------
+# Plot total volume using the "totalprod" function
+p <- plot_totalprod(year_to_plot = 1995,
+                    fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
+                    model_fit_density = 3, 
+                    model_fit_production = 2,
+                    x_limits = c(0.9,250),
+                    y_limits = c(1, 2500),
+                    y_breaks = c(1, 10, 1000),
+                    y_labels = c(1, 10, 1000),
+                    y_name = expression(paste('Total Crown Volume (m'^3, 'cm'^-1,')', ' ha'^-1,')')), 
+                    preddat = fitted_totalvol %>% mutate(prod_model = 2),
+                    obsdat = totalvolbins_fg, 
+                    plot_abline = FALSE)
+p <- p + scale_y_continuous(position = "left", trans = "log10", 
+                            name = expression(paste('Total Crown Volume (m'^3, ' cm'^-1,' ha'^-1,')'))) +
+  theme(aspect.ratio = 0.75)
+p
+
+#------Fig 4b------
 # Plot total light using the "totalprod" function
-plot_totalprod(year_to_plot = 1995,
+p <- plot_totalprod(year_to_plot = 1995,
                fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                model_fit_density = 3, 
                model_fit_production = 2,
@@ -413,24 +433,15 @@ plot_totalprod(year_to_plot = 1995,
                y_limits = c(5, 100000),
                y_breaks = c(10, 1000, 100000),
                y_labels = c(10, 1000, 100000),
-               y_name = expression(paste('Total light received (W ha'^-1,')')),
+               y_name = expression(paste('Total Light Received (kW cm'^-1,' ha'^-1,')')),
                preddat = fitted_totallight,
                obsdat = totallightbins_fg,
                plot_abline = FALSE)
+p <- p + scale_y_continuous(position = "left", trans = "log10", 
+                            name = expression(paste('Total Light Recieved (W cm'^-1,' ha'^-1,')'))) +
+  theme(aspect.ratio = 0.75)
+p
 
-# Plot total volume using the "totalprod" function
-plot_totalprod(year_to_plot = 1995,
-               fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
-               model_fit_density = 3, 
-               model_fit_production = 2,
-               x_limits = c(0.9,250),
-               y_limits = c(1, 2500),
-               y_breaks = c(1, 10, 1000),
-               y_labels = c(1, 10, 1000),
-               y_name = expression(paste('Total crown volume (m'^3, ' ha'^-1,')')),
-               preddat = fitted_totalvol %>% mutate(prod_model = 2),
-               obsdat = totalvolbins_fg, 
-               plot_abline = FALSE)
 
 # Plot individual light using the modified "prod" function
 source(file.path(github_path, 'code/plotting/plot_prod_fixed.R'))
@@ -443,7 +454,7 @@ plot_prod_fixed(year_to_plot = 1995,
           y_breaks = c(10, 1000,1e5),
           y_labels = c(10,1000,1e5),
           x_name = 'Diameter (cm)',
-          y_name = 'Individual light received (W)',
+          y_name = 'Individual Light Received (W)',
           error_bar_width = 0.01,
           dodge_width = 0.05,
           preddat = fitted_indivlight,
