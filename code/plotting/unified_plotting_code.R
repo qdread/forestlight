@@ -116,7 +116,7 @@ plot_dens <- function(year_to_plot = 1995,
   require(ggplot2)
   
   obsdat <- obsdat %>%
-    filter(fg %in% fg_names, year == year_to_plot, bin_count > 1) %>%
+    filter(fg %in% fg_names, year == year_to_plot, bin_count > 10) %>%
     filter(bin_value > 0)
   
   # Get minimum and maximum observed bin value for each group to be plotted
@@ -174,7 +174,7 @@ plot_prod <- function(year_to_plot = 1995,
   pos <- if (dodge_errorbar) position_dodge(width = dodge_width) else 'identity'
   
   obsdat <- obsdat %>%
-    filter(fg %in% fg_names, year == year_to_plot, !is.na(mean), mean_n_individuals > 1) %>%
+    filter(fg %in% fg_names, year == year_to_plot, !is.na(mean), mean_n_individuals > 10) %>%
     group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup
   
   obs_limits <- obsdat %>%
@@ -225,7 +225,7 @@ plot_totalprod <- function(year_to_plot = 1995,
                            fill_names = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "ivory"),
                            fill_names0 = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
                            x_name = 'Diameter (cm)',
-                           y_name = expression(paste('Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),
+                           y_name = expression(paste('Total Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),
                            obsdat = obs_totalprod,
                            preddat = fitted_totalprod,
                            plot_abline = TRUE
@@ -234,7 +234,7 @@ plot_totalprod <- function(year_to_plot = 1995,
   require(dplyr)
   require(ggplot2)
   obsdat <- obsdat %>%
-    filter(fg %in% fg_names, year == year_to_plot) %>%
+    filter(fg %in% fg_names, year == year_to_plot, bin_count > 10) %>%
     filter(bin_value > 0)
   
   obs_limits <- obsdat %>%
@@ -298,7 +298,7 @@ p <- plot_dens(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
           model_fit = 3,
           x_limits = c(1, 260),
-          y_limits = c(0.001, 3000),
+          y_limits = c(0.003, 3000),
           y_labels = c(0.001, 0.1, 10,1000),
           y_breaks = c(0.001, 0.1,  10, 1000))
 p
@@ -422,6 +422,7 @@ p <- p + scale_y_continuous(position = "left", trans = "log10",
                             name = expression(paste('Total Crown Volume (m'^3, ' cm'^-1,' ha'^-1,')'))) +
   theme(aspect.ratio = 0.75)
 p
+#drop values under n = 10; are lines fitting too low
 
 #------Fig 4b------
 # Plot total light using the "totalprod" function
@@ -430,15 +431,17 @@ p <- plot_totalprod(year_to_plot = 1995,
                model_fit_density = 3, 
                model_fit_production = 2,
                x_limits = c(0.9,250),
-               y_limits = c(5, 100000),
-               y_breaks = c(10, 1000, 100000),
-               y_labels = c(10, 1000, 100000),
+               y_limits = c(100, 100000),
+               y_breaks = c(100, 1000, 10000, 100000),
+               y_labels = c("0.1", "1", "10", "100"),
                y_name = expression(paste('Total Light Received (kW cm'^-1,' ha'^-1,')')),
                preddat = fitted_totallight,
                obsdat = totallightbins_fg,
                plot_abline = FALSE)
-p <- p + scale_y_continuous(position = "left", trans = "log10", 
-                            name = expression(paste('Total Light Recieved (W cm'^-1,' ha'^-1,')'))) +
+
+p <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
+                            labels = c("0.1", "1", "10", "100"), limits = c(100, 100000),
+                            name = expression(paste('Total Light Recieved (kW cm'^-1,' ha'^-1,')'))) +
   theme(aspect.ratio = 0.75)
 p
 
@@ -446,7 +449,7 @@ p
 # Plot individual light using the modified "prod" function
 source(file.path(github_path, 'code/plotting/plot_prod_fixed.R'))
 
-plot_prod_fixed(year_to_plot = 1995,
+p <- plot_prod_fixed(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           model_fit = 2,
           x_limits = c(1, 280),
@@ -459,175 +462,12 @@ plot_prod_fixed(year_to_plot = 1995,
           dodge_width = 0.05,
           preddat = fitted_indivlight,
           obsdat = indivlightbins_fg %>% mutate(year = 1995, mean = q50) %>% rename(mean_n_individuals = bin_count))
-
-
-####### Fig 4a Total Crown Volume ############
-light_growth <- source(file.path(github_path,'code/plotting/lightdistributionplots.r'))
-load(file.path(github_path, 'code/plotting/lightdistributionplots.r'))
-###  Crown Area
-error_bar_width <- 0.13
-
-p <- crownvolumebins1995 %>%
-  filter(fg %in% c('all', fg_names), !is.na(bin_value), bin_value > 0) %>%
-  filter(bin_count > 10) %>%
-  mutate(bin_min = ifelse(bin_min == 0, bin_value, bin_min)) %>%
-  mutate(bin_value = bin_value/area_core, bin_min = bin_min/area_core, bin_max = bin_max/area_core) %>%
-  group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
-  ggplot(aes(x = bin_midpoint, y = bin_value, ymin = bin_min, ymax = bin_max, group = fg, fill=fg,color = fg)) +
-  theme_plant+#geom_errorbar(aes(width = width), position=p_dodge) +
-  #geom_abline(intercept=4, slope = -2/3, color ="darkgray",linetype="dashed", size=1.5)+
-  geom_point(shape = 21, size = geom_size,  stroke = .5, color = "black")+
-  scale_x_log10(name = 'Diameter (cm)', limits = c(1, 200), breaks=c(1,3,10,30,100,300)) +  
-  scale_y_log10(limits = c(3, 3000),breaks=c(1, 10, 100, 1000, 10000), labels = signif,
-                #scale_y_log10(labels = trans_format("log10", math_format(10^.x)), #limits = c(.2, 0.6),breaks=c(0.1, 0.2, 0.3, 0.4, 0.6), labels = signif,
-                name = expression(atop('Total Crown Volume',paste('(m'^3, ' ha'^-1,')'))))  +  
-  scale_color_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') +
-  scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
-
 p
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_4/total_crown_vol.pdf'))
-plot(p1)
-dev.off()
-
-##### Fig 4b
-# Load precalculated bin data.
-# Loop through all the csv files and load them into R
-fpdata <- file.path(gdrive_path, 'data/data_june2018_alternativecluster')
-file_names <- c('densitybin_5census', 'indivproductionbin_5census', 'totalproductionbin_5census', 'crownareabin_2census', 'lightreceivedbin_2census', 'indivprodperareabin_2census', 'breeder_stats_bydiam_2census', 'breederscore_bin_bydiam_2census', 'breeder_stats_bylight_2census', 'breederscore_bin_bylight_2census', 'fastslow_stats_bydiam_2census', 'fastslowscore_bin_bydiam_2census', 'fastslow_stats_bylight_2census', 'fastslowscore_bin_bylight_2census')
-
-for (i in file_names) {
-  assign(i, read.csv(file.path(fpdata, paste0(i,'.csv')), stringsAsFactors = FALSE))
-}
-
-
-error_bar_width <- 0.13
-dodge_width <- 0
-
-area_core <- 42.84 # Area of the plot without the edge strip and without the "young" forest area.
-global_diam_xlimits <- c(1, 316) # Maximum and minimum for x axis if it's diameter.
-
-indivproductionbin_5census$fg <- factor(indivproductionbin_5census$fg, levels=c('fg1','fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'all'))
-densitybin_5census$fg <- factor(densitybin_5census$fg, levels=c('fg1','fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'all'))
-
-unique(densitybin_5census $fg)
-fg_names <- paste('fg', 1:5, sep = '')
-fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate')
-fg_labels2 <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate','All')
-
-p_dodge <- position_dodge(width = dodge_width)
-
-geom_size = 3.5
-
-##### Fig 4b ########
-
-p <- lightreceivedbin_2census %>%
-  filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
-  mutate(bin_ymin = ifelse(bin_ymin == 0, bin_yvalue, bin_ymin)) %>%
-  mutate(bin_yvalue = (bin_yvalue/area_core)/1000, bin_ymin = (bin_ymin/area_core)/1000, bin_ymax = (bin_ymax/area_core)/1000) %>%
-  group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
-  ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, color = fg,fill=fg)) +
-  theme_plant+ 
-  geom_errorbar(aes(width = width), position=p_dodge)+#geom_pointrange()  +
-  #geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+
-  geom_point(position=p_dodge,shape = 21, size = geom_size,  stroke = .5, color = "black")+
-  scale_x_log10(name = 'Diameter (cm)', limits = c(1, 300), breaks=c(1,3,10,30,100,300)) +  
-  scale_y_log10(position="left", name = expression(atop('Total Light Capture',paste('(kW ha'^-1,')'))),labels = signif,
-                limits = c(0.04, 100), breaks=c(0.1, 1, 10, 100)) +
-  scale_color_manual(values = c('black', guild_fills_nb0), labels = c('All', fg_labels), name = 'Functional group') +
-  scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
+p <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(10, 1000, 100000),
+                            labels = c("0.01", "1", "100"),
+                            name = expression(paste('Individual Light Received (W)'))) +
+  theme(aspect.ratio = 0.75)
 p
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_4/Total_Light_Capture.pdf'))
-plot(p1)
-dev.off()
-###  Individual Growth vs Light [deprecated]
-factor(indivprodperareabin_2census$fg)
-
-p <- indivprodperareabin_2census %>%
-  filter(fg %in% fg_names, !is.na(mean), mean > 0) %>%
-  filter(mean_n_individuals >= 10)%>%
-  group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
-  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, group = fg, fill=fg,color = fg)) +
-  theme_plant+geom_errorbar(aes(width = width), position=p_dodge) +
-  geom_point(shape = 21, size = geom_size, color = "black", stroke = .5)+
-  scale_x_log10(limits = c(1, 450),breaks=c(1,10,100,1000),  
-                name = expression(paste('Light per Crown Area (W m'^-2,')')))+ 
-  scale_y_log10(limits = c(.003, .15), breaks = c(0.003, 0.01, .03, 0.1, 0.3), labels = c(0.003, 0.01, .03, 0.1, 0.3),
-                name = expression(atop('Growth per Crown',paste('Area (kg y'^-1, ' m'^-2,')')))) +
-  scale_color_manual(values = guild_fills_nb0, labels = fg_labels, name = 'Functional Froup') +
-  geom_abline(intercept=-3.85, slope = 1, color ="darkgray",linetype="dashed", size=1)+
-  scale_fill_manual(values = guild_fills_nb, labels = fg_labels, name = 'Functional Froup') 
-p
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_4/Growth_per_Light.pdf'))
-plot(p1)
-dev.off()
-
-# growth by light, normalized for volume
-github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
-light_growth <- source(file.path(github_path,'code/plotting/lightdistributionplots.r'))
-github_path
-
-load(file.path(github_path, 'code/plotting/lightdistributionplots.r'))
-###  Crown Area
-error_bar_width <- 0.13
-p <- crownareabin_2census %>%
-  filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
-  filter(mean_n_individuals > 10) %>%
-  mutate(bin_ymin = ifelse(bin_ymin == 0, bin_yvalue, bin_ymin)) %>%
-  mutate(bin_yvalue = bin_yvalue/area_core, bin_ymin = bin_ymin/area_core, bin_ymax = bin_ymax/area_core) %>%
-  group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
-  ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, fill=fg,color = fg)) +
-  theme_plant+geom_errorbar(aes(width = width), position=p_dodge) +
-  #geom_abline(intercept=4, slope = -2/3, color ="darkgray",linetype="dashed", size=1.5)+
-  geom_point(shape = 21, size = geom_size,  stroke = .5, color = "black")+
-  scale_x_log10(name = 'Diameter (cm)', limits = c(1, 350), breaks=c(1,3,10,30,100,300)) +  
-  scale_y_log10(limits = c(1, 10000),breaks=c(1, 10, 100, 1000, 10000), labels = signif,
-                name = expression(atop('Total Crown Area',paste('(m'^2, ' ha'^-1,')'))))  +  
-  scale_color_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') +
-  scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
-
-p
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_4/extra_crown_area_size.pdf'))
-plot(p1)
-dev.off()
-
-
-crownareabin_2census_mid <- crownareabin_2census %>%
-  filter(bin_midpoint > 4) %>%
-  filter(bin_midpoint < 40) 
-fitted_models = crownareabin_2census_mid %>% group_by(fg) %>% do(model = lm(log10(bin_yvalue) ~ log10(bin_midpoint), data = .))
-
-fitted_models %>% tidy(model)
-fitted_models %>% glance(model)
-summary(lm1)
-
-
-load(file.path(gdrive_path, 'data/area_and_volume_bins_1995.RData'))
-
-
-library(broom)
-crownvolumebins1995_mid <- crownvolumebins1995 %>%
-  filter(bin_midpoint > 3) %>%
-  filter(bin_midpoint < 30) %>%
-  filter(fg == "all")
-
-lm1 <- lm(log10(crownvolumebins1995_mid$bin_value)~ log10(crownvolumebins1995_mid$bin_midpoint))
-summary(lm1)
-plot(log10(crownvolumebins1995_mid$bin_value)~ log10(crownvolumebins1995_mid$bin_midpoint))
-
-fitted_models = crownvolumebins1995_mid %>% group_by(fg) %>% 
-  do(model = lm(log10(bin_value) ~ log10(bin_midpoint), data = .))
-
-fitted_models %>% tidy(model)
-fitted_models %>% glance(model)
-summary(lm1)
 
 
 # ------------------------------- Fig 5 Relative Abundance  ------------------------------------
@@ -663,9 +503,30 @@ fastslow_stats_breeder_bydiam_2census$ID <- as.factor(fastslow_stats_breeder_byd
 str(fastslow_stats_breeder_bydiam_2census)
 
 
-# Abundance by Diameter
+# 5 yr plots 
+# First reverse direction for breeder response variables; otherwise going in opposite direction
+breeder_stats_bydiam_5censusb <- breeder_stats_bydiam_5census
+breeder_stats_bydiam_5censusb[,2:7] <- 1/breeder_stats_bydiam_5censusb[,2:7]
+breeder_stats_bydiam_5censusb <- as.matrix(breeder_stats_bydiam_5censusb )
+# Get rid of infinite values
+breeder_stats_bydiam_5censusb[!is.finite(breeder_stats_bydiam_5censusb)] <- NA
+breeder_stats_bydiam_5censusb <- as.data.frame(breeder_stats_bydiam_5censusb )
+# Add ID for combining
+breeder_stats_bydiam_5census_id <- breeder_stats_bydiam_5censusb %>%
+  mutate(ID = "Breeder")
+fastslow_bydiam_5census_id <- fastslow_stats_bydiam_5census %>%
+  mutate(ID = "Fast-Slow")
+# Combine
+fastslow_stats_breeder_bydiam_5census <-rbind(breeder_stats_bydiam_5census_id,fastslow_bydiam_5census_id)
+# Plot by diameter
+fill_ <- c("grey", "grey25")
+fastslow_stats_breeder_bydiam_5census$ID <- as.factor(fastslow_stats_breeder_bydiam_5census$ID)
+str(fastslow_stats_breeder_bydiam_5census)
 
-p <- fastslow_stats_breeder_bydiam_2census  %>%
+### Fig 6A ##### Abundance by Diameter
+
+   # 5 sampling periods 5 yrs each
+p <- fastslow_stats_breeder_bydiam_5census %>% 
   filter(density_ratio_mean > 0) %>%
   mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
   ggplot(aes(x = bin_midpoint, y = density_ratio_mean, 
@@ -689,9 +550,33 @@ pdf(file.path(gdrive_path, 'Figures/Fig_5/Abun_ratio_diameter.pdf'))
 plot(p1)
 dev.off()
 
+### Fig 6A alt. # 2 sampling periods (5 yrs each)
+p <- fastslow_stats_breeder_bydiam_2census %>% #fastslow_stats_breeder_bydiam_2census  %>%
+  filter(density_ratio_mean > 0) %>%
+  mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
+  ggplot(aes(x = bin_midpoint, y = density_ratio_mean, 
+             ymin = density_ratio_min, ymax = density_ratio_max, fill = ID)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
+  geom_errorbar(width = error_bar_width) +theme_plant+
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
+  scale_fill_manual(values = c("Breeder" = "black", "Fast-Slow" = "grey"))+
+  
+  scale_x_log10(limits=c(.7,330),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.006,100),
+                name = expression("Ratio")) +
+  theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
 
-# Production by Light
 
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_5/Abun_ratio_diameter.pdf'))
+plot(p1)
+dev.off()
+
+# Fig 6b, ### Production by Light (2 sampling periods, 5 yr apiece)
+ 
 p <- prod_ratio_light   %>%
   #filter(mean_n_individuals > 10) %>%
   filter(production_ratio_mean > 0) %>%
@@ -716,46 +601,6 @@ plot(p1)
 dev.off()
 #name = expression(paste(frac("Fast","Slow"))))  
 
-
-# Combine fast-slow and breeder by Light 
-
-fastslow_stats_bylight_2census_id <- fastslow_stats_bylight_2census %>%
-  mutate(ID = "Fast-Slow")
-# Reverse direction of breeder/pioneer 
-breeder_stats_bylight_2census_b <- as.matrix(breeder_stats_bylight_2census)
-breeder_stats_bylight_2census_b[, 2:7] <- 1/breeder_stats_bylight_2census_b[, 2:7]
-# Get rid of infinite values
-breeder_stats_bylight_2census_b[!is.finite(breeder_stats_bylight_2census_b)] <- NA
-breeder_stats_bylight_2census_b <- as.data.frame(breeder_stats_bylight_2census_b)
-# Add ID for combining
-breeder_stats_bylight_2census_id <- breeder_stats_bylight_2census_b%>%
-  mutate(ID = "Breeder-Pioneer")
-# Combine
-bylight_2census <- as.data.frame(rbind(fastslow_stats_bylight_2census_id,breeder_stats_bylight_2census_id))
-
-
-p <- bylight_2census    %>%
-  filter(density_ratio_mean > 0) %>%
-  mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = density_ratio_mean, 
-             ymin = density_ratio_min, ymax = density_ratio_max, fill = ID)) +
-  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  geom_errorbar(width = error_bar_width) + theme_plant+
-  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
-  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
-  
-  scale_x_log10(limits=c(1,400),breaks=c(1,10,100), name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
-  scale_y_log10(breaks = c(0.01,0.1,1,10,100), labels=signif, limits=c(0.003,500),
-                name = expression("Abundance Ratio"))
-  #scale_y_log10() + theme(axis.title.y = element_blank(),
-   #     axis.text.y = element_blank(),
-    #    axis.ticks.y = element_blank())
-p
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_5/Abun_ratio_light.pdf'))
-plot(p1)
-dev.off()
 
 
 
@@ -893,6 +738,47 @@ p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
 pdf(file.path(gdrive_path, 'Figures/Ex_ratios/Production_light.pdf'))
+plot(p1)
+dev.off()
+
+#  Supplmeental 
+# Relative abundance by Light 
+
+fastslow_stats_bylight_2census_id <- fastslow_stats_bylight_2census %>%
+  mutate(ID = "Fast-Slow")
+# Reverse direction of breeder/pioneer 
+breeder_stats_bylight_2census_b <- as.matrix(breeder_stats_bylight_2census)
+breeder_stats_bylight_2census_b[, 2:7] <- 1/breeder_stats_bylight_2census_b[, 2:7]
+# Get rid of infinite values
+breeder_stats_bylight_2census_b[!is.finite(breeder_stats_bylight_2census_b)] <- NA
+breeder_stats_bylight_2census_b <- as.data.frame(breeder_stats_bylight_2census_b)
+# Add ID for combining
+breeder_stats_bylight_2census_id <- breeder_stats_bylight_2census_b%>%
+  mutate(ID = "Breeder-Pioneer")
+# Combine
+bylight_2census <- as.data.frame(rbind(fastslow_stats_bylight_2census_id,breeder_stats_bylight_2census_id))
+
+
+p <- bylight_2census    %>%
+  filter(density_ratio_mean > 0) %>%
+  mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
+  ggplot(aes(x = bin_midpoint, y = density_ratio_mean, 
+             ymin = density_ratio_min, ymax = density_ratio_max, fill = ID)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
+  geom_errorbar(width = error_bar_width) + theme_plant+
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
+  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
+  
+  scale_x_log10(limits=c(1,400),breaks=c(1,10,100), name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
+  scale_y_log10(breaks = c(0.01,0.1,1,10,100), labels=signif, limits=c(0.003,500),
+                name = expression("Abundance Ratio"))
+#scale_y_log10() + theme(axis.title.y = element_blank(),
+#     axis.text.y = element_blank(),
+#    axis.ticks.y = element_blank())
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_5/Abun_ratio_light.pdf'))
 plot(p1)
 dev.off()
 
@@ -1154,6 +1040,68 @@ dev.off()
 #p
 #dev.off()       
 
+
+
+# Symmetry plot
+# Compare total growth fitted slope (evaluated halfway between the high and low cutoffs) with total light fitted slope at the same point. 
+# QDR / Forestlight / 20 June 2019
+
+
+
+# Load parameter df to find the point at which to evaluate the fitted slopes, then load the fitted slopes
+
+params <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/newpiecewise_paramci_by_fg.csv'), stringsAsFactors = FALSE)
+
+xvalues <- params %>% 
+  filter(variable == 'density', model == 3) %>%
+  group_by(fg) %>%
+  summarize(mid_cutoff = (mean[parameter == 'tau_high'] + mean[parameter == 'tau_low'])/2)
+
+# Load fitted slopes of total growth and total light.
+
+growth_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/newpiecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+light_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/totallightscaling/light_piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+
+growth_slopes_atmiddle <- growth_slopes %>% 
+  filter(variable == 'total_production', dens_model == 3, prod_model == 2) %>%
+  left_join(xvalues) %>%
+  mutate(diff = abs(dbh - mid_cutoff)) %>%
+  group_by(fg) %>%
+  filter(diff == min(diff))
+
+light_slopes_atmiddle <- light_slopes %>% 
+  filter(variable == 'total_incoming_light', dens_model == 3, prod_model == 2) %>%
+  left_join(xvalues) %>%
+  mutate(diff = abs(dbh - mid_cutoff)) %>%
+  group_by(fg) %>%
+  filter(diff == min(diff))
+
+fg_full_names <- c('Fast', 'LL Pioneer', 'Slow', 'SL Breeder', 'Medium', 'All Trees', 'Unclassified')
+fgs <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified')
+
+allslopes <- rbind(growth_slopes_atmiddle, light_slopes_atmiddle) %>%
+  ungroup %>%
+  mutate(fg = factor(fg, levels = fgs, labels = fg_full_names))
+library(grid)
+grob1 <- grobTree(textGrob("Total Light", x = 0.65, y = 0.95, hjust = 0,
+                          gp = gpar(col = "gold3", fontsize = 18))) 
+grob2 <- grobTree(textGrob("Total Production", x = 0.65, y = 0.885, hjust = 0,
+                           gp = gpar(col = "darkgreen", fontsize = 18)))# fontface="italic"
+# Plot
+
+ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, color = variable)) +
+  geom_hline(yintercept = 0, linetype = 'dotted') +
+  geom_errorbar(position = position_dodge(width = 0.5), size = 1, width = 0.7) +
+  geom_point(position = position_dodge(width = 0.5), size = 4) +
+  labs(x = 'Life History Guild', y = 'Scaling Slopes for Midsize Trees') +
+  scale_y_continuous(limits = c(-1.5, 1.5)) +
+  scale_color_manual(values = c('gold2', 'darkgreen'), labels = c('Total Light', 'Total Growth')) +
+  theme_plant + theme(axis.text.x = element_text(angle = 45, hjust = 1)) + annotation_custom(grob1) +annotation_custom(grob2)
+
+pdf(file.path(gdrive_path, 'Figures/Growth_hex/growth_hex.pdf'))
+p
+dev.off()
+#-------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------
 ###################### Additional Light Plots  ########################
 
@@ -1830,4 +1778,153 @@ loglogregressions <- alltree_light_95 %>%
   do(model = lm(log10(light_received) ~ log10(dbh_corr), data = .))
 
 lapply(loglogregressions$model, summary)
+
+
+############### ############### Extra or Deprecated ##################################
+
+####### Fig 4a Total Crown Volume ############
+light_growth <- source(file.path(github_path,'code/plotting/lightdistributionplots.r'))
+load(file.path(github_path, 'code/plotting/lightdistributionplots.r'))
+###  Crown Area
+error_bar_width <- 0.13
+
+p <- crownvolumebins1995 %>%
+  filter(fg %in% c('all', fg_names), !is.na(bin_value), bin_value > 0) %>%
+  filter(bin_count > 10) %>%
+  mutate(bin_min = ifelse(bin_min == 0, bin_value, bin_min)) %>%
+  mutate(bin_value = bin_value/area_core, bin_min = bin_min/area_core, bin_max = bin_max/area_core) %>%
+  group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
+  ggplot(aes(x = bin_midpoint, y = bin_value, ymin = bin_min, ymax = bin_max, group = fg, fill=fg,color = fg)) +
+  theme_plant+#geom_errorbar(aes(width = width), position=p_dodge) +
+  #geom_abline(intercept=4, slope = -2/3, color ="darkgray",linetype="dashed", size=1.5)+
+  geom_point(shape = 21, size = geom_size,  stroke = .5, color = "black")+
+  scale_x_log10(name = 'Diameter (cm)', limits = c(1, 200), breaks=c(1,3,10,30,100,300)) +  
+  scale_y_log10(limits = c(3, 3000),breaks=c(1, 10, 100, 1000, 10000), labels = signif,
+                #scale_y_log10(labels = trans_format("log10", math_format(10^.x)), #limits = c(.2, 0.6),breaks=c(0.1, 0.2, 0.3, 0.4, 0.6), labels = signif,
+                name = expression(atop('Total Crown Volume',paste('(m'^3, ' ha'^-1,')'))))  +  
+  scale_color_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') +
+  scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
+
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_4/total_crown_vol.pdf'))
+plot(p1)
+dev.off()
+
+##### Fig 4b
+# Load precalculated bin data.
+# Loop through all the csv files and load them into R
+fpdata <- file.path(gdrive_path, 'data/data_june2018_alternativecluster')
+file_names <- c('densitybin_5census', 'indivproductionbin_5census', 'totalproductionbin_5census', 'crownareabin_2census', 'lightreceivedbin_2census', 'indivprodperareabin_2census', 'breeder_stats_bydiam_2census', 'breederscore_bin_bydiam_2census', 'breeder_stats_bylight_2census', 'breederscore_bin_bylight_2census', 'fastslow_stats_bydiam_2census', 'fastslowscore_bin_bydiam_2census', 'fastslow_stats_bylight_2census', 'fastslowscore_bin_bylight_2census')
+
+for (i in file_names) {
+  assign(i, read.csv(file.path(fpdata, paste0(i,'.csv')), stringsAsFactors = FALSE))
+}
+
+
+error_bar_width <- 0.13
+dodge_width <- 0
+
+area_core <- 42.84 # Area of the plot without the edge strip and without the "young" forest area.
+global_diam_xlimits <- c(1, 316) # Maximum and minimum for x axis if it's diameter.
+
+indivproductionbin_5census$fg <- factor(indivproductionbin_5census$fg, levels=c('fg1','fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'all'))
+densitybin_5census$fg <- factor(densitybin_5census$fg, levels=c('fg1','fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'all'))
+
+unique(densitybin_5census $fg)
+fg_names <- paste('fg', 1:5, sep = '')
+fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate')
+fg_labels2 <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate','All')
+
+p_dodge <- position_dodge(width = dodge_width)
+
+geom_size = 3.5
+
+
+###  Individual Growth vs Light [deprecated]
+
+p <- indivprodperareabin_2census %>%
+  filter(fg %in% fg_names, !is.na(mean), mean > 0) %>%
+  filter(mean_n_individuals >= 10)%>%
+  group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, group = fg, fill=fg,color = fg)) +
+  theme_plant+geom_errorbar(aes(width = width), position=p_dodge) +
+  geom_point(shape = 21, size = geom_size, color = "black", stroke = .5)+
+  scale_x_log10(limits = c(1, 450),breaks=c(1,10,100,1000),  
+                name = expression(paste('Light per Crown Area (W m'^-2,')')))+ 
+  scale_y_log10(limits = c(.003, .15), breaks = c(0.003, 0.01, .03, 0.1, 0.3), labels = c(0.003, 0.01, .03, 0.1, 0.3),
+                name = expression(atop('Growth per Crown',paste('Area (kg y'^-1, ' m'^-2,')')))) +
+  scale_color_manual(values = guild_fills_nb0, labels = fg_labels, name = 'Functional Froup') +
+  geom_abline(intercept=-3.85, slope = 1, color ="darkgray",linetype="dashed", size=1)+
+  scale_fill_manual(values = guild_fills_nb, labels = fg_labels, name = 'Functional Froup') 
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_4/Growth_per_Light.pdf'))
+plot(p1)
+dev.off()
+
+# growth by light, normalized for volume
+
+light_growth <- source(file.path(github_path,'code/plotting/lightdistributionplots.r'))
+
+load(file.path(github_path, 'code/plotting/lightdistributionplots.r'))
+###  Crown Area
+error_bar_width <- 0.13
+p <- crownareabin_2census %>%
+  filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
+  filter(mean_n_individuals > 10) %>%
+  mutate(bin_ymin = ifelse(bin_ymin == 0, bin_yvalue, bin_ymin)) %>%
+  mutate(bin_yvalue = bin_yvalue/area_core, bin_ymin = bin_ymin/area_core, bin_ymax = bin_ymax/area_core) %>%
+  group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
+  ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, fill=fg,color = fg)) +
+  theme_plant+geom_errorbar(aes(width = width), position=p_dodge) +
+  #geom_abline(intercept=4, slope = -2/3, color ="darkgray",linetype="dashed", size=1.5)+
+  geom_point(shape = 21, size = geom_size,  stroke = .5, color = "black")+
+  scale_x_log10(name = 'Diameter (cm)', limits = c(1, 350), breaks=c(1,3,10,30,100,300)) +  
+  scale_y_log10(limits = c(1, 10000),breaks=c(1, 10, 100, 1000, 10000), labels = signif,
+                name = expression(atop('Total Crown Area',paste('(m'^2, ' ha'^-1,')'))))  +  
+  scale_color_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') +
+  scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
+
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_4/extra_crown_area_size.pdf'))
+plot(p1)
+dev.off()
+
+
+crownareabin_2census_mid <- crownareabin_2census %>%
+  filter(bin_midpoint > 4) %>%
+  filter(bin_midpoint < 40) 
+fitted_models = crownareabin_2census_mid %>% group_by(fg) %>% do(model = lm(log10(bin_yvalue) ~ log10(bin_midpoint), data = .))
+
+fitted_models %>% tidy(model)
+fitted_models %>% glance(model)
+summary(lm1)
+
+
+load(file.path(gdrive_path, 'data/area_and_volume_bins_1995.RData'))
+
+
+library(broom)
+crownvolumebins1995_mid <- crownvolumebins1995 %>%
+  filter(bin_midpoint > 3) %>%
+  filter(bin_midpoint < 30) %>%
+  filter(fg == "all")
+
+lm1 <- lm(log10(crownvolumebins1995_mid$bin_value)~ log10(crownvolumebins1995_mid$bin_midpoint))
+summary(lm1)
+plot(log10(crownvolumebins1995_mid$bin_value)~ log10(crownvolumebins1995_mid$bin_midpoint))
+
+fitted_models = crownvolumebins1995_mid %>% group_by(fg) %>% 
+  do(model = lm(log10(bin_value) ~ log10(bin_midpoint), data = .))
+
+fitted_models %>% tidy(model)
+fitted_models %>% glance(model)
+summary(lm1)
+
+
 
