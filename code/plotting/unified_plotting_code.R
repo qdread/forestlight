@@ -1087,18 +1087,22 @@ grob1 <- grobTree(textGrob("Total Light", x = 0.65, y = 0.95, hjust = 0,
                           gp = gpar(col = "gold3", fontsize = 18))) 
 grob2 <- grobTree(textGrob("Total Production", x = 0.65, y = 0.885, hjust = 0,
                            gp = gpar(col = "darkgreen", fontsize = 18)))# fontface="italic"
+grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.33, y = 0.47, hjust = 0,
+                           gp = gpar(col = "black", fontsize = 18))) #, fontface = "bold")))
 # Plot
 
-ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, color = variable)) +
-  geom_hline(yintercept = 0, linetype = 'dotted') +
+p <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, color = variable)) +
+  geom_hline(yintercept = 0, linetype = 'dotted', size = 1) +
   geom_errorbar(position = position_dodge(width = 0.5), size = 1, width = 0.7) +
   geom_point(position = position_dodge(width = 0.5), size = 4) +
-  labs(x = 'Life History Guild', y = 'Scaling Slopes for Midsize Trees') +
+  labs(x = 'Life History Guild', y = 'Scaling Slopes') +
   scale_y_continuous(limits = c(-1.5, 1.5)) +
   scale_color_manual(values = c('gold2', 'darkgreen'), labels = c('Total Light', 'Total Growth')) +
-  theme_plant + theme(axis.text.x = element_text(angle = 45, hjust = 1)) + annotation_custom(grob1) +annotation_custom(grob2)
+  theme_plant + theme(axis.text.x = element_text(angle = 35, hjust = 1, face = "italic", size = 15)) +
+  annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3)
 
-pdf(file.path(gdrive_path, 'Figures/Growth_hex/growth_hex.pdf'))
+p
+pdf(file.path(gdrive_path, 'Figures/Growth~light_slopes/Growth~light_slopes.pdf'))
 p
 dev.off()
 #-------------------------------------------------------------------------------------------
