@@ -70,7 +70,7 @@ pred_totallight <- ci_df %>%
   mutate_at(vars(starts_with('q')), funs(./area_core)) 
 
 
-fp <- '~/google_drive/ForestLight/data/data_piecewisefits/totallightscaling'
+fp <- '~/google_drive/ForestLight/data/data_piecewisefits'
 
 write.csv(pred_indivlight, file.path(fp, 'pred_indivlight.csv'), row.names = FALSE)
 write.csv(pred_totallight, file.path(fp, 'pred_totallight.csv'), row.names = FALSE)

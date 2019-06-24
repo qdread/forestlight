@@ -116,8 +116,17 @@ mod_df <- expand.grid(variable = 'total_production',
                       stringsAsFactors = FALSE)
 
 mod_df <- rbind(prod_df, mod_df)
-					  
-min_n <- read.csv('~/forestlight/stanrdump/min_n.csv', stringsAsFactors = FALSE)
+
+# Modification 24 June: make sure that the multiplication is done by the number of trees that have light measurements, not the total number.
+
+load('~/forestlight/stanrdump/rawdataobj_alternativecluster.r')  
+
+correct_n <- alltree_light_95 %>%
+	mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg))) %>%
+	group_by(fg) %>%
+	summarize(n = n())
+	
+min_n <- data.frame(year = 1995, fg = c('alltree', correct_n$fg), xmin = 1.1, n = c(sum(correct_n$n), correct_n$n), stringsAsFactors = FALSE)
 
 total_prod <- read.csv('~/forestlight/stanrdump/lightrec_total.csv', stringsAsFactors = FALSE)
 
