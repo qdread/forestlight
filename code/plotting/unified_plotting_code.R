@@ -434,14 +434,14 @@ p <- plot_totalprod(year_to_plot = 1995,
                y_limits = c(100, 100000),
                y_breaks = c(100, 1000, 10000, 100000),
                y_labels = c("0.1", "1", "10", "100"),
-               y_name = expression(paste('Total Light Received (kW cm'^-1,' ha'^-1,')')),
+               y_name = expression(paste('Light Intercepted (kW cm'^-1,' ha'^-1,')')),
                preddat = fitted_totallight,
                obsdat = totallightbins_fg,
                plot_abline = FALSE)
 
 p <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
                             labels = c("0.1", "1", "10", "100"), limits = c(100, 100000),
-                            name = expression(paste('Total Light Recieved (kW cm'^-1,' ha'^-1,')'))) +
+                            name = expression(paste('Light Intercepted (kW cm'^-1,' ha'^-1,')'))) +
   theme(aspect.ratio = 0.75)
 p
 
@@ -470,7 +470,7 @@ p <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(10, 1
 p
 
 
-# ------------------------------- Fig 5 Relative Abundance  ------------------------------------
+# ------------------------------- Fig 6 Relative Abundance  ------------------------------------
 
 
 ###### Life history Relative Abundance by Size 
@@ -805,7 +805,7 @@ p <- ggplot(ics %>% filter(criterion == 'WAIC',
         text = element_text(size = 14), strip.text = element_text(size=12)) +
   labs(x = 'Segments in Density Function', y = "Widely Applicable Information Criterion (WAIC)")
 p
-ggsave(file.path(gdrive_path, 'Figures/LOOIC/WAIC_density.pdf'), p)
+ggsave(file.path(gdrive_path, 'Figures/WOOIC/WAIC_density.pdf'), p)
 # pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_density.pdf"))
 # p
 # dev.off()
@@ -824,7 +824,7 @@ p <- ggplot(ics %>% filter(criterion == 'WAIC',
         text = element_text(size = 14),strip.text = element_text(size=12)) +
   labs(x = 'Segments in Production Function',  y = "Widely Applicable Information Criterion (WAIC)")
 p
-ggsave(file.path(gdrive_path, 'Figures/LOOIC/WAIC_production.pdf'), p)
+ggsave(file.path(gdrive_path, 'Figures/WOOIC/WAIC_production.pdf'), p)
 # pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_production.pdf"))
 # p
 # dev.off()
@@ -835,7 +835,7 @@ ggsave(file.path(gdrive_path, 'Figures/LOOIC/WAIC_production.pdf'), p)
 
 slopes <- read.csv(file.path(fp, 'newpiecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 slopes$fg <- factor(slopes$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
-slopes$variable <- factor(slopes$variable, labels = c("Density", "Individual Growth", "Total Growth"))
+slopes$variable <- factor(slopes$variable, labels = c("Density", "Individual Growth", "Production"))
 colors <- c("sienna4", "yellowgreen", "springgreen4")
 
 # Using 3 segment density and 1 segment production
@@ -856,7 +856,7 @@ p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) | (is.na(den
         legend.text=element_text(size = 12),axis.title = element_text(size = 15),
         axis.text = element_text(color = "black", size = 11)) +
   labs(y = 'Slope') +
-  ggtitle('Fitted slopes: \n 3 segment density model and 1 segment production model')+
+  ggtitle('Fitted Slopes: \n 3 Segment Density model & 1 Segment Production Model')+
   theme(plot.title = element_text(hjust=0.5)) #+ theme(legend.title=element_blank())
 p 
 pdf(file.path(gdrive_path, "Figures/Slopes/fitted_slopes_1_seg_production.pdf"))
@@ -1083,9 +1083,9 @@ allslopes <- rbind(growth_slopes_atmiddle, light_slopes_atmiddle) %>%
   ungroup %>%
   mutate(fg = factor(fg, levels = fgs, labels = fg_full_names))
 library(grid)
-grob1 <- grobTree(textGrob("Total Light", x = 0.65, y = 0.95, hjust = 0,
+grob1 <- grobTree(textGrob("Light Capture", x = 0.75, y = 0.95, hjust = 0,
                           gp = gpar(col = "gold3", fontsize = 18))) 
-grob2 <- grobTree(textGrob("Total Production", x = 0.65, y = 0.885, hjust = 0,
+grob2 <- grobTree(textGrob("Production", x = 0.75, y = 0.89, hjust = 0,
                            gp = gpar(col = "darkgreen", fontsize = 18)))# fontface="italic"
 grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.33, y = 0.47, hjust = 0,
                            gp = gpar(col = "black", fontsize = 18))) #, fontface = "bold")))
@@ -1200,7 +1200,7 @@ p_mean_segments <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
   scale_x_log10(name = title_x) + 
   geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), aes(x = xmax * 0.5, xend = xmax * 2, y = ymax * 0.5^log_slope_q50 , yend = ymax * 2^log_slope_q50) , color = 'blue', size = 1) +
   scale_y_log10(name = title_y) +
-  theme_panel+
+  theme_plant +
   theme(panel.border = element_rect(fill=NA),
         strip.background = element_rect(fill=NA))
 p_mean_segments
@@ -1208,6 +1208,7 @@ p_mean_segments
 
 # I attempted to set an alpha scale so that the amount of transparency is roughly the same but the numbers may need to be tweaked
 #pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/p_raw_panels.pdf"))
+
 p_raw_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% 'unclassified')) +
   facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +theme_plant+
   geom_point(shape=21,aes(x = light_area, y = production_area, alpha = fg)) +
@@ -1224,7 +1225,8 @@ p_raw_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% '
         strip.text.x = element_blank(),
         axis.text = element_text(size = 12, color = "black"), 
         axis.ticks.length=unit(0.2,"cm"),
-        axis.title = element_text(size = 12))
+        axis.title = element_text(size = 12)) 
+  
 p_raw_panels
 #dev.off()
 # 3. Plot with different panels for each functional group, and quantiles
@@ -1235,6 +1237,14 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassifie
 
 unique(obs_light_binned$fg)
 unique(slopes$fg)
+
+grob1 <- grobTree(textGrob("Fast", x = 0.25, y = 0.95, hjust = 0,
+                           gp = gpar(col = "gold3", fontsize = 18))) 
+grob2 <- grobTree(textGrob("Pioneer", x = 0.45, y = 0.95, hjust = 0,
+                           gp = gpar(col = "darkgreen", fontsize = 18)))# fontface="italic"
+grob3 <- grobTree(textGrob("Slow", x = 0.75, y = 0.95, hjust = 0,
+                           gp = gpar(col = "black", fontsize = 18))) #, fontface = "bold")))
+#
 
 p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
   facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +theme_plant+
@@ -1258,7 +1268,8 @@ p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
         strip.text.x = element_blank(),
         axis.text = element_text(size = 12, color = "black"), 
         axis.ticks.length=unit(0.2,"cm"),
-        axis.title = element_text(size = 12))
+        axis.title = element_text(size = 12)) 
+
 p_median_panels
 
 pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/light_growth.pdf"))
@@ -1296,9 +1307,9 @@ p_mean_1panel <- ggplot(obs_light_binned %>% filter(year == year_to_plot, mean_n
   scale_y_log10(name = title_y) +
   scale_color_manual(name = 'Functional group', values = fg_colors2, labels = fg_labels) +
   scale_fill_manual(values = guild_fills_nb, labels = fg_labels, guide = FALSE) +
-  theme_plant +
-  theme(panel.border = element_rect(fill=NA),
-        legend.position = c(0.2, 0.8))
+  theme_plant #+
+  #theme(panel.border = element_rect(fill=NA),
+   #     legend.position = c(0.2, 0.8))
 p_mean_1panel 
 # 7. Plot line segments of the maximum slope at correct location, and segments with slope=1 for isometry
 
@@ -1853,14 +1864,14 @@ p <- indivprodperareabin_2census %>%
   filter(mean_n_individuals >= 10)%>%
   group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, group = fg, fill=fg,color = fg)) +
-  theme_plant+geom_errorbar(aes(width = width), position=p_dodge) +
+  theme_plant + geom_errorbar(aes(width = width), position = p_dodge) +
   geom_point(shape = 21, size = geom_size, color = "black", stroke = .5)+
   scale_x_log10(limits = c(1, 450),breaks=c(1,10,100,1000),  
                 name = expression(paste('Light per Crown Area (W m'^-2,')')))+ 
   scale_y_log10(limits = c(.003, .15), breaks = c(0.003, 0.01, .03, 0.1, 0.3), labels = c(0.003, 0.01, .03, 0.1, 0.3),
                 name = expression(atop('Growth per Crown',paste('Area (kg y'^-1, ' m'^-2,')')))) +
   scale_color_manual(values = guild_fills_nb0, labels = fg_labels, name = 'Functional Froup') +
-  geom_abline(intercept=-3.85, slope = 1, color ="darkgray",linetype="dashed", size=1)+
+  geom_abline(intercept = -3.85, slope = 1, color ="darkgray",linetype="dashed", size=1)+
   scale_fill_manual(values = guild_fills_nb, labels = fg_labels, name = 'Functional Froup') 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
