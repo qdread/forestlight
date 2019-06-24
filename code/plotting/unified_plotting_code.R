@@ -1238,14 +1238,6 @@ ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassifie
 unique(obs_light_binned$fg)
 unique(slopes$fg)
 
-grob1 <- grobTree(textGrob("Fast", x = 0.25, y = 0.95, hjust = 0,
-                           gp = gpar(col = "gold3", fontsize = 18))) 
-grob2 <- grobTree(textGrob("Pioneer", x = 0.45, y = 0.95, hjust = 0,
-                           gp = gpar(col = "darkgreen", fontsize = 18)))# fontface="italic"
-grob3 <- grobTree(textGrob("Slow", x = 0.75, y = 0.95, hjust = 0,
-                           gp = gpar(col = "black", fontsize = 18))) #, fontface = "bold")))
-#
-
 p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
   facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +theme_plant+
   #facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
@@ -1301,18 +1293,17 @@ p_mean_1panel <- ggplot(obs_light_binned %>% filter(year == year_to_plot, mean_n
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.5) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50, color = fg)) +
   geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max, group = fg, color = fg, width = error_bar_width * width), position = position_dodge(width = dodge_width)) +
-  geom_point(aes(x = bin_midpoint, y = mean, group = fg, fill = fg), size = 3, shape = 21, position = position_dodge(width = dodge_width)) +
+  geom_point(aes(x = bin_midpoint, y = mean, group = fg, fill = fg), size = 4, shape = 21, position = position_dodge(width = dodge_width)) +
   
   scale_x_log10(name = title_x) + 
   scale_y_log10(name = title_y) +
-  scale_color_manual(name = 'Functional group', values = fg_colors2, labels = fg_labels) +
+  scale_color_manual(name = 'Functional group', values = guild_fills_nb0, labels = fg_labels) +
   scale_fill_manual(values = guild_fills_nb, labels = fg_labels, guide = FALSE) +
   theme_plant #+
-  #theme(panel.border = element_rect(fill=NA),
-   #     legend.position = c(0.2, 0.8))
-p_mean_1panel 
-# 7. Plot line segments of the maximum slope at correct location, and segments with slope=1 for isometry
 
+p_mean_1panel 
+
+ #7. Plot line segments of the maximum slope at correct location, and segments with slope=1 for isometry
 
 
 
@@ -1349,13 +1340,13 @@ p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% '
   hex_scale_log_colors + 
   scale_color_manual(name = 'Functional group',values = fg_colors, labels = fg_labels) +
   #scale_fill_manual(values = fg_colors, labels = fg_labels, guide = FALSE) +
-  theme_plant_+
+  theme_plant +
   guides(color = FALSE) +
   theme(panel.border = element_rect(fill=NA),
         strip.background = element_rect(fill=NA),
         legend.position = c(0.85, 0.15))
 p_hex_panels
-#p<-set_panel_size(p_hex_panels, width=unit(10,"cm"), height=unit(6,"cm"))
+#p <-set_panel_size(p_hex_panels, width=unit(10,"cm"), height=unit(6,"cm"))
 #plot(p)
 pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/growth_light_heat.pdf"))
 p_hex_panels
@@ -1378,7 +1369,7 @@ p_median_1panel <- ggplot(obs_light_binned %>%
             filter(year == year_to_plot), aes(x = light_area, y = q50), color = "gray")+ 
   #geom_errorbar(aes(x = bin_midpoint, ymin = q25, ymax = q75, group = fg, color = fg), size = 0.75, width = 0, position = position_dodge(width = dodge_width)) +
   geom_errorbar(aes(x = bin_midpoint, ymin =ci_min, ymax = ci_max, group = fg,
-                    color = fg),size = 0.5, width = 0.75, position = position_dodge(width = dodge_width)) +
+                    color = fg),size = 0.5, width = 0.1, position = position_dodge(width = dodge_width)) +
   
   #geom_errorbar(aes(x = bin_midpoint, ymin = q025, ymax = q975, group = fg, color = fg), width = 0, position = position_dodge(width = dodge_width)) +
   geom_point(size=3.5, shape=21,color='black',aes(x = bin_midpoint,
