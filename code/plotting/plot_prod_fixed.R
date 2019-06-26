@@ -26,7 +26,7 @@ plot_prod_fixed <- function(year_to_plot = 1995,
   pos <- if (dodge_errorbar) position_dodge(width = dodge_width) else 'identity'
   
   obsdat <- obsdat %>%
-    filter(fg %in% fg_names, year == year_to_plot, !is.na(mean), mean_n_individuals > 1) %>%
+    filter(fg %in% fg_names, year == year_to_plot, !is.na(mean), mean_n_individuals > 10) %>%
     group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup
   
   obs_limits <- obsdat %>%

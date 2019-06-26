@@ -418,18 +418,27 @@ p <- plot_totalprod(year_to_plot = 1995,
                     fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                     model_fit_density = 3, 
                     model_fit_production = 2,
-                    x_limits = c(0.9,250),
-                    y_limits = c(1, 2500),
-                    y_breaks = c(1, 10, 1000),
-                    y_labels = c(1, 10, 1000),
-                    y_name = expression(paste('Total Crown Volume (m'^3, 'cm'^-1,')', ' ha'^-1,')')), 
+                    x_limits = c(0.9, 150),
+                    y_limits = c(5, 2500),
+                    y_breaks = c(1, 10, 100, 1000),
+                    y_labels = c(1, 10, 100, 1000),
+                    y_name = expression(paste('Total Crown Volume (m'^3, ' cm'^-1, ' ha'^-1,')')), 
                     preddat = fitted_totalvol %>% mutate(prod_model = 2),
                     obsdat = totalvolbins_fg, 
                     plot_abline = FALSE)
-p <- p + scale_y_continuous(position = "left", trans = "log10", 
-                            name = expression(paste('Total Crown Volume (m'^3, ' cm'^-1,' ha'^-1,')'))) +
-  theme(aspect.ratio = 0.75)
 p
+p0 <- p + scale_y_continuous(position = "left", trans = "log10", 
+                            name = expression(atop('Total Crown Volume',paste('(m'^3, ' cm'^-1,' ha'^-1,')')))) +
+  theme(aspect.ratio = 0.75)
+plot(p0)
+p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path,'Figures/Fig_4/Total_Crown_Vol.pdf'))
+plot(p1)
+dev.off()
+
+
 #drop values under n = 10; are lines fitting too low
 
 #------Fig 4b------
@@ -438,21 +447,39 @@ p <- plot_totalprod(year_to_plot = 1995,
                fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                model_fit_density = 3, 
                model_fit_production = 2,
-               x_limits = c(0.9,250),
+               x_limits = c(0.9,150),
                y_limits = c(100, 100000),
                y_breaks = c(100, 1000, 10000, 100000),
                y_labels = c("0.1", "1", "10", "100"),
-               y_name = expression(paste('Light Intercepted (kW cm'^-1,' ha'^-1,')')),
+               y_name = expression(paste('Total Light Intercepted (kW cm'^-1,' ha'^-1,')')),
                preddat = fitted_totallight,
                obsdat = totallightbins_fg,
                plot_abline = FALSE)
-
-p <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
-                            labels = c("0.1", "1", "10", "100"), limits = c(100, 100000),
-                            name = expression(paste('Light Intercepted (kW cm'^-1,' ha'^-1,')'))) +
-  theme(aspect.ratio = 0.75)
 p
+p0 <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
+                            labels = c("0.1", "1", "10", "100"), #limits = c(100, 100000),
+                            name = expression(paste('Total Light Intercepted (W cm'^-1,' ha'^-1,')'))) +
+  theme(aspect.ratio = 0.75)
+plot(p0)
 
+p1 <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
+                             labels = c("0.1", "1", "10", "100"), #limits = c(100, 100000),
+                             name = expression(atop('Total Light Intercepted',paste('(W m'^3, ' cm'^-1,' ha'^-1,')'))))  +
+  theme(aspect.ratio = 0.75)
+plot(p1)
+
+plot(p1)
+p3 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+plot(p3)
+p4 <- set_panel_size(p1, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p4)
+pdf(file.path(gdrive_path,'Figures/Fig_4/Total_light.pdf'))
+plot(p4)
+dev.off()
+
+pdf(file.path(gdrive_path,'Figures/Fig_4/Total_light_v2.pdf'))
+plot(p3)
+dev.off()
 
 # Plot individual light using the modified "prod" function
 source(file.path(github_path, 'code/plotting/plot_prod_fixed.R'))
@@ -460,25 +487,27 @@ source(file.path(github_path, 'code/plotting/plot_prod_fixed.R'))
 p <- plot_prod_fixed(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           model_fit = 2,
-          x_limits = c(1, 280),
+          x_limits = c(1, 200),
           y_limits = c(10, 1e6),
           y_breaks = c(10, 1000,1e5),
-          y_labels = c(10,1000,1e5),
+          y_labels =  c("0.01", "1", "100"),
           x_name = 'Diameter (cm)',
-          y_name = 'Individual Light Received (W)',
+          y_name = 'Individual Light Intercepted (kW)',
           error_bar_width = 0.01,
           dodge_width = 0.05,
           preddat = fitted_indivlight,
           obsdat = indivlightbins_fg %>% mutate(year = 1995, mean = q50) %>% rename(mean_n_individuals = bin_count))
 p
-p <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(10, 1000, 100000),
-                            labels = c("0.01", "1", "100"),
-                            name = expression(paste('Individual Light Received (W)'))) +
+p1 <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(10, 1000,1e5),
+                             labels = c("0.01", "1", "100"), #limits = c(100, 100000),
+                             name = expression(atop('Individual Light',paste('Intercepted (kW)'))))  +
   theme(aspect.ratio = 0.75)
-p
-
-
-
+plot(p1)  
+p2 <- set_panel_size(p1, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p2)
+pdf(file.path(gdrive_path,'Figures/Fig_4/Indiv_light.pdf'))
+plot(p1)
+dev.off()
 ################################################################################################
 # ------------------------------- Fig 5 Light Interception  ------------------------------------
 ################################################################################################
@@ -949,7 +978,6 @@ plot(p1)
 pdf(file.path(gdrive_path, 'Figures/Ex_ratios/Production_light.pdf'))
 plot(p1)
 dev.off()
-
 #  Supplmeental 
 # Relative abundance by Light 
 
