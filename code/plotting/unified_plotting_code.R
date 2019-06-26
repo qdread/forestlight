@@ -487,7 +487,7 @@ source(file.path(github_path, 'code/plotting/plot_prod_fixed.R'))
 p <- plot_prod_fixed(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           model_fit = 2,
-          x_limits = c(1, 200),
+          x_limits = c(1, 150),
           y_limits = c(10, 1e6),
           y_breaks = c(10, 1000,1e5),
           y_labels =  c("0.01", "1", "100"),
@@ -501,7 +501,7 @@ p
 p1 <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(10, 1000,1e5),
                              labels = c("0.01", "1", "100"), #limits = c(100, 100000),
                              name = expression(atop('Individual Light',paste('Intercepted (kW)'))))  +
-  theme(aspect.ratio = 0.75)
+  theme(aspect.ratio = 0.75, axis.ticks.x = element_line())
 plot(p1)  
 p2 <- set_panel_size(p1, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p2)
