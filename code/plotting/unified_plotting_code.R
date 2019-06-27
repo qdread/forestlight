@@ -570,7 +570,7 @@ plot_prod <- function(year_to_plot = 1995,
   
 }
 # Original grayscale
-#hex_scale_1 <- scale_fill_gradient(low = 'gray90', high = 'gray10', guide = FALSE)
+hex_scale_1 <- scale_fill_gradient(low = 'gray90', high = 'gray10', guide = FALSE)
 
 # Biased grayscale to emphasize the variation in the hexagons with less data.
 # Bias >1 does this.
@@ -938,12 +938,13 @@ p_mean_segments
 #dev.off()
 # 3. Plot with different panels for each functional group, and quantiles
 
+# Problem!!
 ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
   facet_wrap(~ fg,scale = "free_y", labeller = label_value) 
 
 unique(obs_light_binned$fg)
-unique(slopes$fg)
+
 
 
 # 4. Plot with different panels for each functional group, and means
