@@ -1796,7 +1796,6 @@ ggplot(rbind(prod_slopes_10cm, light_slopes_10cm) %>% filter(!fg %in% c('All','U
 # Observed values with fitted lines superimposed (update to Figure 4)
 
 # Load fitted values
-#rawlight_ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/rawlightpiecewise/rawlightpiecewise_ci_by_fg.csv', stringsAsFactors = FALSE) 
 rawlight_ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/rawlightpiecewise/rawlightpiecewise_ci_by_fg.csv', stringsAsFactors = FALSE) 
 
 area_core <- 42.84
