@@ -50,6 +50,14 @@ theme_facet2 <- theme(strip.background = element_rect(fill=NA),
                      axis.text = element_text(size = 15, color = "black"), 
                      axis.ticks.length=unit(0.2,"cm"),
                      axis.title = element_text(size = 15)) 
+
+theme_no_y <- theme(axis.title.y = element_blank(),
+      axis.text.y = element_blank(),
+      axis.ticks.y = element_blank())
+
+theme_no_x <- theme(axis.title.x = element_blank(),
+                    axis.text.x = element_blank(),
+                    axis.ticks.x = element_blank())
 ################################################################################################
 # ------------------------------ Fig 1: hand drawn schematics ---------------------------------
 ################################################################################################
@@ -221,10 +229,7 @@ plot_prod <- function(year_to_plot = 1995,
                size = geom_size,color="black",shape=21, position = pos) +
     scale_x_log10()+#name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) +
-    theme(axis.title.x = element_blank(),
-          axis.text.x = element_blank(),
-          axis.ticks.x = element_blank(),
-          rect = element_rect(fill = "transparent"))+ # all rectangles
+    theme_no_x +theme(rect = element_rect(fill = "transparent"))+ # all rectangles
     scale_color_manual(values = fill_names0) +
     scale_fill_manual(values = fill_names) + theme_plant
   
@@ -483,8 +488,7 @@ dev.off()
 
 
 #----------------------   Hex Plot of Growth Scaling  ---------------------------
-# note 'object 'alltreedat' not found'
-# Appropriate path needed 
+
 
 fp <- '~/google_drive/ForestLight/data/data_forplotting_aug2018' ## CHANGE PATH AS NEEDED
 fp <- '~/Google Drive/ForestLight/data/data_forplotting_aug2018' ## CHANGE PATH AS NEEDED
@@ -520,7 +524,7 @@ plot_prod <- function(year_to_plot = 1995,
                       x_breaks = c(1, 10, 100),
                       y_limits,
                       y_breaks,
-                      #x_name = 'Diameter (cm)',
+                      x_name = 'Diameter (cm)',
                       y_name = expression(paste('Growth (kg yr'^-1,')')), line_types = c('dashed', 'solid'),
                       aspect_ratio = 0.75,
                       hex_scale = hex_scale_log_colors,
@@ -623,7 +627,7 @@ fitted_totallight <- read.csv(file.path(fp, 'fitted_totallight.csv'), stringsAsF
 fitted_totalvol <- read.csv(file.path(fp, 'fitted_totalvol.csv'), stringsAsFactors = FALSE)
 
 # Observed (binned) values for 1995 for individual light, total light, and total volume
-load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
+#load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
 source(file.path(github_path, 'code/allfunctions27july.r'))
 fp_obs <- file.path(gdrive_path, 'data/data_forplotting_aug2018')
 binedgedata <- read.csv(file.path(fp_obs,'obs_dens.csv'),stringsAsFactors = FALSE) %>% filter(fg == 'all', year == 1995) 
@@ -770,8 +774,8 @@ dev.off()
 year_to_plot <- 1995 ### CHANGE THIS IF YOU WANT TO PLOT 1990
 
 # Load data ----
-fp <- 'data/data_forplotting_light_june2018'
-fp <- '/Users/jgradym/Google Drive/ForestLight/data/data_forplotting_light_june2018'
+
+fp <- file.path(gdrive_path, 'data/data_forplotting_light_june2018')
 
 # New File path needed
 obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
@@ -1117,16 +1121,6 @@ exv <- expression(atop('Light per Crown Volume', paste('(W cm'^-1, ')')))
 exv2 <- expression(paste('Light per Crown Volume (W cm'^-1, ')', sep = ''))
 exd <- 'Diameter (cm)'
 
-
-theme_facet2 <- theme(strip.background = element_rect(fill=NA),
-                      panel.border = element_rect(color = "black", fill=NA,  size=.75),legend.position = 'none',
-                      panel.background = element_blank(),
-                      strip.text.x =  element_text(size = 15),
-                      axis.text = element_text(size = 15, color = "black"), 
-                      axis.ticks.length=unit(0.2,"cm"),
-                      axis.title = element_text(size = 15)) 
-
-
 fg_names = c('fg1','fg2','fg3','fg4','fg5','unclassified')
 full_names = c('Fast', 'Pioneer', 'Slow', 'Breeder', 'Medium', 'Unclassified')
 labels <- setNames(full_names, fg_names)
@@ -1141,7 +1135,7 @@ p <- ggplot() + geom_point(alpha = 0.01, data = alltree_light_95, aes(x = dbh_co
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
-
+p
 
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p2)
@@ -1183,7 +1177,7 @@ dev.off()
 
 # ------------------- Each group
 ggplot() +
-  geom_point(alpha = 0.05, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received/crownvolume), color = 'forestgreen') +
+  geom_point(alpha = 0.05, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received/crownvolume), color = 'chartreuse3') +
   geom_pointrange(data = lightpervolfakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
   facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = labels)) +
   scale_x_log10(name = exd) +
@@ -1192,7 +1186,7 @@ ggplot() +
 # Plot: hexagon plot ------------------------------------------------------
 
 alpha_value <- 0.6
-hexfill <- scale_fill_gradient(low = 'green', high = 'forestgreen', trans = 'log', breaks = c(1,10,100,1000))
+hexfill <- scale_fill_gradient(low = 'blue', high = 'red', trans = 'log', breaks = c(1,10,100,1000))
 hex_scale_log_colors 
 ####### by area #######
 # Each group
@@ -1517,10 +1511,7 @@ p <- prod_ratio_light   %>%
   scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(1,330), breaks=c(1, 10, 100)) +
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.06,100),
                 name = expression("Production Ratio"))+
-  scale_y_log10(limits=c(0.006,100)) + theme(axis.title.y = element_blank(),
-                                             axis.text.y = element_blank(),
-                                             axis.ticks.y = element_blank())
-
+  scale_y_log10(limits=c(0.006,100)) + 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
@@ -1876,7 +1867,7 @@ ggsave(file.path(fpfig, 'totallightscaling_oneplot.png'), prawlightfits_onefig, 
   # Light Vs Size Plot
   # Edited 21 March: include volume in addition to area.
 
-load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
+#load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
 source(file.path(github_path, 'code/allfunctions27july.r'))
   
 alltree_light_95 <- alltree_light_95 %>%
