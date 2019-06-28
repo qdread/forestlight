@@ -558,7 +558,7 @@ plot_prod <- function(year_to_plot = 1995,
     #geom_line(data = preddat, aes(x = dbh, y = q50, group = prod_model, linetype = prod_model), size=0.25) +
     geom_abline(slope = 2, intercept = -2.1, linetype = "dashed")+
     facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = labels)) +
-    scale_x_log10()#name = x_name, limits = x_limits, breaks = x_breaks) +
+    scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
   scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels=signif) +
     #scale_linetype_manual(values = line_types, name = 'Functional form') +
     scale_linetype_manual(values = line_types) +
