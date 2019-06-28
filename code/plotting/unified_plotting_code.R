@@ -1735,14 +1735,19 @@ dev.off()
 
 
 # Fitted slopes
+# light scaling
+# QDR edit 27 June to add density slopes back in
+
 rawlightslopes <- read.csv(file.path(gdrive_path,'data/data_piecewisefits/totallightscaling/light_piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+slopes <- read.csv(file.path(gdrive_path,'data/data_piecewisefits/newpiecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+rawlightslopes <- rbind(slopes %>% filter(variable=='density'), rawlightslopes)
 #rawlightslopes <- read.csv(file.path(gdrive_path,'data/data_piecewisefits/rawlightpiecewise/rawlightpiecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 rawlightslopes$fg <- factor(rawlightslopes$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
 rawlightslopes$variable <- factor(rawlightslopes$variable, labels = c("Density", "Individual Incoming Energy", "Total Incoming Energy"))
 colors <- c("sienna4", "yellowgreen", "springgreen4")
 
 # Using 3 segment density and 2 segment production
-ggplot(rawlightslopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassified'), 
+ggplot(rawlightslopes %>% filter((dens_model == 3 & is.na(prod_model)) | (prod_model == 2 & is.na(dens_model)) | (dens_model == 3 & prod_model == 2), !fg %in% 'Unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
   facet_wrap(~ fg,labeller = label_value) +
   geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
@@ -1759,13 +1764,13 @@ ggplot(rawlightslopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unc
   ggtitle('Fitted slopes \n 3 segment density model and 2 segment incoming energy model')+
   theme(plot.title = element_text(hjust=0.5)) #+ theme(legend.title=element_blank())
 
-slopes <- read.csv(file.path(gdrive_path,'data/data_piecewisefits/piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+slopes <- read.csv(file.path(gdrive_path,'data/data_piecewisefits/newpiecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 slopes$fg <- factor(slopes$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
 slopes$variable <- factor(slopes$variable, labels = c("Density", "Individual Growth", "Total Growth"))
 colors <- c("sienna4", "yellowgreen", "springgreen4")
 
 # Using 3 segment density and 2 segment production
-ggplot(slopes %>% filter(dens_model == 3, prod_model == 1, !fg %in% 'Unclassified'), 
+ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) | (prod_model == 1 & is.na(dens_model)) | (dens_model == 3 & prod_model == 1), !fg %in% 'Unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
   facet_wrap(~ fg,labeller = label_value) +
   geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
