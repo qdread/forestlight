@@ -1325,7 +1325,7 @@ xvalues <- params %>%
 
 growth_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/newpiecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 light_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/totallightscaling/light_piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
-
+str(light_slopes)
 growth_slopes_atmiddle <- growth_slopes %>% 
   filter(variable == 'total_production', dens_model == 3, prod_model == 2) %>%
   left_join(xvalues) %>%
