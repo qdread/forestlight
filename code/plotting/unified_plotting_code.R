@@ -943,9 +943,11 @@ p_mean_segments
 # 3. Plot with different panels for each functional group, and quantiles
 
 # Problem!!
-ggplot(slopes %>% filter(dens_model == 3, prod_model == 2, !fg %in% 'Unclassified'), 
+# Corrected 28 June 2019 by QDR because format of new "slopes" DF has changed.
+ggplot(slopes %>% filter((dens_model == 3 & prod_model == 2) | (dens_model == 3 & is.na(prod_model)) | (is.na(dens_model) & prod_model == 2), !fg %in% 'Unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
-  facet_wrap(~ fg,scale = "free_y", labeller = label_value) 
+  facet_wrap(~ fg,scale = "free_y", labeller = label_value) +
+  geom_ribbon() + geom_line()
 
 unique(obs_light_binned$fg)
 
@@ -1511,7 +1513,7 @@ p <- prod_ratio_light   %>%
   scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(1,330), breaks=c(1, 10, 100)) +
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.06,100),
                 name = expression("Production Ratio"))+
-  scale_y_log10(limits=c(0.006,100)) + 
+  scale_y_log10(limits=c(0.006,100)) 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
@@ -1611,7 +1613,7 @@ p <- fastslow_stats_breeder_bydiam_2census %>% #fastslow_stats_breeder_bydiam_2c
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   geom_errorbar(width = error_bar_width) +theme_plant+
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
-  scale_fill_manual(values = c("Breeder" = "black", "Fast-Slow" = "grey"))+
+  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
   
   scale_x_log10(limits=c(.7,330),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.006,100),
