@@ -567,10 +567,10 @@ plot_prod <- function(year_to_plot = 1995,
     geom_abline(slope = 2, intercept = -2.1, linetype = "dashed")+
     facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = labels)) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
-  scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels=signif) +
+  scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) + #, labels=signif
     #scale_linetype_manual(values = line_types, name = 'Functional form') +
     scale_linetype_manual(values = line_types) +
-    hex_scale + theme_plant+
+    hex_scale + theme_plant +
     coord_fixed(ratio = aspect_ratio) + guides(linetype = 'none')+
     theme(legend.position = c(0.7, 0.15), strip.background = element_blank(),
           strip.text = element_text(size=12))#, legend.text = element_blank())
