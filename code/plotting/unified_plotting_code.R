@@ -523,7 +523,7 @@ raw_prod <- raw_prod %>%
 plot_prod <- function(year_to_plot = 1995,
                       fg_names = c('fg1','fg2','fg3','fg4','fg5','unclassified'),
                       full_names = c('Fast', 'Slow', 'Pioneer', 'Breeder', 'Medium', 'Unclassified'),
-                      func_names = c('power law', 'Power Law\ntimes Exponential'),
+                      func_names = c('power law', '2-segment power law'),
                       x_limits = c(1, 300),
                       x_breaks = c(1, 10, 100),
                       y_limits,
@@ -533,7 +533,9 @@ plot_prod <- function(year_to_plot = 1995,
                       aspect_ratio = 0.75,
                       hex_scale = hex_scale_log_colors,
                       obsdat = raw_prod,
-                      preddat = fitted_indivprod
+                      preddat = fitted_indivprod,
+                      plot_abline = TRUE,
+                      plot_fits = FALSE
 ) {
   
   require(dplyr)
@@ -554,27 +556,30 @@ plot_prod <- function(year_to_plot = 1995,
   
   preddat <- preddat %>%
     left_join(obs_limits) %>%
-    filter(dens_model == 'pareto', fg %in% fg_names, year == year_to_plot) %>%
+    filter(fg %in% fg_names, year == year_to_plot) %>%
     filter_at(vars(starts_with('q')), all_vars(. > min(y_limits))) %>%
     filter(dbh >= min_obs & dbh <= max_obs) %>%
     mutate(prod_model = factor(prod_model, labels = func_names))
   
   labels <- setNames(full_names, fg_names)
   
-  ggplot() +
+  p <- ggplot() +
     geom_hex(data = obsdat, aes(x = dbh_corr, y = production)) +
-    #geom_line(data = preddat, aes(x = dbh, y = q50, group = prod_model, linetype = prod_model), size=0.25) +
-    geom_abline(slope = 2, intercept = -2.1, linetype = "dashed")+
     facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = labels)) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
-  scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) + #, labels=signif
-    #scale_linetype_manual(values = line_types, name = 'Functional form') +
-    scale_linetype_manual(values = line_types) +
-    hex_scale + theme_plant +
-    coord_fixed(ratio = aspect_ratio) + guides(linetype = 'none')+
+    scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) + 
+    scale_linetype_manual(name = 'Growth fit', values = line_types) +
+    hex_scale + 
+    theme_plant +
+    coord_fixed(ratio = aspect_ratio) + 
     theme(legend.position = c(0.7, 0.15), strip.background = element_blank(),
-          strip.text = element_text(size=12))#, legend.text = element_blank())
+          strip.text = element_text(size=12),
+          legend.key = element_rect(fill = NA))
   
+  if (plot_abline) p <- p + geom_abline(slope = 2, intercept = -2.1, linetype = "dashed") + guides(linetype = 'none')
+  if (plot_fits) p <- p + geom_line(data = preddat, aes(x = dbh, y = q50, group = prod_model, linetype = prod_model), size=0.25) 
+
+  return(p)
   
 }
 # Original grayscale
@@ -606,7 +611,12 @@ p <- plot_prod(year_to_plot = 1995,
                y_limits = c(0.001, 1000),
                y_breaks = c(.001, .1, 10, 1000),
                line_types = c('dashed', 'solid'),
-               hex_scale = hex_scale_log_colors)
+               hex_scale = hex_scale_log_colors,
+               plot_abline = FALSE,
+               plot_fits = TRUE)
+
+p <- p + theme(legend.position = 'bottom')
+
 p 
 pdf(file.path(gdrive_path, 'Figures/Growth_hex/growth_hex.pdf'))
 p
