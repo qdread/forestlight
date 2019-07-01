@@ -13,6 +13,10 @@ github_path <- '~/Documents/GitHub/forestlight'
 gdrive_path <- '/Users/jgradym/Google Drive/ForestLight'
 github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
 
+#Grady_2
+gdrive_path <- '/Users/johngrady/Google Drive/ForestLight'
+github_path <- '/Users/johngrady/Documents/GitHub/forestlight'
+
 library(tidyverse)
 library(egg)
 library(scales)
