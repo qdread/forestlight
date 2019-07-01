@@ -1151,6 +1151,7 @@ dev.off()
 
 #name = expression(atop('Total Light Intercepted',paste('(W m'^3, ' cm'^-1,' ha'^-1,')'))))  
 # Supp: Each group
+alpha_value <- 0.05
 ggplot() +
   geom_point(alpha = 0.05, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received/crownarea), color = 'chartreuse3') +
   geom_pointrange(data = lightperareafakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), 
@@ -1516,8 +1517,8 @@ p <- prod_ratio_light   %>%
   theme_plant+
   scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(1,330), breaks=c(1, 10, 100)) +
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.06,100),
-                name = expression("Production Ratio"))+
-  scale_y_log10(limits=c(0.006,100)) 
+                name = expression("Production Ratio"))
+
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
@@ -1535,15 +1536,13 @@ p <- prod_ratio_diam   %>%
              ymin =production_ratio_min, ymax = production_ratio_max, fill = ID)) +
   geom_errorbar(width = error_bar_width) +
   geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
-  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
+  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey")) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  theme_plant+
+  theme_plant +
   scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(1,330), breaks=c(1, 10, 100)) +
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.06,100),
-                name = expression("Production Ratio"))+
-  scale_y_log10(limits=c(0.006,100)) + theme(axis.title.y = element_blank(),
-                                             axis.text.y = element_blank(),
-                                             axis.ticks.y = element_blank())
+                name = expression("Production Ratio")) +
+  theme_no_y
 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
@@ -1566,9 +1565,7 @@ p <- bylight_2census    %>%
   scale_x_log10(limits=c(1,400),breaks=c(1,10,100), name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
   scale_y_log10(breaks = c(0.01,0.1,1,10,100), labels=signif, limits=c(0.003,500),
                 name = expression("Abundance Ratio"))
-#scale_y_log10() + theme(axis.title.y = element_blank(),
-#     axis.text.y = element_blank(),
-#    axis.ticks.y = element_blank())
+
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
@@ -1798,75 +1795,6 @@ ggplot(rbind(prod_slopes_10cm, light_slopes_10cm) %>% filter(!fg %in% c('All','U
 ###
 # Observed values with fitted lines superimposed (update to Figure 4)
 
-# Load fitted values
-rawlight_ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/rawlightpiecewise/rawlightpiecewise_ci_by_fg.csv', stringsAsFactors = FALSE) 
-
-area_core <- 42.84
-
-rawlight_ci_df$fg[rawlight_ci_df$fg == 'alltree'] <- 'all'
-
-rawlight_pred_dens <- rawlight_ci_df %>%
-  filter(variable == 'density') %>%
-  select(-variable) %>%
-  mutate_at(vars(starts_with('q')), funs(./area_core)) 
-
-rawlight_fitted_indivprod <- rawlight_ci_df %>%
-  filter(variable == 'production_fitted') %>%
-  select(-variable)
-
-rawlight_fitted_totalprod <- rawlight_ci_df %>%
-  filter(variable == 'total_production_fitted') %>%
-  select(-variable) %>%
-  mutate_at(vars(starts_with('q')), funs(./area_core)) 
-
-rawlight_pred_indivprod <- rawlight_ci_df %>%
-  filter(variable == 'production') %>%
-  select(-variable)
-
-rawlight_pred_totalprod <- rawlight_ci_df %>%
-  filter(variable == 'total_production') %>%
-  select(-variable) %>%
-  mutate_at(vars(starts_with('q')), funs(./area_core)) 
-
-# Load observed values
-rawlight_obs_totalprod <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/rawlightpiecewise/observed_light_bin.csv', stringsAsFactors = FALSE) %>% mutate(bin_value = bin_value/area_core)
-
-
-# The below df is from the "total workflow" (Do not run)
-# rawlight_observed_bin <- cbind(fg = 'all', lightreceivedbin_alltree_byyear[[2]]) %>%
-#   rbind(map2_dfr(lightreceivedbin_fg_byyear, c('fg1','fg2','fg3','fg4','fg5','unclassified'), ~ cbind(fg = .y, .x[[2]])))
-# write.csv(rawlight_observed_bin, file = '~/google_drive/ForestLight/data/data_piecewisefits/rawlightpiecewise/observed_light_bin.csv', row.names = FALSE)
-
-# Modify fitted values so that they do not go above the data.
-bin_maxes <- rawlight_obs_totalprod %>% group_by(fg) %>% summarize(max = max(bin_midpoint[bin_count > 10]))
-rawlight_fitted_totalprod <- rawlight_fitted_totalprod %>%
-  left_join(bin_maxes) %>%
-  filter(dbh <= max)
-
-prawlightfits <- ggplot(rawlight_obs_totalprod %>% filter(!is.na(fg), !fg %in% 'unclassified', bin_count > 10)) +
-  geom_ribbon(data = rawlight_fitted_totalprod %>% filter(prod_model == 2, !fg %in% 'unclassified'), aes(x = dbh, ymin = q025, ymax = q975), fill = 'gray80') +
-  geom_line(data = rawlight_fitted_totalprod %>% filter(prod_model == 2, !fg %in% 'unclassified'), aes(x = dbh, y = q50)) +
-  geom_point(aes(x = bin_midpoint, y = bin_value)) +
-  facet_wrap(~ fg) +
-  scale_x_log10(name = 'Diameter (cm)') +
-  scale_y_log10(name = expression(paste('Total incoming light (W ha'^-1,')', sep=''))) +
-  theme_bw() 
-
-mycols <- c('black', RColorBrewer::brewer.pal(5,'Set1'))
-
-prawlightfits_onefig <- ggplot(rawlight_obs_totalprod %>% filter(!is.na(fg), !fg %in% 'unclassified', bin_count > 10)) +
-  geom_ribbon(data = rawlight_fitted_totalprod %>% filter(prod_model == 2, !fg %in% 'unclassified'), aes(x = dbh, ymin = q025, ymax = q975, fill = fg), alpha = 0.4) +
-  geom_line(data = rawlight_fitted_totalprod %>% filter(prod_model == 2, !fg %in% 'unclassified'), aes(x = dbh, y = q50, color = fg)) +
-  geom_point(aes(x = bin_midpoint, y = bin_value, color = fg)) +
-  scale_x_log10(name = 'Diameter (cm)') +
-  scale_y_log10(name = expression(paste('Total incoming light (W ha'^-1,')', sep='')), limits = c(1e2,1e5)) +
-  theme_bw() +
-  scale_color_manual(values=mycols) + scale_fill_manual(values=mycols)
-
-
-fpfig <- '~/google_drive/ForestLight/figs/lightpowerlaws_feb2019'
-ggsave(file.path(fpfig, 'totallightscaling_separateplots.png'), prawlightfits, height = 5, width = 8, dpi = 300)
-ggsave(file.path(fpfig, 'totallightscaling_oneplot.png'), prawlightfits_onefig, height = 5, width = 6, dpi = 300)
 
 # light per volume
 
@@ -1950,7 +1878,7 @@ p <- ggplot() +
         strip.text.x = element_text(size = 12, face = "italic"),
         panel.grid = element_blank(), legend.position = 'none')
 p
-lapdf(file.path(gdrive_path, 'Figures/Growth_light/light_crown_area_fg.pdf'))
+pdf(file.path(gdrive_path, 'Figures/Growth_light/light_crown_area_fg.pdf'))
 p
 dev.off()
 lightperareafakebin_fg$fg
@@ -1983,14 +1911,14 @@ p <- ggplot() +
   scale_x_log10(name = exd, breaks = c(1, 3, 10, 30, 100)) +
   scale_y_log10(name = exv) +
   theme(axis.title = element_text(size = 12)) +
-  theme_bw() + 
+  theme_facet + 
   theme(axis.text = element_text(color = "black", size = 12), axis.title = element_text(size = 13)) + 
           theme(legend.position="none") +
   theme(strip.background = element_blank(), 
         panel.border = element_rect(color = "black", fill = NA, size = .75),
         strip.text.x = element_text(size = 12, face = "italic"),
         panel.grid = element_blank(), legend.position = 'none') +
-scale_color_manual(values = guild_fills_nb2)
+scale_color_manual(values = guild_fills_nb0)
 p
   
 pdf(file.path(gdrive_path, 'Figures/Growth_light/light_crown_vol_fg.pdf'))
@@ -1999,19 +1927,6 @@ dev.off()
 
 colors <- c("sienna4", "yellowgreen", "springgreen4")
 
-
-
-# All together
-p <- ggplot() +
-  geom_point(alpha = 0.01, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownvolume), color = 'chartreuse3') +
-  geom_pointrange(data = lightpervolfakebin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  scale_x_log10(name = exd, breaks = c(1, 3, 10, 30, 100)) +
-  scale_y_log10(name = exv) +
-  theme_plant 
-p
-pdf(file.path(gdrive_path, 'Figures/Growth_light/light_crown_vol_all.pdf'))
-p
-dev.off()
 
 
 
