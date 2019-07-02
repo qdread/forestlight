@@ -111,7 +111,7 @@ pred_totalprod <- ci_df %>%
 # Then divide by area
 totalprod_integrals <- fitted_totalprod %>%
   left_join(lim_totalprod) %>%
-  group_by(fg) %>%
+  group_by(fg, dens_model, prod_model) %>%
   filter(dbh <= lim_max) %>%
   summarize(integral = trapz(x = dbh, y = q50)) %>%
   left_join(prod_totals_fg) %>%
@@ -166,7 +166,7 @@ pred_totallight <- ci_df %>%
 # Then divide by area
 totallight_integrals <- fitted_totallight %>%
   left_join(lim_totallight) %>%
-  group_by(fg) %>%
+  group_by(fg, dens_model, prod_model) %>%
   filter(dbh <= lim_max) %>%
   summarize(integral = trapz(x = dbh, y = q50)) %>%
   left_join(light_totals_fg) %>%
@@ -195,14 +195,13 @@ area_core <- 42.84
 ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
 
 fitted_totalvol <- ci_df %>%
-  select(-variable) %>%
-  mutate_at(vars(starts_with('q')), funs(./area_core)) 
+  select(-variable) 
 
 # Get integral and multiply fitted total volume by the new constant
 # Then divide by area
 totalvol_integrals <- fitted_totalvol %>%
   left_join(lim_totalvol) %>%
-  group_by(fg) %>%
+  group_by(fg, dens_model) %>%
   filter(dbh <= lim_max) %>%
   summarize(integral = trapz(x = dbh, y = q50)) %>%
   left_join(volume_totals_fg) %>%

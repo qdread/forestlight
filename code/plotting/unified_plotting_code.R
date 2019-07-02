@@ -636,6 +636,7 @@ dev.off()
 
 # Fitted values for individual light, total light, and total volume
 fp <- file.path(gdrive_path, 'data/data_piecewisefits')
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
 fitted_indivlight <- read.csv(file.path(fp, 'fitted_indivlight.csv'), stringsAsFactors = FALSE)
 fitted_totallight <- read.csv(file.path(fp, 'fitted_totallight.csv'), stringsAsFactors = FALSE)
 fitted_totalvol <- read.csv(file.path(fp, 'fitted_totalvol.csv'), stringsAsFactors = FALSE)

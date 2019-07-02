@@ -19,6 +19,12 @@ fitted_totalvolume <- function(fit, dbh_pred, dens_form = NA, x_min = NULL, n_in
       dens_fitted <- dens_fitted * n_indiv
 	  dens_fitted_quant <- apply(dens_fitted, 2, quantile, probs = qprobs, na.rm = TRUE)
 	  
+	  # Use crown volume allometry to get crown volume for each dbh pred.
+
+	  volumes <- exp(-.681 + 2.02 * log(dbh_pred))
+
+	  totalvol_fitted <- sweep(dens_fitted, 2, volumes, '*')
+	  
 	  totalvol_fitted_quant <- apply(totalvol_fitted, 2, quantile, probs = qprobs, na.rm = TRUE)
  
 
