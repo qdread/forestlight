@@ -4,6 +4,7 @@
 # Edited 14 Feb 2019: also expand this to handle the piecewise by light received fits.
 # Edited 17 Feb 2019: Add lognormal distribution too.
 # Edited 17 Jun 2019: Change file names so it can accommodate the incoming light and volume scalings
+# Edited 02 Jul 2019: Get rid of the integration correction factor (better new one is applied elsewhere)
 
 # Information to get:
 # Parameter values and credible intervals
@@ -75,180 +76,165 @@ param_values <- function(fit, pars) {
 # Works for density, for production, or for total production
 # Fit should be a list. If total production, it's list (density, production)
 
-fitted_predicted_values <- function(fit, variable, dbh_pred, dens_form = NA, prod_form = NA, total_prod = NA, x_min = NULL, n_indiv = 1, ll = 1.1, ul = 316, pars_to_get, scaling_var = 'dbh') {
+fitted_predicted_values <- function(fit, variable, dbh_pred, dens_form = NA, prod_form = NA, x_min = NULL, n_indiv = 1, ll = 1.1, ul = 316, pars_to_get, scaling_var = 'dbh') {
   require(purrr)
-  require(pracma)
-  
+
   # Use high and low normal quantiles to get prediction intervals
   prediction_quantile <- function(p, fitted_values) {
-	pred_raw <- apply(fitted_values, 2, function(mus) exp(qnorm(p, mean = log(mus), sd = pars_prod[,'sigma'])))
-	apply(pred_raw, 2, median, na.rm = TRUE)
+    pred_raw <- apply(fitted_values, 2, function(mus) exp(qnorm(p, mean = log(mus), sd = pars_prod[,'sigma'])))
+    apply(pred_raw, 2, median, na.rm = TRUE)
   }
   
   qprobs <- c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975) 
-   
+  
   if (variable == 'density' | variable == 'total_production') {
-	  pars_dens <- as.data.frame(do.call('cbind', extract(fit[['density']], pars_to_get[['density']])))
-
-	  if (dens_form == '1') {
-		dens_fitted <- sapply(dbh_pred, pdf_pareto, xmin = x_min, alpha = pars_dens[,'alpha']) 
-	  }
-	  if (dens_form == '2') {
-		dens_fitted <- sapply(dbh_pred, pdf_2part, xmin = x_min, alpha_low = pars_dens[,'alpha_low'], alpha_high = pars_dens[,'alpha_high'], tau = pars_dens[,'tau'])
-	  }
-	  if (dens_form == '3') {
-		dens_fitted <- sapply(dbh_pred, pdf_3part, xmin = x_min, alpha_low = pars_dens[,'alpha_low'], alpha_mid = pars_dens[,'alpha_mid'], alpha_high = pars_dens[,'alpha_high'], tau_low = pars_dens[,'tau_low'], tau_high = pars_dens[,'tau_high'])
-	  }
-	  if (dens_form == 'w') {
-		# Must manually rescale and remove upper and lower truncations
-		trunc_pts <- pmap(pars_dens, function(m, n, ...) pweibull(q = c(ll,ul), shape = m, scale = n))
-		dens_fitted <- sapply(dbh_pred, dweibull, shape = pars_dens[,'m'], scale = pars_dens[,'n']) 
-		dens_fitted <- t(sapply(1:nrow(dens_fitted), function(i) {
-		  x <- dens_fitted[i,]/diff(trunc_pts[[i]])
-		  x
-		  }))
-	  }
-	  if (dens_form == 'ln') {
-		dens_fitted <- sapply(dbh_pred, dlnorm, meanlog = pars_dens[,'mu_logn'], sdlog = pars_dens[,'sigma_logn']) 
-	  }
-      dens_fitted <- dens_fitted * n_indiv
-	  dens_fitted_quant <- apply(dens_fitted, 2, quantile, probs = qprobs, na.rm = TRUE)
+    pars_dens <- as.data.frame(do.call('cbind', extract(fit[['density']], pars_to_get[['density']])))
+    
+    if (dens_form == '1') {
+      dens_fitted <- sapply(dbh_pred, pdf_pareto, xmin = x_min, alpha = pars_dens[,'alpha']) 
+    }
+    if (dens_form == '2') {
+      dens_fitted <- sapply(dbh_pred, pdf_2part, xmin = x_min, alpha_low = pars_dens[,'alpha_low'], alpha_high = pars_dens[,'alpha_high'], tau = pars_dens[,'tau'])
+    }
+    if (dens_form == '3') {
+      dens_fitted <- sapply(dbh_pred, pdf_3part, xmin = x_min, alpha_low = pars_dens[,'alpha_low'], alpha_mid = pars_dens[,'alpha_mid'], alpha_high = pars_dens[,'alpha_high'], tau_low = pars_dens[,'tau_low'], tau_high = pars_dens[,'tau_high'])
+    }
+    if (dens_form == 'w') {
+      # Must manually rescale and remove upper and lower truncations
+      trunc_pts <- pmap(pars_dens, function(m, n, ...) pweibull(q = c(ll,ul), shape = m, scale = n))
+      dens_fitted <- sapply(dbh_pred, dweibull, shape = pars_dens[,'m'], scale = pars_dens[,'n']) 
+      dens_fitted <- t(sapply(1:nrow(dens_fitted), function(i) {
+        x <- dens_fitted[i,]/diff(trunc_pts[[i]])
+        x
+      }))
+    }
+    if (dens_form == 'ln') {
+      dens_fitted <- sapply(dbh_pred, dlnorm, meanlog = pars_dens[,'mu_logn'], sdlog = pars_dens[,'sigma_logn']) 
+    }
+    dens_fitted <- dens_fitted * n_indiv
+    dens_fitted_quant <- apply(dens_fitted, 2, quantile, probs = qprobs, na.rm = TRUE)
   }
   
   if (variable == 'production' | variable == 'total_production') {
-	pars_prod <- as.data.frame(do.call('cbind', extract(fit[['production']], c(pars_to_get[['production']], 'sigma'))))
-	  if (prod_form == '1') {
-		prod_fitted <- sapply(dbh_pred, powerlaw_log, beta0 = pars_prod[,'beta0'], beta1 = pars_prod[,'beta1'])
-	  }
-	  if (prod_form == '2') {
-		prod_fitted <- sapply(dbh_pred, powerlaw_hinge_log, beta0 = pars_prod[,'beta0'], beta1_low = pars_prod[,'beta1_low'], beta1_high = pars_prod[,'beta1_high'], x0 = pars_prod[,'x0'], delta = pars_prod[,'delta'])
-	  }
-	  prod_fitted_quant <- apply(prod_fitted, 2, quantile, probs = qprobs, na.rm = TRUE)
-	  prod_pred_quant <- map_dfc(qprobs, prediction_quantile, fitted_values = prod_fitted)
+    pars_prod <- as.data.frame(do.call('cbind', extract(fit[['production']], c(pars_to_get[['production']], 'sigma'))))
+    if (prod_form == '1') {
+      prod_fitted <- sapply(dbh_pred, powerlaw_log, beta0 = pars_prod[,'beta0'], beta1 = pars_prod[,'beta1'])
+    }
+    if (prod_form == '2') {
+      prod_fitted <- sapply(dbh_pred, powerlaw_hinge_log, beta0 = pars_prod[,'beta0'], beta1_low = pars_prod[,'beta1_low'], beta1_high = pars_prod[,'beta1_high'], x0 = pars_prod[,'x0'], delta = pars_prod[,'delta'])
+    }
+    prod_fitted_quant <- apply(prod_fitted, 2, quantile, probs = qprobs, na.rm = TRUE)
+    prod_pred_quant <- map_dfc(qprobs, prediction_quantile, fitted_values = prod_fitted)
   }
-    
+  
   if (variable == 'total_production') {
-	  totalprod_fitted <- dens_fitted * prod_fitted
-	  
-	  
-	  # Integrate fitted total production and multiply total production fitted values by the 
-	  # ratio of total observed production and integral of fitted production
-	  # (Use trapezoidal integration)
-	  totalprod_fitted <- t(sapply(1:nrow(totalprod_fitted), function(i) {
-		fitted_integral <- trapz(x = dbh_pred, y = totalprod_fitted[i,])
-		totalprod_fitted[i,] * total_prod / fitted_integral
-	  }))
-      totalprod_fitted_quant <- apply(totalprod_fitted, 2, quantile, probs = qprobs, na.rm = TRUE)
-	  totalprod_pred_quant <- map_dfc(qprobs, prediction_quantile, fitted_values = totalprod_fitted)
+    totalprod_fitted <- dens_fitted * prod_fitted
+    
+    totalprod_fitted_quant <- apply(totalprod_fitted, 2, quantile, probs = qprobs, na.rm = TRUE)
+    totalprod_pred_quant <- map_dfc(qprobs, prediction_quantile, fitted_values = totalprod_fitted)
   }
   
   if (variable == 'density') {
-	out <- data.frame(dbh = dbh_pred,
-                    variable = rep('density', length(dbh_pred)),
-                    t(dens_fitted_quant))
+    out <- data.frame(dbh = dbh_pred,
+                      variable = rep('density', length(dbh_pred)),
+                      t(dens_fitted_quant))
   } 
   if (variable == 'production') {
-	out <- data.frame(dbh = dbh_pred,
-                    variable = rep(c('production','production_fitted'), each = length(dbh_pred)),
-                    rbind(as.matrix(prod_pred_quant), t(prod_fitted_quant)))
+    out <- data.frame(dbh = dbh_pred,
+                      variable = rep(c('production','production_fitted'), each = length(dbh_pred)),
+                      rbind(as.matrix(prod_pred_quant), t(prod_fitted_quant)))
   }
   if (variable == 'total_production') {
-	out <- data.frame(dbh = dbh_pred,
-                    variable = rep(c('total_production','total_production_fitted'), each = length(dbh_pred)),
-                    rbind(as.matrix(totalprod_pred_quant), t(totalprod_fitted_quant)))
+    out <- data.frame(dbh = dbh_pred,
+                      variable = rep(c('total_production','total_production_fitted'), each = length(dbh_pred)),
+                      rbind(as.matrix(totalprod_pred_quant), t(totalprod_fitted_quant)))
   }
   
   setNames(out, c(scaling_var, 'variable', 'q025', 'q05', 'q25', 'q50', 'q75', 'q95', 'q975'))  
 }
 
+
 # 3. Function to get the fitted log slope values at many points
 # -------------------------------------------------------------
 
-fitted_slope_ci <- function(fit, variable, dbh_pred, dens_form, prod_form, total_prod, x_min = NULL, n_indiv = 1, ll = 1.1, ul = 316, pars_to_get,  scaling_var = 'dbh') {
+fitted_slope_ci <- function(fit, variable, dbh_pred, dens_form, prod_form, x_min = NULL, n_indiv = 1, ll = 1.1, ul = 316, pars_to_get, scaling_var = 'dbh') {
   require(purrr)
-  require(pracma)
-    
+  
   qprobs <- c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975) 
   
   # Here, get the fitted log slope for all the predicted values. (x is dbh_pred and y is each column of fitted value)
   # Uses formula x/y dy/dx for log slope.
   log_slope <- function(x, y) (x[-1]/y[-1]) * diff(y)/diff(x)  
-   
+  
   if (variable == 'density' | variable == 'total_production') {
-	  pars_dens <- as.data.frame(do.call('cbind', extract(fit[['density']], pars_to_get[['density']])))
-
-	  if (dens_form == '1') {
-		dens_fitted <- sapply(dbh_pred, pdf_pareto, xmin = x_min, alpha = pars_dens[,'alpha']) 
-	  }
-	  if (dens_form == '2') {
-		dens_fitted <- sapply(dbh_pred, pdf_2part, xmin = x_min, alpha_low = pars_dens[,'alpha_low'], alpha_high = pars_dens[,'alpha_high'], tau = pars_dens[,'tau'])
-	  }
-	  if (dens_form == '3') {
-		dens_fitted <- sapply(dbh_pred, pdf_3part, xmin = x_min, alpha_low = pars_dens[,'alpha_low'], alpha_mid = pars_dens[,'alpha_mid'], alpha_high = pars_dens[,'alpha_high'], tau_low = pars_dens[,'tau_low'], tau_high = pars_dens[,'tau_high'])
-	  }
-	  if (dens_form == 'w') {
-		# Must manually rescale and remove upper and lower truncations
-		trunc_pts <- pmap(pars_dens, function(m, n, ...) pweibull(q = c(ll,ul), shape = m, scale = n))
-		dens_fitted <- sapply(dbh_pred, dweibull, shape = pars_dens[,'m'], scale = pars_dens[,'n']) 
-		dens_fitted <- t(sapply(1:nrow(dens_fitted), function(i) {
-		  x <- dens_fitted[i,]/diff(trunc_pts[[i]])
-		  x
-		  }))
-	  }
-	  if (dens_form == 'ln') {
-		dens_fitted <- sapply(dbh_pred, dlnorm, meanlog = pars_dens[,'mu_logn'], sdlog = pars_dens[,'sigma_logn']) 
-	  }
-      dens_fitted <- dens_fitted * n_indiv
-	  dens_fittedslopes <- map_dfr(as.data.frame(t(dens_fitted)), ~ log_slope(dbh_pred, .))
-	  dens_fittedslopes_quant <- apply(dens_fittedslopes, 1, quantile, probs = qprobs, na.rm = TRUE)
+    pars_dens <- as.data.frame(do.call('cbind', extract(fit[['density']], pars_to_get[['density']])))
+    
+    if (dens_form == '1') {
+      dens_fitted <- sapply(dbh_pred, pdf_pareto, xmin = x_min, alpha = pars_dens[,'alpha']) 
+    }
+    if (dens_form == '2') {
+      dens_fitted <- sapply(dbh_pred, pdf_2part, xmin = x_min, alpha_low = pars_dens[,'alpha_low'], alpha_high = pars_dens[,'alpha_high'], tau = pars_dens[,'tau'])
+    }
+    if (dens_form == '3') {
+      dens_fitted <- sapply(dbh_pred, pdf_3part, xmin = x_min, alpha_low = pars_dens[,'alpha_low'], alpha_mid = pars_dens[,'alpha_mid'], alpha_high = pars_dens[,'alpha_high'], tau_low = pars_dens[,'tau_low'], tau_high = pars_dens[,'tau_high'])
+    }
+    if (dens_form == 'w') {
+      # Must manually rescale and remove upper and lower truncations
+      trunc_pts <- pmap(pars_dens, function(m, n, ...) pweibull(q = c(ll,ul), shape = m, scale = n))
+      dens_fitted <- sapply(dbh_pred, dweibull, shape = pars_dens[,'m'], scale = pars_dens[,'n']) 
+      dens_fitted <- t(sapply(1:nrow(dens_fitted), function(i) {
+        x <- dens_fitted[i,]/diff(trunc_pts[[i]])
+        x
+      }))
+    }
+    if (dens_form == 'ln') {
+      dens_fitted <- sapply(dbh_pred, dlnorm, meanlog = pars_dens[,'mu_logn'], sdlog = pars_dens[,'sigma_logn']) 
+    }
+    dens_fitted <- dens_fitted * n_indiv
+    dens_fittedslopes <- map_dfr(as.data.frame(t(dens_fitted)), ~ log_slope(dbh_pred, .))
+    dens_fittedslopes_quant <- apply(dens_fittedslopes, 1, quantile, probs = qprobs, na.rm = TRUE)
   }
   
   if (variable == 'production' | variable == 'total_production') {
-	pars_prod <- as.data.frame(do.call('cbind', extract(fit[['production']], pars_to_get[['production']])))
-	  if (prod_form == '1') {
-		prod_fitted <- sapply(dbh_pred, powerlaw_log, beta0 = pars_prod[,'beta0'], beta1 = pars_prod[,'beta1'])
-	  }
-	  if (prod_form == '2') {
-		prod_fitted <- sapply(dbh_pred, powerlaw_hinge_log, beta0 = pars_prod[,'beta0'], beta1_low = pars_prod[,'beta1_low'], beta1_high = pars_prod[,'beta1_high'], x0 = pars_prod[,'x0'], delta = pars_prod[,'delta'])
-	  }
-	  prod_fittedslopes <- map_dfr(as.data.frame(t(prod_fitted)), ~ log_slope(dbh_pred, .))
-	  prod_fittedslopes_quant <- apply(prod_fittedslopes, 1, quantile, probs = qprobs, na.rm = TRUE)
+    pars_prod <- as.data.frame(do.call('cbind', extract(fit[['production']], pars_to_get[['production']])))
+    if (prod_form == '1') {
+      prod_fitted <- sapply(dbh_pred, powerlaw_log, beta0 = pars_prod[,'beta0'], beta1 = pars_prod[,'beta1'])
+    }
+    if (prod_form == '2') {
+      prod_fitted <- sapply(dbh_pred, powerlaw_hinge_log, beta0 = pars_prod[,'beta0'], beta1_low = pars_prod[,'beta1_low'], beta1_high = pars_prod[,'beta1_high'], x0 = pars_prod[,'x0'], delta = pars_prod[,'delta'])
+    }
+    prod_fittedslopes <- map_dfr(as.data.frame(t(prod_fitted)), ~ log_slope(dbh_pred, .))
+    prod_fittedslopes_quant <- apply(prod_fittedslopes, 1, quantile, probs = qprobs, na.rm = TRUE)
   }
-    
+  
   if (variable == 'total_production') {
-	  totalprod_fitted <- dens_fitted * prod_fitted
-	  
-	  
-	  # Integrate fitted total production and multiply total production fitted values by the 
-	  # ratio of total observed production and integral of fitted production
-	  # (Use trapezoidal integration)
-	  totalprod_fitted <- t(sapply(1:nrow(totalprod_fitted), function(i) {
-		fitted_integral <- trapz(x = dbh_pred, y = totalprod_fitted[i,])
-		totalprod_fitted[i,] * total_prod / fitted_integral
-	  }))
-      totalprod_fittedslopes <- map_dfr(as.data.frame(t(totalprod_fitted)), ~ log_slope(dbh_pred, .))
-	  totalprod_fittedslopes_quant <- apply(totalprod_fittedslopes, 1, quantile, probs = qprobs, na.rm = TRUE)
+    totalprod_fitted <- dens_fitted * prod_fitted
+    
+   
+    totalprod_fittedslopes <- map_dfr(as.data.frame(t(totalprod_fitted)), ~ log_slope(dbh_pred, .))
+    totalprod_fittedslopes_quant <- apply(totalprod_fittedslopes, 1, quantile, probs = qprobs, na.rm = TRUE)
   }
   
   if (variable == 'density') {
-	out <- data.frame(dbh = dbh_pred[-1],
-                    variable = rep('density', length(dbh_pred)-1),
-                    t(dens_fittedslopes_quant))
+    out <- data.frame(dbh = dbh_pred[-1],
+                      variable = rep('density', length(dbh_pred)-1),
+                      t(dens_fittedslopes_quant))
   } 
   if (variable == 'production') {
-	out <- data.frame(dbh = dbh_pred[-1],
-                    variable = rep('production', length(dbh_pred)-1),
-                    t(prod_fittedslopes_quant))
+    out <- data.frame(dbh = dbh_pred[-1],
+                      variable = rep('production', length(dbh_pred)-1),
+                      t(prod_fittedslopes_quant))
   }
   if (variable == 'total_production') {
-	out <- data.frame(dbh = dbh_pred[-1],
-                    variable = rep('total_production', length(dbh_pred)-1),
-                    t(totalprod_fittedslopes_quant))
+    out <- data.frame(dbh = dbh_pred[-1],
+                      variable = rep('total_production', length(dbh_pred)-1),
+                      t(totalprod_fittedslopes_quant))
   }
   
   setNames(out, c(scaling_var, 'variable', 'q025', 'q05', 'q25', 'q50', 'q75', 'q95', 'q975'))
-    
+  
 }
+
 
 # 4. Function to get the Bayesian R-squared and its quantiles
 # -----------------------------------------------------------
@@ -339,7 +325,7 @@ extract_density <- function(dens_model, fg, year, xmin, n, use_subset = FALSE, n
 	   fitted_slopes = fitted_slopes)
 }
 
-extract_production <- function(prod_model, fg, year, xmin, n, total_production, use_subset = FALSE, n_chains = 3, scaling.var = 'dbh', fp = '~/forestlight/stanoutput', fpdump = '~/forestlight/stanrdump', productionfitprefix = 'fit_production', infix = '', dumpprefix = 'dump_', LL = 1.1, UL = 316) {
+extract_production <- function(prod_model, fg, year, xmin, n, use_subset = FALSE, n_chains = 3, scaling.var = 'dbh', fp = '~/forestlight/stanoutput', fpdump = '~/forestlight/stanrdump', productionfitprefix = 'fit_production', infix = '', dumpprefix = 'dump_', LL = 1.1, UL = 316) {
   require(rstan)
   require(loo)
   require(Brobdingnag)
@@ -361,12 +347,12 @@ extract_production <- function(prod_model, fg, year, xmin, n, total_production, 
 
   # Get fitted values with credible intervals and prediction intervals
   print('Calculating fitted values and prediction intervals . . .')
-  pred_interval <- fitted_predicted_values(fit, variable = 'production', dbh_pred, prod_form = prod_model, total_prod = total_production, x_min = xmin, n_indiv = n, pars_to_get = get_pars, scaling_var = scaling.var, ll = LL, ul = UL)
+  pred_interval <- fitted_predicted_values(fit, variable = 'production', dbh_pred, prod_form = prod_model, x_min = xmin, n_indiv = n, pars_to_get = get_pars, scaling_var = scaling.var, ll = LL, ul = UL)
   pred_interval <- data.frame(year = year, prod_model = prod_model, fg = fg, pred_interval)
   
   # Get fitted log slopes
   print('Calculating log slopes . . .')
-  fitted_slopes <- fitted_slope_ci(fit, variable = 'production', dbh_pred, prod_form = prod_model, total_prod = total_production, x_min = xmin, n_indiv = n, scaling_var = scaling.var, pars_to_get = get_pars, ll = LL, ul = UL)
+  fitted_slopes <- fitted_slope_ci(fit, variable = 'production', dbh_pred, prod_form = prod_model, x_min = xmin, n_indiv = n, scaling_var = scaling.var, pars_to_get = get_pars, ll = LL, ul = UL)
   fitted_slopes <- data.frame(year = year, prod_model = prod_model, fg = fg, fitted_slopes)
 
   # Get WAIC and LOOIC
@@ -393,10 +379,10 @@ extract_production <- function(prod_model, fg, year, xmin, n, total_production, 
 	   r2s = r2s)
 }
 
-extract_totalproduction <- function(dens_model, prod_model, fg, year, xmin, n, total_production, use_subset = FALSE, n_chains = 3, scaling.var = 'dbh', fp = '~/forestlight/stanoutput', densityfitprefix = 'fit_density', productionfitprefix = 'fit_production', infix = '', LL = 1.1, UL = 316) {
+extract_totalproduction <- function(dens_model, prod_model, fg, year, xmin, n, use_subset = FALSE, n_chains = 3, scaling.var = 'dbh', fp = '~/forestlight/stanoutput', densityfitprefix = 'fit_density', productionfitprefix = 'fit_production', infix = '', LL = 1.1, UL = 316) {
   require(rstan)
   require(Brobdingnag)
-
+  
   # Load CSVs as stanfit object
   print('Loading stan fit . . .')
   files_density <- paste0(densityfitprefix, dens_model, '_', fg, '_', year, '_', 1:n_chains, '.csv')
@@ -407,23 +393,24 @@ extract_totalproduction <- function(dens_model, prod_model, fg, year, xmin, n, t
   print('Calculating fitted values and prediction intervals . . .')
   
   density_par <- list('1' = c('alpha'),
-					  '2' = c('alpha_low', 'alpha_high', 'tau'),
-					  '3' = c('alpha_low', 'alpha_mid', 'alpha_high', 'tau_low', 'tau_high'),
-					  'w' = c('m','n'),
-					  'ln' = c('mu_logn', 'sigma_logn'))
+                      '2' = c('alpha_low', 'alpha_high', 'tau'),
+                      '3' = c('alpha_low', 'alpha_mid', 'alpha_high', 'tau_low', 'tau_high'),
+                      'w' = c('m','n'),
+                      'ln' = c('mu_logn', 'sigma_logn'))
   production_par <- list('1' = c('beta0', 'beta1'),
-						 '2' = c('beta0', 'beta1_low', 'beta1_high', 'x0', 'delta'))					  
+                         '2' = c('beta0', 'beta1_low', 'beta1_high', 'x0', 'delta'))					  
   
   get_pars <- list(density = density_par[[dens_model]], production = production_par[[prod_model]])
   
-  pred_interval <- fitted_predicted_values(fit, variable = 'total_production', dbh_pred, dens_form = dens_model, prod_form = prod_model, total_prod = total_production, x_min = xmin, n_indiv = n, pars_to_get = get_pars, scaling_var = scaling.var, ll = LL, ul = UL)
+  pred_interval <- fitted_predicted_values(fit, variable = 'total_production', dbh_pred, dens_form = dens_model, prod_form = prod_model, x_min = xmin, n_indiv = n, pars_to_get = get_pars, scaling_var = scaling.var, ll = LL, ul = UL)
   pred_interval <- data.frame(year = year, dens_model = dens_model, prod_model = prod_model, fg = fg, pred_interval)
   
   # Get fitted log slopes
   print('Calculating log slopes . . .')
-  fitted_slopes <- fitted_slope_ci(fit, variable = 'total_production', dbh_pred, dens_form = dens_model, prod_form = prod_model, total_prod = total_production, x_min = xmin, n_indiv = n, scaling_var = scaling.var, pars_to_get = get_pars, ll = LL, ul = UL)
+  fitted_slopes <- fitted_slope_ci(fit, variable = 'total_production', dbh_pred, dens_form = dens_model, prod_form = prod_model, x_min = xmin, n_indiv = n, scaling_var = scaling.var, pars_to_get = get_pars, ll = LL, ul = UL)
   fitted_slopes <- data.frame(year = year, dens_model = dens_model, prod_model = prod_model, fg = fg, fitted_slopes)
-
+  
   list(pred_interval = pred_interval,
-	   fitted_slopes = fitted_slopes)
+       fitted_slopes = fitted_slopes)
 }
+

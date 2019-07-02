@@ -72,7 +72,6 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 									year = mod_df$year[i],
 									xmin = mod_df$xmin[i],
 									n = mod_df$n[i],
-									total_production = mod_df$total_production[i],
 									use_subset = FALSE)
 	}
 	if (mod_df$variable[i] == 'total_production') {
@@ -82,7 +81,6 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 									year = mod_df$year[i],
 									xmin = mod_df$xmin[i],
 									n = mod_df$n[i],
-									total_production = mod_df$total_production[i],
 									use_subset = FALSE)
 	}
 
@@ -148,7 +146,6 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 									year = mod_df$year[i],
 									xmin = mod_df$xmin[i],
 									n = mod_df$n[i],
-									total_production = mod_df$total_production[i],
 									infix = 'rawlightscaling_',
 									use_subset = FALSE)
 	}
@@ -159,7 +156,6 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 									year = mod_df$year[i],
 									xmin = mod_df$xmin[i],
 									n = mod_df$n[i],
-									total_production = mod_df$total_production[i],
 									infix = 'rawlightscaling_',
 									use_subset = FALSE)
 	}
@@ -219,7 +215,6 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
   fitted_totalvolume_values <- fitted_totalvolume(fit = fit[['density']], 
 												  dbh_pred = dbh_pred,
 												  dens_form = mod_df$dens_model[i],
-												  total_prod = mod_df$total_production[i],
 												  x_min = mod_df$xmin[i],
 												  n_indiv = mod_df$n[i],
 												  pars_to_get = density_par[[mod_df$dens_model[i]]])
