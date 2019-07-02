@@ -80,7 +80,7 @@ volume_totals_fg <- alltreedat[[3]] %>%
 volume_totals_fg <- rbind(volume_totals_fg, data.frame(fg = 'all', total = sum(volume_totals_fg$total)))
 
 
-ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/newpiecewise_ci_by_fg.csv', stringsAsFactors = FALSE)
+ci_df <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/newpiecewise_ci_by_fg.csv'), stringsAsFactors = FALSE)
 area_core <- 42.84
 
 ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
@@ -88,7 +88,7 @@ ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
 pred_dens <- ci_df %>%
   filter(variable == 'density') %>%
   select(-variable) %>%
-  mutate_at(vars(starts_with('q')), funs(./area_core)) 
+  mutate_at(vars(starts_with('q')), ~ ./area_core)
 
 fitted_indivprod <- ci_df %>%
   filter(variable == 'production_fitted') %>%
@@ -96,8 +96,7 @@ fitted_indivprod <- ci_df %>%
 
 fitted_totalprod <- ci_df %>%
   filter(variable == 'total_production_fitted') %>%
-  select(-variable) %>%
-  mutate_at(vars(starts_with('q')), funs(./area_core)) 
+  select(-variable) 
 
 pred_indivprod <- ci_df %>%
   filter(variable == 'production') %>%
@@ -105,14 +104,26 @@ pred_indivprod <- ci_df %>%
 
 pred_totalprod <- ci_df %>%
   filter(variable == 'total_production') %>%
-  select(-variable) %>%
-  mutate_at(vars(starts_with('q')), funs(./area_core)) 
+  select(-variable) 
 
 # Get integrals for total production and total production fitted, then multiply the fitted values by the normalization constant
 # Norm constant is the summed bin total production / the integral
+# Then divide by area
 totalprod_integrals <- fitted_totalprod %>%
+  left_join(lim_totalprod) %>%
   group_by(fg) %>%
-  
+  filter(dbh <= lim_max) %>%
+  summarize(integral = trapz(x = dbh, y = q50)) %>%
+  left_join(prod_totals_fg) %>%
+  mutate(constant = total/integral)
+
+fitted_totalprod <- fitted_totalprod %>%
+  left_join(totalprod_integrals) %>%
+  mutate_at(vars(starts_with('q')), ~ . * (constant/area_core))
+
+pred_totalprod <- pred_totalprod %>%
+  left_join(totalprod_integrals) %>%
+  mutate_at(vars(starts_with('q')), ~ . * (constant/area_core))
 
 fp <- '~/google_drive/ForestLight/data/data_piecewisefits'
 
@@ -141,8 +152,7 @@ fitted_indivlight <- ci_df %>%
 
 fitted_totallight <- ci_df %>%
   filter(variable == 'total_incoming_light_fitted') %>%
-  select(-variable) %>%
-  mutate_at(vars(starts_with('q')), funs(./area_core)) 
+  select(-variable) 
 
 pred_indivlight <- ci_df %>%
   filter(variable == 'incoming_light') %>%
@@ -150,8 +160,25 @@ pred_indivlight <- ci_df %>%
 
 pred_totallight <- ci_df %>%
   filter(variable == 'total_incoming_light') %>%
-  select(-variable) %>%
-  mutate_at(vars(starts_with('q')), funs(./area_core)) 
+  select(-variable) 
+
+# Get integral and multiply fitted and predicted total light by the new constant
+# Then divide by area
+totallight_integrals <- fitted_totallight %>%
+  left_join(lim_totallight) %>%
+  group_by(fg) %>%
+  filter(dbh <= lim_max) %>%
+  summarize(integral = trapz(x = dbh, y = q50)) %>%
+  left_join(light_totals_fg) %>%
+  mutate(constant = total/integral)
+
+fitted_totallight <- fitted_totallight %>%
+  left_join(totallight_integrals) %>%
+  mutate_at(vars(starts_with('q')), ~ . * (constant/area_core))
+
+pred_totallight <- pred_totallight %>%
+  left_join(totallight_integrals) %>%
+  mutate_at(vars(starts_with('q')), ~ . * (constant/area_core))
 
 
 fp <- '~/google_drive/ForestLight/data/data_piecewisefits'
@@ -170,6 +197,20 @@ ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
 fitted_totalvol <- ci_df %>%
   select(-variable) %>%
   mutate_at(vars(starts_with('q')), funs(./area_core)) 
+
+# Get integral and multiply fitted total volume by the new constant
+# Then divide by area
+totalvol_integrals <- fitted_totalvol %>%
+  left_join(lim_totalvol) %>%
+  group_by(fg) %>%
+  filter(dbh <= lim_max) %>%
+  summarize(integral = trapz(x = dbh, y = q50)) %>%
+  left_join(volume_totals_fg) %>%
+  mutate(constant = total/integral)
+
+fitted_totalvol <- fitted_totalvol %>%
+  left_join(totalvol_integrals) %>%
+  mutate_at(vars(starts_with('q')), ~ . * (constant/area_core))
 
 fp <- '~/google_drive/ForestLight/data/data_piecewisefits/totallightscaling'
 
