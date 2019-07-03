@@ -58,7 +58,11 @@ prod_totals_fg <- alltreedat[[3]] %>%
   filter(dbh_corr <= lim_max) %>%
   summarize(total = sum(production))
 
-prod_totals_fg <- rbind(prod_totals_fg, data.frame(fg = 'all', total = sum(prod_totals_fg$total)))
+prod_total_all <- alltreedat[[3]] %>%
+  filter(dbh_corr <= lim_totalprod$lim_max[lim_totalprod$fg == 'all']) %>%
+  summarize(total = sum(production))
+
+prod_totals_fg <- rbind(prod_totals_fg, data.frame(fg = 'all', total = prod_total_all$total))
 
 light_totals_fg <- alltree_light_95 %>%
   mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg))) %>%
@@ -67,8 +71,11 @@ light_totals_fg <- alltree_light_95 %>%
   filter(dbh_corr <= lim_max) %>%
   summarize(total = sum(light_received))
 
-light_totals_fg <- rbind(light_totals_fg, data.frame(fg = 'all', total = sum(light_totals_fg$total)))
+light_total_all <- alltree_light_95 %>%
+  filter(dbh_corr <= lim_totallight$lim_max[lim_totallight$fg == 'all']) %>%
+  summarize(total = sum(light_received))
 
+light_totals_fg <- rbind(light_totals_fg, data.frame(fg = 'all', total = light_total_all$total))
 
 volume_totals_fg <- alltreedat[[3]] %>%
   mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg))) %>%
@@ -77,7 +84,11 @@ volume_totals_fg <- alltreedat[[3]] %>%
   filter(dbh_corr <= lim_max) %>%
   summarize(total = sum(crownvolume))
 
-volume_totals_fg <- rbind(volume_totals_fg, data.frame(fg = 'all', total = sum(volume_totals_fg$total)))
+volume_total_all <- alltreedat[[3]] %>%
+  filter(dbh_corr <= lim_totalvol$lim_max[lim_totalvol$fg == 'all']) %>%
+  summarize(total = sum(crownvolume))
+
+volume_totals_fg <- rbind(volume_totals_fg, data.frame(fg = 'all', total = volume_total_all$total))
 
 
 ci_df <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/newpiecewise_ci_by_fg.csv'), stringsAsFactors = FALSE)

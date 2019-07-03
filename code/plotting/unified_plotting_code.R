@@ -807,9 +807,7 @@ pred_light <- pred_light %>%
 
 pred_light_5groups <- pred_light %>% filter(!fg %in% c('alltree','unclassified'))
 
-# Do some additional computation to correct the error bar width for the number of groups in each bin
-obs_light_binned <- obs_light_binned %>%
-  group_by(bin_midpoint, year) %>% mutate(width = sum(c('fg1','fg2','fg3','fg4','fg5') %in% fg)) %>% ungroup
+
 
 
 # Axis titles
@@ -859,7 +857,14 @@ cast_pars <- left_join(cast_pars, segment_location)
 dodge_width <- 0.03
 error_bar_width <- 0.04
 #---------------------------- Combined mean binned growth by light + fg --------------------------------
-p_mean_1panel <- ggplot(obs_light_binned %>% filter(year == year_to_plot, mean_n_individuals > 10, !fg %in% c('alltree', 'unclassified'))) +
+
+# Do some additional computation to correct the error bar width for the number of groups in each bin
+obs_light_binned_plotdata <- obs_light_binned %>% filter(year == year_to_plot, mean_n_individuals > 10, !fg %in% c('alltree', 'unclassified')) %>%
+    group_by(bin_midpoint, year) %>% 
+  mutate(width = sum(c('fg1','fg2','fg3','fg4','fg5') %in% fg)) %>% 
+  ungroup
+
+p_mean_1panel <- ggplot(obs_light_binned_plotdata) +
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.5) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50, color = fg)) +
   geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max, group = fg, color = fg, width = error_bar_width * width), position = position_dodge(width = dodge_width)) +
