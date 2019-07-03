@@ -386,8 +386,8 @@ dev.off()
 # ------------------------   WOOIC of Piecewise Models  -----------------------------------
 
 # This section was edited by QDR, 20 Jun 2019, for the updated model fits.
-# We are now using WAIC as the information criterion because the LOOIC unfortunately returned errors for some groups. Results are the same though.
 
+fp <- file.path(gdrive_path, 'data/data_piecewisefits')
 ics <- read.csv(file.path(fp, 'newpiecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
 ics$fg <- factor(ics$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
 
@@ -504,9 +504,7 @@ for (i in dir(fp, pattern = '.csv')) {
 
 
 # Load raw data
-load('~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
-load('~/Google Drive/ForestLight/data/rawdataobj_alternativecluster.r')
-
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
 
 # Process the raw data to get one single data frame with a lot of rows.
 library(dplyr)
@@ -1279,7 +1277,6 @@ exl <- expression(atop('Intercepted Light', paste('per Individual (W)')))
 exd <- 'Diameter (cm)'
 
 labels = trans_format("log10", math_format(10^.x))
-
 
 
 p <- ggplot() +
