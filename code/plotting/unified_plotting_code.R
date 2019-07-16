@@ -494,8 +494,7 @@ dev.off()
 #----------------------   Hex Plot of Growth Scaling  ---------------------------
 
 
-fp <- '~/google_drive/ForestLight/data/data_forplotting_aug2018' ## CHANGE PATH AS NEEDED
-fp <- '~/Google Drive/ForestLight/data/data_forplotting_aug2018' ## CHANGE PATH AS NEEDED
+fp <- file.path(gdrive_path,'data/data_forplotting_aug2018') ## CHANGE PATH AS NEEDED
 
 for (i in dir(fp, pattern = '.csv')) {
   n <- gsub('.csv','',i)
@@ -507,8 +506,6 @@ for (i in dir(fp, pattern = '.csv')) {
 load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
 
 # Process the raw data to get one single data frame with a lot of rows.
-library(dplyr)
-library(purrr)
 
 # Get only year, func group, dbh, and production (no more is needed to plot right now)
 raw_prod <- do.call(rbind, map2(alltreedat, seq(1985,2010,5), function(x, y) cbind(year = y, x %>% select(fg, dbh_corr, production))))
@@ -613,10 +610,11 @@ p <- plot_prod(year_to_plot = 1995,
                plot_abline = FALSE,
                plot_fits = TRUE)
 
-p <- p + theme(legend.position = 'bottom')
+p <- p + theme(legend.position = 'right') + scale_y_log10(labels = c(0.01, 1, 100),                                                                                breaks = c(0.01, 1, 100),
+                                                           name = expression(paste('Growth (kg yr'^-1,')')))
 
 p 
-pdf(file.path(gdrive_path, 'Figures/Growth_hex/growth_hex.pdf'))
+pdf(file.path(gdrive_path, 'Figures/FigureGrowth_hex/growth_hex.pdf'))
 p
 dev.off()
 #pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/raw_growth_heat.pdf"))
@@ -771,8 +769,8 @@ p <- plot_prod_fixed(year_to_plot = 1995,
           preddat = fitted_indivlight,
           obsdat = indivlightbins_fg %>% mutate(year = 1995, mean = q50) %>% rename(mean_n_individuals = bin_count))
 p
-p1 <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(10, 1000,1e5),
-                             labels = c("0.01", "1", "100"), #limits = c(100, 100000),
+p1 <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(10, 100, 1000,10000,1e5),
+                             labels = c("0.01", "0.1", "1", "10", "100"), #limits = c(100, 100000),
                              name = expression(atop('Individual Light',paste('Intercepted (kW)'))))  +
   theme(aspect.ratio = 0.75, axis.ticks.x = element_line())
 plot(p1)  
