@@ -11,9 +11,14 @@ biomassbin_1995 <- rbind(data.frame(fg = 'all', biomassbin_alltree_1995), ungrou
 write.csv(biomassbin_1995, '~/google_drive/ForestLight/data/biomassbin_1995.csv', row.names = FALSE)
 
 #### make quick plot
-
+biomassbin_1995 <- read_csv(file.path(gdrive_path,'data/biomassbin_1995.csv'))
+biomassbin_1995 <- read.csv(file.path(gdrive_path,'data/biomassbin_1995.csv'), stringsAsFactors = FALSE)
 biomassbin_1995 <- read.csv('~/google_drive/ForestLight/data/biomassbin_1995.csv', stringsAsFactors = FALSE)
 
+fast_sum <- sum(biomassbin_1995$bin_value[biomassbin_1995$fg == "fg1"])
+pioneer_sum <- sum(biomassbin_1995$bin_value[biomassbin_1995$fg == "fg2"])
+slow_sum <- sum(biomassbin_1995$bin_value[biomassbin_1995$fg == "fg3"])
+ratio_slow_fast <- slow_sum/fast_sum
 ggplot(biomassbin_1995, aes(x = bin_midpoint, y = bin_value, color = fg)) +
   geom_point() +
   theme_bw() +
