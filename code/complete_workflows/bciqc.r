@@ -4,7 +4,7 @@
 
 # Load Condit's BCI data and Nadja's light data.
 
-fp <- 'C:/Users/Q/google_drive/ForestLight/data/BCI_raw'
+fp <- '~/google_drive/ForestLight/data/BCI_raw'
 
 growth8590 <- read.delim(file.path(fp, 'BCI_light/growth_final8590.txt'), stringsAsFactors = FALSE)
 growth9095 <- read.delim(file.path(fp, 'BCI_light/growth_final9095.txt'), stringsAsFactors = FALSE)

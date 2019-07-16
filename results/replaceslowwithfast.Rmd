@@ -1,0 +1,91 @@
+---
+title: "Replacing slow with fast"
+author: "Quentin D. Read"
+date: "July 16, 2019"
+output: pdf_document
+---
+
+First load the data.
+```{r load_data, message = FALSE, warning = FALSE}
+library(tidyverse)
+
+gdrive_path <- '~/google_drive/ForestLight'
+
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
+
+dat1995 <- alltreedat[[3]] %>%
+  select(sp, fg, wsg, height_corr, dbh_corr, agb_corr) %>%
+  mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg)))
+
+fgnames <- c('fast', 'pioneer', 'slow', 'breeder', 'medium', 'unclassified')
+```
+
+
+This is the allometric equation we used to get aboveground biomass from diameter, height, and wood specific gravity (WSG) of an individual tree.
+
+```{r allometry}
+agb.allometry <- function(wsg, dbh, height) { 0.0509 * wsg * ((dbh)^2) * height }
+```
+
+
+The only species-level trait that is used in the aboveground biomass allometry is WSG. This trait differs quite a bit among the functional groups.
+
+```{r plot_wsg}
+dat1995 %>%
+  group_by(sp) %>%
+  slice(1) %>%
+  ungroup %>%
+  ggplot(aes(x = factor(fg), y = wsg)) +
+    geom_boxplot(fill = 'oldlace') + 
+    geom_jitter() +
+    scale_x_discrete(labels = fgnames) +
+    labs(x = 'Functional group', y = 'Wood specific gravity') +
+    theme_bw()
+```
+
+Here are the median (weighted by individual) WSG values for the functional groups.
+
+```{r median_wsg}
+(wsg_by_fg <- dat1995 %>%
+  group_by(fg) %>%
+  summarize(median_wsg = median(wsg)) )
+```
+
+Calculate an alternative allometry where all the slow individuals are replaced with a median fast individual of the same size. Sum up the "true" and "alternative" biomass by functional group.
+
+```{r alternative}
+fast_wsg <- wsg_by_fg$median_wsg[wsg_by_fg$fg == 'fg1']
+
+dat1995 <- dat1995 %>%
+  mutate(wsg_alternative = if_else(fg == 'fg3', fast_wsg, wsg),
+         agb_alternative = agb.allometry(wsg_alternative, dbh_corr, height_corr))
+
+biomass_sums <- dat1995 %>%
+  group_by(fg) %>%
+  summarize(biomass_true = sum(agb_corr),
+            biomass_alternative = sum(agb_alternative)) 
+
+# Rename FG3 to FG1 in alternative scenario
+biomass_sums$biomass_alternative[1] <- biomass_sums$biomass_alternative[1] + biomass_sums$biomass_alternative[3]
+biomass_sums$biomass_alternative[3] <- 0
+```
+
+Here is the result. It is notable that so much biomass is taken up by the long-lived pioneers even though they are relatively few individuals compared to the slow trees. There are just a lot of really big ones. This may be real or possibly partially due to the allometry overestimating biomass of big individuals.
+
+```{r plot_biomass}
+biomass_sums %>%
+  mutate(fg = factor(fgnames, levels = fgnames)) %>%
+  gather(scenario, biomass, -fg) %>%
+  mutate(scenario = factor(scenario, levels = c('biomass_true','biomass_alternative'), labels = c('true','alternative'))) %>%
+  ggplot(aes(x = scenario, y = biomass, fill = fg)) +
+    geom_col(position = 'stack') +
+    theme_bw() +
+    scale_fill_manual(values = c(RColorBrewer::brewer.pal(5, 'Set1'), 'black')) +
+    labs(y = 'Total aboveground biomass (kg)')
+```
+
+Overall, the aboveground biomass of the BCI plot would go down by 11% if all slow individuals were replaced with fast.
+
+```{r calc_decrease}
+1 - sum(biomass_sums$biomass_alternative) / sum(biomass_sums$biomass_true)
+```
