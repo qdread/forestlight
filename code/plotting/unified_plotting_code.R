@@ -881,7 +881,7 @@ dev.off()
 
 #---------------------------- Median binned growth by light + fg --------------------------------
 p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +theme_plant+
+  facet_wrap(~ fg, labeller = labeller(fg = fg_labels2)) +theme_plant+
   #facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
               aes(x = light_area, ymin = q025, ymax = q975,group=fg,color=NA,fill=fg), alpha = 0.5) +
@@ -963,7 +963,7 @@ p_mean_segments
 ggplot(slopes %>% filter((dens_model == 3 & prod_model == 2) | (dens_model == 3 & is.na(prod_model)) | (is.na(dens_model) & prod_model == 2), !fg %in% 'Unclassified'), 
        aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
   facet_wrap(~ fg,scale = "free_y", labeller = label_value) +
-  geom_ribbon() + geom_line()
+  geom_ribbon() + geom_line() + theme_facet2
 
 unique(obs_light_binned$fg)
 
@@ -1010,13 +1010,17 @@ p_mean_panels
 #hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('forestgreen', 'red3'), bias=3)(50),
 #                        trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
 #hex_scale_3b <- scale_fill_gradientn(colours = rev(colorRampPalette(RColorBrewer::brewer.pal(9,'RdYlBu'), bias=0.1)(50)), guide = F)
+obs_light_raw$fg <- factor(obs_light_raw$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium"))
+facet_wrap(~ fg,labeller = label_value) 
+
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
                                              trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000), 
                                              labels = c(1,10,100,1000), limits=c(1,5000))
 
-
+unique(obs_light_raw$fg)
 p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% 'unclassified', )) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +
+  #facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +
+  facet_wrap(~ fg,labeller = fg_labels2) +
   geom_hex(aes(x = light_area, y = production_area)) +
   #geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
   #          aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
@@ -1615,7 +1619,7 @@ dev.off()
 
 
 #----------------------------- Fig 6B alt: Abundance by Diameter for 2 sampling periods ----------------------------
-#not plotting black points! (?)
+
 p <- fastslow_stats_breeder_bydiam_2census %>% #fastslow_stats_breeder_bydiam_2census  %>%
   filter(density_ratio_mean > 0) %>%
   filter(mean_n_individuals > 10) %>%
