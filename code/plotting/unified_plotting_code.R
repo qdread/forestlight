@@ -384,7 +384,7 @@ dev.off()
 #---------------------------------------------------------------------------------------------
 
 
-### Add height
+### Add height #doesn't work!
 p <- plot_totalprod(year_to_plot = 1995,
                     fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                     model_fit_density = 3, 
@@ -395,9 +395,8 @@ p <- plot_totalprod(year_to_plot = 1995,
                     y_labels = c(0.1, 1, 10, 100),
                     preddat = fitted_totalprod)
 p
-p0 <- p + #geom_abline(intercept= 2, slope = 0, color ="gray72",linetype="dashed", size=.75) + 
-  scale_x_log10(sec_axis = sec_axis(sec.axis = sec_axis(~ . * 10), #~ exp(0.438 + 0.595 * log(.))),
-                                    name = "Height (m)"))#, breaks = c(2, 3, 5, 10, 20, 40)))#,
+p0 <- p + scale_x_log10(sec_axis = sec_axis(sec.axis = sec_axis(~ ~ exp(0.438 + 0.595 * log(.))),
+                                    name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 40)))#,
                                #labels=c("2","3","5","30"))#,  
 p0                            
 #scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks)+#,
@@ -427,11 +426,19 @@ p <- ggplot(ics %>% filter(criterion == 'WAIC',
             aes(x = factor(dens_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
   facet_wrap(~ fg, labeller = label_value, scales = 'free_y') +
   geom_pointrange() +
-  theme_facet +
+  theme_bw(base_size = base_size, base_family = "",
+           base_line_size = base_size/22, base_rect_size = base_size/11)+
+  theme(strip.background = element_blank(),panel.grid = element_blank(), 
+        text = element_text(size = 14),strip.text = element_text(size=12)) +
   labs(x = 'Segments in Density Function', y = "Widely Applicable Information Criterion (WAIC)")
 p
-p1 <- set_panel_size(p, width=unit(9.25,"cm"), height=unit(7,"cm"))
-ggsave(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_density.pdf'), p1)
+#ggsave(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_density.pdf'), p)
+
+p1 <- set_panel_size(p, width=unit(3.5,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_density.pdf'))
+plot(p1)
+dev.off()
 # pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_density.pdf"))
 # p
 # dev.off()
@@ -450,14 +457,14 @@ p <- ggplot(ics %>% filter(criterion == 'WAIC',
         text = element_text(size = 14),strip.text = element_text(size=12)) +
   labs(x = 'Segments in Growth Function',  y = "Widely Applicable Information Criterion (WAIC)")
 p
-p1 <- set_panel_size(p, width=unit(6,"cm"), height=unit(7,"cm"))
-p1 <- set_panel_size(p, width=unit(9.25,"cm"), height=unit(7,"cm"))
+#ggsave(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_growth.pdf'), p)
+
+p1 <- set_panel_size(p, width=unit(4,"cm"), height=unit(7,"cm"))
 plot(p1)
-ggsave(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_growth.pdf'), p)
-# pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_production.pdf"))
-# p
-# dev.off()
-#ggsave(file.path(fpfig, 'production_model_information_criteria.pdf'), height = 6, width = 9)
+pdf(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_growth.pdf'))
+plot(p1)
+dev.off()
+ #ggsave(file.path(fpfig, 'production_model_information_criteria.pdf'), height = 6, width = 9)
 #---------------------------------------------------------------------------------------------
 
 #-------------------   Plot Slopes vs Size for each life history group  -------------------
@@ -469,8 +476,8 @@ colors <- c("sienna4", "yellowgreen", "springgreen4")
 
 # Using 3 segment density and 1 segment production
 p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) | (is.na(dens_model) & prod_model == 1) | (dens_model == 3 & prod_model == 1), !fg %in% 'Unclassified'), 
-            aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
-  facet_wrap(~ fg,labeller = label_value) +
+            aes(x = dbh, y = q50, ymin = q25, ymax = q75, color = variable, fill = variable)) +
+  facet_wrap(~ fg, scale = 'free_y', labeller = label_value) +
   geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
   geom_hline(yintercept = -2, linetype = 'dashed', col = "sienna4", size = 0.3) +
   geom_hline(yintercept = 2, linetype = 'dashed', col = "yellowgreen", size = 0.3) +
@@ -864,7 +871,7 @@ p <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in%
                                 breaks = seq(0, 1.5, 0.2), labels = seq(0, 1.5, 0.2))) +
   theme_plant + theme(aspect.ratio = 0.75)
 p
-pdf(file.path(gdrive_path, "Figures/Fig_3/Slopes/Max_growth_by_fg.pdf"))
+pdf(file.path(gdrive_path, "Figures/Fig_4/Max_growth_by_fg.pdf"))
 p
 dev.off()
 
@@ -1401,7 +1408,7 @@ grob1 <- grobTree(textGrob("Light Capture", x = 0.75, y = 0.95, hjust = 0,
                            gp = gpar(col = "gold3", fontsize = 18))) 
 grob2 <- grobTree(textGrob("Production", x = 0.75, y = 0.89, hjust = 0,
                            gp = gpar(col = "darkgreen", fontsize = 18)))# fontface="italic"
-grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.39, y = 0.47, hjust = 0,
+grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.35, y = 0.47, hjust = 0,
                            gp = gpar(col = "black", fontsize = 18))) #, fontface = "bold")))
 # Plot
 
