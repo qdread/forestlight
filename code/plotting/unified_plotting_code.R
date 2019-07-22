@@ -384,7 +384,7 @@ dev.off()
 #---------------------------------------------------------------------------------------------
 
 
-### Add height #doesn't work!
+### Add height  - doesn't work!
 p <- plot_totalprod(year_to_plot = 1995,
                     fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                     model_fit_density = 3, 
@@ -476,7 +476,7 @@ colors <- c("sienna4", "yellowgreen", "springgreen4")
 
 # Using 3 segment density and 1 segment production
 p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) | (is.na(dens_model) & prod_model == 1) | (dens_model == 3 & prod_model == 1), !fg %in% 'Unclassified'), 
-            aes(x = dbh, y = q50, ymin = q25, ymax = q75, color = variable, fill = variable)) +
+            aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
   facet_wrap(~ fg, scale = 'free_y', labeller = label_value) +
   geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
   geom_hline(yintercept = -2, linetype = 'dashed', col = "sienna4", size = 0.3) +
