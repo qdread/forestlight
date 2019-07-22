@@ -15,7 +15,6 @@ write.csv(biomassbin_1995, '~/google_drive/ForestLight/data/biomassbin_1995.csv'
 gdrive_path <- '~/google_drive/ForestLight'
 github_path <- '~/Documents/GitHub/forestlight'
 
-biomassbin_1995 <- read.csv('~/google_drive/ForestLight/data/biomassbin_1995.csv', stringsAsFactors = FALSE)
 #Grady
 gdrive_path <- '/Users/jgradym/Google Drive/ForestLight'
 github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
