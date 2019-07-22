@@ -11,7 +11,7 @@ biomassbin_1995 <- rbind(data.frame(fg = 'all', biomassbin_alltree_1995), ungrou
 write.csv(biomassbin_1995, '~/google_drive/ForestLight/data/biomassbin_1995.csv', row.names = FALSE)
 
 #### make quick plot
-<<<<<<< HEAD
+
 #Q Dog
 gdrive_path <- '~/google_drive/ForestLight'
 github_path <- '~/Documents/GitHub/forestlight'
@@ -25,11 +25,7 @@ gdrive_path <- '/Users/johngrady/Google Drive/ForestLight'
 github_path <- '/Users/johngrady/Documents/GitHub/forestlight'
 
 biomassbin_1995 <- read.csv(file.path(gdrive_path,'data/biomassbin_1995.csv'), stringsAsFactors = FALSE)
-=======
-biomassbin_1995 <- read_csv(file.path(gdrive_path,'data/biomassbin_1995.csv'))
-biomassbin_1995 <- read.csv(file.path(gdrive_path,'data/biomassbin_1995.csv'), stringsAsFactors = FALSE)
-biomassbin_1995 <- read.csv('~/google_drive/ForestLight/data/biomassbin_1995.csv', stringsAsFactors = FALSE)
->>>>>>> 06019f5f64127c6013e451713f579cc166e98b1c
+
 
 fast_sum <- sum(biomassbin_1995$bin_value[biomassbin_1995$fg == "fg1"])
 pioneer_sum <- sum(biomassbin_1995$bin_value[biomassbin_1995$fg == "fg2"])
