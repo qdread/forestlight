@@ -24,6 +24,7 @@ gdrive_path <- '/Users/johngrady/Google Drive/ForestLight'
 github_path <- '/Users/johngrady/Documents/GitHub/forestlight'
 
 biomassbin_1995 <- read.csv(file.path(gdrive_path,'data/biomassbin_1995.csv'), stringsAsFactors = FALSE)
+biomassbin_1995 <- read.csv(file.path(gdrive_path,'data/biomassbin_1995.csv'), stringsAsFactors = FALSE)
 
 fast_sum <- sum(biomassbin_1995$bin_value[biomassbin_1995$fg == "fg1"])
 pioneer_sum <- sum(biomassbin_1995$bin_value[biomassbin_1995$fg == "fg2"])
