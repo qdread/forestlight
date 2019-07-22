@@ -10,3 +10,4 @@ gapdata6.txt
 *.rda
 testmullerweibull.r
 *.pdf
+code/binning/biomassbin.r
