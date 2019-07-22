@@ -9,14 +9,16 @@
 gdrive_path <- '~/google_drive/ForestLight'
 github_path <- '~/Documents/GitHub/forestlight'
 
-#Grady
-gdrive_path <- '/Users/jgradym/Google Drive/ForestLight'
-github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
-
 #Grady_2
 gdrive_path <- '/Users/johngrady/Google Drive/ForestLight'
 github_path <- '/Users/johngrady/Documents/GitHub/forestlight'
 
+#Grady
+gdrive_path <- '/Users/jgradym/Google Drive/ForestLight'
+github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
+
+#library(ggplot2, lib.loc = '/Library/Frameworks/R.framework/Versions/3.5/Resources/ggplot2_v2.2.1')
+#packageVersion("ggplot2")
 library(tidyverse)
 library(egg)
 library(scales)
@@ -284,7 +286,7 @@ plot_totalprod <- function(year_to_plot = 1995,
     #geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
     geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
     geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value,group = fg, fill=fg), size = geom_size, color = "black",shape=21) +
-    scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
+    scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +  
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels, position = "right") +
     scale_color_manual(values = fill_names0) + theme_plant + theme(aspect.ratio = 1) +
     scale_fill_manual(values = fill_names) 
@@ -382,6 +384,33 @@ dev.off()
 #---------------------------------------------------------------------------------------------
 
 
+### Add height
+p <- plot_totalprod(year_to_plot = 1995,
+                    fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
+                    model_fit_density = 3, 
+                    model_fit_production = 2,
+                    x_limits = c(0.9,250),
+                    y_limits = c(0.03, 200),
+                    y_breaks = c(0.1, 1, 10, 100),
+                    y_labels = c(0.1, 1, 10, 100),
+                    preddat = fitted_totalprod)
+p
+p0 <- p + #geom_abline(intercept= 2, slope = 0, color ="gray72",linetype="dashed", size=.75) + 
+  scale_x_log10(sec_axis = sec_axis(sec.axis = sec_axis(~ . * 10), #~ exp(0.438 + 0.595 * log(.))),
+                                    name = "Height (m)"))#, breaks = c(2, 3, 5, 10, 20, 40)))#,
+                               #labels=c("2","3","5","30"))#,  
+p0                            
+#scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks)+#,
+  #sec.axis = sec_axis(~exp(0.438+0.595*log(.)),breaks=c(2,3,5,10,20,30),  
+  #               name = "Height (m)"))+
+#p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+
+pdf(file.path(gdrive_path,'Figures/Fig_3/Main/Fig_3c_Total_Production.pdf'))
+plot(p1)
+dev.off()
+
 
 # ------------------------   WOOIC of Piecewise Models  -----------------------------------
 
@@ -398,32 +427,33 @@ p <- ggplot(ics %>% filter(criterion == 'WAIC',
             aes(x = factor(dens_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
   facet_wrap(~ fg, labeller = label_value, scales = 'free_y') +
   geom_pointrange() +
-  theme_bw(base_size = base_size, base_family = "",
-           base_line_size = base_size/22, base_rect_size = base_size/11)+
-  theme(strip.background = element_blank(),panel.grid = element_blank(), 
-        text = element_text(size = 14), strip.text = element_text(size=12)) +
+  theme_facet +
   labs(x = 'Segments in Density Function', y = "Widely Applicable Information Criterion (WAIC)")
 p
-ggsave(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_density.pdf'), p)
+p1 <- set_panel_size(p, width=unit(9.25,"cm"), height=unit(7,"cm"))
+ggsave(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_density.pdf'), p1)
 # pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_density.pdf"))
 # p
 # dev.off()
 #ggsave(file.path(fpfig, 'density_model_information_criteria.pdf'), height = 6, width = 9)
 
-# Production model
+# Growth model
 
 p <- ggplot(ics %>% filter(criterion == 'WAIC', 
                            variable == 'production', !fg %in% 'Unclassified'), 
             aes(x = factor(prod_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
   facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
-  geom_pointrange() +
+  geom_pointrange() + #theme_facet +
   theme_bw(base_size = base_size, base_family = "",
-           base_line_size = base_size/22, base_rect_size = base_size/11)+
+          base_line_size = base_size/22, base_rect_size = base_size/11)+
   theme(strip.background = element_blank(),panel.grid = element_blank(), 
         text = element_text(size = 14),strip.text = element_text(size=12)) +
-  labs(x = 'Segments in Production Function',  y = "Widely Applicable Information Criterion (WAIC)")
+  labs(x = 'Segments in Growth Function',  y = "Widely Applicable Information Criterion (WAIC)")
 p
-ggsave(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_production.pdf'), p)
+p1 <- set_panel_size(p, width=unit(6,"cm"), height=unit(7,"cm"))
+p1 <- set_panel_size(p, width=unit(9.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+ggsave(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_growth.pdf'), p)
 # pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_production.pdf"))
 # p
 # dev.off()
@@ -689,7 +719,7 @@ p <- plot_totalprod(year_to_plot = 1995,
                     model_fit_density = 3, 
                     model_fit_production = 2,
                     x_limits = c(0.9, 150),
-                    y_limits = c(5, 2500),
+                    y_limits = c(5, 5500),
                     y_breaks = c(1, 10, 100, 1000),
                     y_labels = c(1, 10, 100, 1000),
                     y_name = expression(paste('Total Crown Volume (m'^3, ' cm'^-1, ' ha'^-1,')')), 
@@ -697,7 +727,7 @@ p <- plot_totalprod(year_to_plot = 1995,
                     obsdat = totalvolbins_fg, 
                     plot_abline = FALSE)
 p
-p0 <- p + scale_y_continuous(position = "left", trans = "log10", 
+p0 <- p + scale_y_continuous(position = "left", trans = "log10", limits = c(5, 5500),
                             name = expression(atop('Total Crown Volume',paste('(m'^3, ' cm'^-1,' ha'^-1,')')))) +
   theme(aspect.ratio = 0.75)
 plot(p0)
@@ -723,7 +753,7 @@ p <- plot_totalprod(year_to_plot = 1995,
                model_fit_density = 3, 
                model_fit_production = 2,
                x_limits = c(0.9,150),
-               y_limits = c(100, 100000),
+               y_limits = c(100, 200000),
                y_breaks = c(100, 1000, 10000, 100000),
                y_labels = c("0.1", "1", "10", "100"),
                y_name = expression(paste('Total Light Intercepted (kW cm'^-1,' ha'^-1,')')),
@@ -732,20 +762,20 @@ p <- plot_totalprod(year_to_plot = 1995,
                plot_abline = FALSE)
 p
 p0 <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
-                            labels = c("0.1", "1", "10", "100"), #limits = c(100, 100000),
+                            labels = c("0.1", "1", "10", "100"), limits = c(100, 400000),
                             name = expression(paste('Total Light Intercepted (W cm'^-1,' ha'^-1,')'))) +
   theme(aspect.ratio = 0.75)
 plot(p0)
 
 p1 <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
-                             labels = c("0.1", "1", "10", "100"), #limits = c(100, 100000),
+                             labels = c("0.1", "1", "10", "100"), limits = c(100, 450000),
                              name = expression(atop('Total Light Intercepted',paste('(W m'^3, ' cm'^-1,' ha'^-1,')'))))  +
   theme(aspect.ratio = 0.75)
 plot(p1)
 
 
-p3 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
-plot(p3)
+#p3 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+#plot(p3)
 p4 <- set_panel_size(p1, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p4)
 pdf(file.path(gdrive_path,'Figures/Fig_4/Fig_4b_Total_light.pdf'))
@@ -1531,7 +1561,7 @@ p <- prod_ratio_light   %>%
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   theme_plant+
   scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(1,330), breaks=c(1, 10, 100)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.06,100),
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.003,100),
                 name = expression("Production Ratio"))
 
 p
@@ -1554,8 +1584,8 @@ p <- prod_ratio_diam   %>%
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey")) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   theme_plant +
-  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(1,330), breaks=c(1, 10, 100)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.06,100),
+  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(1,150), breaks=c(1, 10, 100)) +
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.003,100),
                 name = expression("Production Ratio")) +
   theme_no_y
 
@@ -1578,7 +1608,7 @@ p <- bylight_2census    %>%
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
   
   scale_x_log10(limits=c(1,400),breaks=c(1,10,100), name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
-  scale_y_log10(breaks = c(0.01,0.1,1,10,100), labels=signif, limits=c(0.003,500),
+  scale_y_log10(breaks = c(0.01,0.1,1,10,100), labels=signif, limits=c(0.003,100),
                 name = expression("Abundance Ratio"))
 
 p
@@ -1600,8 +1630,8 @@ p <- fastslow_stats_breeder_bydiam_5census %>%
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
   scale_fill_manual(values = c("Breeder" = "black", "Fast-Slow" = "grey"))+
   
-  scale_x_log10(limits=c(.7,330),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.006,100),
+  scale_x_log10(limits=c(.7,160),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.003,100),
                 name = expression("Ratio")) +
   theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
         axis.ticks.y = element_blank())
