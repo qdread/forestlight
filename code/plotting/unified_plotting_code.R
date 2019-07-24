@@ -395,7 +395,9 @@ p <- plot_totalprod(year_to_plot = 1995,
                     y_labels = c(0.1, 1, 10, 100),
                     preddat = fitted_totalprod)
 p
-p0 <- p + scale_x_log10(sec_axis = sec_axis(sec.axis = sec_axis(~ ~ exp(0.438 + 0.595 * log(.))),
+p0 <- p + scale_x_log10(name = 'Diameter (cm)',
+                        breaks = c(1,3,10,30,100,300),
+                        sec.axis = sec_axis(~ exp(0.438 + 0.595 * log(.)),
                                     name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 40)))#,
                                #labels=c("2","3","5","30"))#,  
 p0                            
