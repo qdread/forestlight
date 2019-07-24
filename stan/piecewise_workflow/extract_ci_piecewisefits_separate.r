@@ -224,3 +224,46 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 
 }
  
+ 
+# GROWTH AS DIAMETER PER TIME SCALING
+# INDIVIDUAL PRODUCTION ONLY
+# ADDED 24 JULY 2019
+# ===================================
+
+source('~/forestlight/stancode/extraction_functions_piecewise_separate.r')
+
+library(purrr)
+library(dplyr)
+library(foreach)
+library(doParallel)
+
+prod_df <- expand.grid(variable = 'production',
+					   dens_model = as.numeric(NA),
+					   prod_model = 1:2,
+					   fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
+					   year = 1995,
+					   stringsAsFactors = FALSE) 
+					   
+min_n <- read.csv('~/forestlight/stanrdump/min_n.csv', stringsAsFactors = FALSE)	
+
+
+mod_df <- prod_df %>%
+  left_join(min_n)
+
+dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
+
+registerDoParallel(cores = 8)
+
+tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
+		fit_info <- extract_production(prod_model = mod_df$prod_model[i],
+									fg = mod_df$fg[i],
+									year = mod_df$year[i],
+									xmin = mod_df$xmin[i],
+									n = mod_df$n[i],
+									infix = 'diamgrowthscaling_',
+									use_subset = FALSE)
+	
+	save(fit_info, file = paste0('~/forestlight/stanoutput/fitinfo/diamgrowthpw_info_',i,'.r'))
+	message('Fit ', i, ' saved')
+
+}				   
