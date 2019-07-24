@@ -167,3 +167,63 @@ fit_info_list <- map(1:nrow(mod_df), function(i) {
 
 pred_values <- imap_dfr(fit_info_list, ~ data.frame(mod_df[.y,-1], .x))
 write.csv(pred_values, file = '~/forestlight/volume_piecewise_ci_by_fg.csv', row.names = FALSE)
+
+
+# GROWTH AS DIAMETER PER TIME SCALINGS
+# ADDED 24 JULY 2019
+# ====================================
+
+mod_df <- prod_df
+
+fit_info_list <- map(1:nrow(mod_df), function(i) {
+  load(file.path(fp, paste0('diamgrowthpw_info_',i,'.r')))
+  fit_info
+})
+
+# Extract WAIC and LOOIC for total light from each one.
+# ----------------------------------------------------------------
+
+get_ics <- function(x) {
+	ics <- data.frame(criterion = c('WAIC', 'LOOIC'),
+					  IC_value = c(x$waic['waic','Estimate'], x$loo['looic','Estimate']),
+					  IC_stderr = c(x$waic['waic','SE'], x$loo['looic','SE']))
+	return(ics)
+}
+
+fit_ics <- map_dfr(fit_info_list, get_ics)
+fit_ics <- cbind(mod_df[rep(1:nrow(mod_df), each=2),], fit_ics)
+fit_ics$variable <- 'diameter growth individual'
+write.csv(fit_ics, file = '~/forestlight/diamgrowth_piecewise_ics_by_fg.csv', row.names = FALSE)
+
+# Combine parameter credible intervals into single data frame.
+# ------------------------------------------------------------
+
+param_cis <- map_dfr(fit_info_list, 'param_cis')
+param_cis$variable <- 'diameter growth individual'
+
+write.csv(param_cis, file = '~/forestlight/diamgrowth_piecewise_paramci_by_fg.csv', row.names = FALSE)
+
+# Combine predicted values into single data frame.
+# ------------------------------------------------
+
+pred_values <- map_dfr(fit_info_list, 'pred_interval')
+pred_values$variable <- factor(pred_values$variable, levels = c('production', 'production_fitted'), labels = c('diameter_growth', 'diameter_growth_fitted'))
+
+write.csv(pred_values, file = '~/forestlight/diamgrowth_piecewise_ci_by_fg.csv', row.names = FALSE)
+
+# Combine fitted slopes into single data frame.
+# ---------------------------------------------
+
+fitted_slopes <- map_dfr(fit_info_list, 'fitted_slopes')
+fitted_slopes$variable <- 'diameter growth individual'
+
+write.csv(fitted_slopes, file = '~/forestlight/diamgrowth_piecewise_fitted_slopes_by_fg.csv', row.names = FALSE)
+
+# Combine R-squared values into single data frame.
+# ------------------------------------------------
+
+r2s <- do.call(rbind, map(fit_info_list, 'r2s'))
+r2s <- cbind(prod_df, r2s)
+r2s$variable <- 'diameter growth individual'
+
+write.csv(r2s, file = '~/forestlight/diamgrowth_piecewise_r2_by_fg.csv', row.names = FALSE)

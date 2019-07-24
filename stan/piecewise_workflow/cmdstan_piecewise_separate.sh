@@ -121,3 +121,22 @@ sbatch --export=scaling=rawlightscaling,dumptype=dump,guild=fg2,year=1995,model=
 
 # FG all, 2 segments, do all chains to see if they finish faster with different initial values.
 sbatch --export=scaling=rawlightscaling,dumptype=dump,guild=alltree,year=1995,model=production2,NS=1000,NW=5000,seed=2117 --time=7-00:00:00 --job-name=l2_a --array=4-6 fitpiecewisegeneral.sb
+
+################### individual growth expressed as diameter per year
+# added 24 July 2019
+
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=fg1,year=1995,model=production1,NS=1000,NW=5000,seed=6611 --time=4:00:00 --job-name=dg1_1 fitpiecewisegeneral.sb
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=fg2,year=1995,model=production1,NS=1000,NW=5000,seed=6612 --time=4:00:00 --job-name=dg1_2 fitpiecewisegeneral.sb
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=fg3,year=1995,model=production1,NS=1000,NW=5000,seed=6613 --time=7-00:00:00 --job-name=dg1_3 fitpiecewisegeneral.sb
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=fg4,year=1995,model=production1,NS=1000,NW=5000,seed=6614 --time=7-00:00:00 --job-name=dg1_4 fitpiecewisegeneral.sb
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=fg5,year=1995,model=production1,NS=1000,NW=5000,seed=6615 --time=4:00:00 --job-name=dg1_5 fitpiecewisegeneral.sb
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=unclassified,year=1995,model=production1,NS=1000,NW=5000,seed=6616 --time=4:00:00 --job-name=dg1_u fitpiecewisegeneral.sb
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=alltree,year=1995,model=production1,NS=1000,NW=5000,seed=6617 --time=7-00:00:00 --job-name=dg1_a fitpiecewisegeneral.sb
+
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=fg1,year=1995,model=production2,NS=1000,NW=5000,seed=5511 --time=4:00:00 --job-name=dg2_1 fitpiecewisegeneral.sb
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=fg2,year=1995,model=production2,NS=1000,NW=5000,seed=5512 --time=4:00:00 --job-name=dg2_2 fitpiecewisegeneral.sb
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=fg3,year=1995,model=production2,NS=1000,NW=5000,seed=5513 --time=7-00:00:00 --job-name=dg2_3 fitpiecewisegeneral.sb
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=fg4,year=1995,model=production2,NS=1000,NW=5000,seed=5514 --time=7-00:00:00 --job-name=dg2_4 fitpiecewisegeneral.sb
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=fg5,year=1995,model=production2,NS=1000,NW=5000,seed=5515 --time=4:00:00 --job-name=dg2_5 fitpiecewisegeneral.sb
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=unclassified,year=1995,model=production2,NS=1000,NW=5000,seed=5516 --time=4:00:00 --job-name=dg2_u fitpiecewisegeneral.sb
+sbatch --export=scaling=diamgrowthscaling,dumptype=dump,guild=alltree,year=1995,model=production2,NS=1000,NW=5000,seed=5517 --time=7-00:00:00 --job-name=dg2_a fitpiecewisegeneral.sb
