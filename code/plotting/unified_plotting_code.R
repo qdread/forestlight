@@ -412,6 +412,20 @@ pdf(file.path(gdrive_path,'Figures/Fig_3/Main/Fig_3c_Total_Production.pdf'))
 plot(p1)
 dev.off()
 
+# ----------------------- Range of total growth for 5 censuses 1990-2010 ------------------
+
+minmax_prod_bycensus <- obs_totalprod %>%
+  filter(bin_value > 0, !fg %in% 'unclassified') %>%
+  group_by(fg, bin_midpoint) %>%
+  summarize(range_min = min(bin_value), range_max = max(bin_value))
+
+ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax = range_max, color = fg)) +
+  geom_errorbar() +
+  scale_x_log10(name = 'Diameter (cm)', breaks = c(1,3,10,30,100,300)) + 
+  scale_y_log10(expression(paste('Total Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')), breaks = 10^(-2:3), labels = as.character(10^(-2:3))) +
+  scale_color_manual(values = guild_colors) +
+  theme_plant
+  
 
 # ------------------------   WOOIC of Piecewise Models  -----------------------------------
 
