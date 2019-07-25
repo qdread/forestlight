@@ -103,6 +103,7 @@ fgbci$PC_slow_to_fast <- -fgbci$X1new
 fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 
 guild_fills <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")#RColorBrewer::brewer.pal(5, 'Set1')
+guild_fills2 <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 guild_colors <- c("black", "#99AF3C", "#1D5128", "#1e3160", "#6BA3BF", "#D6D6D6")
 guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")
 guild_fills_nb0 <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
@@ -401,18 +402,20 @@ p
 p0 <- p + scale_x_log10(name = 'Diameter (cm)',
                         breaks = c(1,3,10,30,100,300),
                         sec.axis = sec_axis(~ exp(0.438 + 0.595 * log(.)),
-                                    name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 40)))#,
+                                    name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 40))) +
+  scale_y_log10(position = "left", name =expression(paste('Total Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),) +theme(aspect.ratio = 0.8)
+  #,
                                #labels=c("2","3","5","30"))#,  
 p0                            
 #scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks)+#,
   #sec.axis = sec_axis(~exp(0.438+0.595*log(.)),breaks=c(2,3,5,10,20,30),  
   #               name = "Height (m)"))+
 #p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
 
-pdf(file.path(gdrive_path,'Figures/Fig_3/Main/Fig_3c_Total_Production.pdf'))
-plot(p1)
+pdf(file.path(gdrive_path,'Figures/Fig_3/Height/Fig_3c_Total_Production_Height.pdf'))
+plot(p0)
 dev.off()
 
 # ----------------------- Range of total growth for 5 censuses 1990-2010 ------------------
@@ -422,13 +425,17 @@ minmax_prod_bycensus <- obs_totalprod %>%
   group_by(fg, bin_midpoint) %>%
   summarize(range_min = min(bin_value), range_max = max(bin_value))
 
-ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax = range_max, color = fg)) +
-  geom_errorbar() +
+p <- ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax = range_max, color = fg)) +
+  geom_errorbar(size = 1) +
   scale_x_log10(name = 'Diameter (cm)', breaks = c(1,3,10,30,100,300)) + 
-  scale_y_log10(expression(paste('Total Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')), breaks = 10^(-2:3), labels = as.character(10^(-2:3))) +
-  scale_color_manual(values = guild_colors) +
+  scale_y_log10(expression(paste('Total Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),
+                breaks = 10^(-2:3), labels = as.character(10^(-2:3)), limits = c(0.01, 1000)) +
+  scale_color_manual(values = guild_fills2) +
   theme_plant
   
+pdf(file.path(gdrive_path,'Figures/Fig_3/Range/Total_Production_Range.pdf'))
+plot(p)
+dev.off()
 
 # ------------------------ Individual growth plot using diameter -------------------------
 
