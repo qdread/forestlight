@@ -46,7 +46,13 @@ binall <- dat %>%
             q25 = quantile(dbh_increment, 0.25),
             q50 = quantile(dbh_increment, 0.5),
             q75 = quantile(dbh_increment, 0.75),
-            q975 = quantile(dbh_increment, 0.975))
+            q975 = quantile(dbh_increment, 0.975),
+            mean = exp(mean(log(dbh_increment))),
+            sd = exp(sd(log(dbh_increment))),
+            ci_width = qnorm(0.975) * sd(log(dbh_increment)) / sqrt(length(dbh_increment)),
+            ci_min = exp(mean(log(dbh_increment)) - ci_width),
+            ci_max = exp(mean(log(dbh_increment)) + ci_width),
+            mean_n_individuals = length(dbh_increment))
 
 binfg <- dat %>%
   mutate(dbh_bin = cut(dbh_corr, breaks = binbreaks, include.lowest = TRUE)) %>%
@@ -55,10 +61,20 @@ binfg <- dat %>%
             q25 = quantile(dbh_increment, 0.25),
             q50 = quantile(dbh_increment, 0.5),
             q75 = quantile(dbh_increment, 0.75),
-            q975 = quantile(dbh_increment, 0.975))
+            q975 = quantile(dbh_increment, 0.975),
+            mean = exp(mean(log(dbh_increment))),
+            sd = exp(sd(log(dbh_increment))),
+            ci_width = qnorm(0.975) * sd(log(dbh_increment)) / sqrt(length(dbh_increment)),
+            ci_min = exp(mean(log(dbh_increment)) - ci_width),
+            ci_max = exp(mean(log(dbh_increment)) + ci_width),
+            mean_n_individuals = length(dbh_increment))
+
+   
 
 bindbhincrement <- rbind(cbind(fg = 'all', binall) %>% ungroup, binfg %>% ungroup) %>%
-  mutate(dbh = binmidpoints[as.numeric(dbh_bin)])
+  mutate(bin_midpoint = binmidpoints[as.numeric(dbh_bin)],
+         year = 1995
+         )
 
 ggplot(bindbhincrement %>% filter(!fg %in% 'unclassified'), aes(x = dbh, y = q50, ymin = q25, ymax = q75, color = fg)) +
   geom_pointrange() +
@@ -71,10 +87,17 @@ fittedvals <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/diamgrowt
 
 
 guild_fills2 <- guild_fills; guild_fills2[6] <- 'red'
-ggplot(bindbhincrement %>% filter(!fg %in% 'unclassified'), aes(x = dbh, y = q50, ymin = q25, ymax = q75, color = fg)) +
+ggplot(bindbhincrement %>% filter(!fg %in% 'unclassified'), aes(x = bin_midpoint, y = q50, ymin = q25, ymax = q75, color = fg)) +
   geom_pointrange() +
   geom_ribbon(data = fittedvals %>% filter(prod_model == 2, !fg %in% 'unclassified'), aes(x = dbh, ymin=q025, ymax=q975), alpha = 0.15) +
   geom_line(data = fittedvals %>% filter(prod_model == 2, !fg %in% 'unclassified'), aes(x = dbh), size = 1) +
   theme_bw() +
   scale_x_log10() + scale_y_log10() +
   scale_color_manual(values=guild_fills2)
+
+# Write files for observed and fitted.
+fp <- file.path(gdrive_path, 'data/data_piecewisefits')
+fp_obs <- file.path(gdrive_path, 'data/data_forplotting_aug2018')
+
+write.csv(bindbhincrement, file = file.path(fp_obs, 'obs_indivdiamgrowth.csv'), row.names = FALSE)
+write.csv(fittedvals, file = file.path(fp, 'fitted_indivdiamgrowth.csv'), row.names = FALSE)

@@ -200,7 +200,8 @@ plot_prod <- function(year_to_plot = 1995,
                       dodge_width = 0.03,
                       dodge_errorbar = TRUE,
                       obsdat = obs_indivprod,
-                      preddat = fitted_indivprod
+                      preddat = fitted_indivprod,
+                      plot_abline = TRUE
 ) {
   
   require(dplyr)
@@ -222,9 +223,8 @@ plot_prod <- function(year_to_plot = 1995,
     filter_at(vars(starts_with('q')), all_vars(. > min(y_limits))) %>%
     filter(dbh >= min_obs & dbh <= max_obs)
   
-  ggplot() +
+  p <- ggplot() +
     geom_ribbon(data = preddat, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
-    geom_abline(intercept= -1.6, slope = 2, color ="gray72",linetype="dashed", size=.75)+   
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     #geom_errorbar(data = obsdat, aes_string(x = 'bin_midpoint', ymin = error_quantiles[1], ymax = error_quantiles[2], group = 'fg', color = 'fg', width = 'width'), position = pos) +
     geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
@@ -239,7 +239,10 @@ plot_prod <- function(year_to_plot = 1995,
     scale_color_manual(values = fill_names0) +
     scale_fill_manual(values = fill_names) + theme_plant
   
-  
+  if (plot_abline) {
+    p <- p + geom_abline(intercept= -1.6, slope = 2, color ="gray72",linetype="dashed", size=.75)
+  }
+  p
 }
 
 # Plot single model fit with multiple functional groups for total production
@@ -384,7 +387,7 @@ dev.off()
 #---------------------------------------------------------------------------------------------
 
 
-### Add height  - doesn't work!
+### Add height  
 p <- plot_totalprod(year_to_plot = 1995,
                     fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                     model_fit_density = 3, 
@@ -427,7 +430,26 @@ ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax = rang
   theme_plant
   
 
-# ------------------------   WOOIC of Piecewise Models  -----------------------------------
+# ------------------------ Individual growth plot using diameter -------------------------
+
+p <- plot_prod(year_to_plot = 1995,
+               fg_names = c('fg1','fg2','fg3','fg4','fg5'),
+               model_fit = 2,
+               x_limits = c(1, 280),
+               y_limits = c(0.02, 1),
+               y_breaks = c(0.03, 0.1, 0.3, 1),
+               y_labels = c(0.03, 0.1, 0.3, 1),
+               error_bar_width = 0.01,
+               dodge_width = 0.05,
+               obsdat = obs_indivdiamgrowth,
+               preddat = fitted_indivdiamgrowth,
+               plot_abline = FALSE,
+               x_name = 'Diameter (cm)',
+               y_name = expression(paste('Diameter growth (cm y'^-1,')')))
+
+p + theme(axis.text.x = element_text()) + labs(x = 'Diameter (cm)')
+
+# ------------------------   WAIC of Piecewise Models  -----------------------------------
 
 # This section was edited by QDR, 20 Jun 2019, for the updated model fits.
 
