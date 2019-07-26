@@ -452,9 +452,14 @@ p <- plot_prod(year_to_plot = 1995,
                preddat = fitted_indivdiamgrowth,
                plot_abline = FALSE,
                x_name = 'Diameter (cm)',
-               y_name = expression(paste('Diameter growth (cm y'^-1,')')))
+               y_name = expression(paste('Diameter growth (cm yr'^-1,')')))
 
-p + theme(axis.text.x = element_text()) + labs(x = 'Diameter (cm)')
+p1 <- p + theme(axis.text.x = element_text(), axis.ticks.x = element_line()) + 
+  labs(x = 'Diameter (cm)')
+plot(p1)
+pdf(file.path(gdrive_path,'Figures/Fig_3/Diameter/Diam_growth.pdf'))
+plot(p)
+dev.off()
 
 # ------------------------   WAIC of Piecewise Models  -----------------------------------
 
