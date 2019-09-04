@@ -22,6 +22,7 @@ github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
 library(tidyverse)
 library(egg)
 library(scales)
+library(RColorBrewer)
 
 # Some Plotting Code
 
@@ -103,15 +104,18 @@ fgbci$PC_slow_to_fast <- -fgbci$X1new
 fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 
 guild_fills <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")#RColorBrewer::brewer.pal(5, 'Set1')
+guild_fills <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87")#RColorBrewer::brewer.pal(5, 'Set1')
 guild_fills2 <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 guild_colors <- c("black", "#99AF3C", "#1D5128", "#1e3160", "#6BA3BF", "#D6D6D6")
 guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")
+guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87")
 guild_fills_nb0 <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 guild_colors_nb0 <- c("#99AF3C", "#1D5128", "#1e3160", "#6BA3BF", "#D6D6D6")
 guild_colors_nb <- c("#3B4403", "#02330A", "#031a49", "#02394F", "#595A5B")
 fg_names <- paste('fg', 1:5, sep = '')
 fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 
+guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
 p <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
   geom_point(shape = 21, size = 4.5, color = "black") + theme_plant +
   labs(x = 'Slow to Fast', y = 'Breeders to Pioneers') +
@@ -120,7 +124,7 @@ p <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = fa
   scale_color_manual(values = guild_colors_nb, labels = fg_labels, name = 'functional group')+
   scale_fill_manual(values = guild_fills_nb)
 p
-pdf(file.path(gdrive_path, 'Figures/Fig_1/Life_Histories.pdf'))
+pdf(file.path(gdrive_path, 'Figures/Fig_2/Life_Histories.pdf'))
 p
 dev.off()
 
@@ -140,7 +144,7 @@ plot_dens <- function(year_to_plot = 1995,
                       y_limits,
                       y_breaks,
                       y_labels,
-                      fill_names = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "ivory"),
+                      fill_names = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"),
                       fill_names0 = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
                       x_name = 'Diameter (cm)',
                       y_name = expression(paste('Density (n ha'^-1,'cm'^-1,')')),
@@ -172,7 +176,7 @@ plot_dens <- function(year_to_plot = 1995,
     geom_abline(intercept=4, slope = -2, color ="gray72",linetype="dashed", size=.75)+   
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
-    geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
+    #geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
     geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value, group = fg, fill=fg), size = geom_size, shape=21,color="black") +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks,labels = y_labels) +
@@ -191,10 +195,10 @@ plot_prod <- function(year_to_plot = 1995,
                       y_limits,
                       y_labels,
                       y_breaks,
-                      fill_names = c("#BFE046", "#267038", "#27408b", "#87Cefa", "ivory"),
+                      fill_names = c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"),
                       fill_names0 = c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
                       x_name = 'Diameter (cm)',
-                      y_name = expression(paste('Growth (kg y'^-1,')')),
+                      y_name = expression(paste('Growth (kg yr'^-1,')')),
                       average = 'mean',
                       error_quantiles = c('ci_min', 'ci_max'),
                       error_bar_width = 0.03,
@@ -229,9 +233,7 @@ plot_prod <- function(year_to_plot = 1995,
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     #geom_errorbar(data = obsdat, aes_string(x = 'bin_midpoint', ymin = error_quantiles[1], ymax = error_quantiles[2], group = 'fg', color = 'fg', width = 'width'), position = pos) +
     geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
-    geom_ribbon(data = preddat[preddat$fg == "fg5",], 
-                aes(x = dbh, ymin = q025, ymax = q975), 
-                fill = "gray", alpha = 0.4) +
+    #geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
     geom_point(data = obsdat, aes_string(x = 'bin_midpoint', y = average, group = 'fg', fill = 'fg'),
                size = geom_size,color="black",shape=21, position = pos) +
     scale_x_log10()+#name = x_name, limits = x_limits, breaks = x_breaks) +
@@ -258,10 +260,10 @@ plot_totalprod <- function(year_to_plot = 1995,
                            y_limits = c(0.03,100),
                            y_breaks = c(0.01,0.1, 1, 10,100, 1000),
                            y_labels,
-                           fill_names = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "ivory"),
+                           fill_names = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"),
                            fill_names0 = c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
                            x_name = 'Diameter (cm)',
-                           y_name = expression(paste('Total Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),
+                           y_name = expression(paste('Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),
                            obsdat = obs_totalprod,
                            preddat = fitted_totalprod,
                            plot_abline = TRUE
@@ -288,7 +290,7 @@ plot_totalprod <- function(year_to_plot = 1995,
        
     geom_line(data = preddat, aes(x = dbh, y = q50, group = fg, color = fg)) +
     #geom_line(data = preddat[preddat$fg == "fg5",], aes(x = dbh, y = q50), color = "gray")+ # white circles get gray line
-    geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
+    #geom_ribbon(data = preddat[preddat$fg == "fg5",], aes(x = dbh, ymin = q025, ymax = q975), fill = "gray", alpha = 0.4) +
     geom_point(data = obsdat, aes(x = bin_midpoint, y = bin_value,group = fg, fill=fg), size = geom_size, color = "black",shape=21) +
     scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) +  
     scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels, position = "right") +
@@ -397,13 +399,16 @@ p <- plot_totalprod(year_to_plot = 1995,
                     y_limits = c(0.03, 200),
                     y_breaks = c(0.1, 1, 10, 100),
                     y_labels = c(0.1, 1, 10, 100),
+                    position= "left",
                     preddat = fitted_totalprod)
 p
 p0 <- p + scale_x_log10(name = 'Diameter (cm)',
-                        breaks = c(1,3,10,30,100,300),
+                        breaks = c(1,3,10,30,100,300), limits = c(0.9, 250),
                         sec.axis = sec_axis(~ exp(0.438 + 0.595 * log(.)),
                                     name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 40))) +
-  scale_y_log10(position = "left", name =expression(paste('Total Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),) +theme(aspect.ratio = 0.8)
+  scale_y_log10(position = "left", limits = c(0.03, 200), breaks = c(0.1, 1, 10, 100),labels = c(0.1, 1, 10, 100),
+                name =expression(atop('Total Production', paste('(kg ha'^-1,' cm'^-1,' yr'^-1,')')))) +
+  theme(aspect.ratio = 0.8)
   #,
                                #labels=c("2","3","5","30"))#,  
 p0                            
@@ -432,7 +437,7 @@ p <- ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax =
                 breaks = 10^(-2:3), labels = as.character(10^(-2:3)), limits = c(0.01, 1000)) +
   scale_color_manual(values = guild_fills2) +
   theme_plant
-  
+p
 pdf(file.path(gdrive_path,'Figures/Fig_3/Range/Total_Production_Range.pdf'))
 plot(p)
 dev.off()
@@ -455,11 +460,14 @@ p <- plot_prod(year_to_plot = 1995,
                y_name = expression(paste('Diameter growth (cm yr'^-1,')')))
 
 p1 <- p + theme(axis.text.x = element_text(), axis.ticks.x = element_line()) + 
-  labs(x = 'Diameter (cm)')
+  labs(x = 'Diameter (cm)') + theme(plot.margin=grid::unit(c(1,1,1,1), "mm"))
+  
 plot(p1)
-pdf(file.path(gdrive_path,'Figures/Fig_3/Diameter/Diam_growth.pdf'))
-plot(p)
-dev.off()
+
+ggsave(file.path(gdrive_path,'Figures/Fig_3/Diameter/Diam_growth.pdf'), p1, width = 7, height = 5.3)
+#system2("pdfcrop", 
+ #       c(file.path(gdrive_path,"Figures/Fig_3/Diameter/Diam_growth.pdf", 
+  #                            file.path(gdrive_path,"Figures/Fig_3/Diameter/Diam_growth.pdf"))))
 
 # ------------------------   WAIC of Piecewise Models  -----------------------------------
 
@@ -864,7 +872,7 @@ plot(p1)
 p2 <- set_panel_size(p1, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p2)
 pdf(file.path(gdrive_path,'Figures/Fig_4/Indiv_light.pdf'))
-plot(p1)
+plot(p2)
 dev.off()
 
 
@@ -900,10 +908,10 @@ title_x <- expression(paste('Light per Crown Area (W m'^-2,')',sep=''))
 title_y <- expression(paste('Growth (kg yr'^-1, ' m'^-2,')', sep=''))
 
 # Colors
-colors <- c('black',"#BFE046","#267038" , "#27408b", "#87Cefa", "ivory" ) # #BFE046= light green,#267038=dark green,27408b=dark blue,"#87Cefa" = light blue,    
+colors <- c('black',"#BFE046","#267038" , "#27408b", "#87Cefa", "gray87" ) # #BFE046= light green,#267038=dark green,27408b=dark blue,"#87Cefa" = light blue,    
 year_to_plot = 1995
 fg_colors <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87Cefa", fg5 = "gray70",  alltree = 'black') #unclassified = 'brown',
-fg_colors2 <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87Cefa", fg5 = "ivory",  alltree = 'black') #unclassified = 'brown',
+fg_colors2 <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87Cefa", fg5 = "gray87",  alltree = 'black') #unclassified = 'brown',
 
 ### -----
 
@@ -911,7 +919,7 @@ fg_colors2 <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87C
 
 # Remove all tree and unclassified groups
 param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg3", "fg4"))
-fg_labels2 <- c("Fast", "LL Pioneer", "Intermediate", "Slow", "SL Breeder")
+fg_labels2 <- c("Fast", "Pioneer", "Intermediate", "Slow", "Breeder")
 p <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
             aes(x = fg, y = q50, ymin = q25, ymax = q75)) +theme_facet +
   geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 1) + 
@@ -950,7 +958,7 @@ obs_light_binned_plotdata <- obs_light_binned %>% filter(year == year_to_plot, m
   ungroup
 
 p_mean_1panel <- ggplot(obs_light_binned_plotdata) +
-  geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.5) +
+  geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50, color = fg)) +
   geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max, group = fg, color = fg, width = error_bar_width * width), position = position_dodge(width = dodge_width)) +
   geom_point(aes(x = bin_midpoint, y = mean, group = fg, fill = fg), size = 4, shape = 21, position = position_dodge(width = dodge_width)) +
@@ -962,7 +970,7 @@ p_mean_1panel <- ggplot(obs_light_binned_plotdata) +
   theme_plant #+
 
 p_mean_1panel 
-pdf(file.path(gdrive_path, "Figures/Fig_4/Growth by light/Combined mean growth.pdf"))
+pdf(file.path(gdrive_path, "Figures/Fig_2/Fig_2b.pdf"))
 p_mean_1panel 
 dev.off()
 
@@ -1375,9 +1383,11 @@ labels = trans_format("log10", math_format(10^.x))
 
 p <- ggplot() +
   geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received)) +
-  geom_pointrange(data = unscaledlightbydbhfakebin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  geom_pointrange(data = unscaledlightbydbhfakebin_fg %>% filter(fg %in% 'all'), 
+                  aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
   scale_x_log10(name = exd) +
-  scale_y_log10(name = exl, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), labels = trans_format("log10", math_format(10^.x))) +
+  scale_y_log10(name = exl, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), 
+                labels = trans_format("log10", math_format(10^.x))) +
   theme_plant +
   hex_scale_log_colors +
   guides(fill = guide_legend(override.aes = list(alpha = alpha_value))) +
@@ -1395,7 +1405,8 @@ ggplot() +
   geom_pointrange(data = unscaledlightbydbhfakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
   facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = fg_labels)) +theme_plant+
   scale_x_log10(name = exd) +
-  scale_y_log10(name = exl, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), labels = trans_format("log10", math_format(10^.x))) +
+  scale_y_log10(name = exl, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), 
+                labels = trans_format("log10", math_format(10^.x))) +
   theme_facet2 +
   hex_scale_log_colors +
   guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
@@ -1511,7 +1522,7 @@ p_dodge <- position_dodge(width = dodge_width)
 geom_size = 3.5
 
 
-###### Read in Data ######
+# ------------------------------- Fig 6 Relative Abundance & Production ------------------------------------
 
 # Load the 5 diameter census ones, can be used if needed
 fastslow_stats_bydiam_5census <- read_csv(file.path(gdrive_path, 'data/data_june2018_alternativecluster/fastslow_stats_bydiam_5census.csv'))
@@ -1525,8 +1536,6 @@ breeder_stats_bydiam_2census <- read_csv(file.path(gdrive_path, 'data/data_june2
 fastslow_stats_bylight_2census <-  read_csv(file.path(gdrive_path, 'data/data_june2018_alternativecluster/fastslow_stats_bylight_2census.csv'))
 breeder_stats_bylight_2census <-  read_csv(file.path(gdrive_path, 'data/data_june2018_alternativecluster/breeder_stats_bylight_2census.csv'))
 
-
-# ------------------------------- Fig 6 Relative Abundance & Pr=oduction ------------------------------------
 
 # 2 samples by diameter
 
