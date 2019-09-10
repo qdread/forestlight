@@ -2,6 +2,7 @@
 # QDR / Forestlight / 14 June 2019
 
 # Modified 20 June: add light params and R2s.
+# Modified 10 Sep: include sigma in production fits.
 
 library(tidyverse)
 
@@ -10,11 +11,11 @@ params <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/newpiecew
 density_param_df <- params %>% filter(variable == 'density')
 production_param_df <- params %>% filter(variable == 'production')
 
-production_params <- c('beta0','beta1','beta1_low','beta1_high','x0','delta')
+production_params <- c('beta0','beta1','beta1_low','beta1_high','x0','delta','sigma')
 density_params <- c('alpha', 'alpha_low', 'alpha_high', 'tau', 'alpha_mid', 'tau_low', 'tau_high')
 
 # Alternative names.
-production_params_names <- c('intercept', 'slope', 'slope small trees', 'slope large trees', 'cutoff', 'smoothing parameter')
+production_params_names <- c('intercept', 'slope', 'slope small trees', 'slope large trees', 'cutoff', 'smoothing parameter', 'sigma')
 density_params_names <- c('slope', 'slope small trees', 'slope large trees', 'cutoff small to large', 'slope middle trees', 'cutoff small to middle', 'cutoff middle to large')
 
 # Full names of functional groups
@@ -97,10 +98,10 @@ library(tidyverse)
 
 params <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/totallightscaling/light_piecewise_paramci_by_fg.csv', stringsAsFactors = FALSE)
 
-production_params <- c('beta0','beta1','beta1_low','beta1_high','x0','delta')
+production_params <- c('beta0','beta1','beta1_low','beta1_high','x0','delta','sigma')
 
 # Alternative names.
-production_params_names <- c('intercept', 'slope', 'slope small trees', 'slope large trees', 'cutoff', 'smoothing parameter')
+production_params_names <- c('intercept', 'slope', 'slope small trees', 'slope large trees', 'cutoff', 'smoothing parameter','sigma')
 
 # Full names of functional groups
 fg_full_names <- c('fast', 'large pioneer', 'slow', 'small breeder', 'medium', 'all trees', 'unclassified')
@@ -155,10 +156,10 @@ library(tidyverse)
 
 params <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/diamgrowth_piecewise_paramci_by_fg.csv', stringsAsFactors = FALSE)
 
-production_params <- c('beta0','beta1','beta1_low','beta1_high','x0','delta')
+production_params <- c('beta0','beta1','beta1_low','beta1_high','x0','delta','sigma')
 
 # Alternative names.
-production_params_names <- c('intercept', 'slope', 'slope small trees', 'slope large trees', 'cutoff', 'smoothing parameter')
+production_params_names <- c('intercept', 'slope', 'slope small trees', 'slope large trees', 'cutoff', 'smoothing parameter', 'sigma')
 
 # Full names of functional groups
 fg_full_names <- c('fast', 'large pioneer', 'slow', 'small breeder', 'medium', 'all trees', 'unclassified')
