@@ -399,7 +399,6 @@ p <- plot_totalprod(year_to_plot = 1995,
                     y_limits = c(0.03, 200),
                     y_breaks = c(0.1, 1, 10, 100),
                     y_labels = c(0.1, 1, 10, 100),
-                    position= "left",
                     preddat = fitted_totalprod)
 p
 p0 <- p + scale_x_log10(name = 'Diameter (cm)',
@@ -1822,8 +1821,8 @@ plot(p1)
 dev.off()
 
 
-
-
+lm_pca <- lm(mean~bin_midpoint, data = score_bin_bydiam)
+summary(lm_pca)
 
 #-----------------------------------------------------------------------------------
 ###################### Additional Light Plots  ########################
