@@ -5,6 +5,7 @@
 # Edited 17 Feb 2019: Add lognormal distribution too.
 # Edited 17 Jun 2019: Change file names so it can accommodate the incoming light and volume scalings
 # Edited 02 Jul 2019: Get rid of the integration correction factor (better new one is applied elsewhere)
+# Edited 10 Sep 2019: Also extract the sigma parameter from production fits.
 
 # Information to get:
 # Parameter values and credible intervals
@@ -116,7 +117,7 @@ fitted_predicted_values <- function(fit, variable, dbh_pred, dens_form = NA, pro
   }
   
   if (variable == 'production' | variable == 'total_production') {
-    pars_prod <- as.data.frame(do.call('cbind', extract(fit[['production']], c(pars_to_get[['production']], 'sigma'))))
+    pars_prod <- as.data.frame(do.call('cbind', extract(fit[['production']], c(pars_to_get[['production']]))))
     if (prod_form == '1') {
       prod_fitted <- sapply(dbh_pred, powerlaw_log, beta0 = pars_prod[,'beta0'], beta1 = pars_prod[,'beta1'])
     }
@@ -338,8 +339,8 @@ extract_production <- function(prod_model, fg, year, xmin, n, use_subset = FALSE
   # Get credible intervals of parameters
   # Only get density parameters if production model is 1, only get production parameters if density model is 1
   print('Calculating credible intervals of parameters . . .')
-  production_par <- list('1' = c('beta0', 'beta1'),
-						 '2' = c('beta0', 'beta1_low', 'beta1_high', 'x0', 'delta'))
+  production_par <- list('1' = c('beta0', 'beta1', 'sigma'),
+						 '2' = c('beta0', 'beta1_low', 'beta1_high', 'x0', 'delta', 'sigma'))
   
   get_pars <- list(production = production_par[[prod_model]])
   
@@ -397,8 +398,8 @@ extract_totalproduction <- function(dens_model, prod_model, fg, year, xmin, n, u
                       '3' = c('alpha_low', 'alpha_mid', 'alpha_high', 'tau_low', 'tau_high'),
                       'w' = c('m','n'),
                       'ln' = c('mu_logn', 'sigma_logn'))
-  production_par <- list('1' = c('beta0', 'beta1'),
-                         '2' = c('beta0', 'beta1_low', 'beta1_high', 'x0', 'delta'))					  
+  production_par <- list('1' = c('beta0', 'beta1', 'sigma'),
+                         '2' = c('beta0', 'beta1_low', 'beta1_high', 'x0', 'delta', 'sigma'))					  
   
   get_pars <- list(density = density_par[[dens_model]], production = production_par[[prod_model]])
   
