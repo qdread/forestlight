@@ -160,13 +160,16 @@ tp <- function(dbh) {
 # If it's needed to edit the allometries for different species groups, add it here.
 ######
 
+# !!! Correction made 03 Oct 2019: correct so that we are dividing by volume, not multiplying
+
 for (i in 2:3) {
   
   crowndim <- tp(bcicensusdat[[i]]$dbh_corr) 
   bcicensusdat[[i]]$crownarea <- pi * crowndim$cr^2
   bcicensusdat[[i]]$crownvolume <- crowndim$cV
   bcicensusdat[[i]] <- transform(bcicensusdat[[i]], light_received = light * crownarea * insol_bci,
-                                                    light_received_byvolume = light * crownvolume * insol_bci)
+													light_received_byarea = light * insol_bci,
+                                                    light_received_byvolume = light * crownarea * insol_bci / crownvolume)
   
 }
 
