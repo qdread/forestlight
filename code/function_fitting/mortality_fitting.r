@@ -16,7 +16,7 @@ mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting_aug2018/obs_morta
 
 # Compile stan model
 logreg <- stan_model(file.path(github_path, 'stan/mortreg.stan'), model_name = 'logreg') # Model for each FG
-logreg_mixed <- stan_model(file.path(github_path, 'stan/mortreg_fg_noloops.stan'), model_name = 'logreg_fg') # Mixed model with random slopes and intercepts for FGs
+logreg_mixed <- stan_model(file.path(github_path, 'stan/mortreg_fg_v3.stan'), model_name = 'logreg_fg') # Mixed model with random slopes and intercepts for FGs
 
 # Set stan options
 options(mc.cores = 2)
@@ -27,10 +27,10 @@ rstan_options(auto_write = TRUE)
 # Test fit model on subset of data ----------------------------------------
 
 
-set.seed(411)
+set.seed(711)
 mort_subset <- mort %>%
   filter(!fg %in% 'unclassified') %>%
-  sample_n(20000) %>%
+  sample_n(10000) %>%
   mutate(died = alive == 0) %>%
   select(fg, died, light_received_byarea)
 
