@@ -38,9 +38,9 @@ theme_plant <- theme(panel.grid = element_blank(), #for Total Production
 fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
 guild_colors_nb <- c("#3B4403", "#02330A", "#031a49", "#02394F", "#595A5B")
-fitted_mort2 <- as_tibble(fitted_mort)
 
-plightarea <- ggplot(data = fitted_mort2 %>% mutate(fg = factor(fg, labels = fg_labels))) +
+
+plightarea <- ggplot(data = fitted_mort %>% mutate(fg = factor(fg, labels = fg_labels))) +
   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
   #geom_line(data = fitted_mort2[fitted_mort2$fg == "fg5",]  %>%       #Trying to make fg5 a darker gray!
