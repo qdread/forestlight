@@ -18,20 +18,50 @@ fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortalit
 # Make some simple plots --------------------------------------------------
 
 # Color mapping
+
+theme_plant <- theme(panel.grid = element_blank(), #for Total Production
+                     aspect.ratio = .75,
+                     axis.text = element_text(size = 15, color = "black"), 
+                     axis.ticks.length=unit(0.2,"cm"),
+                     axis.title = element_text(size = 15),
+                     axis.title.y = element_text(margin = margin(r = 10)),
+                     axis.title.x = element_text(margin = margin(t = 10)),
+                     axis.title.x.top = element_text(margin = margin(b = 5)),
+                     plot.title = element_text(size = 15, face = "plain", hjust = 10),
+                     panel.border = element_rect(color = "black", fill=NA,  size=1),
+                     panel.background = element_rect(fill = "transparent",colour = NA),
+                     plot.background = element_rect(fill = "transparent",colour = NA),
+                     legend.position = "none",
+                     rect = element_rect(fill = "transparent"),
+                     text = element_text(family = 'Helvetica')) 
+
 fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
 guild_colors_nb <- c("#3B4403", "#02330A", "#031a49", "#02394F", "#595A5B")
+fitted_mort2 <- as_tibble(fitted_mort)
 
-plightarea <- ggplot(fitted_mort %>% mutate(fg = factor(fg, labels = fg_labels))) +
-  geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
+plightarea <- ggplot(data = fitted_mort2 %>% mutate(fg = factor(fg, labels = fg_labels))) +
+  geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = bin_mort %>% filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) > 7)  %>% mutate(fg = factor(fg, labels = fg_labels)),
-             aes(x = bin_midpoint, y = mortality, fill = fg, size = lived + died),
-             pch = 21) +
-  scale_x_log10(name = parse(text = 'Light~received~per~unit~crown~area~(W~m^-2)'), limits = c(1, 412), expand = c(0, 0)) +
-  scale_y_continuous(name = 'Mortality rate 1990-1995') +
-  scale_size_continuous(name = 'Individuals', trans = 'log', breaks = 10^(0:3)) +
+  #geom_line(data = fitted_mort2[fitted_mort2$fg == "fg5",]  %>%       #Trying to make fg5 a darker gray!
+   #           aes(x = light_per_area, y = q50),  color = "gray") +
+  geom_point(data = bin_mort %>% filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) > 20)  %>% mutate(fg = factor(fg, labels = fg_labels)),
+             aes(x = bin_midpoint, y = mortality, fill = fg), #lived + died),
+             shape = 21, size = 3) +
+  scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), limits = c(1.1, 412)) +
+  scale_y_log10(breaks = c(0.03, 0.3, .1), labels = c(0.03, 0.3, 0.1), limits = c(0.02, .6),
+                name = expression(paste("Mortality (5 yr"^-1,")"))) +
+  #scale_size_continuous(name = 'Individuals', trans = 'log', breaks = 10^(0:3)) +
   scale_color_manual(values = guild_fills_nb) +
   scale_fill_manual(values = guild_fills_nb) +
-  theme_bw() +
-  ggtitle('Mortality rate by light per area')
+  theme_plant #+
+  #ggtitle('Mortality rate by light per area')
+plightarea
+p2 <- set_panel_size(plightarea, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p2)
+
+pdf(file.path(gdrive_path, "Figures/Fig_2/Fig_2c.pdf"))
+grid.newpage()
+grid.draw(p2)
+dev.off()
