@@ -8,12 +8,32 @@ library(tidyverse)
 library(rstan)
 
 # Check out this slick trick so that we no longer need to comment out any paths - just run this and it sees if it's Quentin or not.
-user <- Sys.info()['user']
+user <- Sys.info()['user']  #nice!
+
 gdrive_path <- ifelse(user == 'qread', '~/google_drive/ForestLight/', file.path('/Users',user,'Google Drive/ForestLight'))
 github_path <- ifelse(user == 'qread', '~/Documents/GitHub/forestlight', file.path('/Users',user,'Documents/GitHub/forestlight'))
 
 mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting_aug2018/obs_mortalityindividuals.csv'))
 
+
+# plot theme & colors
+
+theme_plant <- theme(panel.grid = element_blank(), #for Total Production
+                     aspect.ratio = .75,
+                     axis.text = element_text(size = 19, color = "black"), 
+                     axis.ticks.length=unit(0.2,"cm"),
+                     axis.title = element_text(size = 19),
+                     axis.title.y = element_text(margin = margin(r = 10)),
+                     axis.title.x = element_text(margin = margin(t = 10)),
+                     axis.title.x.top = element_text(margin = margin(b = 5)),
+                     plot.title = element_text(size = 19, face = "plain", hjust = 10),
+                     panel.border = element_rect(color = "black", fill=NA,  size=1),
+                     panel.background = element_blank(),
+                     legend.position = "none",
+                     rect = element_rect(fill = "transparent"),
+                     text = element_text(family = 'Helvetica')) 
+
+guild_colors <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87")
 # Compile stan model
 logreg <- stan_model(file.path(github_path, 'stan/mortreg.stan'), model_name = 'logreg') # Model for each FG
 logreg_mixed <- stan_model(file.path(github_path, 'stan/mortreg_fg_v3.stan'), model_name = 'logreg_fg') # Mixed model with random slopes and intercepts for FGs
@@ -55,10 +75,13 @@ fitted_values <- coef_data %>%
   group_by(fg) %>%
   group_modify(~ data.frame(x = x_pred, y = plogis(.x$intercept + .x$slope * x_pred)))
 
+
 ggplot(fitted_values, aes(x = 10^x, y = y, group = fg, color = fg)) +
-  geom_line() +
-  scale_x_log10() +
-  theme_bw()
+  geom_line(size = 1.5) +
+  scale_color_manual(values = guild_colors)+
+  scale_x_log10(name = expression(paste("Light per Crown Area (W m"^-2,")"))) +
+  scale_y_log10(breaks = c(0.05, 0.1, 0.2, 0.4), name = expression(paste("Mortality (yr"^-1,")"))) +
+  theme_plant
 # Looks good!
 
 
