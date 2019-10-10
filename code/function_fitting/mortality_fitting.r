@@ -15,25 +15,6 @@ github_path <- ifelse(user == 'qread', '~/Documents/GitHub/forestlight', file.pa
 
 mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting_aug2018/obs_mortalityindividuals.csv'))
 
-
-# plot theme & colors
-
-theme_plant <- theme(panel.grid = element_blank(), #for Total Production
-                     aspect.ratio = .75,
-                     axis.text = element_text(size = 19, color = "black"), 
-                     axis.ticks.length=unit(0.2,"cm"),
-                     axis.title = element_text(size = 19),
-                     axis.title.y = element_text(margin = margin(r = 10)),
-                     axis.title.x = element_text(margin = margin(t = 10)),
-                     axis.title.x.top = element_text(margin = margin(b = 5)),
-                     plot.title = element_text(size = 19, face = "plain", hjust = 10),
-                     panel.border = element_rect(color = "black", fill=NA,  size=1),
-                     panel.background = element_blank(),
-                     legend.position = "none",
-                     rect = element_rect(fill = "transparent"),
-                     text = element_text(family = 'Helvetica')) 
-
-guild_colors <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87")
 # Compile stan model
 logreg <- stan_model(file.path(github_path, 'stan/mortreg.stan'), model_name = 'logreg') # Model for each FG
 logreg_mixed <- stan_model(file.path(github_path, 'stan/mortreg_fg_v3.stan'), model_name = 'logreg_fg') # Mixed model with random slopes and intercepts for FGs

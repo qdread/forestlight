@@ -37,10 +37,10 @@ theme_plant <- theme(panel.grid = element_blank(), #for Total Production
 
 fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
-guild_colors_nb <- c("#3B4403", "#02330A", "#031a49", "#02394F", "#595A5B")
-fitted_mort2 <- as_tibble(fitted_mort)
+guild_colors_nb <- c("#3B4403", "#02330A", "#031a49", "#02394F", "gray")
 
-plightarea <- ggplot(data = fitted_mort2 %>% mutate(fg = factor(fg, labels = fg_labels))) +
+
+(plightarea <- ggplot(data = fitted_mort %>% mutate(fg = factor(fg, labels = fg_labels))) +
   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
   #geom_line(data = fitted_mort2[fitted_mort2$fg == "fg5",]  %>%       #Trying to make fg5 a darker gray!
@@ -49,12 +49,12 @@ plightarea <- ggplot(data = fitted_mort2 %>% mutate(fg = factor(fg, labels = fg_
              aes(x = bin_midpoint, y = mortality, fill = fg), #lived + died),
              shape = 21, size = 3) +
   scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), limits = c(1.1, 412)) +
-  scale_y_log10(breaks = c(0.03, 0.3, .1), labels = c(0.03, 0.3, 0.1), limits = c(0.02, .6),
-                name = expression(paste("Mortality (5 yr"^-1,")"))) +
+  scale_y_continuous(breaks = c(0.03, 0.3, .1), labels = c(0.03, 0.3, 0.1), limits = c(0.02, .5),
+                name = expression(paste("Mortality (5 yr"^-1,")")), trans = 'logit') +
   #scale_size_continuous(name = 'Individuals', trans = 'log', breaks = 10^(0:3)) +
-  scale_color_manual(values = guild_fills_nb) +
+  scale_color_manual(values = guild_colors_nb) +
   scale_fill_manual(values = guild_fills_nb) +
-  theme_plant #+
+  theme_plant) #+
   #ggtitle('Mortality rate by light per area')
 plightarea
 p2 <- set_panel_size(plightarea, width=unit(10.25,"cm"), height=unit(7,"cm"))
