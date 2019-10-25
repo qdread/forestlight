@@ -153,17 +153,20 @@ tp <- function(dbh) {
 ######
 
 # !!! Correction made 03 Oct 2019: correct so that we are dividing by volume, not multiplying
+# Added 25 Oct 2019: include crown depth so that we can correct for incident light capture percentage using light extinction coefficient.
 
 for (i in 2:3) {
   
   crowndim <- tp(bcicensusdat[[i]]$dbh_corr) 
-  bcicensusdat[[i]]$crownarea <- pi * crowndim$cr^2
-  bcicensusdat[[i]]$crownvolume <- crowndim$cV
-  bcicensusdat[[i]] <- transform(bcicensusdat[[i]], 
-                                 light_received = light * crownarea * insol_bci,
-                                 light_received_byarea = light * insol_bci,
-                                 light_received_byvolume = light * crownarea * insol_bci / crownvolume)
-  
+  bcicensusdat[[i]] <- bcicensusdat[[i]] %>%
+    mutate(crownarea = pi * crowndim$cr^2,
+           crownvolume = crowndim$cV,
+           height_bohlman = crowndim$h,
+           crowndepth = crowndim$cd,
+           light_received = light * crownarea * insol_bci,
+           light_received_byarea = light * insol_bci,
+           light_received_byvolume = light * crownarea * insol_bci / crownvolume)
+
 }
 
 # Classification of light into 3 groups.
@@ -598,7 +601,7 @@ fastslowscore_bin_bylight_2census <- binscore(dat = alltreedat[2:3], bindat = db
 # Export binned data
 
 fpdata <- '~/google_drive/ForestLight/data/data_binned'
-file_names <- c('densitybin_5census', 'indivproductionbin_5census', 'totalproductionbin_5census', 'crownareabin_2census', 'lightreceivedbin_2census', 'indivprodperareabin_2census', 'breeder_stats_bydiam_2census', 'breederscore_bin_bydiam_2census', 'breeder_stats_bylight_2census', 'breederscore_bin_bylight_2census', 'fastslow_stats_bydiam_2census', 'fastslowscore_bin_bydiam_2census', 'fastslow_stats_bylight_2census', 'fastslowscore_bin_bylight_2census','fastslow_stats_bydiam_5census','breeder_stats_bydiam_5census')
+file_names <- c('densitybin_5census', 'indivproductionbin_5census', 'totalproductionbin_5census', 'crownareabin_2census', 'lightreceivedbin_2census', 'indivprodperareabin_2census', 'breeder_stats_bydiam_2census',  'breederscore_bin_bydiam_2census', 'breeder_stats_bylight_2census', 'breederscore_bin_bylight_2census', 'fastslow_stats_bydiam_2census', 'fastslowscore_bin_bydiam_2census', 'fastslow_stats_bylight_2census', 'fastslowscore_bin_bylight_2census','fastslow_stats_bydiam_5census','breeder_stats_bydiam_5census')
 
 for (i in file_names) {
   write.csv(get(i), file=file.path(fpdata, paste0(i,'.csv')), row.names = FALSE)

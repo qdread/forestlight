@@ -1,0 +1,143 @@
+---
+title: "Corrections to light per volume scaling"
+author: "Quentin D. Read"
+date: "October 25, 2019"
+output: pdf_document
+---
+
+```{r include = FALSE}
+library(tidyverse)
+
+user <- Sys.info()['user']
+gdrive_path <- ifelse(user == 'qread', '~/google_drive/ForestLight/', file.path('/Users',user,'Google Drive/ForestLight'))
+github_path <- ifelse(user == 'qread', '~/Documents/GitHub/forestlight', file.path('/Users',user,'Documents/GitHub/forestlight'))
+
+source(file.path(github_path, 'code/allfunctions27july.r'))
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
+
+alltree_light_95 <- alltree_light_95 %>%
+  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), as.character(NA)))
+
+dbhbin1995 <- with(alltree_light_95, logbin(x = dbh_corr, n = 20))
+```
+
+
+# The problem
+
+In the existing draft of the MS we have a plot showing the scaling, at an individual tree level, of light captured per volume ($W m^{-3}$) as a function of diameter. This relationship does not account for the fact that shallower crowns of trees with smaller volume will let some light through, while very deep crowns of trees with larger volume can capture almost all incident light. Therefore, the relationship may appear "flatter" than is likely to be true in reality.
+
+We can correct for this to some extent using the rough approximation described by Kitajima et al. (2005) and suggested by Nadja. The correction assumes that leaf area index per crown, or the number of leaf layers, is roughly proportional to crown depth in meters. In other words, trees have layers of leaves that are roughly evenly spaced along the height axis. We can use this relationship and the light extinction coefficient to estimate what percent of incident light, after accounting for shading of the crown, is actually captured by the tree:
+
+$$p = 1 - e^{-kd}$$
+
+Here $p$ is the proportion of incident light captured, $k$ is the light extinction coefficient, and $d$ is crown depth in meters. 
+
+We can use the crown depth allometry given by Bohlman and O'Brien (2006), assuming the same allometry for all species. However we only have a few $k$ values for Panama tree species provided by Kitajima et al. They vary from 0.35 to 0.7, discounting *Cecropia*.
+
+Below I show the effect of assuming different values of $k$ for all trees on the light captured per volume scaling relationship.
+
+# Shape of the light capture relationship
+
+This shows the relationship given by the equation above for a range of plausible values of $k$.
+
+Here crown depths up to 20 m are plotted since essentially any value of $k$ results in 100% light capture at 20 m or deeper, though allometrically estimated crown depths go above 20 in our dataset.
+
+```{r}
+
+# Equation relating crown depth to light capture
+pct_light_captured <- function(depth, k) 1 - exp(-k * depth)
+
+# Representative values to plot
+depth_values <- seq(0, 20, length.out = 101)
+k_values <- seq(0.3, 0.7, by = 0.05)
+
+# Evaluate proportion capture at all combinations
+cross_values <- cross2(depth_values, k_values)
+
+plot_dat <- data.frame(depth = map_dbl(cross_values, 1),
+                       k = map_dbl(cross_values, 2),
+                       pct_captured = map_dbl(cross_values, 
+                                              ~ pct_light_captured(depth = .[[1]], k = .[[2]])))
+
+# Create plot
+ggplot(plot_dat, aes(x = depth, y = pct_captured, group = k, color = k)) +
+  geom_line(size = 1) +
+  theme_minimal() +
+  scale_color_viridis_c(breaks = seq(0.3, 0.7, by = 0.1)) +
+  scale_y_continuous(name = 'proportion light captured') +
+  scale_x_continuous(name = 'crown depth (m)', limits = c(0, 20))
+
+```
+
+# Calculate proportion light capture for BCI trees
+
+The following calculates the proportion light capture, given different values of $k$ for the 1995 trees. Note that we include $k = \infty$ which represents applying no correction and which is the same as the figure in the current MS draft.
+
+```{r}
+# Range of light extinction coefficients
+k_values <- c(seq(0.3, 0.7, by = 0.1), Inf)
+
+treedat95 <- alltree_light_95 %>% 
+  select(dbh_corr, crownvolume, crowndepth, light_received_byvolume)
+
+# Correction factors for each k
+corr_factors <- map(k_values, ~ pct_light_captured(depth = treedat95$crowndepth, k = .))
+
+# Multiply raw light by volume times correction factor
+corrected_light_by_volume <- map(corr_factors, ~ . * treedat95$light_received_byvolume)
+```
+
+Next we bin the data for visualization purposes.
+
+```{r}
+# Combine corrected values into a data frame
+treedat_withcorr <- map2_dfr(k_values, corrected_light_by_volume, 
+                             ~ data.frame(dbh_corr = treedat95$dbh_corr, 
+                                          k = .x,
+                                          corrected_light_received_by_volume = .y))
+
+# Set bin breaks
+bin_breaks <- c(dbhbin1995$bin_min[1], 
+                dbhbin1995$bin_max[-length(dbhbin1995$bin_max)], 
+                dbhbin1995$bin_max[length(dbhbin1995$bin_max)] + 1)
+
+# Do "fake bin" for visualization
+correctedlightvol_fakebin <- treedat_withcorr %>%
+  mutate(dbh_bin = cut(dbh_corr, 
+                       breaks = bin_breaks, 
+                       labels = dbhbin1995$bin_midpoint, 
+                       include.lowest = TRUE)) %>%
+  group_by(k, dbh_bin) %>%
+  do(quantile(.$corrected_light_received_by_volume, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975'))) %>%
+  ungroup %>%
+  mutate(dbh_bin = as.numeric(as.character(dbh_bin)))
+
+```
+
+Finally we plot the binned data. I showed the central 95% of the range of y-values at each bin to give an idea of how the point clouds overlap. As expected, the smaller the value of $k$, and therefore the more transparent the crowns, the steeper the slope. As the crowns get very deep even relatively transparent leaves capture all the light since there are so many layers.
+
+```{r}
+ggplot(correctedlightvol_fakebin %>% mutate(k = factor(k)), 
+       aes(x = dbh_bin, y = q50, ymin = q025, ymax = q975, group = k, color = k, fill = k)) +
+  geom_line(position = position_dodge(width = 0.04)) +
+  geom_point(position = position_dodge(width = 0.04)) +
+  geom_errorbar(position = position_dodge(width = 0.04)) +
+  scale_x_log10(name = 'Diameter (cm)') +
+  scale_y_log10(name = parse(text = 'Light~captured~per~volume~(W~m^-3)')) +
+  theme_minimal() +
+  ggtitle('Light capture per volume for different values of k', 
+          'k = Inf is the uncorrected value we used before')
+```
+
+Here is a quick and dirty analysis showing the scaling coefficients of the relationship for different $k$ values, assuming a log-linear scaling relationship. The 0.3 slope for $k = \infty$ corresponds to the figure in the MS draft. The slopes vary from 0.3 to 0.73. If we roughly assumed a median $k$ value of around 0.5 based on Kitajima et al., we would get a slope of around 0.6. So that's around twice as steep as the uncorrected value in the MS draft, but still much flatter than the light per area scaling relationship.
+
+```{r}
+treedat_withcorr %>%
+  group_by(k) %>%
+  summarize(scaling_coefficient = 
+              lm(log10(corrected_light_received_by_volume) ~ log10(dbh_corr))$coeff[2])
+```
+
