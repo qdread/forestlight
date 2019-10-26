@@ -51,26 +51,26 @@ fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 # Also annualize to the middle of the interval: 2 to 3
 # Also, some of the census intervals are not exactly 5 so we can correct for this with the 
 
-### Function for annualizing biomass increment
+### Function for annualizing biomass increment (or diameter increment)
 # census interval should be 5 years and desired new interval should be 1 year
-annual_increment <- function(agb_old, agb_new, census_interval = 5, new_interval = c(2, 3)){
-  rate <-  (agb_new / agb_old)^(1/census_interval) - 1
-  agb_old * ((1 + rate)^(new_interval[2]) - (1+rate)^(new_interval[1]))
+annual_increment <- function(meas_old, meas_new, census_interval = 5, new_interval = c(2, 3)){
+  rate <-  (meas_new / meas_old)^(1/census_interval) - 1
+  meas_old * ((1 + rate)^(new_interval[2]) - (1+rate)^(new_interval[1]))
 }
 
 # Get production by taking the difference between successive biomasses and converting to annual rate
 bci_production <- map2(bci_full[-7], bci_full[-1], function(old, new) {
   census_interval <- (new$date - old$date)/365.25
-  agb_old <- if_else(is.na(old$agb_corr), new$agb_corr / census_interval, annual_increment(agb_old = old$agb_corr, agb_new = new$agb_corr, census_interval = census_interval))
+  if_else(is.na(old$agb_corr), new$agb_corr / census_interval, annual_increment(meas_old = old$agb_corr, meas_new = new$agb_corr, census_interval = census_interval))
 })
 
-### alternative one where everything is just divided by 5. (DO NOT USE)
-# bci_production <- map2(bci_full[-7], bci_full[-1], function(old, new) {
-#   census_interval <- (new$date - old$date)/365.25
-#   agb_old <- if_else(is.na(old$agb_corr), new$agb_corr / census_interval, (new$agb_corr - old$agb_corr) / census_interval)
-# })
+# Added 25 Oct 2019: Also get annualized diameter increment (used for model fitting later)
+bci_diamgrowthrate <- map2(bci_full[-7], bci_full[-1], function(old, new) {
+  census_interval <- (new$date - old$date)/365.25
+  if_else(is.na(old$dbh_corr), new$dbh_corr / census_interval, annual_increment(meas_old = old$dbh_corr, meas_new = new$dbh_corr, census_interval = census_interval))
+})
 
-# Amendment 11 Oct. : Add dbh increment, used to detect production outliers.
+# Amendment 11 Oct. 2017 : Add dbh increment (raw), used to detect production outliers.
 
 bci_dbhincs <- map2(bci_full[-7], bci_full[-1], function(old, new) {
   dbh_old <- if_else(is.na(old$dbh_corr), 0, old$dbh_corr) 
@@ -79,12 +79,13 @@ bci_dbhincs <- map2(bci_full[-7], bci_full[-1], function(old, new) {
 
 # Add columns to the bci_full data frames.
 
-bcicensusdat <- map(1:6, ~ cbind(bci_full[-1][[.]], production = bci_production[[.]], bci_dbhincs[[.]]))
+bcicensusdat <- map(1:6, ~ cbind(bci_full[-1][[.]], production = bci_production[[.]], diam_growth_rate = bci_diamgrowthrate[[.]], bci_dbhincs[[.]]))
 bcicensusdat <- map(bcicensusdat, function(x) x %>%
                       filter(DFstatus == 'alive') %>%
                       mutate(dbh_corr = dbh_corr/10,
                              agb_corr = agb_corr * 1000,
                              production = production * 1000,
+                             diam_growth_rate = diam_growth_rate / 10,
                              dbhinc = dbhinc/10,
                              dbhlastcensus = dbhlastcensus/10) %>%
                       filter(!young) )
