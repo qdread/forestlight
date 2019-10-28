@@ -373,7 +373,7 @@ lightreceivedbin_alltree_byyear <- alltreedat[2:3] %>% map(~ with(filter(., !is.
 lightreceivedbin_allclassified_byyear <- alltreedat_classified[2:3] %>% map(~ with(filter(., !is.na(light_received)), logbin_setedges(x = dbh_corr, y = light_received, edges = dbhbin_all)))
 
 lightreceivedbin_fg_byyear <- fgdat %>%
-  map(~ map(.[2:3], function(z) with(filter(z, !is.na(light_received)), logbin_setedges(x = z$dbh_corr, y = z$light_received, edges = dbhbin_allclassified))))
+  map(~ map(.[2:3], function(z) with(filter(z, !is.na(light_received)), logbin_setedges(x = dbh_corr, y = light_received, edges = dbhbin_allclassified))))
 
 lightreceivedbin_all_2census <- bin_across_years(lightreceivedbin_alltree_byyear)
 lightreceivedbin_allclassified_2census <- bin_across_years(lightreceivedbin_allclassified_byyear)
