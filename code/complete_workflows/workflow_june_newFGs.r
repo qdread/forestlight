@@ -155,6 +155,10 @@ tp <- function(dbh) {
 
 # !!! Correction made 03 Oct 2019: correct so that we are dividing by volume, not multiplying
 # Added 25 Oct 2019: include crown depth so that we can correct for incident light capture percentage using light extinction coefficient.
+# Added 28 Oct 2019: include the function to estimate percent light captured given light extinction coefficient of 0.5
+
+overall_k <- 0.5 # Roughly the mean light extinction coefficient for the Panamanian species in Kitajima et al. 2005.
+pct_light_captured <- function(depth, k) 1 - exp(-k * depth)
 
 for (i in 2:3) {
   
@@ -165,8 +169,9 @@ for (i in 2:3) {
            height_bohlman = crowndim$h,
            crowndepth = crowndim$cd,
            light_received = light * crownarea * insol_bci,
+           fraction_light_captured = pct_light_captured(depth = crowndepth, k = overall_k),
            light_received_byarea = light * insol_bci,
-           light_received_byvolume = light * crownarea * insol_bci / crownvolume)
+           light_received_byvolume = light * fraction_light_captured * crownarea * insol_bci / crownvolume)
 
 }
 

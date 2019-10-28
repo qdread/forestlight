@@ -2,12 +2,31 @@
 # Follows Meakem et al. 2017
 # QDR 11 July 2017
 
+# Last modified 28 Oct. 2019: Also include light data from recruits (not just trees that have a growth rate in 1995)
+
 # Load Condit's BCI data and Nadja's light data.
 
 fp <- '~/google_drive/ForestLight/data/BCI_raw'
 
 growth8590 <- read.delim(file.path(fp, 'BCI_light/growth_final8590.txt'), stringsAsFactors = FALSE)
 growth9095 <- read.delim(file.path(fp, 'BCI_light/growth_final9095.txt'), stringsAsFactors = FALSE)
+
+load(file.path(fp, 'recruits1995_light.rdata'))
+
+# Combine 90-95 growth+light data with 90-95 recruits' light data
+
+library(MASS)
+library(nlme)
+library(tidyverse)
+
+recs9095l <- recs9095l %>% mutate(
+  tag = as.integer(tag),
+  dinc = NA,
+  interval = NA,
+  sp = toupper(sp)
+)
+
+growth9095 <- rbind(growth9095, recs9095l[, names(growth9095)])
 
 # Load census data. 1 = 1980, 2 = 1985, 3 = 1990, 4 = 1995, 5 = 2000, 6 = 2005, 7 = 2010.
 
@@ -69,10 +88,6 @@ taper.H <- function(dbh) {43.4375*(1-
 #    using allometries from Chave et al. (2005) for most tropical forests. Also define 
 #    function (agb.allometryb) that does not included total tree height. 
 agb.allometry <- function(wsg,dbh,H) {0.0509*wsg*((dbh)^2)*H}
-
-library(MASS)
-library(nlme)
-library(tidyverse)
 
 model1.pars <- taper.parameters[taper.parameters$eqn==1 & taper.parameters$b1 >0,]
 
