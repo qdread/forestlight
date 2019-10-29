@@ -21,10 +21,10 @@ load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r')) # load othe
 
 # Check 
 # How many trees are in 1990 and 1995 dataset put together?
-length(union(alltreedat[[2]]$tag, alltreedat[[3]]$tag)) # ~184K all together
-length(intersect(alltreedat[[2]]$tag, alltreedat[[3]]$tag)) # ~84K in both (alive in both years)
-length(setdiff(alltreedat[[2]]$tag, alltreedat[[3]]$tag)) # ~70K in 1990 but not 1995, so they died
-length(setdiff(alltreedat[[3]]$tag, alltreedat[[2]]$tag)) # ~30K in 1995 but not in 1990, so they were born
+length(union(alltreedat[[2]]$tag, alltreedat[[3]]$tag)) # ~217K all together
+length(intersect(alltreedat[[2]]$tag, alltreedat[[3]]$tag)) # ~104K in both (alive in both years)
+length(setdiff(alltreedat[[2]]$tag, alltreedat[[3]]$tag)) # ~84K in 1990 but not 1995, so they died
+length(setdiff(alltreedat[[3]]$tag, alltreedat[[2]]$tag)) # ~29K in 1995 but not in 1990, so they were born
 
 # Create FG lookup table.
 fg_lookup <- unique(rbind(alltreedat[[2]], alltreedat[[3]])[,c('sp','fg')])
@@ -50,17 +50,22 @@ insolation <- function(lat) {
 # Insolation at BCI, 9.2 degrees N
 (insol_bci <- insolation(9.2))
 
+# Added 29 Oct 2019: light extinction coefficient for light received by volume
+overall_k <- 0.5 # Roughly the mean light extinction coefficient for the Panamanian species in Kitajima et al. 2005.
+pct_light_captured <- function(depth, k) 1 - exp(-k * depth)
+
 mort_use <- mort_use %>%
   mutate(fg = if_else(!is.na(fg), paste0('fg', fg), 'unclassified'),
          dbh = dbh/10,
          h = exp(.438 + .595 * log(dbh)),    # Height
-         cd = exp(-.157 + .702 * log(dbh)),  # Crown depth
+         crowndepth = exp(-.157 + .702 * log(dbh)),  # Crown depth
          cr = exp(-.438 + .658 * log(dbh)),  # Crown radius
          crownvolume = exp(-.681 + 2.02 * log(dbh)),  
          crownarea = pi * cr^2,
          light_received = light2 * crownarea * insol_bci,
+         fraction_light_captured = pct_light_captured(depth = crowndepth, k = overall_k),
          light_received_byarea = light2 * insol_bci,
-         light_received_byvolume = light2 * crownarea * insol_bci / crownvolume)
+         light_received_byvolume = light2 * fraction_light_captured * crownarea * insol_bci / crownvolume)
 
 # Do log binning ----------------------------------------------------------
 
@@ -69,14 +74,6 @@ mort_use <- mort_use %>%
 
 ### define bin edges to be the same 20 bins used in all other plots.
 n_bins <- 20
-
-# Get minimum and maximum dbh and light values across all years from the data and make an evenly log spaced 21 length vector
-### WHOOPS this won't work because the mort dataset has different limits for light and 
-# dbh_minmax <- map(alltreedat, ~ range(.x$dbh_corr) %>% setNames(c('min','max')))
-# dbh_bin_bounds <- exp(seq(log(min(map_dbl(dbh_minmax, 'min'))), log(max(map_dbl(dbh_minmax, 'max'))), length.out = n_bins + 1))
-# 
-# light_minmax <- with(rbind(alltree_light_90, alltree_light_95), range(light_received/crownarea))
-# light_bin_bounds <- exp(seq(log(light_minmax[1]), log(light_minmax[2]), length.out = n_bins + 1))
 
 # Get dbh and light bins from the data.
 # Increase maximum value in all cases so that values equal to maximum are counted.
@@ -183,5 +180,5 @@ bin_mort <- bind_rows(cbind(variable = 'dbh', bin_mort_dbh_fg),
                       cbind(variable = 'light_per_area', bin_mort_lightarea_fg),
                       cbind(variable = 'light_per_volume', bin_mort_lightvolume_fg))
 
-write_csv(bin_mort, file.path(gdrive_path, 'data/data_forplotting_aug2018/obs_mortalitybins.csv'))
-write_csv(mort_use, file.path(gdrive_path, 'data/data_forplotting_aug2018/obs_mortalityindividuals.csv'))
+write_csv(bin_mort, file.path(gdrive_path, 'data/data_forplotting/obs_mortalitybins.csv'))
+write_csv(mort_use, file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv'))

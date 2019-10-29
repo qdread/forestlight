@@ -13,5 +13,8 @@ module load GNU/6.2
 
 ((seed=777+SLURM_ARRAY_TASK_ID))
 
-~/forestlight/stancode/mortreg_fg_noloops sample algorithm=hmc engine=nuts max_depth=20 num_samples=1000 num_warmup=5000 thin=1 adapt delta=0.9 random seed=${seed} data file=~/forestlight/stanrdump/mortalitydump.r output file=~/forestlight/stanoutput/fit_mortality_${SLURM_ARRAY_TASK_ID}.csv
+~/forestlight/stancode/mortreg_fg_v3 \
+	sample algorithm=hmc engine=nuts max_depth=20 num_samples=1000 num_warmup=5000 thin=1 adapt delta=0.9 \
+	random seed=${seed} data file=~/forestlight/stanrdump/mortalitydump.r \
+	output file=~/forestlight/stanoutput/fit_mortality_${SLURM_ARRAY_TASK_ID}.csv
 

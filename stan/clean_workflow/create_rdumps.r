@@ -21,6 +21,9 @@ load(file.path(fpdata, 'rawdataobj_alternativecluster.r'))
 library(tidyverse)
 library(rstan)
 
+# read mortality data for mortality rdump
+mort <- read_csv(file.path(fpdata, 'data_forplotting/obs_mortalityindividuals.csv'))
+
 # -------------------------------- #
 # Define function to create rdumps #
 # -------------------------------- #
@@ -55,9 +58,9 @@ fgs <- c('fg1','fg2','fg3','fg4','fg5','unclassified')
 
 ### biomass growth ~ diameter scalings
 
-create_rdump(alltreedat[[3]], 'dbh_corr', 'production', file_name = file.path(fpdump, 'dump_alltree_1995.r'))
+create_rdump(alltreedat[[3]], 'dbh_corr', 'production', file_name = file.path(fpdump, 'dump_production_alltree_1995.r'))
 
-iwalk(fgs, ~ create_rdump(fgdat[[.y]][[3]], 'dbh_corr' , 'production', file_name = file.path(fpdump, paste0('dump_', .x, '_1995.r'))))
+iwalk(fgs, ~ create_rdump(fgdat[[.y]][[3]], 'dbh_corr' , 'production', file_name = file.path(fpdump, paste0('dump_production_', .x, '_1995.r'))))
 
 ### diameter growth ~ diameter scalings
 create_rdump(alltreedat[[3]], 'dbh_corr', 'diam_growth_rate', file_name = file.path(fpdump, 'dump_diamgrowthscaling_alltree_1995.r'))
@@ -90,6 +93,16 @@ create_rdump(dat95, 'crownvolume', 'dbh_corr', file_name = file.path(fpdump, 'du
 dat95 %>%
 	group_by(fg) %>%
 	group_walk(~ create_rdump(as.data.frame(.), 'crownvolume', 'dbh_corr', file_name = file.path(fpdump, paste0('dump_volumescaling_', .y, '_1995.r'))))
+
+### mortality
+mort_data <- mort %>%
+  filter(!fg %in% 'unclassified') %>%
+  mutate(died = alive == 0) %>%
+  select(fg, died, light_received_byarea)
+
+mort_data_dump <- with(mort_data, list(N = nrow(mort_data), M = 5, x = light_received_byarea, y = as.numeric(died), fg = as.numeric(factor(fg))))
+
+with(mort_data_dump, stan_rdump(list = names(mort_data_dump), file = file.path(fpdump, 'mortalitydump.r')))
 
 # ------------------------------------------------------------------------------ #
 # Create CSVs of minima, maxima, number of individuals, and normalization totals #
