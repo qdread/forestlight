@@ -2,12 +2,31 @@
 # Follows Meakem et al. 2017
 # QDR 11 July 2017
 
+# Last modified 28 Oct. 2019: Also include light data from recruits (not just trees that have a growth rate in 1995)
+
 # Load Condit's BCI data and Nadja's light data.
 
 fp <- '~/google_drive/ForestLight/data/BCI_raw'
 
 growth8590 <- read.delim(file.path(fp, 'BCI_light/growth_final8590.txt'), stringsAsFactors = FALSE)
 growth9095 <- read.delim(file.path(fp, 'BCI_light/growth_final9095.txt'), stringsAsFactors = FALSE)
+
+load(file.path(fp, 'recruits1995_light.rdata'))
+
+# Combine 90-95 growth+light data with 90-95 recruits' light data
+
+library(MASS)
+library(nlme)
+library(tidyverse)
+
+recs9095l <- recs9095l %>% mutate(
+  tag = as.integer(tag),
+  dinc = NA,
+  interval = NA,
+  sp = toupper(sp)
+)
+
+growth9095 <- rbind(growth9095, recs9095l[, names(growth9095)])
 
 # Load census data. 1 = 1980, 2 = 1985, 3 = 1990, 4 = 1995, 5 = 2000, 6 = 2005, 7 = 2010.
 
@@ -70,9 +89,6 @@ taper.H <- function(dbh) {43.4375*(1-
 #    function (agb.allometryb) that does not included total tree height. 
 agb.allometry <- function(wsg,dbh,H) {0.0509*wsg*((dbh)^2)*H}
 
-library(MASS)
-library(nlme)
-
 model1.pars <- taper.parameters[taper.parameters$eqn==1 & taper.parameters$b1 >0,]
 
 #  The best model includes 2010 diameter, 2010 height of measurement, and species group
@@ -99,12 +115,17 @@ for (i in 1:length(spcoeffs)) {
 
 names(spcoeffs) <- taper_spp
 
-taper_correct_dbh <- function(x) {
-  if (is.na(x$pom)) return(data.frame(dbh_corr = NA)) # If it wasn't measured, break function.
-  if (x$pom == 1.3 | x$sp %in% palmsp) return(data.frame(dbh_corr = x$dbh)) # Don't correct if already at 1.3, or if it's a palm
-  sp_coeff <- ifelse(x$sp %in% names(spcoeffs), spcoeffs[x$sp], spcoeffs['other']) # If it's not a focal species, it gets "other's" coefficient.
-  b1 <- exp(mdbh * log(x$dbh/10) + mhom * log(x$hom) + sp_coeff)
-  return(data.frame(dbh_corr = 10 * apply.eqn1(d = x$dbh/10, h = x$hom, b1 = b1)))
+# Vectorized function to quickly calculate the taper-corrected DBH for all individuals in one data frame.
+taper_correct_dbh <- function(dat) {
+  indiv_coeffs <- spcoeffs[match(dat$sp, names(spcoeffs))] # Match individuals with their species taper coefficients
+  indiv_coeffs[is.na(indiv_coeffs)] <- spcoeffs['other']   # All other individuals get "other" coefficient
+  b1 <- exp(mdbh * log(dat$dbh/10) + mhom * log(dat$hom) + indiv_coeffs)
+  dbh_corr <- case_when(
+    is.na(dat$pom) ~ as.numeric(NA),                               # If not measured, return NA
+    dat$pom == 1.3 | dat$sp %in% palmsp ~ dat$dbh,                 # Don't correct if already at 1.3, or if it's a palm
+    TRUE ~ 10 * apply.eqn1(d = dat$dbh / 10, h = dat$hom, b1 = b1) # Otherwise apply the correction.
+  )
+  return(data.frame(dbh_corr = dbh_corr))
 }
 
 # Apply dbh correction
@@ -112,8 +133,8 @@ taper_correct_dbh <- function(x) {
 for (i in 1:7) {
   stem_i <- get(paste0('bci.stem', i))
   full_i <- get(paste0('bci.full', i))
-  dbh_corr_stem_i <- stem_i  %>% rowwise %>% do(taper_correct_dbh(.))
-  dbh_corr_full_i <- full_i %>% rowwise %>% do(taper_correct_dbh(.))
+  dbh_corr_stem_i <- taper_correct_dbh(stem_i)
+  dbh_corr_full_i <- taper_correct_dbh(full_i)
   assign(paste0('bci.stem', i), cbind(stem_i, dbh_corr_stem_i))
   assign(paste0('bci.full', i), cbind(full_i, dbh_corr_full_i))
 }
@@ -143,24 +164,25 @@ young_forest <- subset(habitat, Habitat == 'young')
 with(young_forest, plot(GX20, GY20))
 
 # To remove young forest, we need to round all BCI trees to the nearest multiple of 20 lower than their coordinate, and see if it is in one of those.
-which_quadrat <- function(x, y) plyr::round_any(c(x, y), 20, f = floor)
-is_young <- function(coords) any(coords[1] == young_forest$GX20 & coords[2] == young_forest$GY20)
+young_forest_list <- data.frame(t(young_forest[,c('GX20','GY20')]))
 
-library(dplyr)
+# Vectorized function to assign individual stems to young forest area
+is_young <- function(x, y) {
+  x_quadrat <- plyr::round_any(x, 20, f = floor)
+  y_quadrat <- plyr::round_any(y, 20, f = floor)
+  quadrat_list <- data.frame(rbind(x_quadrat, y_quadrat))
+  !is.na(match(quadrat_list, young_forest_list))
+}
 
 for (i in 1:7) {
   assign(paste0('bci.full', i), 
-         get(paste0('bci.full', i)) %>% rowwise %>% mutate(young = is_young(which_quadrat(gx, gy))))
+         get(paste0('bci.full', i)) %>% mutate(young = is_young(gx, gy)))
   assign(paste0('bci.stem', i), 
-         get(paste0('bci.stem', i)) %>% rowwise %>% mutate(young = is_young(which_quadrat(gx, gy))))
+         get(paste0('bci.stem', i)) %>% mutate(young = is_young(gx, gy)))
 }
 
-growth8590 <- growth8590 %>%
-  rowwise %>%
-  mutate(young = is_young(which_quadrat(gx, gy)))
-growth9095 <- growth9095 %>%
-  rowwise %>%
-  mutate(young = is_young(which_quadrat(gx, gy)))
+growth8590 <- growth8590 %>% mutate(young = is_young(gx, gy))
+growth9095 <- growth9095 %>% mutate(young = is_young(gx, gy))
 
 # Calculate the area that Nadja has light values for, so we can determine the right denominator for the per-hectare values.
 # 20-meter strip around the outside: gx < 20 | gx > 980 | gy < 20 | gy > 480
@@ -191,6 +213,3 @@ core_area <- 5e5 - edge_area # 44.16 ha
 
 # Save all the edited files
 save(list = c('growth8590','growth9095',grep('bci.', ls(), value = TRUE)), file = file.path(fp, 'bcidata/bciqcrun.R'))
-
-
-
