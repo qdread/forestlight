@@ -36,15 +36,13 @@ theme_plant <- theme(panel.grid = element_blank(), #for Total Production
                      text = element_text(family = 'Helvetica')) 
 
 fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
-guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
+guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 guild_colors_nb <- c("#3B4403", "#02330A", "#031a49", "#02394F", "gray")
 
 
 (plightarea <- ggplot(data = fitted_mort %>% mutate(fg = factor(fg, labels = fg_labels))) +
   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
-  #geom_line(data = fitted_mort2[fitted_mort2$fg == "fg5",]  %>%       #Trying to make fg5 a darker gray!
-   #           aes(x = light_per_area, y = q50),  color = "gray") +
   geom_point(data = bin_mort %>% filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) > 20)  %>% mutate(fg = factor(fg, labels = fg_labels)),
              aes(x = bin_midpoint, y = mortality, fill = fg), #lived + died),
              shape = 21, size = 3) +
