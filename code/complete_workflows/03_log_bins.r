@@ -1,223 +1,15 @@
-# Full data processing pipeline
+# Script 3: Create log-bins for all variables.
 
-# modified 22 October 2019 to correctly add new recruits to production -- also make the code a lot tidier.
-# modified 25 June 2018 to use Nadja's newest FG classification
-
-# Each bin dataframe should include the following
-# 1 all individuals
-# 2 all individuals classified in a FG
-# 3-7 FGs 1 through 5
-# 8 individuals not classified in a FG
-
-library(tidyverse)
-
-group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
-
-load('~/google_drive/ForestLight/data/BCI_raw/bcidata/bciqcrun.R')
-
-# Create lists over which to map functions.
-bci_full <- mget(paste0('bci.full', 1:7))
-bci_stem <- mget(paste0('bci.stem', 1:7))
-
-# Get rid of young and edge trees for all datasets. This will reduce the number of hectares but will be most correct.
-
-bci_full <- map(bci_full, ~ filter(., !young & !edge))
-bci_stem <- map(bci_stem, ~ filter(., !young & !edge))
-
-growth8590 <- subset(growth8590, !young & !edge)
-growth9095 <- subset(growth9095, !young & !edge)
-
-# Load Nadja's data (new functional groups 25 June)
-# fg5 is the new column (we originally used fg from the older df)
-fgbci <- read.table('~/google_drive/ForestLight/data/Ruger/fgroups_dynamics_new.txt', stringsAsFactors = FALSE)
-
-# Correct functional groups so that: 1 fast, 2 pioneer, 3 slow, 4 breeder, 5 intermediate
-# Old 1,2,3,4,5 --> New 2,3,1,4,5
-fgbci$fg5 <- match(fgbci$fg5, c(2,3,1,4,5))
-
-# Currently X1new is high for slow species and low for fast species
-# Currently X2new is high for pioneer species and low for breeder species
-# Correct these
-fgbci$PC_slow_to_fast <- -fgbci$X1new
-fgbci$PC_breeder_to_pioneer <- fgbci$X2new
-
-# 2. Convert all census data frames to the correct units (dbh in cm, not mm; agb in kg, not Mg)
-# Simultaneously, calculate biomass increments for each stem from the previous census to the current one. Combine everything into a single data frame if possible.
-# Use harmonic mean to annualize the 5-year biomass increment into a 1-year biomass increment using the small end of the interval
-# Also get rid of the young (secondary) forest patches.
-
-# Correction 22 Oct 2019: The old annualizing function returns NaN if the old biomass was 0. 
-# if the old biomass was 0, just use 1/5 of the new biomass as the annual growth rate.
-# Also annualize to the middle of the interval: 2 to 3
-# Also, some of the census intervals are not exactly 5 so we can correct for this with the 
-
-### Function for annualizing biomass increment (or diameter increment)
-# census interval should be 5 years and desired new interval should be 1 year
-annual_increment <- function(meas_old, meas_new, census_interval = 5, new_interval = c(2, 3)){
-  rate <-  (meas_new / meas_old)^(1/census_interval) - 1
-  meas_old * ((1 + rate)^(new_interval[2]) - (1+rate)^(new_interval[1]))
-}
-
-# Get production by taking the difference between successive biomasses and converting to annual rate
-bci_production <- map2(bci_full[-7], bci_full[-1], function(old, new) {
-  census_interval <- (new$date - old$date)/365.25
-  if_else(is.na(old$agb_corr), new$agb_corr / census_interval, annual_increment(meas_old = old$agb_corr, meas_new = new$agb_corr, census_interval = census_interval))
-})
-
-# Added 25 Oct 2019: Also get annualized diameter increment (used for model fitting later)
-bci_diamgrowthrate <- map2(bci_full[-7], bci_full[-1], function(old, new) {
-  census_interval <- (new$date - old$date)/365.25
-  if_else(is.na(old$dbh_corr), new$dbh_corr / census_interval, annual_increment(meas_old = old$dbh_corr, meas_new = new$dbh_corr, census_interval = census_interval))
-})
-
-# Amendment 11 Oct. 2017 : Add dbh increment (raw), used to detect production outliers.
-
-bci_dbhincs <- map2(bci_full[-7], bci_full[-1], function(old, new) {
-  dbh_old <- if_else(is.na(old$dbh_corr), 0, old$dbh_corr) 
-  return(data.frame(dbhinc = new$dbh_corr - dbh_old, dbhlastcensus = dbh_old))
-})
-
-# Add columns to the bci_full data frames.
-
-bcicensusdat <- map(1:6, ~ cbind(bci_full[-1][[.]], production = bci_production[[.]], diam_growth_rate = bci_diamgrowthrate[[.]], bci_dbhincs[[.]]))
-bcicensusdat <- map(bcicensusdat, function(x) x %>%
-                      filter(DFstatus == 'alive') %>%
-                      mutate(dbh_corr = dbh_corr/10,
-                             agb_corr = agb_corr * 1000,
-                             production = production * 1000,
-                             diam_growth_rate = diam_growth_rate / 10,
-                             dbhinc = dbhinc/10,
-                             dbhlastcensus = dbhlastcensus/10) %>%
-                      filter(!young) )
-
-####
-# Amendment 11 Oct.
-# Remove production outliers.
-# Criteria: 
-# 1. If the tree was not in the previous census and its current dbh is >10, remove.
-# 2. If the tree grew over 20 cm dbh between censuses, remove.
-
-bcicensusdat <- map(bcicensusdat, function(x) {
-  x$production[x$dbhinc > 20 | (x$dbhinc > 10 & x$dbhlastcensus == 0)] <- NA
-  x
-})
-
-
-# 3. Join with shade tolerance (Rüger) groups.
-# Here is where the fg5 is assigned as the fg classification we are using.
-
-fgbci_less <- fgbci %>%
-  select(sp, grform, fg5, PC_slow_to_fast, PC_breeder_to_pioneer) %>%
-  rename(fg = fg5, X1 = PC_slow_to_fast, X2 = PC_breeder_to_pioneer) %>%
-  mutate(sp = tolower(sp))
-
-bcicensusdat <- map(bcicensusdat, ~ left_join(., fgbci_less))
-
-# 4. Join the appropriate years with Nadja's light data.
-# bcicensusdat[[2]] is 1985-1990
-# bcicensusdat[[3]] is 1990-1995
-
-bcicensusdat[[2]] <- bcicensusdat[[2]] %>%
-  mutate(tag = as.numeric(tag)) %>%
-  left_join(growth8590 %>% select(tag, light, young, edge))
-
-bcicensusdat[[3]] <- bcicensusdat[[3]] %>%
-  mutate(tag = as.numeric(tag)) %>%
-  left_join(growth9095 %>% select(tag, light, young, edge))
-
-# 5. Run allometries to get total light received.
-
-# Function to get a rough approximation of insolation by latitude.
-
-insolation <- function(lat) {
-  lat <- lat * pi/180 # to radians
-  y <- sin(lat)
-  0.25 * 1367 * (1 - 0.482 * (3*y^2 - 1)/2)
-}
-
-# Insolation at BCI, 9.2 degrees N
-(insol_bci <- insolation(9.2))
-
-# Function to get tree height and crown dimensions from dbh
-# Use same parameters for all trees, taken from Bohlman and O'Brien
-
-tp <- function(dbh) {
-  h <- exp(.438 + .595 * log(dbh))    # Height
-  cd <- exp(-.157 + .702 * log(dbh))  # Crown depth
-  cr <- exp(-.438 + .658 * log(dbh))  # Crown radius
-  cV <- exp(-.681 + 2.02 * log(dbh))  # Crown volume
-  data.frame(h=h, cd=cd, cr=cr, cV=cV)
-}
-
-######
-# If it's needed to edit the allometries for different species groups, add it here.
-######
-
-# !!! Correction made 03 Oct 2019: correct so that we are dividing by volume, not multiplying
-# Added 25 Oct 2019: include crown depth so that we can correct for incident light capture percentage using light extinction coefficient.
-# Added 28 Oct 2019: include the function to estimate percent light captured given light extinction coefficient of 0.5
-
-overall_k <- 0.5 # Roughly the mean light extinction coefficient for the Panamanian species in Kitajima et al. 2005.
-pct_light_captured <- function(depth, k) 1 - exp(-k * depth)
-
-for (i in 2:3) {
-  
-  crowndim <- tp(bcicensusdat[[i]]$dbh_corr) 
-  bcicensusdat[[i]] <- bcicensusdat[[i]] %>%
-    mutate(crownarea = pi * crowndim$cr^2,
-           crownvolume = crowndim$cV,
-           height_bohlman = crowndim$h,
-           crowndepth = crowndim$cd,
-           light_received = light * crownarea * insol_bci,
-           fraction_light_captured = pct_light_captured(depth = crowndepth, k = overall_k),
-           light_received_byarea = light * insol_bci,
-           light_received_byvolume = light * fraction_light_captured * crownarea * insol_bci / crownvolume)
-
-}
-
-# Classification of light into 3 groups.
-# This is percent of full irradiance, not the total light received.
-
-for (i in 2:3) {
-  
-  light_groups <- cut(bcicensusdat[[i]]$light, breaks = 3)
-  table(light_groups)
-  light_groupcodes <- factor(light_groups, 
-                             labels = c('Low light','Intermediate light','High light'))
-  
-  bcicensusdat[[i]]$light_group <- light_groupcodes
-  
-}
-
-# Create final raw objects for each tree and split by FG.
-# fgdat is nested first by FG, then by year.
-
-alltreedat <- map(bcicensusdat, ~ filter(., !is.na(dbh_corr), production > 0))
-
-fgdat <- map(alltreedat, ~ split(., factor(.$fg, exclude = NULL))) %>% transpose # Transposed to ensure compatibility with old code.
-
-# for 2 and 3, make additional data frames that have only trees with light measurements.
-alltree_light_90 <- subset(alltreedat[[2]], !is.na(light))
-alltree_light_95 <- subset(alltreedat[[3]], !is.na(light))
-
-light_fg_90 <- lapply(fgdat, function(x) subset(x[[2]], !is.na(light)))
-light_fg_95 <- lapply(fgdat, function(x) subset(x[[3]], !is.na(light)))
-
-
-# Save raw data as an object
-save(alltreedat, fgdat, alltree_light_90, alltree_light_95, light_fg_90, light_fg_95, file = '~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
-
-####################################################################
-
-# Binning and error bars: all years combined ------------------------------
-
-# Script copied and modified on 22 Jan 2018. 
+# Script split off on 30 October 2019.
 # Crown volume added on 21 March 2019.
+
 # Procedure: use all 5 FGs (but not unclassified) together to get the bin edges
 # Then apply those bin edges to each FG in isolation.
 # That way each FG are given the same bin edges.
 
-#load('~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
+library(tidyverse)
+
+load('~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
 group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
 source('code/allfunctions27july.r')
 
@@ -319,7 +111,7 @@ prodbin_fg_5census <- map2(allyearprod_fg, allyeardbh_fg, ~ fakebin_across_years
 
 indivproductionbin_5census <- cbind(fg = rep(group_names, each = numbins),
                                     rbind(prodbin_all_5census, prodbin_allclassified_5census, do.call('rbind', prodbin_fg_5census)))
-  
+
 # Total production
 # Do the binning for each year separately, as for density, then find min, max, and median.
 
@@ -335,7 +127,7 @@ totalprodbin_fg_5census <- lapply(totalprodbin_fg_byyear, bin_across_years)
 
 # Combine into single df
 totalproductionbin_5census <- cbind(fg = rep(group_names, each = numbins), 
-                            rbind(totalprodbin_all_5census, totalprodbin_allclassified_5census, do.call('rbind', totalprodbin_fg_5census)))
+                                    rbind(totalprodbin_all_5census, totalprodbin_allclassified_5census, do.call('rbind', totalprodbin_fg_5census)))
 
 # Total light received and crown area
 # 1990 and 1995 only
@@ -352,7 +144,7 @@ crownareabin_allclassified_2census <- bin_across_years(crownareabin_allclassifie
 crownareabin_fg_2census <- lapply(crownareabin_fg_byyear, bin_across_years)
 
 crownareabin_2census <- cbind(fg = rep(group_names, each = numbins), 
-                                    rbind(crownareabin_all_2census, crownareabin_allclassified_2census, do.call('rbind', crownareabin_fg_2census)))
+                              rbind(crownareabin_all_2census, crownareabin_allclassified_2census, do.call('rbind', crownareabin_fg_2census)))
 
 ## crown volume
 crownvolumebin_alltree_byyear <- alltreedat[2:3] %>% map(~ logbin_setedges(x = .$dbh_corr, y = .$crownvolume, edges = dbhbin_all))
@@ -366,7 +158,7 @@ crownvolumebin_allclassified_2census <- bin_across_years(crownvolumebin_allclass
 crownvolumebin_fg_2census <- lapply(crownvolumebin_fg_byyear, bin_across_years)
 
 crownvolumebin_2census <- cbind(fg = rep(group_names, each = numbins), 
-                              rbind(crownvolumebin_all_2census, crownvolumebin_allclassified_2census, do.call('rbind', crownvolumebin_fg_2census)))
+                                rbind(crownvolumebin_all_2census, crownvolumebin_allclassified_2census, do.call('rbind', crownvolumebin_fg_2census)))
 
 ## light received
 lightreceivedbin_alltree_byyear <- alltreedat[2:3] %>% map(~ with(filter(., !is.na(light_received)), logbin_setedges(x = dbh_corr, y = light_received, edges = dbhbin_all)))
@@ -380,7 +172,7 @@ lightreceivedbin_allclassified_2census <- bin_across_years(lightreceivedbin_allc
 lightreceivedbin_fg_2census <- lapply(lightreceivedbin_fg_byyear, bin_across_years)
 
 lightreceivedbin_2census <- cbind(fg = rep(group_names, each = numbins), 
-                              rbind(lightreceivedbin_all_2census, lightreceivedbin_allclassified_2census, do.call('rbind', lightreceivedbin_fg_2census)))
+                                  rbind(lightreceivedbin_all_2census, lightreceivedbin_allclassified_2census, do.call('rbind', lightreceivedbin_fg_2census)))
 
 
 ## light received per unit crown area
@@ -399,15 +191,15 @@ lightpervolumebin_fg_byyear <- fgdat %>%
 
 ## Combine the individual 1995 bins to data frames and then write them to R object.
 crownareabins1995 <- rbind(data.frame(year = 1995, fg = 'all', crownareabin_allclassified_byyear[[2]]),
-                              map2_dfr(crownareabin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
+                           map2_dfr(crownareabin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
 crownvolumebins1995 <- rbind(data.frame(year = 1995, fg = 'all', crownvolumebin_allclassified_byyear[[2]]),
-                              map2_dfr(crownvolumebin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
+                             map2_dfr(crownvolumebin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
 lightreceivedbins1995 <- rbind(data.frame(year = 1995, fg = 'all', lightreceivedbin_allclassified_byyear[[2]]),
-                              map2_dfr(lightreceivedbin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
+                               map2_dfr(lightreceivedbin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
 lightperareabins1995 <- rbind(data.frame(year = 1995, fg = 'all', lightperareabin_allclassified_byyear[[2]]),
                               map2_dfr(lightperareabin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
 lightpervolumebins1995 <- rbind(data.frame(year = 1995, fg = 'all', lightpervolumebin_allclassified_byyear[[2]]),
-                              map2_dfr(lightpervolumebin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
+                                map2_dfr(lightpervolumebin_fg_byyear, group_names[3:8], ~ data.frame(year = 1995, fg = .y, .x[[2]])))
 
 # Production and light received per meter squared of crown area.
 # Divide production by crown area and bin (1990 and 1995)
@@ -508,10 +300,10 @@ breeder_stats_bydiam_5census <- breeder_stats_bydiam %>%
 
 # Breeder to pioneer by light received per unit crown area (fg4 to fg2)
 breeder_stats_bylight <- tibble(fg_a_prod = totalprodbin_byyear_bylight[[4]],
-                               fg_b_prod = totalprodbin_byyear_bylight[[2]],
-                               fg_a_dens = densitybin_byyear_bylight[[4]],
-                               fg_b_dens = densitybin_byyear_bylight[[2]],
-                               year = c(1990,1995)) %>%
+                                fg_b_prod = totalprodbin_byyear_bylight[[2]],
+                                fg_a_dens = densitybin_byyear_bylight[[4]],
+                                fg_b_dens = densitybin_byyear_bylight[[2]],
+                                year = c(1990,1995)) %>%
   pmap(function(fg_a_prod, fg_b_prod, fg_a_dens, fg_b_dens, year) 
     data.frame(bin = 1:numbins,
                year = year,
@@ -537,10 +329,10 @@ breederscore_bin_bylight_2census <- binscore(dat = alltreedat[2:3], bindat = dbh
 
 # Fast to slow by diameter (fg1 to fg3)
 fastslow_stats_bydiam <- tibble(fg_a_prod = totalprodbin_byyear_bydiam[[1]],
-                               fg_b_prod = totalprodbin_byyear_bydiam[[3]],
-                               fg_a_dens = densitybin_byyear_bydiam[[1]],
-                               fg_b_dens = densitybin_byyear_bydiam[[3]],
-                               year = c(1990,1995,2000,2005,2010)) %>%
+                                fg_b_prod = totalprodbin_byyear_bydiam[[3]],
+                                fg_a_dens = densitybin_byyear_bydiam[[1]],
+                                fg_b_dens = densitybin_byyear_bydiam[[3]],
+                                year = c(1990,1995,2000,2005,2010)) %>%
   pmap(function(fg_a_prod, fg_b_prod, fg_a_dens, fg_b_dens, year) 
     data.frame(bin = 1:numbins,
                year = year,
@@ -577,10 +369,10 @@ fastslow_stats_bydiam_5census <- fastslow_stats_bydiam %>%
 
 # Fast to slow by light received per unit crown area (fg1 to fg3)
 fastslow_stats_bylight <- tibble(fg_a_prod = totalprodbin_byyear_bylight[[1]],
-                                fg_b_prod = totalprodbin_byyear_bylight[[3]],
-                                fg_a_dens = densitybin_byyear_bylight[[1]],
-                                fg_b_dens = densitybin_byyear_bylight[[3]],
-                                year = c(1990,1995)) %>%
+                                 fg_b_prod = totalprodbin_byyear_bylight[[3]],
+                                 fg_a_dens = densitybin_byyear_bylight[[1]],
+                                 fg_b_dens = densitybin_byyear_bylight[[3]],
+                                 year = c(1990,1995)) %>%
   pmap(function(fg_a_prod, fg_b_prod, fg_a_dens, fg_b_dens, year) 
     data.frame(bin = 1:numbins,
                year = year,
