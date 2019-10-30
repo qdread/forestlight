@@ -118,7 +118,7 @@ sbatch --export=scaling=volumescaling,guild=alltree,year=1995,model=production2,
 # All groups together in multilevel model: LIGHT PER AREA (x) and MORTALITY (y)
 # =============================================================================
 
-sbatch --job-name=mort fitmortality.sb
+sbatch --job-name=mort fitmortality.sh
 
 # Von Bertalanffy model: LIGHT PER AREA (x) and PRODUCTION PER AREA (y)
 # =====================================================================
