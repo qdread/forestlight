@@ -20,7 +20,7 @@ library(foreach)
 library(doParallel)
 
 dens_df <- expand.grid(variable = 'density',
-					   dens_model = 1:3,
+					   dens_model = 1:2,
 					   prod_model = as.numeric(NA),
 					   fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
 					   year = 1995,
@@ -34,7 +34,7 @@ prod_df <- expand.grid(variable = 'production',
 					   stringsAsFactors = FALSE)
 					   					   
 mod_df <- expand.grid(variable = 'total_production',
-					  dens_model = 1:3,
+					  dens_model = 1:2,
                       prod_model = 1:2,
                       fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
                       year = 1995, 
@@ -51,7 +51,7 @@ mod_df <- mod_df %>%
   rename(total_production = production) %>%
   left_join(min_n)
 
-dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
+dbh_pred <- exp(seq(log(1), log(315), length.out = 101))
 
 
 registerDoParallel(cores = 8)
@@ -107,7 +107,7 @@ prod_df <- expand.grid(variable = 'production',
 					   stringsAsFactors = FALSE)
 					   					   
 mod_df <- expand.grid(variable = 'total_production',
-					  dens_model = 1:3,
+					  dens_model = 1:2,
                       prod_model = 1:2,
                       fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
                       year = 1995, 
@@ -115,16 +115,8 @@ mod_df <- expand.grid(variable = 'total_production',
 
 mod_df <- rbind(prod_df, mod_df)
 
-# Modification 24 June: make sure that the multiplication is done by the number of trees that have light measurements, not the total number.
-
-load('~/forestlight/stanrdump/rawdataobj_alternativecluster.r')  
-
-correct_n <- alltree_light_95 %>%
-	mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg))) %>%
-	group_by(fg) %>%
-	summarize(n = n())
-	
-min_n <- data.frame(year = 1995, fg = c('alltree', correct_n$fg), xmin = 1.1, n = c(sum(correct_n$n), correct_n$n), stringsAsFactors = FALSE)
+# Make sure that the multiplication is done by the number of trees that have light measurements, not the total number.
+min_n <- read.csv('~/forestlight/stanrdump/min_n_lighttrees.csv', stringsAsFactors = FALSE)
 
 total_prod <- read.csv('~/forestlight/stanrdump/lightrec_total.csv', stringsAsFactors = FALSE)
 
@@ -133,7 +125,7 @@ mod_df <- mod_df %>%
   rename(total_production = light_received) %>%
   left_join(min_n)
 
-dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
+dbh_pred <- exp(seq(log(1), log(315), length.out = 101))
 
 
 registerDoParallel(cores = 8)
@@ -169,6 +161,8 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 # FITTED VALUES ONLY
 # ==============================
 
+# this one will change if and when we get individual allometries for crown volume by species. (edit at that time)
+
 source('~/forestlight/stancode/extraction_functions_piecewise_separate.r')
 source('~/forestlight/stancode/fittedcrownvolumefunction.r')
 
@@ -178,7 +172,7 @@ library(foreach)
 library(doParallel)
 
 mod_df <- expand.grid(variable = 'total_production',
-					  dens_model = 1:3,
+					  dens_model = 1:2,
                       fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
                       year = 1995, 
                       stringsAsFactors = FALSE)
@@ -193,12 +187,10 @@ mod_df <- mod_df %>%
   left_join(min_n)
   
 
-dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
+dbh_pred <- exp(seq(log(1), log(315), length.out = 101))
+
 density_par <- list('1' = c('alpha'),
-					  '2' = c('alpha_low', 'alpha_high', 'tau'),
-					  '3' = c('alpha_low', 'alpha_mid', 'alpha_high', 'tau_low', 'tau_high'),
-					  'w' = c('m','n'),
-					  'ln' = c('mu_logn', 'sigma_logn'))
+					'2' = c('alpha_low', 'alpha_high', 'tau'))
 
 registerDoParallel(cores = 8)
 
@@ -227,7 +219,6 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
  
 # GROWTH AS DIAMETER PER TIME SCALING
 # INDIVIDUAL PRODUCTION ONLY
-# ADDED 24 JULY 2019
 # ===================================
 
 source('~/forestlight/stancode/extraction_functions_piecewise_separate.r')
@@ -250,7 +241,7 @@ min_n <- read.csv('~/forestlight/stanrdump/min_n.csv', stringsAsFactors = FALSE)
 mod_df <- prod_df %>%
   left_join(min_n)
 
-dbh_pred <- exp(seq(log(1.2), log(315), length.out = 101))
+dbh_pred <- exp(seq(log(1), log(315), length.out = 101))
 
 registerDoParallel(cores = 8)
 
@@ -267,3 +258,6 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 	message('Fit ', i, ' saved')
 
 }				   
+
+### note: mortality and light extraction of output are in separate scripts.
+

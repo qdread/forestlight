@@ -125,10 +125,10 @@ min_n <- rbind(valall, valfg)
 write_csv(min_n, file.path(fpdump, 'min_n.csv'))
 
 # Minima, maxima, and number of individuals for 1995 only for trees with light measured
-valall <- data.frame(fg = 'alltree', year = 1995, xmin = with(alltree_light_95, min(light_received/crownarea)), n = nrow(alltree_light_95))
+valall <- data.frame(fg = 'alltree', year = 1995, xmin = with(alltree_light_95, min(dbh_corr)), n = nrow(alltree_light_95))
 valfg <- alltree_light_95 %>%
   group_by(fg) %>%
-  summarize(xmin = min(light_received/crownarea),
+  summarize(xmin = min(dbh_corr),
             n = n())
 
 min_n <- data.frame(fg = c('alltree', 'fg1','fg2','fg3','fg4','fg5','unclassified'),
