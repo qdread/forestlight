@@ -11,11 +11,9 @@ library(rstan)
 
 fgnames <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'alltree')
 
-z <- expand.grid(fg=fgnames, year = c(1990, 1995), stringsAsFactors = FALSE)
-
 # Define function to get credible intervals around the parameters and to get the interval around the fitted values
 
-extract_light_ci <- function(fg, year) {
+extract_light_ci <- function(fg, year = 1995) {
   getpar <- function(fit) as.data.frame(do.call(cbind, extract(fit)))
   fn_vonbert <- function(x, A, b, k, ...) A * (1 - b * exp(-k * x)) ^ 3
   light_pred <- exp(seq(log(1.1), log(412), length.out = 101))
@@ -48,18 +46,19 @@ extract_light_ci <- function(fg, year) {
   list(pars = param_cis, preds = pred_quant)
 }
 
-all_output <- pmap(z, extract_light_ci)
+all_output <- map(fgnames, extract_light_ci)
 
 # Combine the parameter confidence intervals and the predicted values into two single data frames.
-all_pars <- do.call(rbind, map(all_output, 'pars'))
-all_preds <- do.call(rbind, map(all_output, 'preds'))
+all_pars <- map_dfr(all_output, 'pars')
+all_preds <- map_dfr(all_output, 'preds')
 
 write.csv(all_pars, file = '~/forestlight/lightbyarea_paramci_by_fg.csv', row.names = FALSE)
 write.csv(all_preds, file = '~/forestlight/lightbyarea_predci_by_fg.csv', row.names = FALSE)
 
 # Bayesian R2 for each fit ---------------------------------------------------
 
-bayesian_rsquared_light <- function(fg, year) {
+# Define function to return Bayesian R2.
+bayesian_rsquared_light <- function(fg, year = 1995) {
   require(rstan)
   require(purrr)
   
@@ -99,9 +98,6 @@ bayesian_rsquared_light <- function(fg, year) {
 
 fgnames <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'alltree')
 
-z <- expand.grid(fg=fgnames, year = c(1990, 1995), stringsAsFactors = FALSE)
-
 library(purrr)
-r2s <- pmap(z, bayesian_rsquared_light)
-r2s <- cbind(z, do.call(rbind, r2s))
+r2s <- map_dfr(fgnames, ~ cbind(fg = .,  bayesian_rsquared_light(.)))
 write.csv(r2s, file = '~/forestlight/r2_light_by_fg.csv', row.names = FALSE)
