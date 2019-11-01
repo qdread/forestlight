@@ -12,7 +12,7 @@
 # DENSITY - PRODUCTION SCALINGS
 # =============================
 
-source('~/forestlight/stancode/extraction_functions_piecewise_separate.r')
+source('~/forestlight/stancode/model_output_extraction_functions.r')
 
 library(purrr)
 library(dplyr)
@@ -92,7 +92,7 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 # DENSITY - INCOMING LIGHT SCALINGS
 # =================================
 
-source('~/forestlight/stancode/extraction_functions_piecewise_separate.r')
+source('~/forestlight/stancode/model_output_extraction_functions.r')
 
 library(purrr)
 library(dplyr)
@@ -163,7 +163,7 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 
 # this one will change if and when we get individual allometries for crown volume by species. (edit at that time)
 
-source('~/forestlight/stancode/extraction_functions_piecewise_separate.r')
+source('~/forestlight/stancode/model_output_extraction_functions.r')
 source('~/forestlight/stancode/fittedcrownvolumefunction.r')
 
 library(purrr)
@@ -221,7 +221,7 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 # INDIVIDUAL PRODUCTION ONLY
 # ===================================
 
-source('~/forestlight/stancode/extraction_functions_piecewise_separate.r')
+source('~/forestlight/stancode/model_output_extraction_functions.r')
 
 library(purrr)
 library(dplyr)
