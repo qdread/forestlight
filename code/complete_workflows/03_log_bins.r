@@ -1,5 +1,6 @@
 # Script 3: Create log-bins for all variables.
 
+# Modified on 05 November 2019: Use packaged functions
 # Script split off on 30 October 2019.
 # Crown volume added on 21 March 2019.
 
@@ -8,10 +9,10 @@
 # That way each FG are given the same bin edges.
 
 library(tidyverse)
+library(forestscaling)
 
 load('~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
 group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
-source('code/allfunctions27july.r')
 
 # Set number of bins       
 numbins <- 20
@@ -39,18 +40,6 @@ dbhbin_allclassified_byyear <- alltreedat_classified[-1] %>% map(~ logbin_setedg
 dbhbin_fg_byyear <- fgdat %>%
   map(~ map(.[-1], function(z) logbin_setedges(x = z$dbh_corr, y = NULL, edges = dbhbin_allclassified)))
 
-bin_across_years <- function(binlist) {
-  binvals <- do.call('cbind', lapply(binlist, '[', , 'bin_value'))
-  binindivs <- do.call('cbind', lapply(binlist, '[', , 'bin_count'))
-  data.frame(bin_midpoint = binlist[[1]]$bin_midpoint,
-             bin_min = binlist[[1]]$bin_min,
-             bin_max = binlist[[1]]$bin_max,
-             bin_yvalue = apply(binvals, 1, median),
-             bin_ymin = apply(binvals, 1, min),
-             bin_ymax = apply(binvals, 1, max),
-             mean_n_individuals = apply(binindivs, 1, mean))
-}
-
 dbhbin_all_5census <- bin_across_years(dbhbin_all_byyear)
 dbhbin_allclassified_5census <- bin_across_years(dbhbin_allclassified_byyear)
 dbhbin_fg_5census <- lapply(dbhbin_fg_byyear, bin_across_years)
@@ -65,44 +54,6 @@ densitybin_5census <- cbind(fg = rep(group_names, each = numbins),
 allyearprod <- map(alltreedat[-1], ~ pull(., production)) %>% unlist
 allyearprod_classified <- map(alltreedat_classified[-1], ~ pull(., production)) %>% unlist
 allyearprod_fg <- fgdat %>% map(~ map(., ~ pull(., production)) %>% unlist)
-
-fakebin_across_years <- function(dat_values, dat_classes, edges, mean_type = 'geometric', n_census = 5) {
-  qprobs <- c(0.025, 0.25, 0.5, 0.75, 0.975)
-  # add some padding just in case
-  mins <- edges$bin_min
-  mins[1] <- 0
-  maxes <- edges$bin_max
-  maxes[length(maxes)] <- Inf
-  
-  binstats <- t(sapply(1:length(mins), function(x) {
-    indivs <- dat_values[dat_classes >= mins[x] & dat_classes < maxes[x]]
-    if (mean_type == 'geometric') {
-      mean_n <- exp(mean(log(indivs)))
-      sd_n <- exp(sd(log(indivs)))
-      ci_width <- qnorm(0.975) * sd(log(indivs)) / sqrt(length(indivs))
-      ci_min <- exp(mean(log(indivs)) - ci_width)
-      ci_max <- exp(mean(log(indivs)) + ci_width)
-      
-    } else {
-      mean_n <- mean(indivs)
-      sd_n <- sd(indivs)
-      ci_width <- qnorm(0.975) * sd(indivs) / sqrt(length(indivs))
-      ci_min <- mean_n - ci_width
-      ci_max <- mean_n + ci_width
-    }
-    c(mean = mean_n, 
-      sd = sd_n,
-      quantile(indivs, probs = qprobs),
-      ci_min = ci_min,
-      ci_max = ci_max)
-  }))
-  dimnames(binstats)[[2]] <- c('mean', 'sd', 'q025', 'q25', 'median', 'q75', 'q975', 'ci_min', 'ci_max')
-  data.frame(bin_midpoint = edges$bin_midpoint,
-             bin_min = edges$bin_min,
-             bin_max = edges$bin_max,
-             mean_n_individuals = edges$bin_count / n_census,
-             binstats)
-}
 
 prodbin_all_5census <- fakebin_across_years(dat_values = allyearprod, dat_classes = allyeardbh, edges = dbhbin_all)
 prodbin_allclassified_5census <- fakebin_across_years(dat_values = allyearprod_classified, dat_classes = allyeardbh_classified, edges = dbhbin_allclassified)
@@ -206,14 +157,6 @@ lightpervolumebins1995 <- rbind(data.frame(year = 1995, fg = 'all', lightpervolu
 # Divide light received by crown area and bin (1990 and 1995)
 # These are "fake" bins because it's just an individual measurement
 
-binprod <- function(dat, bindat) {
-  dat <- do.call('rbind', dat)
-  dat$prod_area <- dat$production/dat$crownarea
-  dat$light_area <- dat$light_received/dat$crownarea
-  dat <- subset(dat, !is.na(light_received))
-  with(dat, fakebin_across_years(dat_values = prod_area, dat_classes = light_area, edges = bindat, n_census = 2))
-}
-
 # Bin the entire light received per crown area dataset for 1990 and 1995 into a single set of bin edges.
 light_per_area_all <- alltreedat[2:3] %>% map(~ .$light_received/.$crownarea) %>% unlist
 light_per_area_allclassified <- alltreedat_classified[2:3] %>% map(~ .$light_received/.$crownarea) %>% unlist
@@ -237,13 +180,6 @@ indivprodperareabin_2census <- cbind(fg = rep(group_names, each = numbins),
 # This was repeated for diameter bins.
 # Here do the same 6 binning types, but repeat twice, once for ratio fg2:fg4 (longlived pioneer to shortlived breeder)
 # and once for ratio fg1:fg3 (fast:slow)
-
-binscore <- function(dat, bindat, score_column, class_column) {
-  dat <- do.call('rbind', dat)
-  dat <- dat[!is.na(dat$light_received) & !is.na(dat[,score_column]), ]
-  dat$light_area <- dat$light_received/dat$crownarea
-  with(dat, fakebin_across_years(dat_values = dat[,score_column], dat_classes = dat[,class_column], edges = bindat, mean = 'arithmetic', n_census = 2))
-}
 
 totalprodbin_byyear_bydiam <- fgdat %>%
   map(~ map(.[-1], function(z) logbin_setedges(x = z$dbh_corr, y = z$production, edges = dbhbin_allclassified)))

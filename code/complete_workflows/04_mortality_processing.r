@@ -1,18 +1,16 @@
 # Process and bin 1990-1995 mortality data 
 # QDR / Forestlight / 03 Oct 2019
 
+# Modified 05 Nov 2019 to use our own package.
 
 # Load data ---------------------------------------------------------------
 
 library(tidyverse)
+library(forestscaling)
 
-# Check out this slick trick so that we no longer need to comment out any paths - just run this and it sees if it's Quentin or not.
-user <- Sys.info()['user']
-gdrive_path <- ifelse(user == 'qread', '~/google_drive/ForestLight/', file.path('/Users',user,'Google Drive/ForestLight'))
-github_path <- ifelse(user == 'qread', '~/Documents/GitHub/forestlight', file.path('/Users',user,'Documents/GitHub/forestlight'))
+gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users',user,'Google Drive/ForestLight'))
 
 mort <- read.delim(file.path(gdrive_path, 'data/Ruger/mort_final9095.txt'), sep = '\t') # read mortality
-source(file.path(github_path, 'code/allfunctions27july.r')) # load binning functions
 load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r')) # load other data, which has the FG assignments
 
 # Process data ------------------------------------------------------------
@@ -41,18 +39,11 @@ mort_use <- mort %>%
 
 # Calculate crown area and crown volume for the trees in mort_use, with Bohlman's allometric equations.
 
-insolation <- function(lat) {
-  lat <- lat * pi/180 # to radians
-  y <- sin(lat)
-  0.25 * 1367 * (1 - 0.482 * (3*y^2 - 1)/2)
-}
-
 # Insolation at BCI, 9.2 degrees N
 (insol_bci <- insolation(9.2))
 
 # Added 29 Oct 2019: light extinction coefficient for light received by volume
 overall_k <- 0.5 # Roughly the mean light extinction coefficient for the Panamanian species in Kitajima et al. 2005.
-pct_light_captured <- function(depth, k) 1 - exp(-k * depth)
 
 mort_use <- mort_use %>%
   mutate(fg = if_else(!is.na(fg), paste0('fg', fg), 'unclassified'),
@@ -82,7 +73,6 @@ lightarea_bin_bounds <- exp(seq(log(min(mort_use$light_received_byarea)), log(ma
 lightvolume_bin_bounds <- exp(seq(log(min(mort_use$light_received_byvolume)), log(max(mort_use$light_received_byvolume) + 0.1), length.out = n_bins + 1))
 
 # Get midpoints of bins
-midpts <- function(a) a[-length(a)] + diff(a)/2
 dbh_bin_midpoints <- exp(midpts(log(dbh_bin_bounds)))
 lightarea_bin_midpoints <- exp(midpts(log(lightarea_bin_bounds)))
 lightvolume_bin_midpoints <- exp(midpts(log(lightvolume_bin_bounds)))
