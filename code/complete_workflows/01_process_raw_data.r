@@ -18,6 +18,7 @@ load(file.path(fp, 'recruits1995_light.rdata'))
 library(MASS)
 library(nlme)
 library(tidyverse)
+library(forestscaling)
 
 recs9095l <- recs9095l %>% mutate(
   tag = as.integer(tag),
@@ -66,29 +67,6 @@ palmsp <- c("elaeol","sch1zo","socrex")
 
 # Values of the b1 parameter for each of the species that need to be corrected for taper. See Table 3, Cushman et al. 2014.
 
-
-#    Define function to calculate equivalent diameter at 1.3 m given a diameter measurement 
-#    in cm (d) taken at a nonstandard height in m(h), and a taper parameter (b1). This is 
-#    the overall best taper model from Metcalf et el. (2009)
-apply.eqn1 <- function(d,h,b1) {d/(exp(-b1*(h-1.3)))}
-
-#    Define functions to estimate total tree height (m) from diameter (cm) using 
-#    uncorrected (notaper.H) or taper-corrected (taper.H) allometries parameterized from 
-#    data from the BCI plot. The function is the weibull function as described in 
-#    Feldpausch et al. 2012
-notaper.H <- function(dbh) {43.1427*(1-
-                                       exp(-0.04003*dbh^0.82585))
-}
-taper.H <- function(dbh) {43.4375*(1-
-                                     exp(-0.04469*dbh^0.78339))
-}
-
-#    Define function (agb.allometry) to estimate aboveground biomass from wood specific 
-#    gravity (wsg), tree diameter in centimeters (dbh), and total tree height in meters (H) 
-#    using allometries from Chave et al. (2005) for most tropical forests. Also define 
-#    function (agb.allometryb) that does not included total tree height. 
-agb.allometry <- function(wsg,dbh,H) {0.0509*wsg*((dbh)^2)*H}
-
 model1.pars <- taper.parameters[taper.parameters$eqn==1 & taper.parameters$b1 >0,]
 
 #  The best model includes 2010 diameter, 2010 height of measurement, and species group
@@ -115,18 +93,7 @@ for (i in 1:length(spcoeffs)) {
 
 names(spcoeffs) <- taper_spp
 
-# Vectorized function to quickly calculate the taper-corrected DBH for all individuals in one data frame.
-taper_correct_dbh <- function(dat) {
-  indiv_coeffs <- spcoeffs[match(dat$sp, names(spcoeffs))] # Match individuals with their species taper coefficients
-  indiv_coeffs[is.na(indiv_coeffs)] <- spcoeffs['other']   # All other individuals get "other" coefficient
-  b1 <- exp(mdbh * log(dat$dbh/10) + mhom * log(dat$hom) + indiv_coeffs)
-  dbh_corr <- case_when(
-    is.na(dat$pom) ~ as.numeric(NA),                               # If not measured, return NA
-    dat$pom == 1.3 | dat$sp %in% palmsp ~ dat$dbh,                 # Don't correct if already at 1.3, or if it's a palm
-    TRUE ~ 10 * apply.eqn1(d = dat$dbh / 10, h = dat$hom, b1 = b1) # Otherwise apply the correction.
-  )
-  return(data.frame(dbh_corr = dbh_corr))
-}
+
 
 # Apply dbh correction
 

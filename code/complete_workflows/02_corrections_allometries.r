@@ -11,6 +11,7 @@
 # 8 individuals not classified in a FG
 
 library(tidyverse)
+library(forestscaling)
 
 group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
 
@@ -51,13 +52,6 @@ fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 # if the old biomass was 0, just use 1/5 of the new biomass as the annual growth rate.
 # Also annualize to the middle of the interval: 2 to 3
 # Also, some of the census intervals are not exactly 5 so we can correct for this with the 
-
-### Function for annualizing biomass increment (or diameter increment)
-# census interval should be 5 years and desired new interval should be 1 year
-annual_increment <- function(meas_old, meas_new, census_interval = 5, new_interval = c(2, 3)){
-  rate <-  (meas_new / meas_old)^(1/census_interval) - 1
-  meas_old * ((1 + rate)^(new_interval[2]) - (1+rate)^(new_interval[1]))
-}
 
 # Get production by taking the difference between successive biomasses and converting to annual rate
 bci_production <- map2(bci_full[-7], bci_full[-1], function(old, new) {
@@ -128,14 +122,6 @@ bcicensusdat[[3]] <- bcicensusdat[[3]] %>%
 
 # 5. Run allometries to get total light received.
 
-# Function to get a rough approximation of insolation by latitude.
-
-insolation <- function(lat) {
-  lat <- lat * pi/180 # to radians
-  y <- sin(lat)
-  0.25 * 1367 * (1 - 0.482 * (3*y^2 - 1)/2)
-}
-
 # Insolation at BCI, 9.2 degrees N
 (insol_bci <- insolation(9.2))
 
@@ -159,7 +145,6 @@ tp <- function(dbh) {
 # Added 28 Oct 2019: include the function to estimate percent light captured given light extinction coefficient of 0.5
 
 overall_k <- 0.5 # Roughly the mean light extinction coefficient for the Panamanian species in Kitajima et al. 2005.
-pct_light_captured <- function(depth, k) 1 - exp(-k * depth)
 
 for (i in 2:3) {
   
