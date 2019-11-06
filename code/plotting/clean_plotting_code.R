@@ -30,6 +30,7 @@ guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
 fg_names <- paste('fg', 1:5, sep = '')
 fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 
+geom_size <- 4
 
 ################################################################################################
 # ------------------------------ Fig 1: hand drawn schematics ---------------------------------
@@ -146,7 +147,6 @@ p_mean_1panel <- ggplot(obs_light_binned_plotdata) +
               aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.4) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot),
             aes(x = light_area, y = q50, color = fg)) +
-  #geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max, group = fg, color = fg, width = error_bar_width * width), position = position_dodge(width = dodge_width)) +
   geom_point(aes(x = bin_midpoint, y = mean, group = fg, fill = fg), size = geom_size, shape = 21, position = position_dodge(width = dodge_width)) +
   
   scale_x_log10(name = title_x, limits = c(1.1, 412)) + 

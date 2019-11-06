@@ -179,4 +179,4 @@ notyoung_area_core <- 5e5 - edge_area - young_area_core # 42.84 ha
 core_area <- 5e5 - edge_area # 44.16 ha
 
 # Save all the edited files
-save(list = c('growth8590','growth9095',grep('bci.', ls(), value = TRUE)), file = file.path(fp, 'bcidata/bciqcrun.R'))
+save(list = c('growth8590','growth9095',grep('bci.', ls(), value = TRUE)), file = file.path(fp, 'bcidata/bciqcrun.RData'))

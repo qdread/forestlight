@@ -15,7 +15,7 @@ library(forestscaling)
 
 group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
 
-load('~/google_drive/ForestLight/data/BCI_raw/bcidata/bciqcrun.R')
+load('~/google_drive/ForestLight/data/BCI_raw/bcidata/bciqcrun.RData')
 
 # Create lists over which to map functions.
 bci_full <- mget(paste0('bci.full', 1:7))

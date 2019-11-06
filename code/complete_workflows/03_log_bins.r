@@ -1,5 +1,6 @@
 # Script 3: Create log-bins for all variables.
 
+# Modified on 06 November 2019: prioritize single year binning, separating multiple year binning elsewhere
 # Modified on 05 November 2019: Use packaged functions
 # Script split off on 30 October 2019.
 # Crown volume added on 21 March 2019.
@@ -11,8 +12,13 @@
 library(tidyverse)
 library(forestscaling)
 
-load('~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
+
+gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users',user,'Google Drive/ForestLight'))
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
 group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
+fg_names <- c('fg1','fg2','fg3','fg4','fg5','unclassified')
+years <- seq(1990, 2010, 5)
+
 
 # Set number of bins       
 numbins <- 20
@@ -44,17 +50,38 @@ dbhbin_all_5census <- bin_across_years(dbhbin_all_byyear)
 dbhbin_allclassified_5census <- bin_across_years(dbhbin_allclassified_byyear)
 dbhbin_fg_5census <- lapply(dbhbin_fg_byyear, bin_across_years)
 
-# Combine into single df
+# Combine single year bin into single df
+densitybin_byyear <- rbind(
+  data.frame(fg = 'all', map2_dfr(dbhbin_all_byyear, years, ~ data.frame(year = .y, .x))),
+  map2_dfr(dbhbin_fg_byyear, fg_names, ~ data.frame(fg = .y, map2_dfr(.x, years, ~ data.frame(year = .y, .x))))
+)
+
+# Combine multiple year bin into single df
 densitybin_5census <- cbind(fg = rep(group_names, each = numbins), 
                             rbind(dbhbin_all_5census, dbhbin_allclassified_5census, do.call('rbind', dbhbin_fg_5census)))
 
 # Individual production 
 # Take the mean and 2.5, 50 (median), 97.5 quantiles within each bin.
-# Do it across all years.
+# Do it across all years, and for separate years.
+prodbin_all_byyear <- alltreedat[-1] %>% map(~ fakebin_across_years(dat_values = .$production, dat_classes = .$dbh_corr, edges = dbhbin_allclassified, n_census = 1))
+prodbin_fg_byyear <- alltreedat[-1] %>%
+  map(function(dat) {
+    dat %>%
+      group_by(fg) %>%
+      do(fakebin_across_years(dat_values = .$production, dat_classes = .$dbh_corr, edges = dbhbin_allclassified, n_census = 1))
+  })
+
 allyearprod <- map(alltreedat[-1], ~ pull(., production)) %>% unlist
 allyearprod_classified <- map(alltreedat_classified[-1], ~ pull(., production)) %>% unlist
 allyearprod_fg <- fgdat %>% map(~ map(., ~ pull(., production)) %>% unlist)
 
+# Combine single year bin into single df.
+indivproductionbin_byyear <- bind_rows(
+  data.frame(fg = 'all', map2_dfr(prodbin_all_byyear, years, ~ data.frame(year = .y, .x))),
+  map2_dfr(prodbin_fg_byyear, years, ~ data.frame(year = .y, .x) %>% mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg))))
+)
+
+# Combine multiple year bin into single df.
 prodbin_all_5census <- fakebin_across_years(dat_values = allyearprod, dat_classes = allyeardbh, edges = dbhbin_all)
 prodbin_allclassified_5census <- fakebin_across_years(dat_values = allyearprod_classified, dat_classes = allyeardbh_classified, edges = dbhbin_allclassified)
 
@@ -76,7 +103,13 @@ totalprodbin_all_5census <- bin_across_years(totalprodbin_alltree_byyear)
 totalprodbin_allclassified_5census <- bin_across_years(totalprodbin_allclassified_byyear)
 totalprodbin_fg_5census <- lapply(totalprodbin_fg_byyear, bin_across_years)
 
-# Combine into single df
+# Combine single year bin into single df
+totalproductionbin_byyear <- rbind(
+  data.frame(fg = 'all', map2_dfr(totalprodbin_alltree_byyear, years, ~ data.frame(year = .y, .x))),
+  map2_dfr(totalprodbin_fg_byyear, fg_names, ~ data.frame(fg = .y, map2_dfr(.x, years, ~ data.frame(year = .y, .x))))
+)
+
+# Combine multiple year bin into single df
 totalproductionbin_5census <- cbind(fg = rep(group_names, each = numbins), 
                                     rbind(totalprodbin_all_5census, totalprodbin_allclassified_5census, do.call('rbind', totalprodbin_fg_5census)))
 
@@ -221,6 +254,7 @@ breeder_stats_bydiam_2census <- breeder_stats_bydiam %>%
   cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
 
 breederscore_bin_bydiam_2census <- binscore(dat = alltreedat[2:3], bindat = dbhbin_allclassified, score_column = 'X2', class_column = 'dbh_corr')
+breederscore_bin_bydiam_byyear <- map(alltreedat[2:6], ~ fakebin_across_years(dat_values = .$X2, dat_classes = .$dbh_corr, edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))
 
 breeder_stats_bydiam_5census <- breeder_stats_bydiam %>% 
   group_by(bin) %>%
@@ -262,6 +296,7 @@ breeder_stats_bylight_2census <- breeder_stats_bylight %>%
   cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
 
 breederscore_bin_bylight_2census <- binscore(dat = alltreedat[2:3], bindat = dbhbin_allclassified, score_column = 'X2', class_column = 'light_area')
+breederscore_bin_bylight_byyear <- map(alltreedat[2:3], ~ fakebin_across_years(dat_values = .$X2, dat_classes = .$light_received/.$crown_area, edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))
 
 # Fast to slow by diameter (fg1 to fg3)
 fastslow_stats_bydiam <- tibble(fg_a_prod = totalprodbin_byyear_bydiam[[1]],
@@ -291,6 +326,7 @@ fastslow_stats_bydiam_2census <- fastslow_stats_bydiam %>%
   cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
 
 fastslowscore_bin_bydiam_2census <- binscore(dat = alltreedat[2:3], bindat = dbhbin_allclassified, score_column = 'X1', class_column = 'dbh_corr')
+fastslowscore_bin_bydiam_byyear <- map(alltreedat[2:6], ~ fakebin_across_years(dat_values = .$X1, dat_classes = .$dbh_corr, edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))
 
 fastslow_stats_bydiam_5census <- fastslow_stats_bydiam %>% 
   group_by(bin) %>%
@@ -331,17 +367,31 @@ fastslow_stats_bylight_2census <- fastslow_stats_bylight %>%
   cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
 
 fastslowscore_bin_bylight_2census <- binscore(dat = alltreedat[2:3], bindat = dbhbin_allclassified, score_column = 'X1', class_column = 'light_area')
+fastslowscore_bin_bylight_byyear <- map(alltreedat[2:3], ~ fakebin_across_years(dat_values = .$X1, dat_classes = .$light_received/.$crown_area, edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))
+
 
 # Export binned data
 
 fpdata <- '~/google_drive/ForestLight/data/data_binned'
+
+# Multiple year bins
 file_names <- c('densitybin_5census', 'indivproductionbin_5census', 'totalproductionbin_5census', 'crownareabin_2census', 'lightreceivedbin_2census', 'indivprodperareabin_2census', 'breeder_stats_bydiam_2census',  'breederscore_bin_bydiam_2census', 'breeder_stats_bylight_2census', 'breederscore_bin_bylight_2census', 'fastslow_stats_bydiam_2census', 'fastslowscore_bin_bydiam_2census', 'fastslow_stats_bylight_2census', 'fastslowscore_bin_bylight_2census','fastslow_stats_bydiam_5census','breeder_stats_bydiam_5census')
 
 for (i in file_names) {
   write.csv(get(i), file=file.path(fpdata, paste0(i,'.csv')), row.names = FALSE)
 }
 
-save(list = file_names, file = file.path(fpdata, 'bin_object.RData'))
+save(list = file_names, file = file.path(fpdata, 'bin_object_multipleyear.RData'))
+
+# Single year bins
+file_names <- c('densitybin_byyear', 'indivproductionbin_byyear', 'totalproductionbin_byyear') ### EDIT THIS.
+
+for (i in file_names) {
+  write.csv(get(i), file=file.path(fpdata, paste0(i,'.csv')), row.names = FALSE)
+}
+
+save(list = file_names, file = file.path(fpdata, 'bin_object_singleyear.RData'))
+
 
 save(crownareabins1995, crownvolumebins1995, lightreceivedbins1995, lightperareabins1995, lightpervolumebins1995,
      file = '~/google_drive/ForestLight/data/data_binned/area_and_volume_bins_1995.RData')
