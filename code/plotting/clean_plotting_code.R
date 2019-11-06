@@ -13,6 +13,7 @@ library(RColorBrewer)
 library(gtable)
 library(grid)
 library(reshape2)
+library(hexbin)
 
 # Define color schemes and labels
 guild_fills <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")
@@ -169,8 +170,8 @@ fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 guild_fills_nb <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray90")
 guild_colors_nb <- c("#3B4403", "#02330A", "#031a49", "#02394F", "gray")
 
-bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting_aug2018/obs_mortalitybins.csv')) # Load binned data
-mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting_aug2018/obs_mortalityindividuals.csv')) # Load raw data
+bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalitybins.csv')) # Load binned data
+mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv')) # Load raw data
 fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
 
 
@@ -178,12 +179,11 @@ plightarea <- ggplot(data = fitted_mort %>% mutate(fg = factor(fg, labels = fg_l
   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
   geom_point(data = bin_mort %>% filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) > 20)  %>% mutate(fg = factor(fg, labels = fg_labels)),
-             aes(x = bin_midpoint, y = mortality, fill = fg), #lived + died),
+             aes(x = bin_midpoint, y = mortality, fill = fg)
              shape = 21, size = geom_size) +
   scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), limits = c(1.1, 412)) +
   scale_y_continuous(trans = "logit", position = "right", breaks = c(0.03, 0.3, .1), labels = c(0.03, 0.3, 0.1), limits = c(0.02, .5),
                 name = expression(paste("Mortality (5 yr"^-1,")"))) +
-  #scale_size_continuous(name = 'Individuals', trans = 'log', breaks = 10^(0:3)) +
   scale_color_manual(values = guild_fills_nb) +
   scale_fill_manual(values = guild_fills_nb) +
   theme_plant()
@@ -208,7 +208,6 @@ dev.off()
 
 
 fp <- file.path(gdrive_path, 'data/data_piecewisefits')
-fpfig <- file.path(gdrive_path, 'figs/piecewiseplots_27sep2018')
 
 
 # Plot the fitted values on top of the observed histograms.
@@ -423,10 +422,6 @@ plot(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_density.pdf'))
 plot(p1)
 dev.off()
-# pdf(file.path(gdrive_path, "Figures/LOOIC/LOOIC_density.pdf"))
-# p
-# dev.off()
-#ggsave(file.path(fpfig, 'density_model_information_criteria.pdf'), height = 6, width = 9)
 
 # Growth model
 
@@ -515,7 +510,7 @@ dev.off()
 #----------------------   Hex Plot of Growth Scaling  ---------------------------
 
 
-fp <- file.path(gdrive_path,'data/data_forplotting_aug2018') ## CHANGE PATH AS NEEDED
+fp <- file.path(gdrive_path,'data/data_forplotting') ## CHANGE PATH AS NEEDED
 
 for (i in dir(fp, pattern = '.csv')) {
   n <- gsub('.csv','',i)
@@ -538,20 +533,6 @@ raw_prod <- raw_prod %>%
 # Original grayscale
 hex_scale_1 <- scale_fill_gradient(low = 'gray90', high = 'gray10', guide = FALSE)
 
-# Biased grayscale to emphasize the variation in the hexagons with less data.
-# Bias >1 does this.
-#hex_scale_2 <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=10)(50))
-
-# Biased color scale of red yellow and blue to do the same, using a brewer palette
-# the bias is <1 this time because I had to reverse the scale.
-#hex_scale_3 <- scale_fill_gradientn(colours = rev(colorRampPalette(RColorBrewer::brewer.pal(9,'RdYlBu'), bias=0.3)(50)), guide = FALSE)
-
-# Biased and customized color scale
-#hex_scale_4 <- scale_fill_gradientn(colours = colorRampPalette(c('forestgreen', 'goldenrod', 'indianred'), bias = 3)(50), guide = FALSE)
-
-# Edit the hex scale argument to draw this with other color scales.
-#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=1)(50), trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
-library(hexbin)
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
                                              trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
                                              labels = c(1,10,100,1000,10000), limits=c(1,10000))
@@ -928,43 +909,6 @@ pdf(file.path(gdrive_path, "Figures/Fig_4/Growth by light/growth_light_heat_map.
 p_hex_panels
 dev.off()
 
-# 5. Plot with all functional groups on the same panel, and quantiles
-
-dodge_width <- 0.00
-
-p_median_1panel <- ggplot(obs_light_binned %>% 
-                            filter(year == year_to_plot,mean_n_individuals >= 10, 
-                                   !fg %in% c('alltree', 'unclassified'))) +
-  geom_ribbon(data = pred_light_5groups %>% 
-                filter(year == year_to_plot),
-              aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
-  geom_line(data = pred_light_5groups %>% 
-              filter(year == year_to_plot), 
-            aes(x = light_area, y = q50, color = fg)) +
-  geom_line(data = pred_light_5groups[pred_light_5groups$fg == "fg5",]  %>% 
-              filter(year == year_to_plot), aes(x = light_area, y = q50), color = "gray")+ 
-  #geom_errorbar(aes(x = bin_midpoint, ymin = q25, ymax = q75, group = fg, color = fg), size = 0.75, width = 0, position = position_dodge(width = dodge_width)) +
-  geom_errorbar(aes(x = bin_midpoint, ymin =ci_min, ymax = ci_max, group = fg,
-                    color = fg),size = 0.5, width = 0.1, position = position_dodge(width = dodge_width)) +
-  
-  #geom_errorbar(aes(x = bin_midpoint, ymin = q025, ymax = q975, group = fg, color = fg), width = 0, position = position_dodge(width = dodge_width)) +
-  geom_point(size=3.5, shape=21,color='black',aes(x = bin_midpoint,
-                                                  y = median, group = fg, fill = fg),
-             position = position_dodge(width = dodge_width)) +
-  #geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), aes(x = xmax * 0.5, xend = xmax * 2, y = ymax * 0.5, yend = ymax * 2), color = 'brown1', size = 1) +
-  scale_x_log10(name = title_x, breaks=c(1,3,10,30,100,300))+ 
-  scale_y_log10(name =  expression(atop('Growth per Crown Area',
-                                        paste('(kg y'^-1, ' m'^-2,')')))) +
-  scale_color_manual(name = 'Functional group', values = fg_colors, labels = fg_labels) +
-  scale_fill_manual(values = fg_colors2, labels = fg_labels, guide = FALSE) +
-  theme_plant() + theme(aspect.ratio = 0.7) #+
-# theme(panel.border = element_rect(fill=NA),
-#      legend.position = c(0.2, 0.8))
-
-
-p_median_1panel
-p<-set_panel_size(p_median_1panel, width=unit(11.8,"cm"), height=unit(8.26,"cm"))
-plot(p)
 
 
 
@@ -1081,62 +1025,6 @@ dev.off()
 
 
 
-# ------------------- Each group
-ggplot() +
-  geom_point(alpha = 0.05, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received/crownvolume), color = 'chartreuse3') +
-  geom_pointrange(data = lightpervolfakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = labels)) +
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exv) +
-  theme_facet2()
-# Plot: hexagon plot ------------------------------------------------------
-
-alpha_value <- 0.6
-hexfill <- scale_fill_gradient(low = 'blue', high = 'red', trans = 'log', breaks = c(1,10,100,1000))
-hex_scale_log_colors 
-####### by area #######
-# Each group
-ggplot() +
-  geom_hex(alpha = alpha_value, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received/crownarea)) +
-  geom_pointrange(data = lightperareafakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = labels)) +
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exl, breaks = c(1,10,100,1000), limits = c(1,1000)) +
-  theme_facet2() +
-  hex_scale_log_colors  +
-  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
-
-# All together
-ggplot() +
-  geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownarea)) +
-  geom_pointrange(data = lightperareafakebin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exl, breaks = c(1,10,100,1000), limits = c(1,1000)) +
-  theme_plant() +
-  hex_scale_log_colors  +
-  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
-
-####### by vol #######
-# Each group
-ggplot() +
-  geom_hex(alpha = alpha_value, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received/crownvolume)) +
-  geom_pointrange(data = lightpervolfakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = labels)) +
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exv, breaks = c(1,10,100,1000), limits = c(1,1000)) +
-  theme_facet2() +
-  hex_scale_log_colors  +
-  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
-
-# All together
-ggplot() +
-  geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownvolume)) +
-  geom_pointrange(data = lightpervolfakebin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exv, breaks = c(1,10,100,1000), limits = c(1,1000)) +
-  theme_plant() +
-  hex_scale_log_colors  +
-  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
 
 # Plot: total unscaled light energy by dbh --------------------------------
 
@@ -1252,7 +1140,6 @@ fgs <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified')
 allslopes <- rbind(growth_slopes_atmiddle, light_slopes_atmiddle) %>%
   ungroup %>%
   mutate(fg = factor(fg, levels = fgs, labels = fg_full_names))
-library(grid)
 grob1 <- grobTree(textGrob("Light Capture", x = 0.75, y = 0.95, hjust = 0,
                            gp = gpar(col = "gold3", fontsize = 18))) 
 grob2 <- grobTree(textGrob("Production", x = 0.75, y = 0.89, hjust = 0,
@@ -1517,9 +1404,7 @@ p <- fastslow_stats_breeder_bydiam_2census %>% #fastslow_stats_breeder_bydiam_2c
   
   scale_x_log10(limits=c(.7,330),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.006,100),
-                name = expression("Ratio")) #+
-  #theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
-  #      axis.ticks.y = element_blank())
+                name = expression("Ratio")) 
 
 
 p
@@ -1554,7 +1439,7 @@ plot(p1)
 dev.off()
 
 
-# -------------------- ------   Supp: PCA Rank   -----------------------------
+# -------------------- ------   Supp: PCA score   -----------------------------
 ## by Diameter
 
 # Combine
@@ -1568,7 +1453,6 @@ p <- score_bin_bydiam %>%
   filter(mean_n_individuals > 10) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  #geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
   geom_errorbar(width = error_bar_width) +theme_plant() +
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
@@ -1583,7 +1467,7 @@ plot(p1)
 dev.off()
 
 
-#-------------------------------  PCA rank by light ----------------------------------
+#-------------------------------  PCA score by light ----------------------------------
 
 # Combine
 fastslowscore_bin_bylight_2census_id <- fastslowscore_bin_bylight_2census %>%
@@ -1595,7 +1479,6 @@ PCA_score_by_light <- as.data.frame(rbind(fastslowscore_bin_bylight_2census_id,b
 p <- PCA_score_by_light %>%
   filter(mean_n_individuals > 10) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
-  #geom_segment(aes(xend = bin_midpoint, y = q25, yend = q75), size = 2, color = 'gray50') +
   geom_errorbar(width = error_bar_width) +theme_plant() +
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
@@ -1608,313 +1491,3 @@ plot(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_6/PCA_Scores/PCA_light.pdf'))
 plot(p1)
 dev.off()
-
-
-lm_pca <- lm(mean~bin_midpoint, data = score_bin_bydiam)
-summary(lm_pca)
-
-#-----------------------------------------------------------------------------------
-###################### Additional Light Plots  ########################
-
-
-
-# Plots of "raw light scaling" aka incoming energy scaling
-  # Fitted and predicted values, as well as comparing slopes to the production scaling
-  # Use 1995 data
-  
-
-
-### 
-
-
-# Fitted slopes
-# light scaling
-# QDR edit 27 June to add density slopes back in
-
-rawlightslopes <- read.csv(file.path(gdrive_path,'data/data_piecewisefits/totallightscaling/light_piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
-slopes <- read.csv(file.path(gdrive_path,'data/data_piecewisefits/newpiecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
-rawlightslopes <- rbind(slopes %>% filter(variable=='density'), rawlightslopes)
-#rawlightslopes <- read.csv(file.path(gdrive_path,'data/data_piecewisefits/rawlightpiecewise/rawlightpiecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
-rawlightslopes$fg <- factor(rawlightslopes$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
-rawlightslopes$variable <- factor(rawlightslopes$variable, labels = c("Density", "Individual Incoming Energy", "Total Incoming Energy"))
-colors <- c("sienna4", "yellowgreen", "springgreen4")
-
-# Using 3 segment density and 2 segment production
-ggplot(rawlightslopes %>% filter((dens_model == 3 & is.na(prod_model)) | (prod_model == 2 & is.na(dens_model)) | (dens_model == 3 & prod_model == 2), !fg %in% 'Unclassified'), 
-       aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
-  facet_wrap(~ fg,labeller = label_value) +
-  geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
-  geom_hline(yintercept = -2, linetype = 'dashed', col = "sienna4", size = 0.3) +
-  geom_hline(yintercept = 2, linetype = 'dashed', col = "yellowgreen", size = 0.3) +
-  scale_fill_manual(values = colors) +
-  scale_color_manual(values = colors) +
-  geom_ribbon(alpha = 0.4, size = 0.3) +
-  geom_line() +
-  scale_x_log10(name = 'Diameter (cm)', expand = c(0,0)) +
-  theme_bw() + theme(axis.text = element_text(color = "black", size = 12))+
-  theme(strip.background = element_blank(), panel.grid = element_blank(), legend.position = 'bottom') +
-  labs(y = 'Fitted Slope') +  #coord_fixed(ratio = .1)+
-  ggtitle('Fitted slopes \n 3 segment density model and 2 segment incoming energy model')+
-  theme(plot.title = element_text(hjust=0.5)) #+ theme(legend.title=element_blank())
-
-slopes <- read.csv(file.path(gdrive_path,'data/data_piecewisefits/newpiecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
-slopes$fg <- factor(slopes$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
-slopes$variable <- factor(slopes$variable, labels = c("Density", "Individual Growth", "Total Growth"))
-colors <- c("sienna4", "yellowgreen", "springgreen4")
-
-# Using 3 segment density and 2 segment production
-ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) | (prod_model == 1 & is.na(dens_model)) | (dens_model == 3 & prod_model == 1), !fg %in% 'Unclassified'), 
-       aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
-  facet_wrap(~ fg,labeller = label_value) +
-  geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
-  geom_hline(yintercept = -2, linetype = 'dashed', col = "sienna4", size = 0.3) +
-  geom_hline(yintercept = 2, linetype = 'dashed', col = "yellowgreen", size = 0.3) +
-  scale_fill_manual(values = colors) +
-  scale_color_manual(values = colors) +
-  geom_ribbon(alpha = 0.4, size = 0.3) +
-  geom_line() +
-  scale_x_log10(name = 'Diameter (cm)', expand = c(0,0)) +
-  theme_bw() + theme(axis.text = element_text(color = "black"))+
-  theme(strip.background = element_blank(), panel.grid = element_blank(), legend.position = 'bottom') +
-  labs(y = 'Fitted Slope') +  #coord_fixed(ratio = .1)+
-  ggtitle('Fitted slopes \n 3 segment density model and 2 segment production model')+
-  theme(plot.title = element_text(hjust=0.5)) #+ theme(legend.title=element_blank())
-
-# Get the slope + ci for the middle portion
-prod_slopes_10cm <- slopes %>% filter(variable == 'Total Growth', dbh == unique(slopes$dbh)[38], dens_model == 3, prod_model == 2)
-light_slopes_10cm <- rawlightslopes %>% filter(variable == 'Total Incoming Energy', dbh == unique(rawlightslopes$dbh)[38], dens_model == 3, prod_model == 2)
-
-ggplot(rbind(prod_slopes_10cm, light_slopes_10cm) %>% filter(!fg %in% c('All','Unclassified')), aes(x = fg, y = q50, ymin = q025, ymax = q975, group = variable, color = variable)) +
-  geom_hline(yintercept = 0, linetype = 'dotted') +
-  geom_errorbar(position = position_dodge(width = 0.2), width = 0.2) +
-  geom_point(aes(color = c("red", "black"), position = position_dodge(width = 0.1), size = 6, shape = 21)) +
-  theme_plant() +
-  ggtitle('Symmetry of total growth and total incoming energy patterns', 'Slope of scaling relationship at 10 cm dbh')
-
-###
-# Observed values with fitted lines superimposed (update to Figure 4)
-
-
-# light per volume
-
-  # Light Vs Size Plot
-  # Edited 21 March: include volume in addition to area.
-
-#load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
-
-alltree_light_95 <- alltree_light_95 %>%
-  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), as.character(NA)))
-
-dbhbin1995 <- with(alltree_light_95, logbin(x = dbh_corr, n = 20))
-
-lightperareafakebin_fg <- alltree_light_95 %>%
-  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(fg, dbh_bin) %>%
-  do(quantile(.$light_received/.$crownarea, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('q025','q25','q50','q75','q975')))
-
-lightperareafakebin_all <- alltree_light_95 %>%
-  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(dbh_bin) %>%
-  do(quantile(.$light_received/.$crownarea, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('q025','q25','q50','q75','q975')))
-
-lightperareafakebin_fg <- data.frame(fg = 'all', lightperareafakebin_all, stringsAsFactors = FALSE) %>%
-  rbind(as.data.frame(lightperareafakebin_fg)) %>%
-  mutate(dbh_bin = as.numeric(as.character(dbh_bin)))
-
-lightpervolfakebin_fg <- alltree_light_95 %>%
-  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(fg, dbh_bin) %>%
-  do(quantile(.$light_received/.$crownvolume, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('q025','q25','q50','q75','q975')))
-
-lightpervolfakebin_all <- alltree_light_95 %>%
-  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(dbh_bin) %>%
-  do(quantile(.$light_received/.$crownvolume, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('q025','q25','q50','q75','q975')))
-
-lightpervolfakebin_fg <- data.frame(fg = 'all', lightpervolfakebin_all, stringsAsFactors = FALSE) %>%
-  rbind(as.data.frame(lightpervolfakebin_fg)) %>%
-  mutate(dbh_bin = as.numeric(as.character(dbh_bin)))
-
-# Plot: raw data ----------------------------------------------------------
-
-exl <- expression(paste('Light received per crown area (W m'^-2, ')', sep = ''))
-exl <- expression(atop('Light per Crown Area',paste('(W m'^2, ' ha'^-1,')')))  
-
-exv <- expression(atop('Light per Crown Volume',paste('(W m'^3, ' ha'^-1,')')))  
-exd <- 'Diameter (cm)'
-
-####### by area ######
-# Each group
-label_fg <- labeller(fg = c(all = "All", fg1 = 'Fast', fg2 = 'LL Pioneer',fg3 = "Slow", fg4 = "SL Breeder", fg5 = "Medium"))
-
-p <- ggplot() +
-  geom_point(alpha = 0.05, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received/crownarea, color = fg)) +
-  geom_pointrange(data = lightperareafakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  facet_wrap(~ fg, labeller = label_fg)+ #labeller(fg = c(all = "all", fg1 = 'Fast', fg2 = 'LL Pioneer',fg3 = "Slow", fg4 = "SL Breeder", fg5 = "Medium"))) +#labeller = label_value) +
-  #labeller(lightperareafakebin_fg$fg = c(fg1 = 'Fast', fg2 = 'LL Pioneer', fg3 = "Slow", fg4 = "SL Breeder", fg5 = "Medium")) +
-  scale_color_manual(values = guild_fills_nb2)+
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exl, limits = c(1, 1000), breaks = c(1, 10, 100, 1000)) +
-  theme(axis.title = element_text(size = 12)) +
-  theme_bw() + 
-  theme(axis.text = element_text(color = "black", size = 12), axis.title = element_text(size = 13)) + 
-  theme(legend.position="none") +
-  theme(strip.background = element_blank(), 
-        panel.border = element_rect(color = "black", fill = NA, size = .75),
-        strip.text.x = element_text(size = 12, face = "italic"),
-        panel.grid = element_blank(), legend.position = 'none')
-p
-pdf(file.path(gdrive_path, 'Figures/Growth_light/light_crown_area_fg.pdf'))
-p
-dev.off()
-lightperareafakebin_fg$fg
-# All together
-p <- ggplot() +
-  geom_point(alpha = 0.01, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownarea), color = 'chartreuse3') +
-  geom_pointrange(data = lightperareafakebin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exl, limits = c(1, 1000), breaks = c(1, 10, 100, 1000)) +
-  theme_plant() 
-
-p
-pdf(file.path(gdrive_path, 'Figures/Growth_light/light_crown_area_all.pdf'))
-p
-dev.off()
-
-####### by vol #######
-# Each group
-alltree_light_95$fg <- factor(alltree_light_95$fg , labels = c("Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium"))
-lightpervolfakebin_fg$fg <- factor(lightpervolfakebin_fg$fg , labels = c( "all", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium"))
-
-axis.title = element_text(size = 12)
-p <- ggplot() +
-  geom_point( alpha = 0.05, data = alltree_light_95 %>% filter(!is.na(fg)), 
-             aes(x = dbh_corr, y = light_received/crownvolume,color = fg)) +
-  geom_pointrange(data = lightpervolfakebin_fg %>% 
-                    filter(!fg %in% 'all', !is.na(fg)), size = 0.3, 
-                  aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  facet_wrap(~ fg,labeller = label_value) +
-  scale_x_log10(name = exd, breaks = c(1, 3, 10, 30, 100)) +
-  scale_y_log10(name = exv) +
-  theme(axis.title = element_text(size = 12)) +
-  theme_facet() + 
-  theme(axis.text = element_text(color = "black", size = 12), axis.title = element_text(size = 13)) + 
-          theme(legend.position="none") +
-  theme(strip.background = element_blank(), 
-        panel.border = element_rect(color = "black", fill = NA, size = .75),
-        strip.text.x = element_text(size = 12, face = "italic"),
-        panel.grid = element_blank(), legend.position = 'none') +
-scale_color_manual(values = guild_fills_nb0)
-p
-  
-pdf(file.path(gdrive_path, 'Figures/Growth_light/light_crown_vol_fg.pdf'))
-p
-dev.off()
-
-colors <- c("sienna4", "yellowgreen", "springgreen4")
-
-
-
-
-############### ############### Extra or Deprecated ##################################
-
-####### Fig 4a Total Crown Volume ############
-light_growth <- source(file.path(github_path,'code/plotting/lightdistributionplots.r'))
-load(file.path(github_path, 'code/plotting/lightdistributionplots.r'))
-###  Crown Area
-error_bar_width <- 0.13
-
-p <- crownvolumebins1995 %>%
-  filter(fg %in% c('all', fg_names), !is.na(bin_value), bin_value > 0) %>%
-  filter(bin_count > 10) %>%
-  mutate(bin_min = ifelse(bin_min == 0, bin_value, bin_min)) %>%
-  mutate(bin_value = bin_value/area_core, bin_min = bin_min/area_core, bin_max = bin_max/area_core) %>%
-  group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
-  ggplot(aes(x = bin_midpoint, y = bin_value, ymin = bin_min, ymax = bin_max, group = fg, fill=fg,color = fg)) +
-  theme_plant() + #geom_errorbar(aes(width = width), position=p_dodge) +
-  #geom_abline(intercept=4, slope = -2/3, color ="darkgray",linetype="dashed", size=1.5)+
-  geom_point(shape = 21, size = geom_size,  stroke = .5, color = "black")+
-  scale_x_log10(name = 'Diameter (cm)', limits = c(1, 200), breaks=c(1,3,10,30,100,300)) +  
-  scale_y_log10(limits = c(3, 3000),breaks=c(1, 10, 100, 1000, 10000), labels = signif,
-                #scale_y_log10(labels = trans_format("log10", math_format(10^.x)), #limits = c(.2, 0.6),breaks=c(0.1, 0.2, 0.3, 0.4, 0.6), labels = signif,
-                name = expression(atop('Total Crown Volume',paste('(m'^3, ' ha'^-1,')'))))  +  
-  scale_color_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') +
-  scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
-
-p
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_4/total_crown_vol.pdf'))
-plot(p1)
-dev.off()
-
-##### Fig 4b
-# Load precalculated bin data.
-
-
-
-###  Individual Growth vs Light [deprecated]
-
-p <- indivprodperareabin_2census %>%
-  filter(fg %in% fg_names, !is.na(mean), mean > 0) %>%
-  filter(mean_n_individuals >= 10)%>%
-  group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
-  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, group = fg, fill=fg,color = fg)) +
-  theme_plant() + geom_errorbar(aes(width = width), position = p_dodge) +
-  geom_point(shape = 21, size = geom_size, color = "black", stroke = .5)+
-  scale_x_log10(limits = c(1, 450),breaks=c(1,10,100,1000),  
-                name = expression(paste('Light per Crown Area (W m'^-2,')')))+ 
-  scale_y_log10(limits = c(.003, .15), breaks = c(0.003, 0.01, .03, 0.1, 0.3), labels = c(0.003, 0.01, .03, 0.1, 0.3),
-                name = expression(atop('Growth per Crown',paste('Area (kg y'^-1, ' m'^-2,')')))) +
-  scale_color_manual(values = guild_fills_nb0, labels = fg_labels, name = 'Functional Froup') +
-  geom_abline(intercept = -3.85, slope = 1, color ="darkgray",linetype="dashed", size=1)+
-  scale_fill_manual(values = guild_fills_nb, labels = fg_labels, name = 'Functional Froup') 
-p
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_4/Growth_per_Light.pdf'))
-plot(p1)
-dev.off()
-
-# growth by light, normalized for volume
-
-light_growth <- source(file.path(github_path,'code/plotting/lightdistributionplots.r'))
-
-load(file.path(github_path, 'code/plotting/lightdistributionplots.r'))
-###  Crown Area
-error_bar_width <- 0.13
-p <- crownareabin_2census %>%
-  filter(fg %in% c('all', fg_names), !is.na(bin_yvalue), bin_yvalue > 0) %>%
-  filter(mean_n_individuals > 10) %>%
-  mutate(bin_ymin = ifelse(bin_ymin == 0, bin_yvalue, bin_ymin)) %>%
-  mutate(bin_yvalue = bin_yvalue/area_core, bin_ymin = bin_ymin/area_core, bin_ymax = bin_ymax/area_core) %>%
-  group_by(bin_midpoint) %>% mutate(width = error_bar_width * n()) %>% ungroup %>%
-  ggplot(aes(x = bin_midpoint, y = bin_yvalue, ymin = bin_ymin, ymax = bin_ymax, group = fg, fill=fg,color = fg)) +
-  theme_plant() + geom_errorbar(aes(width = width), position=p_dodge) +
-  #geom_abline(intercept=4, slope = -2/3, color ="darkgray",linetype="dashed", size=1.5)+
-  geom_point(shape = 21, size = geom_size,  stroke = .5, color = "black")+
-  scale_x_log10(name = 'Diameter (cm)', limits = c(1, 350), breaks=c(1,3,10,30,100,300)) +  
-  scale_y_log10(limits = c(1, 10000),breaks=c(1, 10, 100, 1000, 10000), labels = signif,
-                name = expression(atop('Total Crown Area',paste('(m'^2, ' ha'^-1,')'))))  +  
-  scale_color_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') +
-  scale_fill_manual(values = c('black', guild_fills_nb), labels = c('All', fg_labels), name = 'Functional group') 
-
-p
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_4/extra_crown_area_size.pdf'))
-plot(p1)
-dev.off()
-
