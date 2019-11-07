@@ -227,11 +227,11 @@ totalprodbin_byyear_bylight <- fgdat %>%
 densitybin_byyear_bylight <- fgdat %>%
   map(~ map(.[2:3], function(z) logbin_setedges(x = z$light_received/z$crownarea, y = NULL, edges = light_per_area_bins_allclassified)))
 
-# Breeder to pioneer by diameter (fg4 to fg2)
-breeder_stats_bydiam <- tibble(fg_a_prod = totalprodbin_byyear_bydiam[[4]],
-                               fg_b_prod = totalprodbin_byyear_bydiam[[2]],
-                               fg_a_dens = densitybin_byyear_bydiam[[4]],
-                               fg_b_dens = densitybin_byyear_bydiam[[2]],
+# pioneer to breeder by diameter (fg2 to fg4)
+breeder_stats_bydiam <- tibble(fg_a_prod = totalprodbin_byyear_bydiam[[2]],
+                               fg_b_prod = totalprodbin_byyear_bydiam[[4]],
+                               fg_a_dens = densitybin_byyear_bydiam[[2]],
+                               fg_b_dens = densitybin_byyear_bydiam[[4]],
                                year = c(1990,1995,2000,2005,2010)) %>%
   pmap(function(fg_a_prod, fg_b_prod, fg_a_dens, fg_b_dens, year) 
     data.frame(bin = 1:numbins,
@@ -274,11 +274,11 @@ breeder_stats_bydiam_5census <- breeder_stats_bydiam %>%
   cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
 
 
-# Breeder to pioneer by light received per unit crown area (fg4 to fg2)
-breeder_stats_bylight <- tibble(fg_a_prod = totalprodbin_byyear_bylight[[4]],
-                                fg_b_prod = totalprodbin_byyear_bylight[[2]],
-                                fg_a_dens = densitybin_byyear_bylight[[4]],
-                                fg_b_dens = densitybin_byyear_bylight[[2]],
+# pioneer to breeder by light received per unit crown area (fg2 to fg4)
+breeder_stats_bylight <- tibble(fg_a_prod = totalprodbin_byyear_bylight[[2]],
+                                fg_b_prod = totalprodbin_byyear_bylight[[4]],
+                                fg_a_dens = densitybin_byyear_bylight[[2]],
+                                fg_b_dens = densitybin_byyear_bylight[[4]],
                                 year = c(1990,1995)) %>%
   pmap(function(fg_a_prod, fg_b_prod, fg_a_dens, fg_b_dens, year) 
     data.frame(bin = 1:numbins,
