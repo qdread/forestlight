@@ -79,7 +79,8 @@ allyearprod_fg <- fgdat %>% map(~ map(., ~ pull(., production)) %>% unlist)
 indivproductionbin_byyear <- bind_rows(
   data.frame(fg = 'all', map2_dfr(prodbin_all_byyear, years, ~ data.frame(year = .y, .x))),
   map2_dfr(prodbin_fg_byyear, years, ~ data.frame(year = .y, .x) %>% mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg))))
-)
+) %>%
+  select(-mean_n_individuals)
 
 # Combine multiple year bin into single df.
 prodbin_all_5census <- fakebin_across_years(dat_values = allyearprod, dat_classes = allyeardbh, edges = dbhbin_all)
@@ -253,8 +254,13 @@ breeder_stats_bydiam_2census <- breeder_stats_bydiam %>%
             mean_n_individuals = mean(n_individuals)) %>%
   cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
 
+breeder_stats_bydiam_byyear <- breeder_stats_bydiam %>%
+  select(-bin) %>%
+  cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
+
 breederscore_bin_bydiam_2census <- binscore(dat = alltreedat[2:3], bindat = dbhbin_allclassified, score_column = 'X2', class_column = 'dbh_corr')
-breederscore_bin_bydiam_byyear <- map(alltreedat[2:6], ~ fakebin_across_years(dat_values = .$X2, dat_classes = .$dbh_corr, edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))
+breederscore_bin_bydiam_byyear <- map2_dfr(alltreedat[2:6], years, ~ data.frame(year = .y, fakebin_across_years(dat_values = .x$X2[!is.na(.x$X2)], dat_classes = .x$dbh_corr[!is.na(.x$X2)], edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))) %>%
+  select(-mean_n_individuals)
 
 breeder_stats_bydiam_5census <- breeder_stats_bydiam %>% 
   group_by(bin) %>%
@@ -283,6 +289,10 @@ breeder_stats_bylight <- tibble(fg_a_prod = totalprodbin_byyear_bylight[[4]],
   bind_rows %>%
   mutate_if(is.double, ~ if_else(is.finite(.x), .x, as.numeric(NA)))
 
+breeder_stats_bylight_byyear <- breeder_stats_bylight %>%
+  select(-bin) %>%
+  cbind(densitybin_byyear_bylight[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
+
 breeder_stats_bylight_2census <- breeder_stats_bylight %>% 
   filter(year %in% c(1990, 1995)) %>%
   group_by(bin) %>%
@@ -296,7 +306,13 @@ breeder_stats_bylight_2census <- breeder_stats_bylight %>%
   cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
 
 breederscore_bin_bylight_2census <- binscore(dat = alltreedat[2:3], bindat = dbhbin_allclassified, score_column = 'X2', class_column = 'light_area')
-breederscore_bin_bylight_byyear <- map(alltreedat[2:3], ~ fakebin_across_years(dat_values = .$X2, dat_classes = .$light_received/.$crown_area, edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))
+breederscore_bin_bylight_byyear <- alltreedat[2:3] %>%
+  map2_dfr(c(1990, 1995), function(x, y) {
+    x <- x %>% filter(!is.na(X2), !is.na(light_received), !is.na(crownarea))
+    data.frame(year = y, fakebin_across_years(dat_values = x$X2, dat_classes = (x$light_received/x$crownarea), edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))
+  }) %>%
+  select(-mean_n_individuals)
+
 
 # Fast to slow by diameter (fg1 to fg3)
 fastslow_stats_bydiam <- tibble(fg_a_prod = totalprodbin_byyear_bydiam[[1]],
@@ -313,6 +329,10 @@ fastslow_stats_bydiam <- tibble(fg_a_prod = totalprodbin_byyear_bydiam[[1]],
   bind_rows %>%
   mutate_if(is.double, ~ if_else(is.finite(.x), .x, as.numeric(NA)))
 
+fastslow_stats_bydiam_byyear <- fastslow_stats_bydiam %>%
+  select(-bin) %>%
+  cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
+
 fastslow_stats_bydiam_2census <- fastslow_stats_bydiam %>% 
   filter(year %in% c(1990, 1995)) %>%
   group_by(bin) %>%
@@ -326,7 +346,9 @@ fastslow_stats_bydiam_2census <- fastslow_stats_bydiam %>%
   cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
 
 fastslowscore_bin_bydiam_2census <- binscore(dat = alltreedat[2:3], bindat = dbhbin_allclassified, score_column = 'X1', class_column = 'dbh_corr')
-fastslowscore_bin_bydiam_byyear <- map(alltreedat[2:6], ~ fakebin_across_years(dat_values = .$X1, dat_classes = .$dbh_corr, edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))
+fastslowscore_bin_bydiam_byyear <- map2_dfr(alltreedat[2:6], years, ~ data.frame(year = .y, fakebin_across_years(dat_values = .x$X1[!is.na(.x$X1)], dat_classes = .x$dbh_corr[!is.na(.x$X1)], edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))) %>%
+  select(-mean_n_individuals)
+
 
 fastslow_stats_bydiam_5census <- fastslow_stats_bydiam %>% 
   group_by(bin) %>%
@@ -354,6 +376,10 @@ fastslow_stats_bylight <- tibble(fg_a_prod = totalprodbin_byyear_bylight[[1]],
   bind_rows %>%
   mutate_if(is.double, ~ if_else(is.finite(.x), .x, as.numeric(NA)))
 
+fastslow_stats_bylight_byyear <- fastslow_stats_bylight %>%
+  select(-bin) %>%
+  cbind(densitybin_byyear_bylight[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
+
 fastslow_stats_bylight_2census <- fastslow_stats_bylight %>% 
   filter(year %in% c(1990, 1995)) %>%
   group_by(bin) %>%
@@ -367,8 +393,12 @@ fastslow_stats_bylight_2census <- fastslow_stats_bylight %>%
   cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
 
 fastslowscore_bin_bylight_2census <- binscore(dat = alltreedat[2:3], bindat = dbhbin_allclassified, score_column = 'X1', class_column = 'light_area')
-fastslowscore_bin_bylight_byyear <- map(alltreedat[2:3], ~ fakebin_across_years(dat_values = .$X1, dat_classes = .$light_received/.$crown_area, edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))
-
+fastslowscore_bin_bylight_byyear <- alltreedat[2:3] %>%
+  map2_dfr(c(1990, 1995), function(x, y) {
+    x <- x %>% filter(!is.na(X1), !is.na(light_received), !is.na(crownarea))
+    data.frame(year = y, fakebin_across_years(dat_values = x$X1, dat_classes = (x$light_received/x$crownarea), edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))
+  }) %>%
+  select(-mean_n_individuals)
 
 # Export binned data
 
@@ -384,7 +414,7 @@ for (i in file_names) {
 save(list = file_names, file = file.path(fpdata, 'bin_object_multipleyear.RData'))
 
 # Single year bins
-file_names <- c('densitybin_byyear', 'indivproductionbin_byyear', 'totalproductionbin_byyear') ### EDIT THIS.
+file_names <- c('densitybin_byyear', 'indivproductionbin_byyear', 'totalproductionbin_byyear', 'breeder_stats_bydiam_byyear', 'breederscore_bin_bydiam_byyear', 'breeder_stats_bylight_byyear', 'breederscore_bin_bylight_byyear', 'fastslow_stats_bydiam_byyear', 'fastslowscore_bin_bydiam_byyear', 'fastslow_stats_bylight_byyear', 'fastslowscore_bin_bylight_byyear') 
 
 for (i in file_names) {
   write.csv(get(i), file=file.path(fpdata, paste0(i,'.csv')), row.names = FALSE)
