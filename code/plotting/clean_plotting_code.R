@@ -213,7 +213,7 @@ fp <- file.path(gdrive_path, 'data/data_piecewisefits')
 # Plot the fitted values on top of the observed histograms.
 
 # Read observed data
-fp_obs <- file.path(gdrive_path, 'data/data_forplotting_aug2018')
+fp_obs <- file.path(gdrive_path, 'data/data_forplotting')
 
 for (i in dir(fp_obs, pattern = 'obs_')) {
   n <- gsub('.csv','',i)
@@ -322,12 +322,8 @@ p0 <- p + scale_x_log10(name = 'Diameter (cm)',
                 name =expression(atop('Total Production', paste('(kg ha'^-1,' cm'^-1,' yr'^-1,')')))) +
   theme(aspect.ratio = 0.8)
 
-                               #labels=c("2","3","5","30"))#,  
+                               
 p0                            
-#scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks)+#,
-  #sec.axis = sec_axis(~exp(0.438+0.595*log(.)),breaks=c(2,3,5,10,20,30),  
-  #               name = "Height (m)"))+
-#p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
 p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
@@ -390,9 +386,6 @@ grid.newpage()
 grid.draw(p1)
 
 ggsave(file.path(gdrive_path,'Figures/Fig_3/Diameter/Diam_growth.pdf'), p1, width = 7, height = 5.3)
-#system2("pdfcrop", 
- #       c(file.path(gdrive_path,"Figures/Fig_3/Diameter/Diam_growth.pdf", 
-  #                            file.path(gdrive_path,"Figures/Fig_3/Diameter/Diam_growth.pdf"))))
 
 # ------------------------   WAIC of Piecewise Models  -----------------------------------
 
@@ -415,11 +408,10 @@ p <- ggplot(ics %>% filter(criterion == 'WAIC',
         text = element_text(size = 14),strip.text = element_text(size=12)) +
   labs(x = 'Segments in Density Function', y = "Widely Applicable Information Criterion (WAIC)")
 p
-#ggsave(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_density.pdf'), p)
 
 p1 <- set_panel_size(p, width=unit(3.5,"cm"), height=unit(7,"cm"))
 plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_density.pdf'))
+pdf(file.path(gdrive_path, 'Figures/Fig_3/WAIC/WAIC_density.pdf'))
 plot(p1)
 dev.off()
 
@@ -436,14 +428,13 @@ p <- ggplot(ics %>% filter(criterion == 'WAIC',
         text = element_text(size = 14),strip.text = element_text(size=12)) +
   labs(x = 'Segments in Growth Function',  y = "Widely Applicable Information Criterion (WAIC)")
 p
-#ggsave(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_growth.pdf'), p)
 
 p1 <- set_panel_size(p, width=unit(4,"cm"), height=unit(7,"cm"))
 plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_3/WOOIC/WAIC_growth.pdf'))
+pdf(file.path(gdrive_path, 'Figures/Fig_3/WAIC/WAIC_growth.pdf'))
 plot(p1)
 dev.off()
- #ggsave(file.path(fpfig, 'production_model_information_criteria.pdf'), height = 6, width = 9)
+
 #---------------------------------------------------------------------------------------------
 
 #-------------------   Plot Slopes vs Size for each life history group  -------------------
@@ -503,7 +494,6 @@ p
 pdf(file.path(gdrive_path, "Figures/Fig_3/Slopes/fitted_slopes_2_seg_production.pdf"))
 p
 dev.off()
-#ggsave(file.path(fpfig, 'fitted_slopes_3partdensity_2partproduction.pdf'), height = 6, width = 9)
 
 
 
@@ -576,7 +566,7 @@ fitted_totallight <- read.csv(file.path(fp, 'fitted_totallight.csv'), stringsAsF
 fitted_totalvol <- read.csv(file.path(fp, 'fitted_totalvol.csv'), stringsAsFactors = FALSE)
 
 # Observed (binned) values for 1995 for individual light, total light, and total volume
-fp_obs <- file.path(gdrive_path, 'data/data_forplotting_aug2018')
+fp_obs <- file.path(gdrive_path, 'data/data_forplotting')
 binedgedata <- read.csv(file.path(fp_obs,'obs_dens.csv'),stringsAsFactors = FALSE) %>% filter(fg == 'all', year == 1995) 
 area_core <- 42.84
 
@@ -677,7 +667,7 @@ tot_light1 <- tot_light + scale_y_continuous(position = "left", trans = "log10",
   theme(aspect.ratio = 0.75) 
 plot(tot_light1 )
 grob_text <- grobTree(textGrob("Solar Energy Equivalence", x = 0.2, y = 0.85, hjust = 0,
-                               gp = gpar(col = "gray42", fontsize = 18))) #, fontface = "bold")))
+                               gp = gpar(col = "gray42", fontsize = 18))) 
 
 grob_text2 <- grobTree(textGrob("b", x = 0.05, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 tot_light2 <- tot_light  + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
@@ -699,11 +689,8 @@ g3$widths <- unit.pmax(g_tot_vol$widths, g_tot_light$widths)
 grid.newpage()
 grid.draw(g3)
 ggsave(g3, height = 7.6, width = 6, filename = file.path(gdrive_path,'Figures/Fig_5/fig5.pdf'))
+
 # Plot individual light using the modified "prod" function
-
-
-source(file.path(github_path, 'code/plotting/plot_prod_fixed.R'))
-geom_size = 4
 p <- plot_prod_fixed(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           model_fit = 2,
@@ -715,6 +702,7 @@ p <- plot_prod_fixed(year_to_plot = 1995,
           y_name = 'Individual Light Intercepted (kW)',
           error_bar_width = 0.01,
           dodge_width = 0.05,
+          geom_size = 4,
           preddat = fitted_indivlight,
           obsdat = indivlightbins_fg %>% mutate(year = 1995, mean = q50) %>% rename(mean_n_individuals = bin_count))
 p
@@ -794,86 +782,16 @@ p_raw_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% '
   scale_color_manual(values = fg_colors) +
   scale_fill_manual(values = fg_colors) +
   theme_plant() + theme_facet()
-#theme(strip.background = element_rect(fill=NA),
-#    panel.border = element_rect(color = "black", fill=NA,  size=.75),legend.position = 'none',
-#   panel.background = element_blank(),
-#  strip.text.x = element_blank(),
-# axis.text = element_text(size = 12, color = "black"), 
-#axis.ticks.length=unit(0.2,"cm"),
-#axis.title = element_text(size = 12)) 
 
 p_raw_panels
 pdf(file.path(gdrive_path, "Figures/Fig_4/Growth by light/Raw.pdf"))
 p_raw_panels
 dev.off()
 
-#---------------------------- Extra growth by light + fg --------------------------------
 
-p_mean_segments <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
-  #facet_wrap(~ fg, labeller = fg_labels) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) + 
-  
-  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50), color = 'red') +
-  geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max)) +
-  geom_point(aes(x = bin_midpoint, y = mean), shape = 21, size = 2) +
-  
-  geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), aes(x = xmax * 0.5, xend = xmax * 2, y = ymax * 0.5, yend = ymax * 2), color = 'green', size = 1) +
-  scale_x_log10(name = title_x) + 
-  geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), aes(x = xmax * 0.5, xend = xmax * 2, y = ymax * 0.5^log_slope_q50 , yend = ymax * 2^log_slope_q50) , color = 'blue', size = 1) +
-  scale_y_log10(name = title_y) +
-  theme_plant() +
-  theme(panel.border = element_rect(fill=NA),
-        strip.background = element_rect(fill=NA))
-p_mean_segments
-
-# 2. Plot with different panels for each functional group, and raw data
-
-# I attempted to set an alpha scale so that the amount of transparency is roughly the same but the numbers may need to be tweaked
-#pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/p_raw_panels.pdf"))
+# colored hexagon plot ----------------------------------------------------
 
 
-#dev.off()
-# 3. Plot with different panels for each functional group, and quantiles
-
-# Problem!!
-# Corrected 28 June 2019 by QDR because format of new "slopes" DF has changed.
-ggplot(slopes %>% filter((dens_model == 3 & prod_model == 2) | (dens_model == 3 & is.na(prod_model)) | (is.na(dens_model) & prod_model == 2), !fg %in% 'Unclassified'), 
-       aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
-  facet_wrap(~ fg,scale = "free_y", labeller = label_value) +
-  geom_ribbon() + geom_line() + theme_facet2()
-
-unique(obs_light_binned$fg)
-
-
-
-# 4. Plot with different panels for each functional group, and means
-
-p_mean_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +
-  geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975), alpha = 0.5, fill = 'red') +
-  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50), color = 'red') +
-  geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max)) +
-  geom_point(aes(x = bin_midpoint, y = mean)) +
-  scale_x_log10(name = title_x) + 
-  scale_y_log10(name = title_y) +
-  theme_classic() +
-  theme(panel.border = element_rect(fill=NA),
-        strip.background = element_rect(fill=NA))
-p_mean_panels 
-
-
-
-#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=3)(50),
-#                                  trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
-
-#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('khaki1', 'gold', 'red3'), bias=3)(50),
-#                                  trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
-
-#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('aliceblue', 'forestgreen','khaki1','red3'), bias=3)(50),
-#                        trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
-#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('forestgreen', 'red3'), bias=3)(50),
-#                        trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
-#hex_scale_3b <- scale_fill_gradientn(colours = rev(colorRampPalette(RColorBrewer::brewer.pal(9,'RdYlBu'), bias=0.1)(50)), guide = F)
 obs_light_raw$fg <- factor(obs_light_raw$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium"))
 facet_wrap(~ fg,labeller = label_value) 
 
@@ -1002,7 +920,6 @@ ggplot() +
   facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = labels)) +
   scale_x_log10(name = exd) +
   scale_y_log10(name = exl) +
-  #theme_bw()
   theme_facet2()
 
 
@@ -1075,35 +992,7 @@ plot(p2)
 dev.off()
 
 
-# Each group
-ggplot() +
-  geom_hex(alpha = alpha_value, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received)) +
-  geom_pointrange(data = unscaledlightbydbhfakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = fg_labels)) +theme_plant+
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exl, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), 
-                labels = trans_format("log10", math_format(10^.x))) +
-  theme_facet2() +
-  hex_scale_log_colors +
-  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
-
-# All together
-
-# Very simple model
-loglogregressions <- alltree_light_95 %>%
-  group_by(fg) %>%
-  do(model = lm(log10(light_received) ~ log10(dbh_corr), data = .))
-library(broom)
-loglogregressions$model
-lapply(loglogregressions$model, summary)
-#(Intercept)     0.903027   0.005262   171.6   <2e-16 ***
- #log10(dbh_corr) 2.343608   0.007530   311.2   <2e-16 ***
-
-
-# Symmetry plot
-# Compare total growth fitted slope (evaluated halfway between the high and low cutoffs) with total light fitted slope at the same point. 
-# QDR / Forestlight / 20 June 2019
-
+# Symmetry plot -----------------------------------------------------------
 
 
 # Load parameter df to find the point at which to evaluate the fitted slopes, then load the fitted slopes
@@ -1169,134 +1058,32 @@ dev.off()
 # ------------------------------- Fig 6 Life History Ratios ------------------------------------
 ################################################################################################
 
-# Loop through all the csv files and load them into R
-fpdata <- file.path(gdrive_path, 'data/data_june2018_alternativecluster')
-file_names <- c('densitybin_5census', 'indivproductionbin_5census', 'totalproductionbin_5census', 'crownareabin_2census', 'lightreceivedbin_2census', 'indivprodperareabin_2census', 'breeder_stats_bydiam_2census', 'breederscore_bin_bydiam_2census', 'breeder_stats_bylight_2census', 'breederscore_bin_bylight_2census', 'fastslow_stats_bydiam_2census', 'fastslowscore_bin_bydiam_2census', 'fastslow_stats_bylight_2census', 'fastslowscore_bin_bylight_2census')
-
-for (i in file_names) {
-  assign(i, read.csv(file.path(fpdata, paste0(i,'.csv')), stringsAsFactors = FALSE))
-}
-
-
-error_bar_width <- 0.15
-dodge_width <- 0
-
-area_core <- 42.84 # Area of the plot without the edge strip and without the "young" forest area.
-global_diam_xlimits <- c(1, 316) # Maximum and minimum for x axis if it's diameter.
-
-indivproductionbin_5census$fg <- factor(indivproductionbin_5census$fg, levels=c('fg1','fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'all'))
-densitybin_5census$fg <- factor(densitybin_5census$fg, levels=c('fg1','fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'all'))
-
-unique(densitybin_5census $fg)
-fg_names <- paste('fg', 1:5, sep = '')
-fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate')
-fg_labels2 <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Intermediate','All')
-
-p_dodge <- position_dodge(width = dodge_width)
-
-geom_size = 3.5
-
 
 # ------------------------------- Fig 6 Relative Abundance & Production ------------------------------------
 
-# Load the 5 diameter census ones, can be used if needed
-fastslow_stats_bydiam_5census <- read_csv(file.path(gdrive_path, 'data/data_june2018_alternativecluster/fastslow_stats_bydiam_5census.csv'))
-breeder_stats_bydiam_5census <- read_csv(file.path(gdrive_path, 'data/data_june2018_alternativecluster/breeder_stats_bydiam_5census.csv'))
+# Load 1995 bin data
+load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
 
-# Load the 2 yr diameter
-fastslow_stats_bydiam_2census <- read_csv(file.path(gdrive_path, 'data/data_june2018_alternativecluster/fastslow_stats_bydiam_2census.csv'))
-breeder_stats_bydiam_2census <- read_csv(file.path(gdrive_path, 'data/data_june2018_alternativecluster/breeder_stats_bydiam_2census.csv'))
+prod_ratio_diam <- breeder_stats_bydiam_byyear %>% 
+  mutate(ID = 'Breeder-Pioneer') %>%
+  rename(production_ratio = breeder_production_ratio, density_ratio = breeder_density_ratio) %>%
+  rbind(fastslow_stats_bydiam_byyear %>% 
+          mutate(ID = 'Fast-Slow') %>%
+          rename(production_ratio = fastslow_production_ratio, density_ratio = fastslow_density_ratio)) %>%
+  filter(year == 1995)
 
-# Load the 2 yr light
-fastslow_stats_bylight_2census <-  read_csv(file.path(gdrive_path, 'data/data_june2018_alternativecluster/fastslow_stats_bylight_2census.csv'))
-breeder_stats_bylight_2census <-  read_csv(file.path(gdrive_path, 'data/data_june2018_alternativecluster/breeder_stats_bylight_2census.csv'))
-
-
-# 2 samples by diameter
-
-    # Rearrange Order so going up 
-breeder_stats_bydiam_2censusb <- breeder_stats_bydiam_2census
-breeder_stats_bydiam_2censusb[,2:7] <- 1/breeder_stats_bydiam_2censusb[,2:7]
-breeder_stats_bydiam_2censusb <- as.matrix(breeder_stats_bydiam_2censusb )
-    # Get rid of infinite values
-breeder_stats_bydiam_2censusb[!is.finite(breeder_stats_bydiam_2censusb)] <- NA
-breeder_stats_bydiam_2censusb <- as.data.frame(breeder_stats_bydiam_2censusb )
-    # Add ID for combining
-breeder_stats_bydiam_2census_id <- breeder_stats_bydiam_2censusb %>%
-  mutate(ID = "Breeder-Pioneer")
-fastslow_bydiam_2census_id <- fastslow_stats_bydiam_2census %>%
-  mutate(ID = "Fast-Slow")
-    # Combine
-fastslow_stats_breeder_bydiam_2census <-rbind(breeder_stats_bydiam_2census_id,fastslow_bydiam_2census_id)
-     # Plot by diameter
-fill_ <- c("grey", "grey25")
-fastslow_stats_breeder_bydiam_2census$ID <- as.factor(fastslow_stats_breeder_bydiam_2census$ID)
-str(fastslow_stats_breeder_bydiam_2census)
-
-
-# 5 samples by diameter
-breeder_stats_bydiam_5censusb <- breeder_stats_bydiam_5census
-breeder_stats_bydiam_5censusb[,2:7] <- 1/breeder_stats_bydiam_5censusb[,2:7]
-breeder_stats_bydiam_5censusb <- as.matrix(breeder_stats_bydiam_5censusb )
-breeder_stats_bydiam_5censusb[!is.finite(breeder_stats_bydiam_5censusb)] <- NA
-breeder_stats_bydiam_5censusb <- as.data.frame(breeder_stats_bydiam_5censusb )
-breeder_stats_bydiam_5census_id <- breeder_stats_bydiam_5censusb %>%
-  mutate(ID = "Breeder")
-fastslow_bydiam_5census_id <- fastslow_stats_bydiam_5census %>%
-  mutate(ID = "Fast-Slow")
-fastslow_stats_breeder_bydiam_5census <-rbind(breeder_stats_bydiam_5census_id,fastslow_bydiam_5census_id)
-fill_ <- c("grey", "grey25")
-fastslow_stats_breeder_bydiam_5census$ID <- as.factor(fastslow_stats_breeder_bydiam_5census$ID)
-str(fastslow_stats_breeder_bydiam_5census)
-
-
-# 2 samples by light 
-
-fastslow_stats_bylight_2census_b <- fastslow_stats_bylight_2census
-fastslow_stats_bylight_2census_b <- fastslow_stats_bylight_2census
-fastslow_stats_bylight_2census_b[,2:7] <- 1/fastslow_stats_bylight_2census_b[,2:7] 
-fastslow_stats_bylight_2census_b <- as.matrix(fastslow_stats_bylight_2census_b)
-fastslow_stats_bylight_2census_b[!is.finite(fastslow_stats_bylight_2census_b)] <- NA
-fastslow_stats_bylight_2census_b <- as.data.frame(fastslow_stats_bylight_2census_b)
-fastslow_stats_bylight_2census_id <- fastslow_stats_bylight_2census %>%
-  mutate(ID = "Fast-Slow")
-
-breeder_stats_bylight_2census_b <- breeder_stats_bylight_2census
-breeder_stats_bylight_2census_b <- breeder_stats_bylight_2census
-breeder_stats_bylight_2census_b[,2:7] <- 1/breeder_stats_bylight_2census_b[,2:7] 
-breeder_stats_bylight_2census_b <- as.matrix(breeder_stats_bylight_2census_b)
-breeder_stats_bylight_2census_b[!is.finite(breeder_stats_bylight_2census_b)] <- NA
-breeder_stats_bylight_2census_b <- as.data.frame(breeder_stats_bylight_2census_b)
-breeder_stats_bylight_2census_id <- breeder_stats_bylight_2census_b %>%
-  mutate(ID = "Breeder-Pioneer")
-
-prod_ratio_light <- as.data.frame(rbind(fastslow_stats_bylight_2census_id,breeder_stats_bydiam_2census_id))
-
-fastslow_stats_bydiam_2census_id <- fastslow_stats_bydiam_2census %>%
-  mutate(ID = "Fast-Slow")
-
-breeder_stats_bydiam_2census_b <- breeder_stats_bydiam_2census
-breeder_stats_bydiam_2census_b[, 2:7] <- 1/breeder_stats_bydiam_2census_b[, 2:7]
-breeder_stats_bydiam_2census_b <- as.matrix(breeder_stats_bydiam_2census_b)
-breeder_stats_bydiam_2census_b[!is.finite(breeder_stats_bydiam_2census_b )] <- NA
-breeder_stats_bydiam_2census_b <- as.data.frame(breeder_stats_bydiam_2census_b)
-breeder_stats_bydiam_2census_id <- breeder_stats_bydiam_2census_b  %>%
-  mutate(ID = "Breeder-Pioneer")
-
-prod_ratio_diam <- as.data.frame(rbind(fastslow_stats_bydiam_2census_id, breeder_stats_bydiam_2census_id))
-
-
+prod_ratio_light <- breeder_stats_bylight_byyear %>% 
+  mutate(ID = 'Breeder-Pioneer') %>%
+  rename(production_ratio = breeder_production_ratio, density_ratio = breeder_density_ratio) %>%
+  rbind(fastslow_stats_bylight_byyear %>% 
+          mutate(ID = 'Fast-Slow') %>%
+          rename(production_ratio = fastslow_production_ratio, density_ratio = fastslow_density_ratio)) %>%
+  filter(year == 1995)
 
 # ---------------------------------   Fig 6a  Production by light ------------------------------------
-error_bar_width <- 0.15
-
 p <- prod_ratio_light   %>%
-  filter(mean_n_individuals > 10) %>%
-  filter(production_ratio_mean > 0) %>%
-  mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = production_ratio_mean, 
-             ymin =production_ratio_min, ymax = production_ratio_max, fill = ID)) +
-  geom_errorbar(width = error_bar_width) +
+  filter(n_individuals > 10) %>%
+  ggplot(aes(x = bin_midpoint, y = production_ratio, fill = ID)) +
   geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
@@ -1315,12 +1102,8 @@ dev.off()
 # -------------------- ----- Supp: Density ratio by light -----------------------------
 
 p <- prod_ratio_diam   %>%
-  filter(mean_n_individuals > 10) %>%
-  filter(production_ratio_mean > 0) %>%
-  mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = production_ratio_mean, 
-             ymin =production_ratio_min, ymax = production_ratio_max, fill = ID)) +
-  geom_errorbar(width = error_bar_width) +
+  filter(n_individuals > 10) %>%
+  ggplot(aes(x = bin_midpoint, y = production_ratio, fill = ID)) +
   geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey")) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
@@ -1337,80 +1120,28 @@ pdf(file.path(gdrive_path, 'Figures/Fig_6/Sup_Production_diam.pdf'))
 plot(p1)
 dev.off()
 
-# alt code
-p <- bylight_2census    %>%
-  filter(density_ratio_mean > 0) %>%
-  mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = density_ratio_mean, 
-             ymin = density_ratio_min, ymax = density_ratio_max, fill = ID)) +
+#----------------------------- Fig 6B Abundance by Diameter ----------------------------
+h
+p <- prod_ratio_diam %>% 
+  filter(density_ratio > 0) %>%
+  filter(n_individuals > 10) %>%
+  ggplot(aes(x = bin_midpoint, y = density_ratio, fill = ID)) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  geom_errorbar(width = error_bar_width) + theme_plant() +
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
-  
-  scale_x_log10(limits=c(1,400),breaks=c(1,10,100), name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
-  scale_y_log10(breaks = c(0.01,0.1,1,10,100), labels=signif, limits=c(0.003,100),
-                name = expression("Abundance Ratio"))
-
-p
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
-
-#----------------------------- Fig 6B Abundance by Diameter ----------------------------
-# 5 yr samples
-
-   # 5 sampling periods 5 yrs each
-p <- fastslow_stats_breeder_bydiam_5census %>% 
-  filter(density_ratio_mean > 0) %>%
-  filter(mean_n_individuals > 10) %>%
-  mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = density_ratio_mean, 
-             ymin = density_ratio_min, ymax = density_ratio_max, fill = ID)) +
-  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  geom_errorbar(width = error_bar_width) + theme_plant() +
-  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
-  scale_fill_manual(values = c("Breeder" = "black", "Fast-Slow" = "grey"))+
   
   scale_x_log10(limits=c(.7,160),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.003,100),
                 name = expression("Ratio")) +
+  theme_plant() +
   theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
-        axis.ticks.y = element_blank())
+        axis.ticks.y = element_blank()) 
 
 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_6/Fig_6b_Density_5yr.pdf'))
-plot(p1)
-dev.off()
-
-
-
-
-
-#----------------------------- Fig 6B alt: Abundance by Diameter for 2 sampling periods ----------------------------
-
-p <- fastslow_stats_breeder_bydiam_2census %>% #fastslow_stats_breeder_bydiam_2census  %>%
-  filter(density_ratio_mean > 0) %>%
-  filter(mean_n_individuals > 10) %>%
-  mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = density_ratio_mean, 
-             ymin = density_ratio_min, ymax = density_ratio_max, fill = ID)) +
-  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  geom_errorbar(width = error_bar_width) + theme_plant() +
-  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
-  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
-  
-  scale_x_log10(limits=c(.7,330),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.006,100),
-                name = expression("Ratio")) 
-
-
-p
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_6/Fig_6b_Density_2yr.pdf'))
+pdf(file.path(gdrive_path, 'Figures/Fig_6/Fig_6b_Density.pdf'))
 plot(p1)
 dev.off()
 
@@ -1418,12 +1149,9 @@ dev.off()
 
 
 p <- prod_ratio_diam  %>%
-  filter(production_ratio_mean > 0) %>%
-  mutate(production_ratio_min = ifelse(production_ratio_min == 0, production_ratio_mean, production_ratio_min)) %>%
-  ggplot(aes(x = bin_midpoint, y = production_ratio_mean, 
-             ymin =production_ratio_min, ymax = production_ratio_max, fill = ID)) +
+  filter(production_ratio > 0) %>%
+  ggplot(aes(x = bin_midpoint, y = production_ratio, fill = ID)) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
-  geom_errorbar(width = error_bar_width) +
   geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
   
@@ -1442,23 +1170,27 @@ dev.off()
 # -------------------- ------   Supp: PCA score   -----------------------------
 ## by Diameter
 
+error_bar_width <- 0.15
+
 # Combine
-fastslowscore_bin_bydiam_2census_id <- fastslowscore_bin_bydiam_2census %>%
+fastslowscore_bin_bydiam<- fastslowscore_bin_bydiam_byyear %>%
+  left_join(fastslow_stats_bydiam_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
   mutate(ID = "Fast-Slow")
-breederscore_bin_bydiam_2census_id <- breederscore_bin_bydiam_2census %>%
-  mutate(ID = "Breeder-Pioneer")
-score_bin_bydiam <- as.data.frame(rbind(fastslowscore_bin_bydiam_2census_id, breederscore_bin_bydiam_2census_id))
+breederscore_bin_bydiam <- breederscore_bin_bydiam_byyear %>%
+  left_join(breeder_stats_bydiam_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
+  mutate(ID = 'Breeder-Pioneer')
+score_bin_bydiam <- rbind(fastslowscore_bin_bydiam, breederscore_bin_bydiam)
 
 p <- score_bin_bydiam %>%
-  filter(mean_n_individuals > 10) %>%
+  filter(year == 1995, n_individuals > 10) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   geom_errorbar(width = error_bar_width) +theme_plant() +
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
   
-  scale_x_log10(name = 'Diameter (cm)', limits = c(1,300)) + 
-  scale_y_continuous(limits=c(-2,2.5),breaks=c(-2,0,2),name = 'Slow-Fast PCA') 
+  scale_x_log10(name = 'Diameter (cm)', limits = c(.8,300)) + 
+  scale_y_continuous(limits=c(-2,2.5),breaks=c(-2,0,2),name = 'PCA score') 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)
@@ -1470,21 +1202,23 @@ dev.off()
 #-------------------------------  PCA score by light ----------------------------------
 
 # Combine
-fastslowscore_bin_bylight_2census_id <- fastslowscore_bin_bylight_2census %>%
+fastslowscore_bin_bylight <- fastslowscore_bin_bylight_byyear %>%
+  left_join(fastslow_stats_bylight_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
   mutate(ID = "Fast-Slow")
-breederscore_bin_bylight_2census_id <- breederscore_bin_bylight_2census  %>%
+breederscore_bin_bylight<- breederscore_bin_bylight_byyear  %>%
+  left_join(breeder_stats_bylight_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
   mutate(ID = "Breeder-Pioneer")
-PCA_score_by_light <- as.data.frame(rbind(fastslowscore_bin_bylight_2census_id,breederscore_bin_bylight_2census_id))
+PCA_score_by_light <- rbind(fastslowscore_bin_bylight,breederscore_bin_bylight)
 
 p <- PCA_score_by_light %>%
-  filter(mean_n_individuals > 10) %>%
+  filter(year == 1995, n_individuals > 10) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
   geom_errorbar(width = error_bar_width) +theme_plant() +
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   scale_x_log10(limits=c(1,450),name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
-  scale_y_continuous(limits=c(-2.2,1.5),name = 'Slow-Fast') 
+  scale_y_continuous(limits=c(-2.2,1.5),name = 'PCA score') 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 plot(p1)

@@ -305,11 +305,11 @@ breeder_stats_bylight_2census <- breeder_stats_bylight %>%
             mean_n_individuals = mean(n_individuals)) %>%
   cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
 
-breederscore_bin_bylight_2census <- binscore(dat = alltreedat[2:3], bindat = dbhbin_allclassified, score_column = 'X2', class_column = 'light_area')
+breederscore_bin_bylight_2census <- binscore(dat = alltreedat[2:3], bindat = light_per_area_bins_allclassified, score_column = 'X2', class_column = 'light_area')
 breederscore_bin_bylight_byyear <- alltreedat[2:3] %>%
   map2_dfr(c(1990, 1995), function(x, y) {
     x <- x %>% filter(!is.na(X2), !is.na(light_received), !is.na(crownarea))
-    data.frame(year = y, fakebin_across_years(dat_values = x$X2, dat_classes = (x$light_received/x$crownarea), edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))
+    data.frame(year = y, fakebin_across_years(dat_values = x$X2, dat_classes = (x$light_received/x$crownarea), edges = light_per_area_bins_allclassified, mean = 'arithmetic', n_census = 1))
   }) %>%
   select(-mean_n_individuals)
 
@@ -392,11 +392,11 @@ fastslow_stats_bylight_2census <- fastslow_stats_bylight %>%
             mean_n_individuals = mean(n_individuals)) %>%
   cbind(densitybin_byyear_bydiam[[1]][[1]][,c('bin_midpoint', 'bin_min', 'bin_max')]) 
 
-fastslowscore_bin_bylight_2census <- binscore(dat = alltreedat[2:3], bindat = dbhbin_allclassified, score_column = 'X1', class_column = 'light_area')
+fastslowscore_bin_bylight_2census <- binscore(dat = alltreedat[2:3], bindat = light_per_area_bins_allclassified, score_column = 'X1', class_column = 'light_area')
 fastslowscore_bin_bylight_byyear <- alltreedat[2:3] %>%
   map2_dfr(c(1990, 1995), function(x, y) {
     x <- x %>% filter(!is.na(X1), !is.na(light_received), !is.na(crownarea))
-    data.frame(year = y, fakebin_across_years(dat_values = x$X1, dat_classes = (x$light_received/x$crownarea), edges = dbhbin_allclassified, mean = 'arithmetic', n_census = 1))
+    data.frame(year = y, fakebin_across_years(dat_values = x$X1, dat_classes = (x$light_received/x$crownarea), edges = light_per_area_bins_allclassified, mean = 'arithmetic', n_census = 1))
   }) %>%
   select(-mean_n_individuals)
 

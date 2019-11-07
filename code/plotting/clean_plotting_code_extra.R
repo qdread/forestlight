@@ -92,6 +92,77 @@ ggplot() +
   guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
 
 
+
+# More unused hexagon plots -----------------------------------------------
+
+#---------------------------- Extra growth by light + fg --------------------------------
+
+p_mean_segments <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
+  #facet_wrap(~ fg, labeller = fg_labels) +
+  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) + 
+  
+  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50), color = 'red') +
+  geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max)) +
+  geom_point(aes(x = bin_midpoint, y = mean), shape = 21, size = 2) +
+  
+  geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), aes(x = xmax * 0.5, xend = xmax * 2, y = ymax * 0.5, yend = ymax * 2), color = 'green', size = 1) +
+  scale_x_log10(name = title_x) + 
+  geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), aes(x = xmax * 0.5, xend = xmax * 2, y = ymax * 0.5^log_slope_q50 , yend = ymax * 2^log_slope_q50) , color = 'blue', size = 1) +
+  scale_y_log10(name = title_y) +
+  theme_plant() +
+  theme(panel.border = element_rect(fill=NA),
+        strip.background = element_rect(fill=NA))
+p_mean_segments
+
+# 2. Plot with different panels for each functional group, and raw data
+
+# I attempted to set an alpha scale so that the amount of transparency is roughly the same but the numbers may need to be tweaked
+#pdf(file.path(gdrive_path, "Plots_J/New/Supplementals/p_raw_panels.pdf"))
+
+
+#dev.off()
+# 3. Plot with different panels for each functional group, and quantiles
+
+# Problem!!
+# Corrected 28 June 2019 by QDR because format of new "slopes" DF has changed.
+ggplot(slopes %>% filter((dens_model == 3 & prod_model == 2) | (dens_model == 3 & is.na(prod_model)) | (is.na(dens_model) & prod_model == 2), !fg %in% 'Unclassified'), 
+       aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
+  facet_wrap(~ fg,scale = "free_y", labeller = label_value) +
+  geom_ribbon() + geom_line() + theme_facet2()
+
+unique(obs_light_binned$fg)
+
+
+
+# 4. Plot with different panels for each functional group, and means
+
+p_mean_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
+  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +
+  geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, ymin = q025, ymax = q975), alpha = 0.5, fill = 'red') +
+  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q50), color = 'red') +
+  geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max)) +
+  geom_point(aes(x = bin_midpoint, y = mean)) +
+  scale_x_log10(name = title_x) + 
+  scale_y_log10(name = title_y) +
+  theme_classic() +
+  theme(panel.border = element_rect(fill=NA),
+        strip.background = element_rect(fill=NA))
+p_mean_panels 
+
+
+
+#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(gray.colors(9, start=.9, end=.1), bias=3)(50),
+#                                  trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+
+#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('khaki1', 'gold', 'red3'), bias=3)(50),
+#                                  trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+
+#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('aliceblue', 'forestgreen','khaki1','red3'), bias=3)(50),
+#                        trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+#hex_scale_log <- scale_fill_gradientn(colours = colorRampPalette(c('forestgreen', 'red3'), bias=3)(50),
+#                        trans = 'log', name = 'Number of\nindividuals', breaks = c(1,10,100,1000), labels = c(1,10,100,1000))
+#hex_scale_3b <- scale_fill_gradientn(colours = rev(colorRampPalette(RColorBrewer::brewer.pal(9,'RdYlBu'), bias=0.1)(50)), guide = F)
+
 # Another unused variant of light by area plots --------------------------------------------------
 
 # 5. Plot with all functional groups on the same panel, and quantiles
@@ -438,3 +509,91 @@ pdf(file.path(gdrive_path, 'Figures/Fig_4/extra_crown_area_size.pdf'))
 plot(p1)
 dev.off()
 
+
+
+# Light by diameter model -------------------------------------------------
+
+# Faceted individual light plot
+# Each group
+ggplot() +
+  geom_hex(alpha = alpha_value, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received)) +
+  geom_pointrange(data = unscaledlightbydbhfakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = fg_labels)) +theme_plant+
+  scale_x_log10(name = exd) +
+  scale_y_log10(name = exl, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), 
+                labels = trans_format("log10", math_format(10^.x))) +
+  theme_facet2() +
+  hex_scale_log_colors +
+  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
+
+
+# Very simple model
+loglogregressions <- alltree_light_95 %>%
+  group_by(fg) %>%
+  do(model = lm(log10(light_received) ~ log10(dbh_corr), data = .))
+library(broom)
+loglogregressions$model
+lapply(loglogregressions$model, summary)
+#(Intercept)     0.903027   0.005262   171.6   <2e-16 ***
+#log10(dbh_corr) 2.343608   0.007530   311.2   <2e-16 ***
+
+
+# Distinguish 2 and 5 census ratio plots ----------------------------------
+
+#----------------------------- Fig 6B Abundance by Diameter ----------------------------
+# 5 yr samples
+
+# 5 sampling periods 5 yrs each
+p <- fastslow_stats_breeder_bydiam_5census %>% 
+  filter(density_ratio_mean > 0) %>%
+  filter(mean_n_individuals > 10) %>%
+  mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
+  ggplot(aes(x = bin_midpoint, y = density_ratio_mean, 
+             ymin = density_ratio_min, ymax = density_ratio_max, fill = ID)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
+  geom_errorbar(width = error_bar_width) + theme_plant() +
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
+  scale_fill_manual(values = c("Breeder" = "black", "Fast-Slow" = "grey"))+
+  
+  scale_x_log10(limits=c(.7,160),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.003,100),
+                name = expression("Ratio")) +
+  theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+
+
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_6/Fig_6b_Density_5yr.pdf'))
+plot(p1)
+dev.off()
+
+
+
+
+
+#----------------------------- Fig 6B alt: Abundance by Diameter for 2 sampling periods ----------------------------
+
+p <- fastslow_stats_breeder_bydiam_2census %>% 
+  filter(density_ratio_mean > 0) %>%
+  filter(mean_n_individuals > 10) %>%
+  mutate(density_ratio_min = ifelse(density_ratio_min == 0, density_ratio_mean, density_ratio_min)) %>%
+  ggplot(aes(x = bin_midpoint, y = density_ratio_mean, 
+             ymin = density_ratio_min, ymax = density_ratio_max, fill = ID)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
+  geom_errorbar(width = error_bar_width) + theme_plant() +
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
+  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
+  
+  scale_x_log10(limits=c(.7,330),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.006,100),
+                name = expression("Ratio")) 
+
+
+p
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+plot(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_6/Fig_6b_Density_2yr.pdf'))
+plot(p1)
+dev.off()
