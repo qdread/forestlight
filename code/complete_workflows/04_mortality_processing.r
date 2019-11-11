@@ -1,6 +1,7 @@
 # Process and bin 1990-1995 mortality data 
 # QDR / Forestlight / 03 Oct 2019
 
+# Modified 11 Nov 2019 to use the updated allometries.
 # Modified 05 Nov 2019 to use our own package.
 
 # Load data ---------------------------------------------------------------
@@ -12,6 +13,7 @@ gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight
 
 mort <- read.delim(file.path(gdrive_path, 'data/Ruger/mort_final9095.txt'), sep = '\t') # read mortality
 load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r')) # load other data, which has the FG assignments
+all_coefs <- read_csv(file.path(gdrive_path, 'data/allometry_final.csv')) # read allometric coefficient data in
 
 # Process data ------------------------------------------------------------
 
@@ -45,14 +47,20 @@ mort_use <- mort %>%
 # Added 29 Oct 2019: light extinction coefficient for light received by volume
 overall_k <- 0.5 # Roughly the mean light extinction coefficient for the Panamanian species in Kitajima et al. 2005.
 
+# Added 11 Nov 2019: create coefficient lookup table
+coef_table <- mort_use %>%
+  transmute(species = sp) %>%
+  left_join(all_coefs)
+# fill in "other"
+coef_table[is.na(coef_table$fg),] <- all_coefs[rep(which(all_coefs$species == 'other'), sum(is.na(coef_table$fg))), ]
+
 mort_use <- mort_use %>%
   mutate(fg = if_else(!is.na(fg), paste0('fg', fg), 'unclassified'),
          dbh = dbh/10,
-         h = exp(.438 + .595 * log(dbh)),    # Height
-         crowndepth = exp(-.157 + .702 * log(dbh)),  # Crown depth
-         cr = exp(-.438 + .658 * log(dbh)),  # Crown radius
-         crownvolume = exp(-.681 + 2.02 * log(dbh)),  
-         crownarea = pi * cr^2,
+         h = coef_table$height_corr_factor * gMM(x = dbh, a = coef_table$height_a, b = coef_table$height_b, k = coef_table$height_k),    # Height
+         crownarea = coef_table$area_corr_factor * coef_table$area_a * dbh ^ coef_table$area_b,
+         crowndepth = exp(coef_table$crowndepth_a + coef_table$crowndepth_b * log(dbh)),
+         crownvolume = (2/3) * crownarea * crowndepth, # Half-ellipsoid
          light_received = light2 * crownarea * insol_bci,
          fraction_light_captured = pct_light_captured(depth = crowndepth, k = overall_k),
          light_received_byarea = light2 * insol_bci,
