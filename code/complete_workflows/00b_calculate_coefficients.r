@@ -136,6 +136,10 @@ area_allspecies_params <- c(0.5659, 1.341)
 no_allo_rows <- which(is.na(all_coefs$height_a))
 all_coefs[no_allo_rows, c('height_a','height_b','height_k','area_a','area_b')] <- t(replicate(length(no_allo_rows), c(height_allspecies_params, area_allspecies_params)))
 
+# Also fill in hard-coded correction factors for height and for area.
+all_coefs$height_corr_factor <- 1.017
+all_coefs$area_corr_factor <- 1.163
+
 # Write to CSV
 write_csv(all_coefs, file.path(gdrive_path, 'data/allometry_final.csv'))
 

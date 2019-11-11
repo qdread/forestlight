@@ -2,7 +2,8 @@
 # Follows Meakem et al. 2017
 # QDR 11 July 2017
 
-# Last modified 28 Oct. 2019: Also include light data from recruits (not just trees that have a growth rate in 1995)
+# Modified 11 Nov. 2019: Replace overall height allometry with species specific generalized Michaelis Menten height allometry.
+# Modified 28 Oct. 2019: Also include light data from recruits (not just trees that have a growth rate in 1995)
 
 # Load Condit's BCI data and Nadja's light data.
 
@@ -56,6 +57,7 @@ growth9095 <- remove_spp(growth9095)
 
 wsg.data <- read.csv(file.path(fp, 'bci_taper/wsg.data.csv'), stringsAsFactors = FALSE)
 taper.parameters <- read.csv(file.path(fp, 'bci_taper/taper.parameters.csv'), stringsAsFactors = FALSE)
+all_coefs <- read.csv(file.path('~/google_drive/ForestLight/data', 'allometry_final.csv'), stringsAsFactors = FALSE)
 
 # These are the species that need to be corrected for taper.
 taper_spp <- c("alsebl", "anacex", "brosal", "cavapl", "ceibpe", "diptpa", "huracr", "other", "quaras", "tab2ar", "tet2pa")        
@@ -107,17 +109,33 @@ for (i in 1:7) {
 }
 
 # Use dbh correction and wsg table to get corrected aboveground biomass values.
+# Use species specific height allometries
+
+# Create allometry lookup table for stem and full data
+stem_height_coefs <- bci.stem1 %>%
+  transmute(species = sp) %>%
+  left_join(all_coefs %>% select(species, height_a, height_b, height_k)) %>%
+  mutate(height_a = if_else(is.na(height_a), all_coefs$height_a[all_coefs$species %in% 'other'], height_a),
+         height_b = if_else(is.na(height_b), all_coefs$height_b[all_coefs$species %in% 'other'], height_b),
+         height_k = if_else(is.na(height_k), all_coefs$height_k[all_coefs$species %in% 'other'], height_k))
+full_height_coefs <- bci.full1 %>%
+  transmute(species = sp) %>%
+  left_join(all_coefs %>% select(species, height_a, height_b, height_k)) %>%
+  mutate(height_a = if_else(is.na(height_a), all_coefs$height_a[all_coefs$species %in% 'other'], height_a),
+         height_b = if_else(is.na(height_b), all_coefs$height_b[all_coefs$species %in% 'other'], height_b),
+         height_k = if_else(is.na(height_k), all_coefs$height_k[all_coefs$species %in% 'other'], height_k))
+
 
 for (i in 1:7) {
   assign(paste0('bci.stem', i), 
          get(paste0('bci.stem', i)) %>% 
            left_join(wsg.data) %>%
-           mutate(height_corr = taper.H(dbh_corr/10),
+           mutate(height_corr = all_coefs$height_corr_factor[1] * gMM(x = dbh_corr/10, a = stem_height_coefs$height_a, b = stem_height_coefs$height_b, k = stem_height_coefs$height_k),
                   agb_corr = agb.allometry(wsg, dbh_corr/10, height_corr)/1000))
   assign(paste0('bci.full', i), 
          get(paste0('bci.full', i)) %>% 
            left_join(wsg.data) %>%
-           mutate(height_corr = taper.H(dbh_corr/10),
+           mutate(height_corr = all_coefs$height_corr_factor[1] * gMM(x = dbh_corr/10, a = full_height_coefs$height_a, b = full_height_coefs$height_b, k = full_height_coefs$height_k),
                   agb_corr = agb.allometry(wsg, dbh_corr/10, height_corr)/1000))
 }
 

@@ -1,5 +1,6 @@
 # Script 2: Correct growth increments, remove outliers, join light data, and apply allometries.
 
+# modified 11 November 2019: replace overall allometries with species-specific allometries
 # modified 30 October 2019: move binning to another script.
 # modified 22 October 2019 to correctly add new recruits to production -- also make the code a lot tidier.
 # modified 25 June 2018 to use Nadja's newest FG classification
@@ -42,6 +43,9 @@ fgbci$fg5 <- match(fgbci$fg5, c(2,3,1,4,5))
 # Correct these
 fgbci$PC_slow_to_fast <- -fgbci$X1new
 fgbci$PC_breeder_to_pioneer <- fgbci$X2new
+
+# Read species-level allometric coefficients
+all_coefs <- read_csv('~/google_drive/ForestLight/data/allometry_final.csv')
 
 # 2. Convert all census data frames to the correct units (dbh in cm, not mm; agb in kg, not Mg)
 # Simultaneously, calculate biomass increments for each stem from the previous census to the current one. Combine everything into a single data frame if possible.
@@ -125,35 +129,27 @@ bcicensusdat[[3]] <- bcicensusdat[[3]] %>%
 # Insolation at BCI, 9.2 degrees N
 (insol_bci <- insolation(9.2))
 
-# Function to get tree height and crown dimensions from dbh
-# Use same parameters for all trees, taken from Bohlman and O'Brien
-
-tp <- function(dbh) {
-  h <- exp(.438 + .595 * log(dbh))    # Height
-  cd <- exp(-.157 + .702 * log(dbh))  # Crown depth
-  cr <- exp(-.438 + .658 * log(dbh))  # Crown radius
-  cV <- exp(-.681 + 2.02 * log(dbh))  # Crown volume
-  data.frame(h=h, cd=cd, cr=cr, cV=cV)
-}
-
-######
-# If it's needed to edit the allometries for different species groups, add it here.
-######
-
-# !!! Correction made 03 Oct 2019: correct so that we are dividing by volume, not multiplying
+# Get tree height and crown dimensions from dbh
+# Correction made 03 Oct 2019: correct so that we are dividing by volume, not multiplying
 # Added 25 Oct 2019: include crown depth so that we can correct for incident light capture percentage using light extinction coefficient.
 # Added 28 Oct 2019: include the function to estimate percent light captured given light extinction coefficient of 0.5
+# Added 11 Nov 2019: Use species specific parameters generated in previous scripts
 
 overall_k <- 0.5 # Roughly the mean light extinction coefficient for the Panamanian species in Kitajima et al. 2005.
 
 for (i in 2:3) {
   
-  crowndim <- tp(bcicensusdat[[i]]$dbh_corr) 
+  # Generate lookup table for coefficients
+  coef_table <- bcicensusdat[[i]] %>%
+    transmute(species = sp) %>%
+    left_join(all_coefs)
+  # fill in "other"
+  coef_table[is.na(coef_table$fg),] <- all_coefs[rep(which(all_coefs$species == 'other'), sum(is.na(coef_table$fg))), ]
+  
   bcicensusdat[[i]] <- bcicensusdat[[i]] %>%
-    mutate(crownarea = pi * crowndim$cr^2,
-           crownvolume = crowndim$cV,
-           height_bohlman = crowndim$h,
-           crowndepth = crowndim$cd,
+    mutate(crownarea = coef_table$area_corr_factor * coef_table$area_a * dbh_corr ^ coef_table$area_b,
+           crowndepth = exp(coef_table$crowndepth_a + coef_table$crowndepth_b * log(dbh_corr)),
+           crownvolume = (2/3) * crownarea * crowndepth, # Half-ellipsoid
            light_received = light * crownarea * insol_bci,
            fraction_light_captured = pct_light_captured(depth = crowndepth, k = overall_k),
            light_received_byarea = light * insol_bci,
