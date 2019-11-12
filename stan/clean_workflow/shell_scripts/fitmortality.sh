@@ -9,8 +9,6 @@
 # Hardcoded all options.
 # chain is the slurm array task id
 
-module load GNU/6.2
-
 ((seed=777+SLURM_ARRAY_TASK_ID))
 
 ~/forestlight/stancode/mortreg_fg_v3 \

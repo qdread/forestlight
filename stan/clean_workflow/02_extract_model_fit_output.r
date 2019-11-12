@@ -138,7 +138,7 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 									year = mod_df$year[i],
 									xmin = mod_df$xmin[i],
 									n = mod_df$n[i],
-									infix = 'rawlightscaling_',
+									scalingtype = 'rawlightscaling',
 									use_subset = FALSE)
 	}
 	if (mod_df$variable[i] == 'total_production') {
@@ -148,7 +148,7 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 									year = mod_df$year[i],
 									xmin = mod_df$xmin[i],
 									n = mod_df$n[i],
-									infix = 'rawlightscaling_',
+									scalingtype = 'rawlightscaling',
 									use_subset = FALSE)
 	}
 
@@ -158,24 +158,30 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 }
 
 # DENSITY x CROWN VOLUME SCALING
-# FITTED VALUES ONLY
 # ==============================
 
-# this one will change if and when we get individual allometries for crown volume by species. (edit at that time)
-
 source('~/forestlight/stancode/model_output_extraction_functions.r')
-source('~/forestlight/stancode/fittedcrownvolumefunction.r')
 
 library(purrr)
 library(dplyr)
 library(foreach)
 library(doParallel)
 
+prod_df <- expand.grid(variable = 'production',
+					   dens_model = as.numeric(NA),
+					   prod_model = 1:2,
+					   fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
+					   year = 1995,
+					   stringsAsFactors = FALSE)
+					   					   
 mod_df <- expand.grid(variable = 'total_production',
 					  dens_model = 1:2,
+                      prod_model = 1:2,
                       fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
                       year = 1995, 
                       stringsAsFactors = FALSE)
+
+mod_df <- rbind(prod_df, mod_df)
 					  
 min_n <- read.csv('~/forestlight/stanrdump/min_n.csv', stringsAsFactors = FALSE)
 
@@ -189,34 +195,35 @@ mod_df <- mod_df %>%
 
 dbh_pred <- exp(seq(log(1), log(315), length.out = 101))
 
-density_par <- list('1' = c('alpha'),
-					'2' = c('alpha_low', 'alpha_high', 'tau'))
-
 registerDoParallel(cores = 8)
 
 tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
-	
-  require(rstan)
-  require(Brobdingnag)
 
-  # Load CSVs as stanfit object
-  message('Loading stan fit ', i, ' . . .')
-  files <- paste0('fit_density', mod_df$dens_model[i], '_', mod_df$fg[i], '_1995_', 1:3, '.csv')
-  fit <- list(density = read_stan_csv(file.path('~/forestlight/stanoutput',files)))
+	if (mod_df$variable[i] == 'production') {
+		fit_info <- extract_production(prod_model = mod_df$prod_model[i],
+									fg = mod_df$fg[i],
+									year = mod_df$year[i],
+									xmin = mod_df$xmin[i],
+									n = mod_df$n[i],
+									scalingtype = 'volumescaling',
+									use_subset = FALSE)
+	}
+	if (mod_df$variable[i] == 'total_production') {
+		fit_info <- extract_totalproduction(dens_model = mod_df$dens_model[i],
+									prod_model = mod_df$prod_model[i],
+									fg = mod_df$fg[i],
+									year = mod_df$year[i],
+									xmin = mod_df$xmin[i],
+									n = mod_df$n[i],
+									scalingtype = 'volumescaling',
+									use_subset = FALSE)
+	}
 
-  fitted_totalvolume_values <- fitted_totalvolume(fit = fit[['density']], 
-												  dbh_pred = dbh_pred,
-												  dens_form = mod_df$dens_model[i],
-												  x_min = mod_df$xmin[i],
-												  n_indiv = mod_df$n[i],
-												  pars_to_get = density_par[[mod_df$dens_model[i]]])
-  
-	save(fitted_totalvolume_values, file = paste0('~/forestlight/stanoutput/fitinfo/volumepw_fittedvalues_',i,'.r'))
+	save(fit_info, file = paste0('~/forestlight/stanoutput/fitinfo/volumepw_info_',mod_df$variable[i],'_',i,'.r'))
 	message('Fit ', i, ' saved')
 
 }
- 
- 
+
 # GROWTH AS DIAMETER PER TIME SCALING
 # INDIVIDUAL PRODUCTION ONLY
 # ===================================
@@ -251,7 +258,7 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 									year = mod_df$year[i],
 									xmin = mod_df$xmin[i],
 									n = mod_df$n[i],
-									infix = 'diamgrowthscaling_',
+									scalingtype = 'diamgrowthscaling',
 									use_subset = FALSE)
 	
 	save(fit_info, file = paste0('~/forestlight/stanoutput/fitinfo/diamgrowthpw_info_',i,'.r'))

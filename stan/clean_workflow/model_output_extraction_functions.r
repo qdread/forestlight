@@ -279,7 +279,7 @@ bayesian_rsquared_production <- function(fit, x, y, prod_model) {
 # Just production: credible intervals of parameters, fitted values, fitted log slopes, WAIC, LOOIC, Bayesian R-squared
 # Density and production_combined: fitted values, fitted log slopes
 
-extract_density <- function(dens_model, fg, year, xmin, n, use_subset = FALSE, n_chains = 3, scaling.var = 'dbh', fp = '~/forestlight/stanoutput', densityfitprefix = 'fit_density', LL = 1.1, UL = 316) {
+extract_density <- function(dens_model, fg, year, xmin, n, use_subset = FALSE, n_chains = 3, scaling.var = 'dbh', fp = '~/forestlight/stanoutput', densityfitprefix = 'fit_density', scalingtype = 'production', LL = 1.1, UL = 316) {
 
   require(rstan)
   require(loo)
@@ -287,7 +287,7 @@ extract_density <- function(dens_model, fg, year, xmin, n, use_subset = FALSE, n
 
   # Load CSVs as stanfit object
   print('Loading stan fit . . .')
-  files <- paste0(densityfitprefix, dens_model, '_', fg, '_', year, '_', 1:n_chains, '.csv')
+  files <- paste0(densityfitprefix, dens_model, '_', scalingtype, '_', fg, '_', year, '_', 1:n_chains, '.csv')
   fit <- list(density = read_stan_csv(file.path(fp,files)))
   
   # Get credible intervals of parameters
@@ -326,14 +326,14 @@ extract_density <- function(dens_model, fg, year, xmin, n, use_subset = FALSE, n
 	   fitted_slopes = fitted_slopes)
 }
 
-extract_production <- function(prod_model, fg, year, xmin, n, use_subset = FALSE, n_chains = 3, scaling.var = 'dbh', fp = '~/forestlight/stanoutput', fpdump = '~/forestlight/stanrdump', productionfitprefix = 'fit_production', infix = '', dumpprefix = 'dump_', LL = 1.1, UL = 316) {
+extract_production <- function(prod_model, fg, year, xmin, n, use_subset = FALSE, n_chains = 3, scaling.var = 'dbh', fp = '~/forestlight/stanoutput', fpdump = '~/forestlight/stanrdump', productionfitprefix = 'fit_production', scalingtype = 'production', dumpprefix = 'dump_', LL = 1.1, UL = 316) {
   require(rstan)
   require(loo)
   require(Brobdingnag)
 
   # Load CSVs as stanfit object
   print('Loading stan fit . . .')
-  files <- paste0(productionfitprefix, prod_model, '_', infix, fg, '_', year, '_', 1:n_chains, '.csv')
+  files <- paste0(productionfitprefix, prod_model, '_', scalingtype, '_', fg, '_', year, '_', 1:n_chains, '.csv')
   fit <- list(production = read_stan_csv(file.path(fp,files)))
   
   # Get credible intervals of parameters
@@ -380,14 +380,14 @@ extract_production <- function(prod_model, fg, year, xmin, n, use_subset = FALSE
 	   r2s = r2s)
 }
 
-extract_totalproduction <- function(dens_model, prod_model, fg, year, xmin, n, use_subset = FALSE, n_chains = 3, scaling.var = 'dbh', fp = '~/forestlight/stanoutput', densityfitprefix = 'fit_density', productionfitprefix = 'fit_production', infix = '', LL = 1.1, UL = 316) {
+extract_totalproduction <- function(dens_model, prod_model, fg, year, xmin, n, use_subset = FALSE, n_chains = 3, scaling.var = 'dbh', fp = '~/forestlight/stanoutput', densityfitprefix = 'fit_density', productionfitprefix = 'fit_production', scalingtype = 'production', LL = 1.1, UL = 316) {
   require(rstan)
   require(Brobdingnag)
   
   # Load CSVs as stanfit object
   print('Loading stan fit . . .')
-  files_density <- paste0(densityfitprefix, dens_model, '_', fg, '_', year, '_', 1:n_chains, '.csv')
-  files_production <- paste0(productionfitprefix, prod_model, '_', infix, fg, '_', year, '_', 1:n_chains, '.csv')
+  files_density <- paste0(densityfitprefix, dens_model, '_', scalingtype, '_', fg, '_', year, '_', 1:n_chains, '.csv')
+  files_production <- paste0(productionfitprefix, prod_model, '_', scalingtype, '_', fg, '_', year, '_', 1:n_chains, '.csv')
   fit <- list(density = read_stan_csv(file.path(fp,files_density)), production = read_stan_csv(file.path(fp,files_production)))
   
   # Get fitted values with credible intervals and prediction intervals

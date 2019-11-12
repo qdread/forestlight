@@ -102,7 +102,7 @@ sbatch --export=scaling=volumescaling,guild=fg2,year=1995,model=production1,NS=1
 sbatch --export=scaling=volumescaling,guild=fg3,year=1995,model=production1,NS=1000,NW=5000,seed=9913 --time=7-00:00:00 --job-name=v1_3 fitpiecewise.sh
 sbatch --export=scaling=volumescaling,guild=fg4,year=1995,model=production1,NS=1000,NW=5000,seed=9914 --time=7-00:00:00 --job-name=v1_4 fitpiecewise.sh
 sbatch --export=scaling=volumescaling,guild=fg5,year=1995,model=production1,NS=1000,NW=5000,seed=9915 --time=4:00:00 --job-name=v1_5 fitpiecewise.sh
-sbatch --export=scaling=volumescaling,guild=unclassified,year=1995,model=production1,NS=1000,NW=5000,seed=9916 --time=4:00:00 --job-name=v1_u fitpiecewise.sh
+sbatch --export=scaling=volumescaling,guild=unclassified,year=1995,model=production1,NS=1000,NW=5000,seed=9916 --time=7-00:00:00 --job-name=v1_u fitpiecewise.sh
 sbatch --export=scaling=volumescaling,guild=alltree,year=1995,model=production1,NS=1000,NW=5000,seed=9917 --time=7-00:00:00 --job-name=v1_a fitpiecewise.sh
 
 # 2 segment
@@ -112,7 +112,7 @@ sbatch --export=scaling=volumescaling,guild=fg2,year=1995,model=production2,NS=1
 sbatch --export=scaling=volumescaling,guild=fg3,year=1995,model=production2,NS=1000,NW=5000,seed=1913 --time=7-00:00:00 --job-name=v2_3 fitpiecewise.sh
 sbatch --export=scaling=volumescaling,guild=fg4,year=1995,model=production2,NS=1000,NW=5000,seed=1914 --time=7-00:00:00 --job-name=v2_4 fitpiecewise.sh
 sbatch --export=scaling=volumescaling,guild=fg5,year=1995,model=production2,NS=1000,NW=5000,seed=1915 --time=4:00:00 --job-name=v2_5 fitpiecewise.sh
-sbatch --export=scaling=volumescaling,guild=unclassified,year=1995,model=production2,NS=1000,NW=5000,seed=1916 --time=4:00:00 --job-name=v2_u fitpiecewise.sh
+sbatch --export=scaling=volumescaling,guild=unclassified,year=1995,model=production2,NS=1000,NW=5000,seed=1916 --time=7-00:00:00 --job-name=v2_u fitpiecewise.sh
 sbatch --export=scaling=volumescaling,guild=alltree,year=1995,model=production2,NS=1000,NW=5000,seed=1917 --time=7-00:00:00 --job-name=v2_a fitpiecewise.sh
 
 # All groups together in multilevel model: LIGHT PER AREA (x) and MORTALITY (y)

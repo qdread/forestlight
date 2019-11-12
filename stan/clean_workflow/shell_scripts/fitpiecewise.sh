@@ -12,8 +12,6 @@
 # Include (random) seed with --export
 # chain is the slurm array task id
 
-module load GNU/6.2
-
 ((seed=seed+SLURM_ARRAY_TASK_ID))
 
 ~/forestlight/stancode/${model} \
