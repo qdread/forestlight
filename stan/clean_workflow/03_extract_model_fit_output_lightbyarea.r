@@ -21,7 +21,7 @@ extract_light_ci <- function(fg, year = 1995) {
   qprob <- c(0.025, 0.25, 0.5, 0.75, 0.975)
   qname <- c('q025', 'q25', 'q50', 'q75', 'q975')
   
-  filenames <- paste0('fit_light_', fg, '_', year, '_', 1:3, '.csv')
+  filenames <- paste0('fit_vonb_light_', fg, '_', year, '_', 1:3, '.csv')
   fit <- read_stan_csv(file.path(fp, filenames))
   pars <- getpar(fit)
   
@@ -43,6 +43,7 @@ extract_light_ci <- function(fg, year = 1995) {
     setNames(nm = qname)
   pred_quant <- data.frame(fg = fg, year = year, light_area = light_pred, pred_quant)
   
+  message(fg, ' done.')
   list(pars = param_cis, preds = pred_quant)
 }
 
@@ -52,8 +53,8 @@ all_output <- map(fgnames, extract_light_ci)
 all_pars <- map_dfr(all_output, 'pars')
 all_preds <- map_dfr(all_output, 'preds')
 
-write.csv(all_pars, file = '~/forestlight/lightbyarea_paramci_by_fg.csv', row.names = FALSE)
-write.csv(all_preds, file = '~/forestlight/lightbyarea_predci_by_fg.csv', row.names = FALSE)
+write.csv(all_pars, file = '~/forestlight/finalcsvs/lightbyarea_paramci_by_fg.csv', row.names = FALSE)
+write.csv(all_preds, file = '~/forestlight/finalcsvs/lightbyarea_predci_by_fg.csv', row.names = FALSE)
 
 # Bayesian R2 for each fit ---------------------------------------------------
 
@@ -64,7 +65,7 @@ bayesian_rsquared_light <- function(fg, year = 1995) {
   
   # 1. Load CSVs with model fit as stanfit object
   fp <- '~/forestlight/stanoutput'
-  files <- paste0('fit_light_', fg, '_', year, '_', 1:3, '.csv')
+  files <- paste0('fit_vonb_light_', fg, '_', year, '_', 1:3, '.csv')
   fit <- read_stan_csv(file.path(fp, files))
   
   # 2. Load data
@@ -99,5 +100,5 @@ bayesian_rsquared_light <- function(fg, year = 1995) {
 fgnames <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'alltree')
 
 library(purrr)
-r2s <- map_dfr(fgnames, ~ cbind(fg = .,  bayesian_rsquared_light(.)))
-write.csv(r2s, file = '~/forestlight/r2_light_by_fg.csv', row.names = FALSE)
+r2s <- map_dfr(fgnames, ~ data.frame(fg = .,  t(bayesian_rsquared_light(.))))
+write.csv(r2s, file = '~/forestlight/finalcsvs/r2_light_by_fg.csv', row.names = FALSE)
