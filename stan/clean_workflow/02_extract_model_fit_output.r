@@ -72,6 +72,7 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 									year = mod_df$year[i],
 									xmin = mod_df$xmin[i],
 									n = mod_df$n[i],
+									dumpprefix = 'dump_production_',
 									use_subset = FALSE)
 	}
 	if (mod_df$variable[i] == 'total_production') {
@@ -139,6 +140,7 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 									xmin = mod_df$xmin[i],
 									n = mod_df$n[i],
 									scalingtype = 'rawlightscaling',
+									dumpprefix = 'dump_rawlightscaling_',
 									use_subset = FALSE)
 	}
 	if (mod_df$variable[i] == 'total_production') {
@@ -206,6 +208,7 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 									xmin = mod_df$xmin[i],
 									n = mod_df$n[i],
 									scalingtype = 'volumescaling',
+									dumpprefix = 'dump_volumescaling_',
 									use_subset = FALSE)
 	}
 	if (mod_df$variable[i] == 'total_production') {
@@ -259,6 +262,7 @@ tmp <- foreach(i = 1:nrow(mod_df)) %dopar% {
 									xmin = mod_df$xmin[i],
 									n = mod_df$n[i],
 									scalingtype = 'diamgrowthscaling',
+									dumpprefix = 'dump_diamgrowthscaling_',
 									use_subset = FALSE)
 	
 	save(fit_info, file = paste0('~/forestlight/stanoutput/fitinfo/diamgrowthpw_info_',i,'.r'))

@@ -386,7 +386,7 @@ extract_totalproduction <- function(dens_model, prod_model, fg, year, xmin, n, u
   
   # Load CSVs as stanfit object
   print('Loading stan fit . . .')
-  files_density <- paste0(densityfitprefix, dens_model, '_', scalingtype, '_', fg, '_', year, '_', 1:n_chains, '.csv')
+  files_density <- paste0(densityfitprefix, dens_model, '_', 'production', '_', fg, '_', year, '_', 1:n_chains, '.csv')
   files_production <- paste0(productionfitprefix, prod_model, '_', scalingtype, '_', fg, '_', year, '_', 1:n_chains, '.csv')
   fit <- list(density = read_stan_csv(file.path(fp,files_density)), production = read_stan_csv(file.path(fp,files_production)))
   
