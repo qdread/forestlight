@@ -59,7 +59,7 @@ mort_use <- mort_use %>%
          dbh = dbh/10,
          h = coef_table$height_corr_factor * gMM(x = dbh, a = coef_table$height_a, b = coef_table$height_b, k = coef_table$height_k),    # Height
          crownarea = coef_table$area_corr_factor * coef_table$area_a * dbh ^ coef_table$area_b,
-         crowndepth = exp(coef_table$crowndepth_a + coef_table$crowndepth_b * log(dbh)),
+         crowndepth = coef_table$crowndepth_corr_factor * exp(coef_table$crowndepth_a + coef_table$crowndepth_b * log(dbh)),
          crownvolume = (2/3) * crownarea * crowndepth, # Half-ellipsoid
          light_received = light2 * crownarea * insol_bci,
          fraction_light_captured = pct_light_captured(depth = crowndepth, k = overall_k),

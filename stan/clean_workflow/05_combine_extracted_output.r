@@ -149,7 +149,7 @@ r2s$variable <- 'incoming light individual'
 
 write.csv(r2s, file = '~/forestlight/light_piecewise_r2_by_fg.csv', row.names = FALSE)
 
-
+#******************** this must be edited b/c we now have a real crown volume relationship
 # DENSITY x CROWN VOLUME SCALING
 # FITTED VALUES ONLY
 # ==============================

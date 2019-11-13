@@ -18,10 +18,11 @@ load('~/google_drive/ForestLight/data/rawdataobj_alternativecluster.r')
 mod_p1 <- stan_model(file = '~/Documents/GitHub/forestlight/stan/clean_workflow/model_scripts/production1.stan', model_name = 'p1segment')
 mod_p2 <- stan_model(file = '~/Documents/GitHub/forestlight/stan/clean_workflow/model_scripts/production2.stan', model_name = 'p2segment')
 mod_d2 <- stan_model(file = '~/Documents/GitHub/forestlight/stan/clean_workflow/model_scripts/density2.stan', model_name = 'd2segment')
+mod_d3 <- stan_model(file = '~/Documents/GitHub/forestlight/stan/clean_workflow/model_scripts/density3.stan', model_name = 'd3segment')
 
 # Make a toy dataset to fit the model
 set.seed(4)
-N <- 20000
+N <- 10000
 idx <- sample(nrow(alltreedat[[3]]), N)
 dat <- with(alltreedat[[3]][idx, ], list(x = dbh_corr, y = production, N = N, x_min = 1, x_max = 286))
 
@@ -29,17 +30,20 @@ dat <- with(alltreedat[[3]][idx, ], list(x = dbh_corr, y = production, N = N, x_
 fit_p1 <- sampling(mod_p1, dat, pars = 'log_lik', include = FALSE, chains = 2, iter = 2000, warmup = 1000, seed = 99)
 fit_p2 <- sampling(mod_p2, dat, pars = 'log_lik', include = FALSE, chains = 2, iter = 2000, warmup = 1000, seed = 99)
 fit_d2 <- sampling(mod_d2, dat, pars = 'log_lik', include = FALSE, chains = 2, iter = 2000, warmup = 1000, seed = 99)
+fit_d3 <- sampling(mod_d3, dat, pars = 'log_lik', include = FALSE, chains = 2, iter = 2000, warmup = 1000, seed = 99)
 
 # Check convergence
 summary(fit_p1)$summary
 summary(fit_p2)$summary
 summary(fit_d2)$summary
+summary(fit_d3)$summary
 
 ###### Get predicted values from all iterations and use this to calculate the correction factor
 # extract pars
 pars_p1 <- extract(fit_p1, c('beta0', 'beta1'))
 pars_p2 <- extract(fit_p2, c('x0', 'beta0', 'beta1_low', 'beta1_high', 'delta'))
 pars_d2 <- extract(fit_d2, c('alpha_low', 'alpha_high', 'tau'))
+pars_d3 <- extract(fit_d3, c('alpha_low', 'alpha_mid', 'alpha_high', 'tau_low', 'tau_high'))
 
 hinge_fn <- function(x = dat$x, x0, beta0, beta1_low, beta1_high, delta) {
   xdiff <- log(x) - log(x0)
@@ -80,9 +84,27 @@ pdf_2 <- function(x = dbh_pred, xmin = 1, alpha_low, alpha_high, tau) {
   return(prob)
 }
 
-fitted_d2_plot <- mapply(pdf_2, alpha_low = pars_d2$alpha_low, alpha_high = pars_d2$alpha_high, tau = pars_d2$tau)
+pdf_3 <- function(x = dbh_pred, xmin = 1, alpha_low, alpha_mid, alpha_high, tau_low, tau_high) {
 
-fitted_totalprod <- fitted_d2_plot * fitted_p1_plot * nrow(alltreedat[[3]])
+    C_con_low <- tau_low ^ (alpha_low - alpha_mid)
+    C_con_high <- tau_high ^ (alpha_high - alpha_mid)
+    C_norm <- ( (C_con_low / alpha_low) * (xmin ^ -alpha_low - tau_low ^ -alpha_low) + (1 / alpha_mid) * (tau_low ^ -alpha_mid - tau_high ^ -alpha_mid) + (C_con_high / alpha_high) * (tau_high ^ -alpha_high) ) ^ -1
+    
+    prob <- case_when(
+      x < tau_low ~ C_con_low * C_norm * ( x ^ - (alpha_low + 1) ),
+      x >= tau_low & x <= tau_high ~ C_norm * ( x ^ - (alpha_mid + 1) ),
+      x > tau_high ~ C_con_high * C_norm * ( x ^ - (alpha_high + 1) ) 
+    )
+
+    return(prob)
+}
+
+
+fitted_d2_plot <- mapply(pdf_2, alpha_low = pars_d2$alpha_low, alpha_high = pars_d2$alpha_high, tau = pars_d2$tau)
+fitted_d3_plot <- mapply(pdf_3, alpha_low = pars_d3$alpha_low, alpha_mid = pars_d3$alpha_mid, alpha_high = pars_d3$alpha_high, tau_low = pars_d3$tau_low, tau_high = pars_d3$tau_high)
+
+
+fitted_totalprod <- fitted_d3_plot * fitted_p1_plot * nrow(alltreedat[[3]])
 fitted_totalprod_corrected <- sweep(fitted_totalprod, 2, cf_p1, `*`)
 
 quantile_corrected <- apply(fitted_totalprod_corrected, 1, quantile, probs = c(0.025, 0.5, 0.975)) %>%
@@ -90,14 +112,30 @@ quantile_corrected <- apply(fitted_totalprod_corrected, 1, quantile, probs = c(0
 quantile_uncorrected <- apply(fitted_totalprod, 1, quantile, probs = c(0.025, 0.5, 0.975)) %>%
   t %>% as.data.frame %>% setNames(c('qlow','med','qhi'))
 
+# Calculate old school correction factor too.
+integrals <- apply(fitted_totalprod, 2, function(y) pracma::trapz(x=dbh_pred,y=y))
+totalprod <- sum(alltreedat[[3]]$production)
+fitted_totalprod_corrected_oldschool <- sweep(fitted_totalprod, 2, totalprod/integrals, `*`)
+quantile_corrected_oldschool <- apply(fitted_totalprod_corrected_oldschool, 1, quantile, probs = c(0.025, 0.5, 0.975)) %>%
+  t %>% as.data.frame %>% setNames(c('qlow','med','qhi'))
+
+
+quantile_dens <- apply(fitted_d2_plot * nrow(alltreedat[[3]]), 1, quantile, probs = c(0.025, 0.5, 0.975)) %>%
+  t %>% as.data.frame %>% setNames(c('qlow','med','qhi'))
+quantile_dens3 <- apply(fitted_d3_plot * nrow(alltreedat[[3]]), 1, quantile, probs = c(0.025, 0.5, 0.975)) %>%
+  t %>% as.data.frame %>% setNames(c('qlow','med','qhi'))
+
 # Load binned data
 bintp <- read_csv('~/google_drive/ForestLight/data/data_binned/totalproductionbin_byyear.csv')
 all95 <- bintp %>% filter(fg=='all',year==1995)
 
 plot(all95$bin_midpoint, all95$bin_value, log = 'xy')
-lines(dbh_pred, quantile_corrected$med, col = 'red')
-lines(dbh_pred, quantile_uncorrected$med, col = 'blue')
+lines(dbh_pred, quantile_corrected$med, col = 'forestgreen')
+lines(dbh_pred, quantile_uncorrected$med, col = 'goldenrod')
+lines(dbh_pred, quantile_corrected_oldschool$med, col = 'red')
 
 bindens <- read_csv('~/google_drive/ForestLight/data/data_binned/densitybin_byyear.csv')
 all95dens <- bindens %>% filter(fg=='all',year==1995)
 plot(all95dens$bin_midpoint, all95dens$bin_value, log = 'xy')
+lines(dbh_pred, quantile_dens$med, col = 'red')
+lines(dbh_pred, quantile_dens3$med, col = 'blue')

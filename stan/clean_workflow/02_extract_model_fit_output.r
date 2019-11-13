@@ -20,7 +20,7 @@ library(foreach)
 library(doParallel)
 
 dens_df <- expand.grid(variable = 'density',
-					   dens_model = 1:2,
+					   dens_model = 1:3,
 					   prod_model = as.numeric(NA),
 					   fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
 					   year = 1995,
@@ -34,7 +34,7 @@ prod_df <- expand.grid(variable = 'production',
 					   stringsAsFactors = FALSE)
 					   					   
 mod_df <- expand.grid(variable = 'total_production',
-					  dens_model = 1:2,
+					  dens_model = 1:3,
                       prod_model = 1:2,
                       fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
                       year = 1995, 
@@ -108,7 +108,7 @@ prod_df <- expand.grid(variable = 'production',
 					   stringsAsFactors = FALSE)
 					   					   
 mod_df <- expand.grid(variable = 'total_production',
-					  dens_model = 1:2,
+					  dens_model = 1:3,
                       prod_model = 1:2,
                       fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
                       year = 1995, 
@@ -177,7 +177,7 @@ prod_df <- expand.grid(variable = 'production',
 					   stringsAsFactors = FALSE)
 					   					   
 mod_df <- expand.grid(variable = 'total_production',
-					  dens_model = 1:2,
+					  dens_model = 1:3,
                       prod_model = 1:2,
                       fg = c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified'),
                       year = 1995, 

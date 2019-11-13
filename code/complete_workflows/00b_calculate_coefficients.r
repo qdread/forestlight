@@ -120,6 +120,10 @@ depth_coefs_allspecies_filled <- bind_rows(depth_coefs_allspecies_filled, depth_
   rename(crowndepth_a = intercept,
          crowndepth_b = slope)
 
+# Add correction factor for log-transformation bias
+mod_all <- lm(log(crowndepth.m) ~ log(dbh.cm), data = bohlman_raw)
+depth_corr_factor <- log_correction_factor(log_y = log(bohlman_raw$crowndepth.m), log_y_pred = predict(mod_all), n_pars = 2)
+
 # Add Martinez coefficients -----------------------------------------------
 
 height_area_coefs <- martinezS2 %>%
@@ -139,6 +143,7 @@ all_coefs[no_allo_rows, c('height_a','height_b','height_k','area_a','area_b')] <
 # Also fill in hard-coded correction factors for height and for area.
 all_coefs$height_corr_factor <- 1.017
 all_coefs$area_corr_factor <- 1.163
+all_coefs$crowndepth_corr_factor <- depth_corr_factor
 
 # Write to CSV
 write_csv(all_coefs, file.path(gdrive_path, 'data/allometry_final.csv'))

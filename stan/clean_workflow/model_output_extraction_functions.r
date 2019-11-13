@@ -18,45 +18,8 @@
 # 0. Define all density and production functions.
 # -----------------------------------------------
 
-# Density model 1 part
-pdf_pareto <- function(x, xmin, alpha) (alpha * xmin^alpha) / (x ^ (alpha+1))
-
-# Density model 2 part
-pdf_2part <- function(x, xmin, alpha_low, alpha_high, tau) {
-	C_con <- tau ^ -(alpha_high + alpha_low)
-	C_norm <- ( (C_con / alpha_low) * (tau ^ alpha_low - xmin ^ alpha_low) + ( tau ^ (-alpha_high) ) / alpha_high ) ^ -1
-	
-	prob <- case_when(
-		x < tau ~ C_con * C_norm * ( x ^ (alpha_low - 1) ),
-		x >= tau ~ C_norm * ( x ^ - (alpha_high + 1) )
-	)
-	return(prob)
-}
-
-# Density model 3 part
-pdf_3part <- function(x, xmin, alpha_low, alpha_mid, alpha_high, tau_low, tau_high) {
-	C_con_low <- tau_low ^ -(alpha_mid + alpha_low)
-	C_con_high <- tau_high ^ (alpha_high - alpha_mid)
-	C_norm <- ( (C_con_low / alpha_low) * (tau_low ^ alpha_low - xmin ^ alpha_low) + (1 / alpha_mid) * (tau_low ^ -alpha_mid - tau_high ^ -alpha_mid) + (C_con_high / alpha_high) * (tau_high ^ -alpha_high) ) ^ -1
-	
-	prob <- case_when(
-		x < tau_low ~ C_con_low * C_norm * ( x ^ (alpha_low - 1) ),
-		x >= tau_low & x <= tau_high ~ C_norm * ( x ^ - (alpha_mid + 1) ),
-		x > tau_high ~ C_con_high * C_norm * ( x ^ - (alpha_high + 1) )
-	)
-	return(prob)
-}
-
-# Density model for Truncated Weibull is defined below.
-
-# Production model 1 part
-powerlaw_log <- function(x, beta0, beta1) beta0 * x^beta1
-
-# Production model 2 parts (hinged)
-powerlaw_hinge_log <- function(x, x0, beta0, beta1_low, beta1_high, delta) {
-	xdiff <- log(x) - log(x0)
-	exp( log(beta0) + beta1_low * xdiff + (beta1_high - beta1_low) * delta * log(1 + exp(as.brob(xdiff / delta))) )
-}
+# Now in package.
+library(forestscaling)
 
 # 1. Function for parameter values and their credible intervals
 # -------------------------------------------------------------
@@ -237,8 +200,8 @@ fitted_slope_ci <- function(fit, variable, dbh_pred, dens_form, prod_form, x_min
 }
 
 
-# 4. Function to get the Bayesian R-squared and its quantiles
-# -----------------------------------------------------------
+# 4. Function to get the Bayesian R-squared and its quantiles (and bias correction factor)
+# ----------------------------------------------------------------------------------------
 
 bayesian_rsquared_production <- function(fit, x, y, prod_model) {
   # 3. Extract parameter estimates.
@@ -267,9 +230,23 @@ bayesian_rsquared_production <- function(fit, x, y, prod_model) {
   resid_var <- apply(resids, 1, var)
   r2s <- pred_var / (pred_var + resid_var)
   
+  # 7. Bias correction factor
+  # Sum of squared residuals
+  ssq_resid <- apply(resids^2, 1, sum)
+  # Standard error of estimates
+  sse <- (ssq_resid / (length(y) - length(production_par[[prod_model]])))^0.5
+  # Correction factors
+  cfs <- exp((sse^2)/2)
+  
   # Quantiles of rsq
   r2_quant <- quantile(r2s, probs = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975), na.rm = TRUE)
-  setNames(r2_quant, c('q025', 'q05', 'q25', 'q50', 'q75', 'q95', 'q975'))
+  r2_quant <- setNames(r2_quant, c('q025', 'q05', 'q25', 'q50', 'q75', 'q95', 'q975'))
+  
+  # Quantiles of correction factor
+  cf_quant <- quantile(cfs, probs = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975), na.rm = TRUE)
+  cf_quant <- setNames(cf_quant, c('q025', 'q05', 'q25', 'q50', 'q75', 'q95', 'q975'))
+  
+  return(list(r2 = r2_quant, cf = cf_quant))
 }
 
 # 5. Master functions for the fits where density and production are done in separate models
@@ -363,21 +340,22 @@ extract_production <- function(prod_model, fg, year, xmin, n, use_subset = FALSE
   print('Calculating LOOIC . . .')
   loo_prod <- loo(ll_prod)$estimates
   
-  # Calculate R-squared
-  print('Calculating Bayesian R-squared . . .')
+  # Calculate R-squared and correction factor
+  print('Calculating Bayesian R-squared and bias CF . . .')
   # Load the dump file from the model so that the R2 can be calculated
   dumpfile <- paste0(dumpprefix, fg, '_', year, '.r')
 
   source(file.path(fpdump, dumpfile)) # Creates variables x and y.
   
-  r2s <- bayesian_rsquared_production(fit[['production']], x, y, prod_model)
+  r2s_cfs <- bayesian_rsquared_production(fit[['production']], x, y, prod_model)
   
   list(waic = waic_prod, 
        loo = loo_prod, 
        param_cis = param_cis, 
        pred_interval = pred_interval,
 	   fitted_slopes = fitted_slopes,
-	   r2s = r2s)
+	   r2s = r2s_cfs$r2,
+	   cfs = r2s_cfs$cf)
 }
 
 extract_totalproduction <- function(dens_model, prod_model, fg, year, xmin, n, use_subset = FALSE, n_chains = 3, scaling.var = 'dbh', fp = '~/forestlight/stanoutput', densityfitprefix = 'fit_density', productionfitprefix = 'fit_production', scalingtype = 'production', LL = 1.1, UL = 316) {

@@ -8,11 +8,11 @@ functions {
 		real C_con_high;
 		real C_norm; // Normalization constant to make sure the pdf integrates to 1
 		
-		C_con_low = tau_low ^ -(alpha_mid + alpha_low);
+		C_con_low = tau_low ^ (alpha_low - alpha_mid);
 		C_con_high = tau_high ^ (alpha_high - alpha_mid);
-		C_norm = ( (C_con_low / alpha_low) * (tau_low ^ alpha_low - x_min ^ alpha_low) + (1 / alpha_mid) * (tau_low ^ -alpha_mid - tau_high ^ -alpha_mid) + (C_con_high / alpha_high) * (tau_high ^ -alpha_high) ) ^ -1;
+		C_norm = ( (C_con_low / alpha_low) * (x_min ^ -alpha_low - tau_low ^ -alpha_low) + (1 / alpha_mid) * (tau_low ^ -alpha_mid - tau_high ^ -alpha_mid) + (C_con_high / alpha_high) * (tau_high ^ -alpha_high) ) ^ -1;
 			
-		if (x < tau_low) prob = C_con_low * C_norm * ( x ^ (alpha_low - 1) );
+		if (x < tau_low) prob = C_con_low * C_norm * ( x ^ - (alpha_low + 1) );
 		if (x >= tau_low && x <= tau_high) prob = C_norm * ( x ^ - (alpha_mid + 1) );
 		if (x > tau_high) prob = C_con_high * C_norm * ( x ^ - (alpha_high + 1) );
 
@@ -34,17 +34,17 @@ parameters {
 	// Three part density
 	real<lower=x_min, upper=x_max> tau_low; // First cutoff must be lower than second.
 	real<lower=tau_low, upper=x_max> tau_high;
-	real<lower=0, upper=10> alpha_low;
+	real<lower=0, upper=5> alpha_low;
 	real<lower=0, upper=5> alpha_mid;
-	real<lower=0, upper=5> alpha_high; 
+	real<lower=0, upper=10> alpha_high; 
 }
 
 model {
 	// Prior: three part density
 	// No prior set for tau (uniform on its interval)
-	alpha_low ~ lognormal(1, 1) T[0, 10];	
+	alpha_low ~ lognormal(1, 1) T[0, 5];	
 	alpha_mid ~ lognormal(1, 1) T[0, 5];
-	alpha_high ~ lognormal(1, 1) T[0, 5];
+	alpha_high ~ lognormal(1, 1) T[0, 10];
 	
 	// Likelihood: three part density
 	for (i in 1:N) {

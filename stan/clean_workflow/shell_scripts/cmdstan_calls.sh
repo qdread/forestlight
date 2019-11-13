@@ -26,6 +26,16 @@ sbatch --export=scaling=production,guild=fg5,year=1995,model=density2,NS=1000,NW
 sbatch --export=scaling=production,guild=unclassified,year=1995,model=density2,NS=1000,NW=5000,seed=216 --time=4:00:00 --job-name=d2_u fitpiecewise.sh
 sbatch --export=scaling=production,guild=alltree,year=1995,model=density2,NS=1000,NW=5000,seed=217 --time=7-00:00:00 --job-name=d2_a fitpiecewise.sh
 
+# 3 segment density
+
+sbatch --export=scaling=production,guild=fg1,year=1995,model=density3,NS=1000,NW=5000,seed=311 --time=4:00:00 --job-name=d3_1 fitpiecewise.sh
+sbatch --export=scaling=production,guild=fg2,year=1995,model=density3,NS=1000,NW=5000,seed=312 --time=4:00:00 --job-name=d3_2 fitpiecewise.sh
+sbatch --export=scaling=production,guild=fg3,year=1995,model=density3,NS=1000,NW=5000,seed=313 --time=7-00:00:00 --job-name=d3_3 fitpiecewise.sh
+sbatch --export=scaling=production,guild=fg4,year=1995,model=density3,NS=1000,NW=5000,seed=314 --time=4:00:00 --job-name=d3_4 fitpiecewise.sh
+sbatch --export=scaling=production,guild=fg5,year=1995,model=density3,NS=1000,NW=5000,seed=315 --time=4:00:00 --job-name=d3_5 fitpiecewise.sh
+sbatch --export=scaling=production,guild=unclassified,year=1995,model=density3,NS=1000,NW=5000,seed=316 --time=4:00:00 --job-name=d3_u fitpiecewise.sh
+sbatch --export=scaling=production,guild=alltree,year=1995,model=density3,NS=1000,NW=5000,seed=317 --time=7-00:00:00 --job-name=d3_a fitpiecewise.sh
+
 # 1 segment production
 
 sbatch --export=scaling=production,guild=fg1,year=1995,model=production1,NS=1000,NW=5000,seed=411 --time=4:00:00 --job-name=p1_1 fitpiecewise.sh

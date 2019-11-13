@@ -148,7 +148,7 @@ for (i in 2:3) {
   
   bcicensusdat[[i]] <- bcicensusdat[[i]] %>%
     mutate(crownarea = coef_table$area_corr_factor * coef_table$area_a * dbh_corr ^ coef_table$area_b,
-           crowndepth = exp(coef_table$crowndepth_a + coef_table$crowndepth_b * log(dbh_corr)),
+           crowndepth = coef_table$crowndepth_corr_factor * exp(coef_table$crowndepth_a + coef_table$crowndepth_b * log(dbh_corr)),
            crownvolume = (2/3) * crownarea * crowndepth, # Half-ellipsoid
            light_received = light * crownarea * insol_bci,
            fraction_light_captured = pct_light_captured(depth = crowndepth, k = overall_k),
