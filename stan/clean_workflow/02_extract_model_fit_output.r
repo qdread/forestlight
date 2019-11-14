@@ -44,11 +44,7 @@ mod_df <- rbind(dens_df, prod_df, mod_df)
 					  
 min_n <- read.csv('~/forestlight/stanrdump/min_n.csv', stringsAsFactors = FALSE)
 
-total_prod <- read.csv('~/forestlight/stanrdump/production_total.csv', stringsAsFactors = FALSE)
-
 mod_df <- mod_df %>%
-  left_join(total_prod) %>%
-  rename(total_production = production) %>%
   left_join(min_n)
 
 dbh_pred <- exp(seq(log(1), log(315), length.out = 101))
@@ -119,11 +115,7 @@ mod_df <- rbind(prod_df, mod_df)
 # Make sure that the multiplication is done by the number of trees that have light measurements, not the total number.
 min_n <- read.csv('~/forestlight/stanrdump/min_n_lighttrees.csv', stringsAsFactors = FALSE)
 
-total_prod <- read.csv('~/forestlight/stanrdump/lightrec_total.csv', stringsAsFactors = FALSE)
-
 mod_df <- mod_df %>%
-  left_join(total_prod) %>%
-  rename(total_production = light_received) %>%
   left_join(min_n)
 
 dbh_pred <- exp(seq(log(1), log(315), length.out = 101))
@@ -187,11 +179,7 @@ mod_df <- rbind(prod_df, mod_df)
 					  
 min_n <- read.csv('~/forestlight/stanrdump/min_n.csv', stringsAsFactors = FALSE)
 
-total_prod <- read.csv('~/forestlight/stanrdump/crownvol_total.csv', stringsAsFactors = FALSE)
-
 mod_df <- mod_df %>%
-  left_join(total_prod) %>%
-  rename(total_production = crownvolume) %>%
   left_join(min_n)
   
 
