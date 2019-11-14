@@ -58,6 +58,8 @@ write.csv(all_preds, file = '~/forestlight/finalcsvs/lightbyarea_predci_by_fg.cs
 
 # Bayesian R2 for each fit ---------------------------------------------------
 
+# 14 Nov 2019: add bias correction factor here.
+
 # Define function to return Bayesian R2.
 bayesian_rsquared_light <- function(fg, year = 1995) {
   require(rstan)
@@ -92,13 +94,30 @@ bayesian_rsquared_light <- function(fg, year = 1995) {
   resid_var <- apply(resids, 1, var)
   r2s <- pred_var / (pred_var + resid_var)
   
+  # 7. Use residuals to calculate bias correction factor
+  # Sum of squared residuals
+  ssq_resid <- apply(resids^2, 1, sum)
+  # Standard error of estimates
+  sse <- (ssq_resid / (length(y) - length(pars_to_get)))^0.5
+  # Correction factors
+  cfs <- exp((sse^2)/2)
+  
   # Quantiles of rsq
   r2_quant <- quantile(r2s, probs = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975))
-  setNames(r2_quant, c('q025', 'q05', 'q25', 'q50', 'q75', 'q95', 'q975'))
+  r2_quant <- setNames(r2_quant, c('q025', 'q05', 'q25', 'q50', 'q75', 'q95', 'q975'))
+  
+  # Quantiles of correction factor
+  cf_quant <- quantile(cfs, probs = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975), na.rm = TRUE)
+  cf_quant <- setNames(cf_quant, c('q025', 'q05', 'q25', 'q50', 'q75', 'q95', 'q975'))
+  
+  return(list(r2 = r2_quant, cf = cf_quant))
 }
 
 fgnames <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'unclassified', 'alltree')
 
-library(purrr)
-r2s <- map_dfr(fgnames, ~ data.frame(fg = .,  t(bayesian_rsquared_light(.))))
-write.csv(r2s, file = '~/forestlight/finalcsvs/r2_light_by_fg.csv', row.names = FALSE)
+r2s_cfs <- map(fgnames, bayesian_rsquared_light)
+r2s <- map2_dfr(r2s_cfs, fgnames, ~ data.frame(fg = .y, t(.x$r2)))
+cfs <- map2_dfr(r2s_cfs, fgnames, ~ data.frame(fg = .y, t(.x$cf)))
+
+write.csv(r2s, file = '~/forestlight/finalcsvs/lightbyarea_r2_by_fg.csv', row.names = FALSE)
+write.csv(cfs, file = '~/forestlight/finalcsvs/lightbyarea_cf_by_fg.csv', row.names = FALSE)
