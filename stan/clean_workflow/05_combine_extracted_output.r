@@ -299,7 +299,7 @@ write.csv(r2s, file = '~/forestlight/finalcsvs/diamgrowth_piecewise_r2_by_fg.csv
 # Combine bias correction factors into single data frame.
 # -------------------------------------------------------
  
-cfs <- do.call(rbind, map(fit_info_list[idx_p], 'cfs'))
+cfs <- do.call(rbind, map(fit_info_list, 'cfs'))
 cfs <- cbind(prod_df, cfs)
 cfs$variable <- 'diameter growth individual'
 
