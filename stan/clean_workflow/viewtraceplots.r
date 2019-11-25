@@ -20,7 +20,8 @@ fits[[2]] <- read_stan_csv(file.path(fp, files[[2]]))
 fits[[3]] <- read_stan_csv(file.path(fp, files[[3]]))
 fits[[4]] <- read_stan_csv(file.path(fp, files[[4]]))
 
-
+summary(fits[[1]], pars = d3_pars)
+summary(fits[[2]], pars = d3_pars)
 
 mcmc_trace(as.array(fits[[1]]), pars = d3_pars)
 mcmc_trace(as.array(fits[[2]]), pars = d3_pars)
