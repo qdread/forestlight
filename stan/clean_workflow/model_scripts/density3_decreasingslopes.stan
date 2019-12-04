@@ -34,17 +34,17 @@ parameters {
 	// Three part density
 	real<lower=x_min, upper=10> tau_low; // First cutoff must be lower than second. Set a fairly low boundary between the cutoff ranges
 	real<lower=25, upper=x_max> tau_high;
-	real<lower=0, upper=2> alpha_low; // Each alpha is now only defined on a narrower interval so that the slopes continuously decrease
-	real<lower=alpha_low, upper=5> alpha_mid;
-	real<lower=alpha_mid, upper=10> alpha_high; 
+	real<lower=0, upper=1> alpha_low; // Each alpha is now only defined on a narrower interval so that the slopes continuously decrease
+	real<lower=1, upper=3> alpha_mid;
+	real<lower=3, upper=10> alpha_high; 
 }
 
 model {
 	// Prior: three part density
 	// No prior set for tau (uniform on its interval)
-	alpha_low ~ lognormal(1, 1) T[0, 2];	
-	alpha_mid ~ lognormal(1, 1) T[alpha_low, 5];
-	alpha_high ~ lognormal(1, 1) T[alpha_mid, 10];
+	alpha_low ~ lognormal(0, 1) T[0, 1];	
+	alpha_mid ~ lognormal(1, 1) T[1, 3];
+	alpha_high ~ lognormal(2, 1) T[3, 10];
 	
 	// Likelihood: three part density
 	for (i in 1:N) {

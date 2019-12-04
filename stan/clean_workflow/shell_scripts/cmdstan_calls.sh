@@ -146,7 +146,7 @@ sbatch --export=scaling=light,guild=alltree,year=1995,model=vonb,NS=1000,NW=5000
 
 sbatch --export=scaling=production,guild=fg3,year=1995,model=density3,NS=1000,NW=5000,seed=3 --time=4-00:00:00 --job-name=d3_3 fitpiecewise_newargs.sh # old model, new model fitting parameters
 
-sbatch --export=scaling=production,guild=fg3,year=1995,model=density3_decreasingslopes,NS=1000,NW=5000,seed=999 --time=4-00:00:00 --job-name=d3_newprior fitpiecewise.sh # model with tightened priors.
+sbatch --export=scaling=production,guild=fg3,year=1995,model=density3_decreasingslopes,NS=1000,NW=7500,seed=666 --time=4-00:00:00 --job-name=d3_newprior fitpiecewise.sh # model with tightened priors.
 
 #sbatch --export=scaling=production,guild=alltree,year=1995,model=density3,NS=1000,NW=5000,seed=11317 --time=7-00:00:00 --job-name=d3_a --array=1-2 fitpiecewise.sh
 #sbatch --export=scaling=volumescaling,guild=unclassified,year=1995,model=production1,NS=1000,NW=5000,seed=19916 --time=7-00:00:00 --job-name=v1_u fitpiecewise.sh
