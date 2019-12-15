@@ -108,7 +108,7 @@ fp <- file.path(gdrive_path, 'data/data_forplotting_light_june2018')
 obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
 obs_light_raw <- read.csv(file.path(fp, 'obs_light_raw.csv'), stringsAsFactors = FALSE)
 pred_light <- read.csv(file.path(fp, 'pred_light.csv'), stringsAsFactors = FALSE)
-param_ci <- read.csv(file.path(fp, 'lightbyarea_paramci_by_fg.csv'), stringsAsFactors = FALSE)
+param_ci <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/lightbyarea_paramci_by_fg.csv'), stringsAsFactors = FALSE)
 
 # Get rid of the predicted points that are outside the limits of the observed data for each FG
 obs_limits <- obs_light_binned %>%
@@ -392,7 +392,7 @@ ggsave(file.path(gdrive_path,'Figures/Fig_3/Diameter/Diam_growth.pdf'), p1, widt
 # This section was edited by QDR, 20 Jun 2019, for the updated model fits.
 
 fp <- file.path(gdrive_path, 'data/data_piecewisefits')
-ics <- read.csv(file.path(fp, 'newpiecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
+ics <- read.csv(file.path(fp, 'piecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
 ics$fg <- factor(ics$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
 
 # Density model
@@ -439,7 +439,7 @@ dev.off()
 
 #-------------------   Plot Slopes vs Size for each life history group  -------------------
 
-slopes <- read.csv(file.path(fp, 'newpiecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+slopes <- read.csv(file.path(fp, 'piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 slopes$fg <- factor(slopes$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
 slopes$variable <- factor(slopes$variable, labels = c("Density", "Individual Growth", "Production"))
 colors <- c("sienna4", "yellowgreen", "springgreen4")
@@ -509,7 +509,7 @@ for (i in dir(fp, pattern = '.csv')) {
 
 
 # Load raw data
-load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
 
 # Process the raw data to get one single data frame with a lot of rows.
 
@@ -540,8 +540,7 @@ p <- plot_prod_withrawdata(year_to_plot = 1995,
                            plot_abline = FALSE,
                            plot_fits = TRUE)
 
-p <- p + theme(legend.position = 'right') + scale_y_log10(labels = c(0.01, 1, 100),                                                                                breaks = c(0.01, 1, 100),
-                                                           name = expression(paste('Growth (kg yr'^-1,')'))) +
+p <- p + theme(legend.position = 'right') + scale_y_log10(labels = c(0.01, 1, 100), breaks = c(0.01, 1, 100), name = expression(paste('Growth (kg yr'^-1,')'))) 
 
 
 p 
@@ -559,54 +558,14 @@ dev.off()
 # Section added by QDR 20 June 2019: new plots of total light scalings and total volume scalings, including fits and CIs
 
 # Fitted values for individual light, total light, and total volume
-fp <- file.path(gdrive_path, 'data/data_piecewisefits')
+fp <- file.path(gdrive_path, 'data/data_forplotting')
 load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
 fitted_indivlight <- read.csv(file.path(fp, 'fitted_indivlight.csv'), stringsAsFactors = FALSE)
 fitted_totallight <- read.csv(file.path(fp, 'fitted_totallight.csv'), stringsAsFactors = FALSE)
 fitted_totalvol <- read.csv(file.path(fp, 'fitted_totalvol.csv'), stringsAsFactors = FALSE)
-
-# Observed (binned) values for 1995 for individual light, total light, and total volume
-fp_obs <- file.path(gdrive_path, 'data/data_forplotting')
-binedgedata <- read.csv(file.path(fp_obs,'obs_dens.csv'),stringsAsFactors = FALSE) %>% filter(fg == 'all', year == 1995) 
-area_core <- 42.84
-
-totallightbins_all <- with(alltree_light_95, logbin_setedges(x = dbh_corr, y = light_received, edges = binedgedata))
-totalvolbins_all <- with(alltree_light_95, logbin_setedges(x = dbh_corr, y = crownvolume, edges = binedgedata))
-
-totallightbins_fg <- alltree_light_95 %>%
-  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), 'unclassified')) %>%
-  group_by(fg) %>%
-  do(logbin_setedges(x = .$dbh_corr, y = .$light_received, edges = binedgedata)) %>%
-  ungroup %>%
-  rbind(data.frame(fg = 'all', totallightbins_all)) %>%
-  mutate(bin_value = bin_value / area_core, year = 1995)
-totalvolbins_fg <- alltree_light_95 %>%
-  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), 'unclassified')) %>%
-  group_by(fg) %>%
-  do(logbin_setedges(x = .$dbh_corr, y = .$crownvolume, edges = binedgedata)) %>%
-  ungroup %>%
-  rbind(data.frame(fg = 'all', totalvolbins_all)) %>%
-  mutate(bin_value = bin_value / area_core, year = 1995)
-
-indivlightbins_all <- alltree_light_95 %>%
-  mutate(indivlight_bin = cut(dbh_corr, breaks = c(binedgedata$bin_min[1], binedgedata$bin_max), labels = binedgedata$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(indivlight_bin) %>%
-  do(c(n = nrow(.), quantile(.$light_received, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
-indivlightbins_fg <- alltree_light_95 %>%
-  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), 'unclassified')) %>%
-  mutate(indivlight_bin =cut(dbh_corr, breaks = c(binedgedata$bin_min[1], binedgedata$bin_max), labels = binedgedata$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(fg, indivlight_bin) %>%
-  do(c(n = nrow(.), quantile(.$light_received, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
-indivlightbins_fg <- data.frame(fg = 'all', indivlightbins_all, stringsAsFactors = FALSE) %>%
-  rbind(as.data.frame(indivlightbins_fg)) %>%
-  mutate(indivlight_bin = as.numeric(as.character(indivlight_bin))) %>%
-  rename(bin_midpoint = indivlight_bin)
+indivlightbins_fg <- read.csv(file.path(fp, 'obs_indivlight.csv'), stringsAsFactors = FALSE)
+totallightbins_fg <- read.csv(file.path(fp, 'obs_totallight.csv'), stringsAsFactors = FALSE)
+totalvolbins_fg <- read.csv(file.path(fp, 'obs_totalvol.csv'), stringsAsFactors = FALSE)
 
 #------Fig 4a------
 # Plot total volume using the "totalprod" function
@@ -834,51 +793,9 @@ dev.off()
 # ------------------------------- Fig 5 Light Interception  ------------------------------------
 ################################################################################################
 
-
-alltree_light_95 <- alltree_light_95 %>%
-  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), as.character(NA)))
-
-dbhbin1995 <- with(alltree_light_95, logbin(x = dbh_corr, n = 20))
-
-lightperareafakebin_fg <- alltree_light_95 %>%
-  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(fg, dbh_bin) %>%
-  do(quantile(.$light_received/.$crownarea, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('q025','q25','q50','q75','q975')))
-
-lightperareafakebin_all <- alltree_light_95 %>%
-  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(dbh_bin) %>%
-  do(quantile(.$light_received/.$crownarea, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('q025','q25','q50','q75','q975')))
-
-lightperareafakebin_fg <- data.frame(fg = 'all', lightperareafakebin_all, stringsAsFactors = FALSE) %>%
-  rbind(as.data.frame(lightperareafakebin_fg)) %>%
-  mutate(dbh_bin = as.numeric(as.character(dbh_bin)))
-
-lightpervolfakebin_fg <- alltree_light_95 %>%
-  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(fg, dbh_bin) %>%
-  do(quantile(.$light_received/.$crownvolume, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('q025','q25','q50','q75','q975')))
-
-lightpervolfakebin_all <- alltree_light_95 %>%
-  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(dbh_bin) %>%
-  do(quantile(.$light_received/.$crownvolume, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('q025','q25','q50','q75','q975')))
-
-lightpervolfakebin_fg <- data.frame(fg = 'all', lightpervolfakebin_all, stringsAsFactors = FALSE) %>%
-  rbind(as.data.frame(lightpervolfakebin_fg)) %>%
-  mutate(dbh_bin = as.numeric(as.character(dbh_bin)))
+lightperareafakebin_fg <- read.csv(file.path(fp_out, 'lightperareafakebin_fg.csv'), stringsAsFactors = FALSE)
+lightpervolfakebin_fg <- read.csv(file.path(fp_out, 'lightpervolfakebin_fg.csv'), stringsAsFactors = FALSE)
+unscaledlightbydbhfakebin_fg <- read.csv(file.path(fp_out, 'unscaledlightbydbhfakebin_fg.csv'), stringsAsFactors = FALSE)
 
 # Plot: raw data ----------------------------------------------------------
 
@@ -946,26 +863,6 @@ dev.off()
 # Plot: total unscaled light energy by dbh --------------------------------
 
 
-unscaledlightbydbhfakebin_fg <- alltree_light_95 %>%
-  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(fg, dbh_bin) %>%
-  do(quantile(.$light_received, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('q025','q25','q50','q75','q975')))
-
-unscaledlightbydbhfakebin_all <- alltree_light_95 %>%
-  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(dbh_bin) %>%
-  do(quantile(.$light_received, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('q025','q25','q50','q75','q975')))
-
-unscaledlightbydbhfakebin_fg <- data.frame(fg = 'all', unscaledlightbydbhfakebin_all, stringsAsFactors = FALSE) %>%
-  rbind(as.data.frame(unscaledlightbydbhfakebin_fg)) %>%
-  mutate(dbh_bin = as.numeric(as.character(dbh_bin)))
-
 alpha_value <- 0.6
 hexfill2 <- scale_fill_gradient(low = 'forestgreen', high = 'navy', trans = 'log', breaks = c(1,3,10,30,100,300))
 exl <- expression(atop('Intercepted Light', paste('per Individual (W)')))
@@ -997,7 +894,7 @@ dev.off()
 
 # Load parameter df to find the point at which to evaluate the fitted slopes, then load the fitted slopes
 
-params <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/newpiecewise_paramci_by_fg.csv'), stringsAsFactors = FALSE)
+params <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_paramci_by_fg.csv'), stringsAsFactors = FALSE)
 
 xvalues <- params %>% 
   filter(variable == 'density', model == 3) %>%
@@ -1006,8 +903,8 @@ xvalues <- params %>%
 
 # Load fitted slopes of total growth and total light.
 
-growth_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/newpiecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
-light_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/totallightscaling/light_piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+growth_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+light_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/light_piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 str(light_slopes)
 growth_slopes_atmiddle <- growth_slopes %>% 
   filter(variable == 'total_production', dens_model == 3, prod_model == 2) %>%

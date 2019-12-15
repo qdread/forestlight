@@ -1,20 +1,23 @@
 # Create piecewise data for plotting.
+# Modified 13 Dec 2019: Create both observed and predicted data in this script. 
+# Modified 13 Dec 2019: Use the new up to date correction factor based on the true correction of Jensen's Inequality.
 # Modified 02 Jul 2019: Calculate new correction factors to get the proper normalizations (based on integral with bounded limits)
 
-library(dplyr)
-library(pracma)
-gdrive_path <- '~/google_drive/ForestLight'
-github_path <- '~/Documents/GitHub/forestlight'
-fp_obs <- file.path(gdrive_path, 'data/data_forplotting_aug2018')
+library(tidyverse)
+library(forestscaling)
+
+gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users',Sys.info()['user'],'Google Drive/ForestLight'))
+
+fp_out <- file.path(gdrive_path, 'data/data_forplotting')
+
+
+# Load all the by-year binned data.
+load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
 
 # Load raw data
 load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
 
-source(file.path(github_path, 'code/allfunctions27july.r'))
-# Load binned data
-obs_totalprod <- read.csv(file.path(fp_obs, 'obs_totalprod.csv'), stringsAsFactors = FALSE)
-
-binedgedata <- read.csv(file.path(fp_obs,'obs_dens.csv'),stringsAsFactors = FALSE) %>% filter(fg == 'all', year == 1995) 
+binedgedata <- densitybin_byyear %>% filter(fg == 'all', year == 1995) 
 area_core <- 42.84
 
 totallightbins_all <- with(alltree_light_95, logbin_setedges(x = dbh_corr, y = light_received, edges = binedgedata))
@@ -35,63 +38,43 @@ totalvolbins_fg <- alltree_light_95 %>%
   rbind(data.frame(fg = 'all', totalvolbins_all)) %>%
   mutate(bin_value = bin_value / area_core, year = 1995)
 
+indivlightbins_all <- alltree_light_95 %>%
+  mutate(indivlight_bin = cut(dbh_corr, breaks = c(binedgedata$bin_min[1], binedgedata$bin_max), labels = binedgedata$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(indivlight_bin) %>%
+  do(c(n = nrow(.), quantile(.$light_received, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
+indivlightbins_fg <- alltree_light_95 %>%
+  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), 'unclassified')) %>%
+  mutate(indivlight_bin =cut(dbh_corr, breaks = c(binedgedata$bin_min[1], binedgedata$bin_max), labels = binedgedata$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(fg, indivlight_bin) %>%
+  do(c(n = nrow(.), quantile(.$light_received, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
+indivlightbins_fg <- data.frame(fg = 'all', indivlightbins_all, stringsAsFactors = FALSE) %>%
+  rbind(as.data.frame(indivlightbins_fg)) %>%
+  mutate(indivlight_bin = as.numeric(as.character(indivlight_bin))) %>%
+  rename(bin_midpoint = indivlight_bin)
 
-# Calculate limits of integral for each FG
-lim_totalprod <- obs_totalprod %>%
-  filter(year == 1995, bin_count >= 10) %>%
-  group_by(fg) %>%
-  summarize(lim_min = min(bin_min), lim_max = max(bin_max))
-lim_totallight <-  totallightbins_fg %>%
-  filter(year == 1995, bin_count >= 10) %>%
-  group_by(fg) %>%
-  summarize(lim_min = min(bin_min), lim_max = max(bin_max))
-lim_totalvol <-  totalvolbins_fg %>%
-  filter(year == 1995, bin_count >= 10) %>%
-  group_by(fg) %>%
-  summarize(lim_min = min(bin_min), lim_max = max(bin_max))
+write.csv(indivlightbins_fg, file.path(fp_out, 'obs_indivlight.csv'), row.names = FALSE)
+write.csv(totallightbins_fg, file.path(fp_out, 'obs_totallight.csv'), row.names = FALSE)
+write.csv(totalvolbins_fg, file.path(fp_out, 'obs_totalvol.csv'), row.names = FALSE)
 
-# Calculate total production, light, and volume within the limits
-prod_totals_fg <- alltreedat[[3]] %>%
-  mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg))) %>%
-  left_join(lim_totalprod) %>%
-  group_by(fg) %>%
-  filter(dbh_corr <= lim_max) %>%
-  summarize(total = sum(production))
-
-prod_total_all <- alltreedat[[3]] %>%
-  filter(dbh_corr <= lim_totalprod$lim_max[lim_totalprod$fg == 'all']) %>%
-  summarize(total = sum(production))
-
-prod_totals_fg <- rbind(prod_totals_fg, data.frame(fg = 'all', total = prod_total_all$total))
-
-light_totals_fg <- alltree_light_95 %>%
-  mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg))) %>%
-  left_join(lim_totallight) %>%
-  group_by(fg) %>%
-  filter(dbh_corr <= lim_max) %>%
-  summarize(total = sum(light_received))
-
-light_total_all <- alltree_light_95 %>%
-  filter(dbh_corr <= lim_totallight$lim_max[lim_totallight$fg == 'all']) %>%
-  summarize(total = sum(light_received))
-
-light_totals_fg <- rbind(light_totals_fg, data.frame(fg = 'all', total = light_total_all$total))
-
-volume_totals_fg <- alltreedat[[3]] %>%
-  mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg))) %>%
-  left_join(lim_totalvol) %>%
-  group_by(fg) %>%
-  filter(dbh_corr <= lim_max) %>%
-  summarize(total = sum(crownvolume))
-
-volume_total_all <- alltreedat[[3]] %>%
-  filter(dbh_corr <= lim_totalvol$lim_max[lim_totalvol$fg == 'all']) %>%
-  summarize(total = sum(crownvolume))
-
-volume_totals_fg <- rbind(volume_totals_fg, data.frame(fg = 'all', total = volume_total_all$total))
+# Load correction factor for total production
+cf_production <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_cf_by_fg.csv')) %>% select(prod_model, fg, q50) %>% rename(corr_factor = q50)
 
 
-ci_df <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/newpiecewise_ci_by_fg.csv'), stringsAsFactors = FALSE)
+# Convert to individuals and production per hectare.
+obs_dens <- densitybin_byyear %>%
+  mutate(bin_value = bin_value / area_core)
+obs_totalprod <- totalproductionbin_byyear %>%
+  mutate(bin_value = bin_value / area_core)
+obs_indivprod <- indivproductionbin_byyear
+
+
+ci_df <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_ci_by_fg.csv'), stringsAsFactors = FALSE)
 area_core <- 42.84
 
 ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
@@ -117,32 +100,22 @@ pred_totalprod <- ci_df %>%
   filter(variable == 'total_production') %>%
   select(-variable) 
 
-# Get integrals for total production and total production fitted, then multiply the fitted values by the normalization constant
-# Norm constant is the summed bin total production / the integral
-# Then divide by area
-totalprod_integrals <- fitted_totalprod %>%
-  left_join(lim_totalprod) %>%
-  group_by(fg, dens_model, prod_model) %>%
-  filter(dbh <= lim_max) %>%
-  summarize(integral = trapz(x = dbh, y = q50)) %>%
-  left_join(prod_totals_fg) %>%
-  mutate(constant = total/integral)
-
 fitted_totalprod <- fitted_totalprod %>%
-  left_join(totalprod_integrals) %>%
-  mutate_at(vars(starts_with('q')), ~ . * (constant/area_core))
+  left_join(cf_production) %>%
+  mutate_at(vars(starts_with('q')), ~ . * (corr_factor/area_core))
 
 pred_totalprod <- pred_totalprod %>%
-  left_join(totalprod_integrals) %>%
-  mutate_at(vars(starts_with('q')), ~ . * (constant/area_core))
+  left_join(cf_production) %>%
+  mutate_at(vars(starts_with('q')), ~ . * (corr_factor/area_core))
 
-fp <- '~/google_drive/ForestLight/data/data_piecewisefits'
-
-write.csv(pred_dens, file.path(fp, 'pred_dens.csv'), row.names = FALSE)
-write.csv(pred_indivprod, file.path(fp, 'pred_indivprod.csv'), row.names = FALSE)
-write.csv(pred_totalprod, file.path(fp, 'pred_totalprod.csv'), row.names = FALSE)
-write.csv(fitted_indivprod, file.path(fp, 'fitted_indivprod.csv'), row.names = FALSE)
-write.csv(fitted_totalprod, file.path(fp, 'fitted_totalprod.csv'), row.names = FALSE)
+write.csv(obs_dens, file.path(fp_out, 'obs_dens.csv'), row.names = FALSE)
+write.csv(obs_totalprod, file.path(fp_out, 'obs_totalprod.csv'), row.names = FALSE)
+write.csv(obs_indivprod, file.path(fp_out, 'obs_indivprod.csv'), row.names = FALSE)
+write.csv(pred_dens, file.path(fp_out, 'pred_dens.csv'), row.names = FALSE)
+write.csv(pred_indivprod, file.path(fp_out, 'pred_indivprod.csv'), row.names = FALSE)
+write.csv(pred_totalprod, file.path(fp_out, 'pred_totalprod.csv'), row.names = FALSE)
+write.csv(fitted_indivprod, file.path(fp_out, 'fitted_indivprod.csv'), row.names = FALSE)
+write.csv(fitted_totalprod, file.path(fp_out, 'fitted_totalprod.csv'), row.names = FALSE)
 
 
 
@@ -152,8 +125,10 @@ write.csv(fitted_totalprod, file.path(fp, 'fitted_totalprod.csv'), row.names = F
 
 library(dplyr)
 
-ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/totallightscaling/light_piecewise_ci_by_fg.csv', stringsAsFactors = FALSE)
+ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/light_piecewise_ci_by_fg.csv', stringsAsFactors = FALSE)
 area_core <- 42.84
+
+cf_totallight<- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/light_piecewise_cf_by_fg.csv')) %>% select(prod_model, fg, q50) %>% rename(corr_factor = q50)
 
 ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
 
@@ -173,31 +148,19 @@ pred_totallight <- ci_df %>%
   filter(variable == 'total_incoming_light') %>%
   select(-variable) 
 
-# Get integral and multiply fitted and predicted total light by the new constant
-# Then divide by area
-totallight_integrals <- fitted_totallight %>%
-  left_join(lim_totallight) %>%
-  group_by(fg, dens_model, prod_model) %>%
-  filter(dbh <= lim_max) %>%
-  summarize(integral = trapz(x = dbh, y = q50)) %>%
-  left_join(light_totals_fg) %>%
-  mutate(constant = total/integral)
-
 fitted_totallight <- fitted_totallight %>%
-  left_join(totallight_integrals) %>%
-  mutate_at(vars(starts_with('q')), ~ . * (constant/area_core))
+  left_join(cf_totallight) %>%
+  mutate_at(vars(starts_with('q')), ~ . * (corr_factor/area_core))
 
 pred_totallight <- pred_totallight %>%
-  left_join(totallight_integrals) %>%
-  mutate_at(vars(starts_with('q')), ~ . * (constant/area_core))
+  left_join(cf_totallight) %>%
+  mutate_at(vars(starts_with('q')), ~ . * (corr_factor/area_core))
 
 
-fp <- '~/google_drive/ForestLight/data/data_piecewisefits'
-
-write.csv(pred_indivlight, file.path(fp, 'pred_indivlight.csv'), row.names = FALSE)
-write.csv(pred_totallight, file.path(fp, 'pred_totallight.csv'), row.names = FALSE)
-write.csv(fitted_indivlight, file.path(fp, 'fitted_indivlight.csv'), row.names = FALSE)
-write.csv(fitted_totallight, file.path(fp, 'fitted_totallight.csv'), row.names = FALSE)
+write.csv(pred_indivlight, file.path(fp_out, 'pred_indivlight.csv'), row.names = FALSE)
+write.csv(pred_totallight, file.path(fp_out, 'pred_totallight.csv'), row.names = FALSE)
+write.csv(fitted_indivlight, file.path(fp_out, 'fitted_indivlight.csv'), row.names = FALSE)
+write.csv(fitted_totallight, file.path(fp_out, 'fitted_totallight.csv'), row.names = FALSE)
 
 ## Volume
 ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/volume_piecewise_ci_by_fg.csv', stringsAsFactors = FALSE)
@@ -205,23 +168,154 @@ area_core <- 42.84
 
 ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
 
+cf_volume <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/volume_piecewise_cf_by_fg.csv')) %>% select(prod_model, fg, q50) %>% rename(corr_factor = q50)
+
 fitted_totalvol <- ci_df %>%
+  filter(variable == 'total_crown_volume_fitted') %>%
   select(-variable) 
 
-# Get integral and multiply fitted total volume by the new constant
-# Then divide by area
-totalvol_integrals <- fitted_totalvol %>%
-  left_join(lim_totalvol) %>%
-  group_by(fg, dens_model) %>%
-  filter(dbh <= lim_max) %>%
-  summarize(integral = trapz(x = dbh, y = q50)) %>%
-  left_join(volume_totals_fg) %>%
-  mutate(constant = total/integral)
-
 fitted_totalvol <- fitted_totalvol %>%
-  left_join(totalvol_integrals) %>%
-  mutate_at(vars(starts_with('q')), ~ . * (constant/area_core))
+  left_join(cf_volume) %>%
+  mutate_at(vars(starts_with('q')), ~ . * (corr_factor/area_core))
 
-fp <- '~/google_drive/ForestLight/data/data_piecewisefits/totallightscaling'
+write.csv(fitted_totalvol, file.path(fp_out, 'fitted_totalvol.csv'), row.names = FALSE)
 
-write.csv(fitted_totalvol, file.path(fp, 'fitted_totalvol.csv'), row.names = FALSE)
+
+# Data for growth per area vs light per area ------------------------------
+
+# In previous workflow this code was in createlightplotdata_final.r
+
+dat90 <- alltree_light_90 %>%
+  select(dbh_corr, production, light_received, crownarea, fg) %>%
+  mutate(production_area = production/crownarea, light_area = light_received/crownarea) %>%
+  mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg)))
+
+dat95 <- alltree_light_95 %>%
+  select(dbh_corr, production, light_received, crownarea, fg) %>%
+  mutate(production_area = production/crownarea, light_area = light_received/crownarea) %>%
+  mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg)))
+
+numbins <- 20
+light_bins_9095 <- logbin(x = c(dat90$light_area, dat95$light_area), n = numbins)
+
+prod_light_bin_90 <- fakebin_across_years(dat_values = dat90$production_area,
+                                          dat_classes = dat90$light_area,
+                                          edges = light_bins_9095,
+                                          n_census = 1)
+prod_light_bin_95 <- fakebin_across_years(dat_values = dat95$production_area,
+                                          dat_classes = dat95$light_area,
+                                          edges = light_bins_9095,
+                                          n_census = 1)
+
+prod_light_bin_fg_90 <- dat90 %>%
+  group_by(fg) %>%
+  do(bin = fakebin_across_years(dat_values = .$production_area,
+                                dat_classes = .$light_area,
+                                edges = light_bins_9095,
+                                n_census = 1))
+
+prod_light_bin_fg_90 <- cbind(fg = rep(c('fg1','fg2','fg3','fg4','fg5','unclassified'), each = numbins),
+                              do.call(rbind, prod_light_bin_fg_90$bin)) %>%
+  filter(complete.cases(.))
+
+prod_light_bin_fg_95 <- dat95 %>%
+  group_by(fg) %>%
+  do(bin = fakebin_across_years(dat_values = .$production_area,
+                                dat_classes = .$light_area,
+                                edges = light_bins_9095,
+                                n_census = 1))
+
+prod_light_bin_fg_95 <- cbind(fg = rep(c('fg1','fg2','fg3','fg4','fg5','unclassified'), each = numbins),
+                              do.call(rbind, prod_light_bin_fg_95$bin)) %>%
+  filter(complete.cases(.))
+
+prod_light_bin_all <- rbind(
+  cbind(year = 1990, fg = 'alltree', prod_light_bin_90),
+  cbind(year = 1990, prod_light_bin_fg_90),
+  cbind(year = 1995, fg = 'alltree', prod_light_bin_95),
+  cbind(year = 1995, prod_light_bin_fg_95)
+)
+
+write.csv(prod_light_bin_all, file = file.path(fp_out, 'obs_light_binned.csv'), row.names = FALSE)
+
+write.csv(rbind(
+  cbind(year = 1990, dat90),
+  cbind(year = 1995, dat95)
+), 
+file = file.path(fp_out, 'obs_light_raw.csv'), row.names = FALSE)
+
+# Create predicted light by area from existing file
+
+system2("cp", args = paste('~/google_drive/ForestLight/data/data_piecewisefits/lightbyarea_predci_by_fg.csv', file.path(fp_out, 'pred_light.csv')))
+
+
+# Create bin data for MS figure 5 -----------------------------------------
+
+alltree_light_95 <- alltree_light_95 %>%
+  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), as.character(NA)))
+
+dbhbin1995 <- with(alltree_light_95, logbin(x = dbh_corr, n = 20))
+
+lightperareafakebin_fg <- alltree_light_95 %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(fg, dbh_bin) %>%
+  do(quantile(.$light_received/.$crownarea, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975')))
+
+lightperareafakebin_all <- alltree_light_95 %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(dbh_bin) %>%
+  do(quantile(.$light_received/.$crownarea, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975')))
+
+lightperareafakebin_fg <- data.frame(fg = 'all', lightperareafakebin_all, stringsAsFactors = FALSE) %>%
+  rbind(as.data.frame(lightperareafakebin_fg)) %>%
+  mutate(dbh_bin = as.numeric(as.character(dbh_bin)))
+
+lightpervolfakebin_fg <- alltree_light_95 %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(fg, dbh_bin) %>%
+  do(quantile(.$light_received/.$crownvolume, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975')))
+
+lightpervolfakebin_all <- alltree_light_95 %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(dbh_bin) %>%
+  do(quantile(.$light_received/.$crownvolume, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975')))
+
+lightpervolfakebin_fg <- data.frame(fg = 'all', lightpervolfakebin_all, stringsAsFactors = FALSE) %>%
+  rbind(as.data.frame(lightpervolfakebin_fg)) %>%
+  mutate(dbh_bin = as.numeric(as.character(dbh_bin)))
+
+unscaledlightbydbhfakebin_fg <- alltree_light_95 %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(fg, dbh_bin) %>%
+  do(quantile(.$light_received, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975')))
+
+unscaledlightbydbhfakebin_all <- alltree_light_95 %>%
+  mutate(dbh_bin = cut(dbh_corr, breaks = c(dbhbin1995$bin_min[1], dbhbin1995$bin_max), labels = dbhbin1995$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(dbh_bin) %>%
+  do(quantile(.$light_received, c(0.025, 0.25, 0.5, 0.75, 0.975)) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('q025','q25','q50','q75','q975')))
+
+unscaledlightbydbhfakebin_fg <- data.frame(fg = 'all', unscaledlightbydbhfakebin_all, stringsAsFactors = FALSE) %>%
+  rbind(as.data.frame(unscaledlightbydbhfakebin_fg)) %>%
+  mutate(dbh_bin = as.numeric(as.character(dbh_bin)))
+
+write.csv(lightperareafakebin_fg, file.path(fp_out, 'lightperareafakebin_fg.csv'), row.names = FALSE)
+write.csv(lightpervolfakebin_fg, file.path(fp_out, 'lightpervolfakebin_fg.csv'), row.names = FALSE)
+write.csv(unscaledlightbydbhfakebin_fg, file.path(fp_out, 'unscaledlightbydbhfakebin_fg.csv'), row.names = FALSE)
