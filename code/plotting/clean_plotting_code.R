@@ -102,7 +102,7 @@ year_to_plot = 1995
 fg_colors <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87Cefa", fg5 = "gray70",  alltree = 'black') #unclassified = 'brown',
 fg_colors2 <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87Cefa", fg5 = "gray87",  alltree = 'black') #unclassified = 'brown',
 
-fp <- file.path(gdrive_path, 'data/data_forplotting_light_june2018')
+fp <- file.path(gdrive_path, 'data/data_forplotting')
 
 # New File path needed
 obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
@@ -179,7 +179,7 @@ plightarea <- ggplot(data = fitted_mort %>% mutate(fg = factor(fg, labels = fg_l
   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
   geom_point(data = bin_mort %>% filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) > 20)  %>% mutate(fg = factor(fg, labels = fg_labels)),
-             aes(x = bin_midpoint, y = mortality, fill = fg)
+             aes(x = bin_midpoint, y = mortality, fill = fg),
              shape = 21, size = geom_size) +
   scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), limits = c(1.1, 412)) +
   scale_y_continuous(trans = "logit", position = "right", breaks = c(0.03, 0.3, .1), labels = c(0.03, 0.3, 0.1), limits = c(0.02, .5),
@@ -207,24 +207,24 @@ dev.off()
 # Plot of slopes in different segments by different functional groups.
 
 
-fp <- file.path(gdrive_path, 'data/data_piecewisefits')
+fp_plot <- file.path(gdrive_path, 'data/data_forplotting')
 
 
 # Plot the fitted values on top of the observed histograms.
 
 # Read observed data
-fp_obs <- file.path(gdrive_path, 'data/data_forplotting')
 
-for (i in dir(fp_obs, pattern = 'obs_')) {
+
+for (i in dir(fp_plot, pattern = 'obs_')) {
   n <- gsub('.csv','',i)
-  assign(n, read.csv(file.path(fp_obs, i), stringsAsFactors = FALSE))
+  assign(n, read.csv(file.path(fp_plot, i), stringsAsFactors = FALSE))
 }
 
 # Read modeled data (CIs)
 
-for (i in dir(fp, pattern = 'pred_|fitted_')) {
+for (i in dir(fp_plot, pattern = 'pred_|fitted_')) {
   n <- gsub('.csv','',i)
-  assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
+  assign(n, read.csv(file.path(fp_plot, i), stringsAsFactors = FALSE))
 }
 
 #source(file.path(github_path, 'stan/piecewise_workflow/plottingfunctionspiecewise.r'))
@@ -262,7 +262,7 @@ p <- plot_prod(year_to_plot = 1995,
           y_limits = c(0.001, 2000),
           y_breaks = c(0.001,0.1, 10, 1000),
           y_labels = c(0.001,0.1,10,1000),
-          error_bar_width = 0.01,
+          #error_bar_width = 0.01,
           dodge_width = 0.05)
 p0 <- p + annotation_custom(grob_text_a)
 p0
@@ -314,9 +314,10 @@ p <- plot_totalprod(year_to_plot = 1995,
                     y_labels = c(0.1, 1, 10, 100),
                     preddat = fitted_totalprod)
 p
+# Edit 15 Dec. 2019: secondary height axis now has new all-species allometry on it (though it is now inaccurate for individual species heights)
 p0 <- p + scale_x_log10(name = 'Diameter (cm)',
                         breaks = c(1,3,10,30,100,300), limits = c(0.9, 250),
-                        sec.axis = sec_axis(~ exp(0.438 + 0.595 * log(.)),
+                        sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
                                     name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 40))) +
   scale_y_log10(position = "left", limits = c(0.03, 200), breaks = c(0.1, 1, 10, 100),labels = c(0.1, 1, 10, 100),
                 name =expression(atop('Total Production', paste('(kg ha'^-1,' cm'^-1,' yr'^-1,')')))) +
@@ -362,7 +363,7 @@ p <- plot_prod(year_to_plot = 1995,
                y_limits = c(0.02, 1),
                y_breaks = c(0.03, 0.1, 0.3, 1),
                y_labels = c(0.03, 0.1, 0.3, 1),
-               error_bar_width = 0.01,
+               #error_bar_width = 0.01,
                dodge_width = 0.05,
                obsdat = obs_indivdiamgrowth,
                preddat = fitted_indivdiamgrowth,
@@ -558,14 +559,14 @@ dev.off()
 # Section added by QDR 20 June 2019: new plots of total light scalings and total volume scalings, including fits and CIs
 
 # Fitted values for individual light, total light, and total volume
-fp <- file.path(gdrive_path, 'data/data_forplotting')
+fp_plot <- file.path(gdrive_path, 'data/data_forplotting')
 load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
-fitted_indivlight <- read.csv(file.path(fp, 'fitted_indivlight.csv'), stringsAsFactors = FALSE)
-fitted_totallight <- read.csv(file.path(fp, 'fitted_totallight.csv'), stringsAsFactors = FALSE)
-fitted_totalvol <- read.csv(file.path(fp, 'fitted_totalvol.csv'), stringsAsFactors = FALSE)
-indivlightbins_fg <- read.csv(file.path(fp, 'obs_indivlight.csv'), stringsAsFactors = FALSE)
-totallightbins_fg <- read.csv(file.path(fp, 'obs_totallight.csv'), stringsAsFactors = FALSE)
-totalvolbins_fg <- read.csv(file.path(fp, 'obs_totalvol.csv'), stringsAsFactors = FALSE)
+fitted_indivlight <- read.csv(file.path(fp_plot, 'fitted_indivlight.csv'), stringsAsFactors = FALSE)
+fitted_totallight <- read.csv(file.path(fp_plot, 'fitted_totallight.csv'), stringsAsFactors = FALSE)
+fitted_totalvol <- read.csv(file.path(fp_plot, 'fitted_totalvol.csv'), stringsAsFactors = FALSE)
+indivlightbins_fg <- read.csv(file.path(fp_plot, 'obs_indivlight.csv'), stringsAsFactors = FALSE)
+totallightbins_fg <- read.csv(file.path(fp_plot, 'obs_totallight.csv'), stringsAsFactors = FALSE)
+totalvolbins_fg <- read.csv(file.path(fp_plot, 'obs_totalvol.csv'), stringsAsFactors = FALSE)
 
 #------Fig 4a------
 # Plot total volume using the "totalprod" function
@@ -701,8 +702,6 @@ pdf(file.path(gdrive_path, "Figures/Fig_4/Max_growth_by_fg.pdf"))
 p
 dev.off()
 
-l
-
 #---------------------------- Median binned growth by light + fg --------------------------------
 p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
   facet_wrap(~ fg, labeller = labeller(fg = fg_labels2)) +
@@ -793,9 +792,9 @@ dev.off()
 # ------------------------------- Fig 5 Light Interception  ------------------------------------
 ################################################################################################
 
-lightperareafakebin_fg <- read.csv(file.path(fp_out, 'lightperareafakebin_fg.csv'), stringsAsFactors = FALSE)
-lightpervolfakebin_fg <- read.csv(file.path(fp_out, 'lightpervolfakebin_fg.csv'), stringsAsFactors = FALSE)
-unscaledlightbydbhfakebin_fg <- read.csv(file.path(fp_out, 'unscaledlightbydbhfakebin_fg.csv'), stringsAsFactors = FALSE)
+lightperareafakebin_fg <- read.csv(file.path(fp_plot, 'lightperareafakebin_fg.csv'), stringsAsFactors = FALSE)
+lightpervolfakebin_fg <- read.csv(file.path(fp_plot, 'lightpervolfakebin_fg.csv'), stringsAsFactors = FALSE)
+unscaledlightbydbhfakebin_fg <- read.csv(file.path(fp_plot, 'unscaledlightbydbhfakebin_fg.csv'), stringsAsFactors = FALSE)
 
 # Plot: raw data ----------------------------------------------------------
 
@@ -905,7 +904,6 @@ xvalues <- params %>%
 
 growth_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 light_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/light_piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
-str(light_slopes)
 growth_slopes_atmiddle <- growth_slopes %>% 
   filter(variable == 'total_production', dens_model == 3, prod_model == 2) %>%
   left_join(xvalues) %>%
@@ -1018,7 +1016,7 @@ plot(p1)
 dev.off()
 
 #----------------------------- Fig 6B Abundance by Diameter ----------------------------
-h
+
 p <- prod_ratio_diam %>% 
   filter(density_ratio > 0) %>%
   filter(n_individuals > 10) %>%

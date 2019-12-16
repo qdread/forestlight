@@ -63,7 +63,10 @@ write.csv(totallightbins_fg, file.path(fp_out, 'obs_totallight.csv'), row.names 
 write.csv(totalvolbins_fg, file.path(fp_out, 'obs_totalvol.csv'), row.names = FALSE)
 
 # Load correction factor for total production
-cf_production <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_cf_by_fg.csv')) %>% select(prod_model, fg, q50) %>% rename(corr_factor = q50)
+cf_production <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_cf_by_fg.csv')) %>% 
+  select(prod_model, fg, q50) %>% 
+  rename(corr_factor = q50) %>%
+  mutate(fg = if_else(fg == 'alltree', 'all', fg))
 
 
 # Convert to individuals and production per hectare.
@@ -128,7 +131,10 @@ library(dplyr)
 ci_df <- read.csv('~/google_drive/ForestLight/data/data_piecewisefits/light_piecewise_ci_by_fg.csv', stringsAsFactors = FALSE)
 area_core <- 42.84
 
-cf_totallight<- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/light_piecewise_cf_by_fg.csv')) %>% select(prod_model, fg, q50) %>% rename(corr_factor = q50)
+cf_totallight<- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/light_piecewise_cf_by_fg.csv')) %>% 
+  select(prod_model, fg, q50) %>% 
+  rename(corr_factor = q50) %>%
+  mutate(fg = if_else(fg == 'alltree', 'all', fg))
 
 ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
 
@@ -168,7 +174,10 @@ area_core <- 42.84
 
 ci_df$fg[ci_df$fg == 'alltree'] <- 'all'
 
-cf_volume <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/volume_piecewise_cf_by_fg.csv')) %>% select(prod_model, fg, q50) %>% rename(corr_factor = q50)
+cf_volume <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/volume_piecewise_cf_by_fg.csv')) %>% 
+  select(prod_model, fg, q50) %>% 
+  rename(corr_factor = q50) %>%
+  mutate(fg = if_else(fg == 'alltree', 'all', fg))
 
 fitted_totalvol <- ci_df %>%
   filter(variable == 'total_crown_volume_fitted') %>%
@@ -319,3 +328,36 @@ unscaledlightbydbhfakebin_fg <- data.frame(fg = 'all', unscaledlightbydbhfakebin
 write.csv(lightperareafakebin_fg, file.path(fp_out, 'lightperareafakebin_fg.csv'), row.names = FALSE)
 write.csv(lightpervolfakebin_fg, file.path(fp_out, 'lightpervolfakebin_fg.csv'), row.names = FALSE)
 write.csv(unscaledlightbydbhfakebin_fg, file.path(fp_out, 'unscaledlightbydbhfakebin_fg.csv'), row.names = FALSE)
+
+
+# Diameter growth plots ---------------------------------------------------
+
+# Observed
+indivdiamgrowthbins_all <- alltreedat[[3]] %>%
+  mutate(indivdiamgrowth_bin = cut(dbh_corr, breaks = c(binedgedata$bin_min[1], binedgedata$bin_max), labels = binedgedata$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(indivdiamgrowth_bin) %>%
+  do(c(n = nrow(.), quantile(.$diam_growth_rate, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
+indivdiamgrowthbins_fg <- alltree_light_95 %>%
+  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), 'unclassified')) %>%
+  mutate(indivdiamgrowth_bin =cut(dbh_corr, breaks = c(binedgedata$bin_min[1], binedgedata$bin_max), labels = binedgedata$bin_midpoint, include.lowest = TRUE)) %>%
+  group_by(fg, indivdiamgrowth_bin) %>%
+  do(c(n = nrow(.), quantile(.$diam_growth_rate, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
+       t %>% 
+       as.data.frame %>%
+       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
+indivdiamgrowthbins_fg <- data.frame(fg = 'all', indivdiamgrowthbins_all, stringsAsFactors = FALSE) %>%
+  rbind(as.data.frame(indivdiamgrowthbins_fg)) %>%
+  mutate(indivdiamgrowth_bin = as.numeric(as.character(indivdiamgrowth_bin))) %>%
+  rename(bin_midpoint = indivdiamgrowth_bin) %>%
+  cbind(year = 1995)
+
+# Fitted
+fittedvals <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/diamgrowth_piecewise_ci_by_fg.csv'), stringsAsFactors = FALSE) %>%
+  filter(variable == 'diameter_growth_fitted') %>%
+  mutate(fg = if_else(fg == 'alltree', 'all', fg))
+
+write.csv(indivdiamgrowthbins_fg, file = file.path(fp_out, 'obs_indivdiamgrowth.csv'), row.names = FALSE)
+write.csv(fittedvals, file = file.path(fp_out, 'fitted_indivdiamgrowth.csv'), row.names = FALSE)
