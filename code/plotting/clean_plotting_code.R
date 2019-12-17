@@ -124,15 +124,6 @@ pred_light_5groups <- pred_light %>% filter(!fg %in% c('alltree','unclassified')
 melt_pars <- melt(param_ci, id.vars=1:3)
 cast_pars <- dcast(melt_pars, fg+year~parameter+variable)
 
-# Version from 27 Apr. Manually find x and y locations for the slope segment to be plotted.
-
-segment_location <- pred_light_5groups %>%
-  group_by(fg, year) %>%
-  summarize(xmax = sum(light_area[which.max(diff(q50)):(1+which.max(diff(q50)))])/2,
-            ymax = sum(q50[which.max(diff(q50)):(1+which.max(diff(q50)))])/2)
-
-cast_pars <- left_join(cast_pars, segment_location)
-
 dodge_width <- 0.03
 error_bar_width <- 0.04
 
@@ -227,7 +218,6 @@ for (i in dir(fp_plot, pattern = 'pred_|fitted_')) {
   assign(n, read.csv(file.path(fp_plot, i), stringsAsFactors = FALSE))
 }
 
-#source(file.path(github_path, 'stan/piecewise_workflow/plottingfunctionspiecewise.r'))
 # Create plots.
 #Model fit 1 = pareto, 1 segment
 #Model Fit 2  = 2 segments, etc
@@ -372,17 +362,8 @@ p <- plot_prod(year_to_plot = 1995,
                y_name = expression(paste('Diameter growth (cm yr'^-1,')')))
 
 p1 <- p + theme(axis.text.x = element_text(), axis.ticks.x = element_line()) + 
-  labs(x = 'Diameter (cm)') + theme(plot.margin=grid::unit(c(1,1,1,1), "mm")) +
-  g_tot_light <- ggplotGrob(p_tot_light)
-g_tot_vol <- ggplotGrob(p_tot_vol)
+  labs(x = 'Diameter (cm)') + theme(plot.margin=grid::unit(c(1,1,1,1), "mm"))
 
-
-g3 <- rbind(g_tot_vol, g_tot_light, size = "first")
-g3$widths <- unit.pmax(g_tot_vol$widths, g_tot_light$widths)
-grid.newpage()
-grid.draw(g3)
-ggsave(g3, height = 7.6, width = 6, filename = file.path(gdrive_path,'Figures/Fig_5/fig5.pdf'))
-  
 grid.newpage()
 grid.draw(p1)
 
@@ -579,7 +560,7 @@ p <- plot_totalprod(year_to_plot = 1995,
                     y_breaks = c(1, 10, 100, 1000),
                     y_labels = c(1, 10, 100, 1000),
                     y_name = expression(paste('Total Crown Volume (m'^3, ' cm'^-1, ' ha'^-1,')')), 
-                    preddat = fitted_totalvol %>% mutate(prod_model = 2),
+                    preddat = fitted_totalvol,
                     obsdat = totalvolbins_fg, 
                     plot_abline = FALSE,
                     geom_size = 3)
@@ -650,35 +631,6 @@ grid.newpage()
 grid.draw(g3)
 ggsave(g3, height = 7.6, width = 6, filename = file.path(gdrive_path,'Figures/Fig_5/fig5.pdf'))
 
-# Plot individual light using the modified "prod" function
-p <- plot_prod_fixed(year_to_plot = 1995,
-          fg_names = c('fg1','fg2','fg3','fg4','fg5'),
-          model_fit = 2,
-          x_limits = c(1, 150),
-          y_limits = c(10, 1e6),
-          y_breaks = c(10, 1000,1e5),
-          y_labels =  c("0.01", "1", "100"),
-          x_name = 'Diameter (cm)',
-          y_name = 'Individual Light Intercepted (kW)',
-          error_bar_width = 0.01,
-          dodge_width = 0.05,
-          geom_size = 4,
-          preddat = fitted_indivlight,
-          obsdat = indivlightbins_fg %>% mutate(year = 1995, mean = q50) %>% rename(mean_n_individuals = bin_count))
-p
-p1 <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(10, 100, 1000,10000,1e5),
-                             labels = c("0.01", "0.1", "1", "10", "100"), #limits = c(100, 100000),
-                             name = expression(atop('Individual Light',paste('Intercepted (kW)'))))  +
-  theme(aspect.ratio = 0.75, axis.ticks.x = element_line())
-plot(p1)  
-p_indiv_light <- set_panel_size(p1, width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p_indiv_light)
-pdf(file.path(gdrive_path,'Figures/Fig_4/Indiv_light.pdf'))
-plot(p2)
-dev.off()
-
-
 
 #----------------------Supplementals Max Growth by Light ----------------------------------------------------
 
@@ -713,7 +665,7 @@ p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg 
   geom_segment(aes(x = bin_midpoint, xend = bin_midpoint, y = q25, yend = q75), size = 0.3) +
   #geom_segment(aes(x = bin_midpoint, xend = bin_midpoint, y = q025, yend = q975)) +
   geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
-               aes(x = xmax * 0.5, xend = xmax * 2, y = ymax * 0.5, yend = ymax * 2), color = 'brown1', size = .5) +
+               aes(x = x_max_q50 * 0.5, xend = x_max_q50 * 2, y = y_max_q50 * 0.5, yend = y_max_q50 * 2), color = 'brown1', size = .5) +
   geom_point(shape=21, aes(x = bin_midpoint, y = median)) +
   scale_color_manual(values = guild_fills_nb ) +
   scale_fill_manual(values = fg_colors)+
@@ -751,7 +703,6 @@ dev.off()
 
 
 obs_light_raw$fg <- factor(obs_light_raw$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium"))
-facet_wrap(~ fg,labeller = label_value) 
 
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
                                              trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000), 

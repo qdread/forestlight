@@ -10,6 +10,8 @@ gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight
 
 fp_out <- file.path(gdrive_path, 'data/data_forplotting')
 
+years <- seq(1990, 2010, 5)
+fg_names <- c("fg1", "fg2", "fg3", "fg4", "fg5", "unclassified")
 
 # Load all the by-year binned data.
 load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
@@ -62,6 +64,27 @@ write.csv(indivlightbins_fg, file.path(fp_out, 'obs_indivlight.csv'), row.names 
 write.csv(totallightbins_fg, file.path(fp_out, 'obs_totallight.csv'), row.names = FALSE)
 write.csv(totalvolbins_fg, file.path(fp_out, 'obs_totalvol.csv'), row.names = FALSE)
 
+# Observed individual production
+obs_indivprod_df <- map(alltreedat[-1],
+                         function(x) fakebin_across_years(dat_values = x$production, dat_classes = x$dbh_corr, edges = binedgedata, n_census = 1))
+obs_indivprod_df <- cbind(fg = 'all', year = rep(years, each = nrow(binedgedata)), do.call(rbind, obs_indivprod_df))
+
+obs_indivprod_fg <- replicate(length(fg_names), list())
+
+for (i in 1:length(fg_names)) {
+  for (j in 1:length(years)) {
+    obs_indivprod_fg[[i]][[j]] <-
+      cbind(fg = fg_names[i], year = years[j],
+            fakebin_across_years(dat_values = fgdat[[i]][[j+1]]$production,
+                                 dat_classes = fgdat[[i]][[j+1]]$dbh_corr,
+                                 edges = binedgedata,
+                                 n_census = 1))
+  }
+}
+
+obs_indivprod_fg <- do.call(rbind, map(obs_indivprod_fg, function(x) do.call(rbind, x)))
+obs_indivprod_df <- rbind(obs_indivprod_df, obs_indivprod_fg)
+
 # Load correction factor for total production
 cf_production <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_cf_by_fg.csv')) %>% 
   select(prod_model, fg, q50) %>% 
@@ -74,7 +97,6 @@ obs_dens <- densitybin_byyear %>%
   mutate(bin_value = bin_value / area_core)
 obs_totalprod <- totalproductionbin_byyear %>%
   mutate(bin_value = bin_value / area_core)
-obs_indivprod <- indivproductionbin_byyear
 
 
 ci_df <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_ci_by_fg.csv'), stringsAsFactors = FALSE)
@@ -113,7 +135,7 @@ pred_totalprod <- pred_totalprod %>%
 
 write.csv(obs_dens, file.path(fp_out, 'obs_dens.csv'), row.names = FALSE)
 write.csv(obs_totalprod, file.path(fp_out, 'obs_totalprod.csv'), row.names = FALSE)
-write.csv(obs_indivprod, file.path(fp_out, 'obs_indivprod.csv'), row.names = FALSE)
+write.csv(obs_indivprod_df, file.path(fp_out, 'obs_indivprod.csv'), row.names = FALSE)
 write.csv(pred_dens, file.path(fp_out, 'pred_dens.csv'), row.names = FALSE)
 write.csv(pred_indivprod, file.path(fp_out, 'pred_indivprod.csv'), row.names = FALSE)
 write.csv(pred_totalprod, file.path(fp_out, 'pred_totalprod.csv'), row.names = FALSE)
@@ -332,32 +354,32 @@ write.csv(unscaledlightbydbhfakebin_fg, file.path(fp_out, 'unscaledlightbydbhfak
 
 # Diameter growth plots ---------------------------------------------------
 
-# Observed
-indivdiamgrowthbins_all <- alltreedat[[3]] %>%
-  mutate(indivdiamgrowth_bin = cut(dbh_corr, breaks = c(binedgedata$bin_min[1], binedgedata$bin_max), labels = binedgedata$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(indivdiamgrowth_bin) %>%
-  do(c(n = nrow(.), quantile(.$diam_growth_rate, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
-indivdiamgrowthbins_fg <- alltree_light_95 %>%
-  mutate(fg = if_else(!is.na(fg), paste0('fg',fg), 'unclassified')) %>%
-  mutate(indivdiamgrowth_bin =cut(dbh_corr, breaks = c(binedgedata$bin_min[1], binedgedata$bin_max), labels = binedgedata$bin_midpoint, include.lowest = TRUE)) %>%
-  group_by(fg, indivdiamgrowth_bin) %>%
-  do(c(n = nrow(.), quantile(.$diam_growth_rate, c(0.025, 0.25, 0.5, 0.75, 0.975))) %>%
-       t %>% 
-       as.data.frame %>%
-       setNames(c('bin_count', 'q025','q25','q50','q75','q975')))
-indivdiamgrowthbins_fg <- data.frame(fg = 'all', indivdiamgrowthbins_all, stringsAsFactors = FALSE) %>%
-  rbind(as.data.frame(indivdiamgrowthbins_fg)) %>%
-  mutate(indivdiamgrowth_bin = as.numeric(as.character(indivdiamgrowth_bin))) %>%
-  rename(bin_midpoint = indivdiamgrowth_bin) %>%
-  cbind(year = 1995)
+
+# Observed individual diameter growth
+obs_indivdiamgrowth_df <- map(alltreedat[-1],
+                        function(x) fakebin_across_years(dat_values = x$diam_growth_rate, dat_classes = x$dbh_corr, edges = binedgedata, n_census = 1))
+obs_indivdiamgrowth_df <- cbind(fg = 'all', year = rep(years, each = nrow(binedgedata)), do.call(rbind, obs_indivdiamgrowth_df))
+
+obs_indivdiamgrowth_fg <- replicate(length(fg_names), list())
+
+for (i in 1:length(fg_names)) {
+  for (j in 1:length(years)) {
+    obs_indivdiamgrowth_fg[[i]][[j]] <-
+      cbind(fg = fg_names[i], year = years[j],
+            fakebin_across_years(dat_values = fgdat[[i]][[j+1]]$diam_growth_rate,
+                                 dat_classes = fgdat[[i]][[j+1]]$dbh_corr,
+                                 edges = binedgedata,
+                                 n_census = 1))
+  }
+}
+
+obs_indivdiamgrowth_fg <- do.call(rbind, map(obs_indivdiamgrowth_fg, function(x) do.call(rbind, x)))
+obs_indivdiamgrowth_df <- rbind(obs_indivdiamgrowth_df, obs_indivdiamgrowth_fg)
 
 # Fitted
 fittedvals <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/diamgrowth_piecewise_ci_by_fg.csv'), stringsAsFactors = FALSE) %>%
   filter(variable == 'diameter_growth_fitted') %>%
   mutate(fg = if_else(fg == 'alltree', 'all', fg))
 
-write.csv(indivdiamgrowthbins_fg, file = file.path(fp_out, 'obs_indivdiamgrowth.csv'), row.names = FALSE)
+write.csv(obs_indivdiamgrowth_df, file = file.path(fp_out, 'obs_indivdiamgrowth.csv'), row.names = FALSE)
 write.csv(fittedvals, file = file.path(fp_out, 'fitted_indivdiamgrowth.csv'), row.names = FALSE)

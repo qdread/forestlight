@@ -597,3 +597,34 @@ plot(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_6/Fig_6b_Density_2yr.pdf'))
 plot(p1)
 dev.off()
+
+
+# Fig 4 Indiv light not used ----------------------------------------------
+
+# Plot individual light using the modified "prod" function
+p <- plot_prod_fixed(year_to_plot = 1995,
+                     fg_names = c('fg1','fg2','fg3','fg4','fg5'),
+                     model_fit = 2,
+                     x_limits = c(1, 150),
+                     y_limits = c(10, 1e6),
+                     y_breaks = c(10, 1000,1e5),
+                     y_labels =  c("0.01", "1", "100"),
+                     x_name = 'Diameter (cm)',
+                     y_name = 'Individual Light Intercepted (kW)',
+                     error_bar_width = 0.01,
+                     dodge_width = 0.05,
+                     geom_size = 4,
+                     preddat = fitted_indivlight,
+                     obsdat = indivlightbins_fg %>% mutate(year = 1995, mean = q50) %>% rename(mean_n_individuals = bin_count))
+p
+p1 <- p + scale_y_continuous(position = "left", trans = "log10", breaks = c(10, 100, 1000,10000,1e5),
+                             labels = c("0.01", "0.1", "1", "10", "100"), #limits = c(100, 100000),
+                             name = expression(atop('Individual Light',paste('Intercepted (kW)'))))  +
+  theme(aspect.ratio = 0.75, axis.ticks.x = element_line())
+plot(p1)  
+p_indiv_light <- set_panel_size(p1, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p_indiv_light)
+pdf(file.path(gdrive_path,'Figures/Fig_4/Indiv_light.pdf'))
+plot(p2)
+dev.off()
