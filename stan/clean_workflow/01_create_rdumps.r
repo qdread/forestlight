@@ -13,7 +13,7 @@
 
 # file paths for input and output
 fpdata <- '~/google_drive/ForestLight/data'
-fpdump <- '~/Dropbox/projects/forestlight/stanrdump'
+fpdump <- '~/Dropbox/Q/projects/forestlight/stanrdump'
 
 # load raw data
 load(file.path(fpdata, 'rawdataobj_alternativecluster.r'))
@@ -81,18 +81,18 @@ dat95 %>%
 	group_walk(~ create_rdump(as.data.frame(.), 'light_area', 'production_area', file_name = file.path(fpdump, paste0('dump_light_', .y, '_1995.r'))))
 	
 ### individual incoming light ~ diameter scalings
-create_rdump(dat95, 'light_received', 'dbh_corr', file_name = file.path(fpdump, 'dump_rawlightscaling_alltree_1995.r'))
+create_rdump(dat95, 'dbh_corr', 'light_received', file_name = file.path(fpdump, 'dump_rawlightscaling_alltree_1995.r'))
 
 dat95 %>%
 	group_by(fg) %>%
-	group_walk(~ create_rdump(as.data.frame(.), 'light_received', 'dbh_corr', file_name = file.path(fpdump, paste0('dump_rawlightscaling_', .y, '_1995.r'))))
+	group_walk(~ create_rdump(as.data.frame(.), 'dbh_corr', 'light_received', file_name = file.path(fpdump, paste0('dump_rawlightscaling_', .y, '_1995.r'))))
 
 ### crown volume ~ diameter scalings
-create_rdump(dat95, 'crownvolume', 'dbh_corr', file_name = file.path(fpdump, 'dump_volumescaling_alltree_1995.r'))
+create_rdump(dat95, 'dbh_corr', 'crownvolume', file_name = file.path(fpdump, 'dump_volumescaling_alltree_1995.r'))
 
 dat95 %>%
 	group_by(fg) %>%
-	group_walk(~ create_rdump(as.data.frame(.), 'crownvolume', 'dbh_corr', file_name = file.path(fpdump, paste0('dump_volumescaling_', .y, '_1995.r'))))
+	group_walk(~ create_rdump(as.data.frame(.), 'dbh_corr', 'crownvolume', file_name = file.path(fpdump, paste0('dump_volumescaling_', .y, '_1995.r'))))
 
 ### mortality
 mort_data <- mort %>%
