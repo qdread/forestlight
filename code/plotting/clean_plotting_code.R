@@ -702,27 +702,29 @@ dev.off()
 # colored hexagon plot ----------------------------------------------------
 
 
-obs_light_raw$fg <- factor(obs_light_raw$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium"))
+obs_light_raw$fg <- factor(obs_light_raw$fg, levels = c(paste0('fg', 1:5), 'unclassified'),
+                           labels = c("Fast", "Pioneer", "Slow", "Breeder", "Medium", "Unclassified"))
+pred_light_5groups$fg <- factor(pred_light_5groups$fg, levels = c(paste0('fg', 1:5)),
+                                labels = c("Fast", "Pioneer", "Slow", "Breeder", "Medium"))
 
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
                                              trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000), 
                                              labels = c(1,10,100,1000), limits=c(1,5000))
 
 unique(obs_light_raw$fg)
-p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% 'unclassified', )) +
-  #facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +
-  facet_wrap(~ fg,labeller = fg_labels2) +
+p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% 'Unclassified')) +
+  facet_wrap(~ fg) +
   geom_hex(aes(x = light_area, y = production_area)) +
   #geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
   #          aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
-            aes(x = light_area, y = q50, color = fg)) +
+            aes(x = light_area, y = q50), color = 'black') +
   #geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q025, color = fg),  linetype = 'dotted') +
   #geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q975, color = fg),  linetype = 'dotted') +
   scale_x_log10(name = title_x) + 
   scale_y_log10(name = title_y, labels=signif) +
   hex_scale_log_colors + 
-  scale_color_manual(name = 'Functional group',values = fg_colors, labels = fg_labels) +
+  #scale_color_manual(name = 'Functional group',values = fg_colors[1:5]) +
   #scale_fill_manual(values = fg_colors, labels = fg_labels, guide = FALSE) +
   theme_plant() +
   guides(color = FALSE) +
