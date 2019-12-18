@@ -1,6 +1,15 @@
 # Clean plotting code using "packaged" functions
 # Plots all main and supplemental figures in forest scaling MS
 
+########### ============== ##############
+### WHICH MODEL FITS TO USE IN PLOTS ####
+########### ============== ##############
+
+# change these if needed.
+DENS = 3
+PROD = 1
+
+
 # Set path to data on google drive
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users',Sys.info()['user'],'Google Drive/ForestLight'))
 
@@ -228,7 +237,7 @@ grob_text_c <- grobTree(textGrob("c", x = 0.05, y = 0.95, gp = gpar(col = "black
 geom_size = 4
 p <- plot_dens(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
-          model_fit = 3,
+          model_fit = DENS,
           x_limits = c(.8, 260),
           y_limits = c(0.003, 8000),
           y_labels = c(0.001, 0.1, 10,1000),
@@ -247,7 +256,7 @@ dev.off()
 # Model fit 2 = power law exp
 p <- plot_prod(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
-          model_fit = 2,
+          model_fit = PROD,
           x_limits = c(1, 280),
           y_limits = c(0.001, 2000),
           y_breaks = c(0.001,0.1, 10, 1000),
@@ -268,8 +277,8 @@ grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.2, y = 0.9
                                gp = gpar(col = "gray42", fontsize = 20))) 
 p <- plot_totalprod(year_to_plot = 1995,
                fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
-               model_fit_density = 3, 
-               model_fit_production = 2,
+               model_fit_density = DENS, 
+               model_fit_production = PROD,
                x_limits = c(0.9,250),
                y_limits = c(0.03, 200),
                y_breaks = c(0.1, 1, 10, 100),
@@ -296,8 +305,8 @@ dev.off()
 ### Add height  
 p <- plot_totalprod(year_to_plot = 1995,
                     fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
-                    model_fit_density = 3, 
-                    model_fit_production = 2,
+                    model_fit_density = DENS, 
+                    model_fit_production = PROD,
                     x_limits = c(0.9,250),
                     y_limits = c(0.03, 200),
                     y_breaks = c(0.1, 1, 10, 100),
@@ -348,7 +357,7 @@ dev.off()
 
 p <- plot_prod(year_to_plot = 1995,
                fg_names = c('fg1','fg2','fg3','fg4','fg5'),
-               model_fit = 2,
+               model_fit = PROD,
                x_limits = c(1, 280),
                y_limits = c(0.02, 1),
                y_breaks = c(0.03, 0.1, 0.3, 1),
@@ -553,8 +562,8 @@ totalvolbins_fg <- read.csv(file.path(fp_plot, 'obs_totalvol.csv'), stringsAsFac
 # Plot total volume using the "totalprod" function
 p <- plot_totalprod(year_to_plot = 1995,
                     fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
-                    model_fit_density = 3, 
-                    model_fit_production = 2,
+                    model_fit_density = DENS, 
+                    model_fit_production = PROD,
                     x_limits = c(0.9, 150),
                     y_limits = c(5, 5500),
                     y_breaks = c(1, 10, 100, 1000),
@@ -591,8 +600,8 @@ p_tot_vol <- p00
 # Plot total light using the "totalprod" function
 tot_light <- plot_totalprod(year_to_plot = 1995,
                             fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
-                            model_fit_density = 3, 
-                            model_fit_production = 2,
+                            model_fit_density = DENS, 
+                            model_fit_production = PROD,
                             x_limits = c(0.9,150),
                             y_limits = c(100, 200000),
                             y_breaks = c(100, 1000, 10000, 100000),
@@ -849,7 +858,7 @@ dev.off()
 params <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_paramci_by_fg.csv'), stringsAsFactors = FALSE)
 
 xvalues <- params %>% 
-  filter(variable == 'density', model == 3) %>%
+  filter(variable == 'density', model == DENS) %>%
   group_by(fg) %>%
   summarize(mid_cutoff = (mean[parameter == 'tau_high'] + mean[parameter == 'tau_low'])/2)
 
@@ -858,14 +867,14 @@ xvalues <- params %>%
 growth_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 light_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/light_piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 growth_slopes_atmiddle <- growth_slopes %>% 
-  filter(variable == 'total_production', dens_model == 3, prod_model == 2) %>%
+  filter(variable == 'total_production', dens_model == DENS, prod_model == PROD) %>%
   left_join(xvalues) %>%
   mutate(diff = abs(dbh - mid_cutoff)) %>%
   group_by(fg) %>%
   filter(diff == min(diff))
 
 light_slopes_atmiddle <- light_slopes %>% 
-  filter(variable == 'total_incoming_light', dens_model == 3, prod_model == 2) %>%
+  filter(variable == 'total_incoming_light', dens_model == DENS, prod_model == PROD) %>%
   left_join(xvalues) %>%
   mutate(diff = abs(dbh - mid_cutoff)) %>%
   group_by(fg) %>%
