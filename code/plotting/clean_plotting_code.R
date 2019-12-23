@@ -11,6 +11,8 @@ PROD = 1
 
 
 # Set path to data on google drive
+devtools::install_github('qdread/forestscaling')
+
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users',Sys.info()['user'],'Google Drive/ForestLight'))
 
 library(forestscaling) # Packaged all the functions and ggplot2 themes here!
@@ -42,63 +44,6 @@ fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 geom_size <- 4
 
 # Some Plotting Code
-
-
-theme_plant <- theme(panel.grid = element_blank(), #for Total Production
-                     aspect.ratio = .75,
-                     axis.text = element_text(size = 19, color = "black"), 
-                     axis.ticks.length=unit(0.2,"cm"),
-                     axis.title = element_text(size = 19),
-                     axis.title.y = element_text(margin = margin(r = 10)),
-                     axis.title.x = element_text(margin = margin(t = 10)),
-                     axis.title.x.top = element_text(margin = margin(b = 5)),
-                     plot.title = element_text(size = 19, face = "plain", hjust = 10),
-                     panel.border = element_rect(color = "black", fill=NA,  size=1),
-                     panel.background = element_blank(),
-                     legend.position = "none",
-                     rect = element_rect(fill = "transparent"),
-                     text = element_text(family = 'Helvetica')) 
-#better?
-theme_plant_small <- theme(panel.grid = element_blank(), #for Total Production
-                           aspect.ratio = .75,
-                           axis.text = element_text(size = 15, color = "black"), 
-                           axis.ticks.length=unit(0.2,"cm"),
-                           axis.title = element_text(size = 15),
-                           axis.title.y = element_text(margin = margin(r = 10)),
-                           axis.title.x = element_text(margin = margin(t = 10)),
-                           axis.title.x.top = element_text(margin = margin(b = 5)),
-                           plot.title = element_text(size = 15, face = "plain", hjust = 10),
-                           panel.border = element_rect(color = "black", fill=NA,  size=1),
-                           panel.background = element_rect(fill = "transparent",colour = NA),
-                           plot.background = element_rect(fill = "transparent",colour = NA),
-                           legend.position = "none",
-                           rect = element_rect(fill = "transparent"),
-                           text = element_text(family = 'Helvetica')) 
-
-theme_facet <- theme(strip.background = element_rect(fill=NA),
-                     panel.border = element_rect(color = "black", fill=NA,  size=.75),legend.position = 'none',
-                     panel.background = element_blank(),
-                     strip.text.x = element_blank(),
-                     axis.text = element_text(size = 15, color = "black"), 
-                     axis.ticks.length=unit(0.2,"cm"),
-                     axis.title = element_text(size = 15)) 
-
-theme_facet2 <- theme(strip.background = element_rect(fill=NA),
-                      panel.border = element_rect(color = "black", fill=NA,  size=.75),legend.position = 'none',
-                      panel.background = element_blank(),
-                      strip.text.x = element_blank(),
-                      axis.text = element_text(size = 15, color = "black"), 
-                      axis.ticks.length=unit(0.2,"cm"),
-                      axis.title = element_text(size = 15)) 
-
-theme_no_y <- theme(axis.title.y = element_blank(),
-                    axis.text.y = element_blank(),
-                    axis.ticks.y = element_blank())
-
-theme_no_x <- theme(axis.title.x = element_blank(),
-                    axis.text.x = element_blank(),
-                    axis.ticks.x = element_blank())
-
 
 
 ################################################################################################
@@ -265,7 +210,6 @@ dev.off()
 ################################################################################################
 
 # Plot of slopes in different segments by different functional groups.
-
 
 fp_plot <- file.path(gdrive_path, 'data/data_forplotting')
 
