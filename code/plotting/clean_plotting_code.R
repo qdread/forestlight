@@ -41,6 +41,66 @@ fg_labels <- c('Fast','LL Pioneer', 'Slow', 'SL Breeder', 'Medium')
 
 geom_size <- 4
 
+# Some Plotting Code
+
+
+theme_plant <- theme(panel.grid = element_blank(), #for Total Production
+                     aspect.ratio = .75,
+                     axis.text = element_text(size = 19, color = "black"), 
+                     axis.ticks.length=unit(0.2,"cm"),
+                     axis.title = element_text(size = 19),
+                     axis.title.y = element_text(margin = margin(r = 10)),
+                     axis.title.x = element_text(margin = margin(t = 10)),
+                     axis.title.x.top = element_text(margin = margin(b = 5)),
+                     plot.title = element_text(size = 19, face = "plain", hjust = 10),
+                     panel.border = element_rect(color = "black", fill=NA,  size=1),
+                     panel.background = element_blank(),
+                     legend.position = "none",
+                     rect = element_rect(fill = "transparent"),
+                     text = element_text(family = 'Helvetica')) 
+#better?
+theme_plant_small <- theme(panel.grid = element_blank(), #for Total Production
+                           aspect.ratio = .75,
+                           axis.text = element_text(size = 15, color = "black"), 
+                           axis.ticks.length=unit(0.2,"cm"),
+                           axis.title = element_text(size = 15),
+                           axis.title.y = element_text(margin = margin(r = 10)),
+                           axis.title.x = element_text(margin = margin(t = 10)),
+                           axis.title.x.top = element_text(margin = margin(b = 5)),
+                           plot.title = element_text(size = 15, face = "plain", hjust = 10),
+                           panel.border = element_rect(color = "black", fill=NA,  size=1),
+                           panel.background = element_rect(fill = "transparent",colour = NA),
+                           plot.background = element_rect(fill = "transparent",colour = NA),
+                           legend.position = "none",
+                           rect = element_rect(fill = "transparent"),
+                           text = element_text(family = 'Helvetica')) 
+
+theme_facet <- theme(strip.background = element_rect(fill=NA),
+                     panel.border = element_rect(color = "black", fill=NA,  size=.75),legend.position = 'none',
+                     panel.background = element_blank(),
+                     strip.text.x = element_blank(),
+                     axis.text = element_text(size = 15, color = "black"), 
+                     axis.ticks.length=unit(0.2,"cm"),
+                     axis.title = element_text(size = 15)) 
+
+theme_facet2 <- theme(strip.background = element_rect(fill=NA),
+                      panel.border = element_rect(color = "black", fill=NA,  size=.75),legend.position = 'none',
+                      panel.background = element_blank(),
+                      strip.text.x = element_blank(),
+                      axis.text = element_text(size = 15, color = "black"), 
+                      axis.ticks.length=unit(0.2,"cm"),
+                      axis.title = element_text(size = 15)) 
+
+theme_no_y <- theme(axis.title.y = element_blank(),
+                    axis.text.y = element_blank(),
+                    axis.ticks.y = element_blank())
+
+theme_no_x <- theme(axis.title.x = element_blank(),
+                    axis.text.x = element_blank(),
+                    axis.ticks.x = element_blank())
+
+
+
 ################################################################################################
 # ------------------------------ Fig 1: hand drawn schematics ---------------------------------
 ################################################################################################
@@ -154,7 +214,7 @@ p_mean_1panel <- ggplot(obs_light_binned_plotdata) +
                 labels = c(0.003, 0.01, 0.03, 0.1)) +
   scale_color_manual(name = 'Functional group', values = guild_fills_nb0, labels = fg_labels) +
   scale_fill_manual(values = guild_fills_nb, labels = fg_labels, guide = FALSE) +
-  theme_plant() + theme_no_x()
+  theme_plant + theme_no_x
 p2b <- set_panel_size(p_mean_1panel, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p2b)
@@ -186,7 +246,7 @@ plightarea <- ggplot(data = fitted_mort %>% mutate(fg = factor(fg, labels = fg_l
                 name = expression(paste("Mortality (5 yr"^-1,")"))) +
   scale_color_manual(values = guild_fills_nb) +
   scale_fill_manual(values = guild_fills_nb) +
-  theme_plant()
+  theme_plant
 
 plightarea
 p2c <- set_panel_size(plightarea, width=unit(10.25,"cm"), height=unit(7,"cm"))
