@@ -159,7 +159,7 @@ p_mean_1panel <- ggplot(obs_light_binned_plotdata) +
                 labels = c(0.003, 0.01, 0.03, 0.1)) +
   scale_color_manual(name = 'Functional group', values = guild_fills_nb0, labels = fg_labels) +
   scale_fill_manual(values = guild_fills_nb, labels = fg_labels, guide = FALSE) +
-  theme_plant + theme_no_x
+  theme_plant() + theme_no_x()
 p2b <- set_panel_size(p_mean_1panel, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p2b)
@@ -191,7 +191,7 @@ plightarea <- ggplot(data = fitted_mort %>% mutate(fg = factor(fg, labels = fg_l
                 name = expression(paste("Mortality (5 yr"^-1,")"))) +
   scale_color_manual(values = guild_fills_nb) +
   scale_fill_manual(values = guild_fills_nb) +
-  theme_plant
+  theme_plant()
 
 plightarea
 p2c <- set_panel_size(plightarea, width=unit(10.25,"cm"), height=unit(7,"cm"))
@@ -212,7 +212,6 @@ dev.off()
 # Plot of slopes in different segments by different functional groups.
 
 fp_plot <- file.path(gdrive_path, 'data/data_forplotting')
-
 
 # Plot the fitted values on top of the observed histograms.
 
@@ -322,7 +321,7 @@ p0 <- p + scale_x_log10(name = 'Diameter (cm)',
                         breaks = c(1,3,10,30,100,300), limits = c(0.9, 250),
                         sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
                                     name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 40))) +
-  scale_y_log10(position = "left", limits = c(0.03, 200), breaks = c(0.1, 1, 10, 100),labels = c(0.1, 1, 10, 100),
+  scale_y_log10(position = "left", limits = c(0.1, 200), breaks = c(0.1, 1, 10, 100),labels = c(0.1, 1, 10, 100),
                 name =expression(atop('Total Production', paste('(kg ha'^-1,' cm'^-1,' yr'^-1,')')))) +
   theme(aspect.ratio = 0.8)
 
@@ -351,10 +350,8 @@ p <- ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax =
   scale_color_manual(values = guild_fills2) +
   theme_plant()
 p
-grid.newpage()
-grid.draw(p1)
 pdf(file.path(gdrive_path,'Figures/Fig_3/Range/Total_Production_Range.pdf'))
-grid.draw(p1)
+grid.draw(p)
 dev.off()
 
 # ------------------------ Individual growth plot using diameter -------------------------
@@ -405,9 +402,10 @@ p <- ggplot(ics %>% filter(criterion == 'WAIC',
 p
 
 p1 <- set_panel_size(p, width=unit(3.5,"cm"), height=unit(7,"cm"))
-plot(p1)
+grid.newpage()
+grid.draw(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_3/WAIC/WAIC_density.pdf'))
-plot(p1)
+grid.draw(p1)
 dev.off()
 
 # Growth model
@@ -425,9 +423,10 @@ p <- ggplot(ics %>% filter(criterion == 'WAIC',
 p
 
 p1 <- set_panel_size(p, width=unit(4,"cm"), height=unit(7,"cm"))
-plot(p1)
+grid.newpage()
+grid.draw(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_3/WAIC/WAIC_growth.pdf'))
-plot(p1)
+grid.draw(p1)
 dev.off()
 
 #---------------------------------------------------------------------------------------------
@@ -591,7 +590,7 @@ p_tot_vol <- p00
 #p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
 p_tot_vol_x<- set_panel_size(p00, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
-grid.draw(p_tot_vol_xl)
+grid.draw(p_tot_vol_x)
 
 pdf(file.path(gdrive_path,'Figures/Fig_4/Fig_4a_Total_Crown_Vol.pdf'))
 grid.draw(p_tot_vol)
@@ -747,7 +746,7 @@ p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% '
 p_hex_panels
 #p <-set_panel_size(p_hex_panels, width=unit(10,"cm"), height=unit(6,"cm"))
 #plot(p)
-pdf(file.path(gdrive_path, "Figures/Fig_4/Growth by light/growth_light_heat_map.pdf"))
+pdf(file.path(gdrive_path, "Figures/Fig_4/growth_light_heat_map.pdf"))
 p_hex_panels
 dev.off()
 
@@ -787,9 +786,10 @@ p <- ggplot() + geom_point(alpha = 0.01, data = alltree_light_95, aes(x = dbh_co
 p
 
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p2)
+grid.newpage()
+grid.draw(p2)
 pdf(file.path(gdrive_path,'Figures/Fig_5/Fig_5a.pdf'))
-plot(p2)
+grid.draw(p2)
 dev.off()
 
 #name = expression(atop('Total Light Intercepted',paste('(W m'^3, ' cm'^-1,' ha'^-1,')'))))  
@@ -817,9 +817,10 @@ p <- ggplot() +
   theme_plant()
 
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p2)
+grid.newpage()
+grid.draw(p2)
 pdf(file.path(gdrive_path,'Figures/Fig_5/Fig_5b.pdf'))
-plot(p2)
+grid.draw(p2)
 dev.off()
 
 
@@ -848,9 +849,10 @@ p <- ggplot() +
   guides(fill = guide_legend(override.aes = list(alpha = alpha_value))) +
   geom_abline(intercept = 0.903027, slope = 2.343608)
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p2)
+grid.newpage()
+grid.draw(p2)
 pdf(file.path(gdrive_path,'Figures/Fig_5/Indiv_light.pdf'))
-plot(p2)
+grid.draw(p2)
 dev.off()
 
 
@@ -908,9 +910,10 @@ p <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, 
   theme_plant() + theme(axis.text.x = element_text(angle = 35, hjust = 1, face = "italic", size = 15)) +
   annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3)
 
-p
+grid.newpage()
+grid.draw(p)
 pdf(file.path(gdrive_path, 'Figures/Fig_5/Growth Light symmetry.pdf'))
-p
+grid.draw(p)
 dev.off()
 #-------------------------------------------------------------------------------------------
 
@@ -955,9 +958,10 @@ p <- prod_ratio_light   %>%
 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
+grid.newpage()
+grid.draw(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_6/Fig_6b_Production_light.pdf'))
-plot(p1)
+grid.draw(p1)
 dev.off()
 
 # -------------------- ----- Supp: Density ratio by light -----------------------------
@@ -976,9 +980,10 @@ p <- prod_ratio_diam   %>%
 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
+grid.newpage()
+grid.draw(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_6/Sup_Production_diam.pdf'))
-plot(p1)
+grid.draw(p1)
 dev.off()
 
 #----------------------------- Fig 6B Abundance by Diameter ----------------------------
@@ -1001,9 +1006,10 @@ p <- prod_ratio_diam %>%
 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
+grid.newpage()
+grid.draw(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_6/Fig_6b_Density.pdf'))
-plot(p1)
+grid.draw(p1)
 dev.off()
 
 # -------------------- ----- Supp: Production ratio by diameter  -----------------------------
@@ -1022,9 +1028,10 @@ p <- prod_ratio_diam  %>%
                 name = expression("Production Ratio")) 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
+grid.newpage()
+grid.draw(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_6/Sup Ratios/Production_diam.pdf'))
-plot(p1)
+grid.draw(p1)
 dev.off()
 
 
@@ -1054,9 +1061,10 @@ p <- score_bin_bydiam %>%
   scale_y_continuous(limits=c(-2,2.5),breaks=c(-2,0,2),name = 'PCA score') 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
+grid.newpage()
+grid.draw(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_6/PCA_Scores/PCA_diam.pdf'))
-plot(p1)
+grid.draw(p1)
 dev.off()
 
 
@@ -1082,7 +1090,8 @@ p <- PCA_score_by_light %>%
   scale_y_continuous(limits=c(-2.2,1.5),name = 'PCA score') 
 p
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-plot(p1)
+grid.newpage()
+grid.draw(p1)
 pdf(file.path(gdrive_path, 'Figures/Fig_6/PCA_Scores/PCA_light.pdf'))
-plot(p1)
+grid.draw(p1)
 dev.off()
