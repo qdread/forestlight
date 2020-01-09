@@ -1,4 +1,5 @@
 # Create piecewise data for plotting.
+# Modified 09 Jan 2020: Fix incorrect number of individuals in some of the observed data.
 # Modified 13 Dec 2019: Create both observed and predicted data in this script. 
 # Modified 13 Dec 2019: Use the new up to date correction factor based on the true correction of Jensen's Inequality.
 # Modified 02 Jul 2019: Calculate new correction factors to get the proper normalizations (based on integral with bounded limits)
@@ -133,6 +134,13 @@ pred_totalprod <- pred_totalprod %>%
   left_join(cf_production) %>%
   mutate_at(vars(starts_with('q')), ~ . * (corr_factor/area_core))
 
+# Added 09 Jan 2020: replace incorrect bin counts in observed production data with the bin counts from observed density.
+joined_counts <- obs_indivprod_df %>% 
+  select(fg, year, bin_midpoint) %>%
+  left_join(obs_dens %>% select(fg, year, bin_midpoint, bin_count))
+
+obs_indivprod_df$mean_n_individuals <- joined_counts$bin_count
+
 write.csv(obs_dens, file.path(fp_out, 'obs_dens.csv'), row.names = FALSE)
 write.csv(obs_totalprod, file.path(fp_out, 'obs_totalprod.csv'), row.names = FALSE)
 write.csv(obs_indivprod_df, file.path(fp_out, 'obs_indivprod.csv'), row.names = FALSE)
@@ -227,6 +235,7 @@ dat95 <- alltree_light_95 %>%
   mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg)))
 
 numbins <- 20
+
 light_bins_9095 <- logbin(x = c(dat90$light_area, dat95$light_area), n = numbins)
 
 prod_light_bin_90 <- fakebin_across_years(dat_values = dat90$production_area,
@@ -259,6 +268,32 @@ prod_light_bin_fg_95 <- dat95 %>%
 prod_light_bin_fg_95 <- cbind(fg = rep(c('fg1','fg2','fg3','fg4','fg5','unclassified'), each = numbins),
                               do.call(rbind, prod_light_bin_fg_95$bin)) %>%
   filter(complete.cases(.))
+
+# Added 09 Jan 2020: Replace incorrect number of individuals in binned light data frame with correct ones by group.
+# There is no existing bin count so must be created manually.
+nlight90 <- dat90 %>%
+  group_by(fg) %>%
+  mutate(bin = cut(light_area, breaks = c(light_bins_9095$bin_min, light_bins_9095$bin_max[numbins]))) %>%
+  group_by(fg, bin) %>%
+  summarize(correct_n = n()) %>%
+  mutate(bin_midpoint = light_bins_9095$bin_midpoint[as.numeric(bin)])
+nlight95 <- dat95 %>%
+  group_by(fg) %>%
+  mutate(bin = cut(light_area, breaks = c(light_bins_9095$bin_min, light_bins_9095$bin_max[numbins]))) %>%
+  group_by(fg, bin) %>%
+  summarize(correct_n = n()) %>%
+  mutate(bin_midpoint = light_bins_9095$bin_midpoint[as.numeric(bin)])
+
+# Join 1990 and 1995 correct counts with the binned values.
+joined_counts_light90 <- prod_light_bin_fg_90 %>%
+  select(fg, bin_midpoint) %>%
+  left_join(nlight90)
+joined_counts_light95 <- prod_light_bin_fg_95 %>%
+  select(fg, bin_midpoint) %>%
+  left_join(nlight95)
+
+prod_light_bin_fg_90$mean_n_individuals <- joined_counts_light90$correct_n
+prod_light_bin_fg_95$mean_n_individuals <- joined_counts_light95$correct_n
 
 prod_light_bin_all <- rbind(
   cbind(year = 1990, fg = 'alltree', prod_light_bin_90),
@@ -380,6 +415,9 @@ obs_indivdiamgrowth_df <- rbind(obs_indivdiamgrowth_df, obs_indivdiamgrowth_fg)
 fittedvals <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/diamgrowth_piecewise_ci_by_fg.csv'), stringsAsFactors = FALSE) %>%
   filter(variable == 'diameter_growth_fitted') %>%
   mutate(fg = if_else(fg == 'alltree', 'all', fg))
+
+# Added 09 Jan 2020: Correct bad numbers of individuals in observed diameter growth by replacing with values from density
+obs_indivdiamgrowth_df$mean_n_individuals <- joined_counts$bin_count
 
 write.csv(obs_indivdiamgrowth_df, file = file.path(fp_out, 'obs_indivdiamgrowth.csv'), row.names = FALSE)
 write.csv(fittedvals, file = file.path(fp_out, 'fitted_indivdiamgrowth.csv'), row.names = FALSE)
