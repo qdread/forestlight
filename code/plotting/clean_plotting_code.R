@@ -11,7 +11,7 @@ PROD = 1
 
 
 # Set path to data on google drive
-devtools::install_github('qdread/forestscaling')
+#devtools::install_github('qdread/forestscaling')
 
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users',Sys.info()['user'],'Google Drive/ForestLight'))
 
@@ -142,7 +142,7 @@ dodge_width <- 0.03
 error_bar_width <- 0.04
 
 # Do some additional computation to correct the error bar width for the number of groups in each bin
-obs_light_binned_plotdata <- obs_light_binned %>% filter(year == year_to_plot, mean_n_individuals > 20, !fg %in% c('alltree', 'unclassified')) %>%
+obs_light_binned_plotdata <- obs_light_binned %>% filter(year == year_to_plot, mean_n_individuals >= 20, !fg %in% c('alltree', 'unclassified')) %>%
   group_by(bin_midpoint, year) %>% 
   mutate(width = sum(c('fg1','fg2','fg3','fg4','fg5') %in% fg)) %>% 
   ungroup
@@ -181,30 +181,30 @@ bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortality
 mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv')) # Load raw data
 fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
 
-
+geom_size = 4
 plightarea <- ggplot(data = fitted_mort %>% mutate(fg = factor(fg, labels = fg_labels))) +
   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = bin_mort %>% filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) > 20)  %>% mutate(fg = factor(fg, labels = fg_labels)),
+  geom_point(data = bin_mort %>% filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) > 20)  %>% 
+               mutate(fg = factor(fg, labels = fg_labels)),
              aes(x = bin_midpoint, y = mortality, fill = fg),
              shape = 21, size = geom_size) +
   scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), limits = c(1.1, 412)) +
-  scale_y_continuous(trans = "logit", position = "right", breaks = c(0.03, 0.3, .1), labels = c(0.03, 0.3, 0.1), limits = c(0.02, .5),
+  scale_y_continuous(trans = "logit", position = "right", breaks = c(0.03, 0.1, 0.3, 0.6), 
+                     labels = c(0.03, 0.1, 0.3, 0.6), limits = c(0.02, 0.65),
                 name = expression(paste("Mortality (5 yr"^-1,")"))) +
   scale_color_manual(values = guild_fills_nb) +
   scale_fill_manual(values = guild_fills_nb) +
   theme_plant()
 
-plightarea
+
 p2c <- set_panel_size(plightarea, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
-grid.draw(p2c)
+grid.draw(p2c)  #notice that LLP and Slow show steep slow of mortality with light!
 
 pdf(file.path(gdrive_path, "Figures/Fig_2/Fig_2c.pdf"))
 grid.draw(p2c)
 dev.off()
-
-
 
 
 ################################################################################################
@@ -244,7 +244,7 @@ p <- plot_dens(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
           model_fit = DENS,
           x_limits = c(.8, 260),
-          y_limits = c(0.003, 8000),
+          y_limits = c(0.003, 10000),
           y_labels = c(0.001, 0.1, 10,1000),
           y_breaks = c(0.001, 0.1,  10, 1000))
 p <- p +annotation_custom(grob_text_b)
@@ -259,16 +259,19 @@ dev.off()
 # Specify dodging with a certain width of error bar
 # Model fit 1 = power law
 # Model fit 2 = power law exp
+obs_indivprod2 <- obs_indivprod
+obs_indivprod <- obs_indivprod %>%
+  filter(mean_n_individuals > 20)
 p <- plot_prod(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           model_fit = PROD,
           x_limits = c(1, 280),
           y_limits = c(0.001, 2000),
           y_breaks = c(0.001,0.1, 10, 1000),
+          error_bar_width = 0.1,
           y_labels = c(0.001,0.1,10,1000),
-          #error_bar_width = 0.01,
           dodge_width = 0.05)
-p0 <- p + annotation_custom(grob_text_a)
+p0 <- p + annotation_custom(grob_text_a) 
 p0
 p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
@@ -277,23 +280,27 @@ pdf(file.path(gdrive_path,'Figures/Fig_3/Main/Fig_3a_Growth.pdf'))
 grid.draw(p1)
 dev.off()
 
-
-grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.2, y = 0.92, hjust = 0,
+obs_totalprod <- obs_totalprod2
+obs_totalprod <- obs_totalprod %>%
+  filter(bin_count > 20)
+grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.2, y = 0.89, hjust = 0,
                                gp = gpar(col = "gray42", fontsize = 20))) 
 p <- plot_totalprod(year_to_plot = 1995,
                fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                model_fit_density = DENS, 
                model_fit_production = PROD,
-               x_limits = c(0.9,250),
-               y_limits = c(0.03, 200),
+               x_limits = c(0.9,230),
+               y_limits = c(0.8, 200),
                y_breaks = c(0.1, 1, 10, 100),
                y_labels = c(0.1, 1, 10, 100),
                preddat = fitted_totalprod)
-p <-  p + annotation_custom(grob_text_c) +annotation_custom(grob_text)
-p <- p + geom_abline(intercept= 2, slope = 0, color ="gray72",linetype="dashed", size=.75)
 p
-p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
-#p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p0 <-  p + annotation_custom(grob_text_c) + annotation_custom(grob_text)
+p0
+# p0 + geom_abline(intercept = 2, slope = 0, color ="gray72",linetype="dashed", size=.75)
+
+p1 <- set_panel_size(p0, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+
 grid.newpage()
 grid.draw(p1)
 
