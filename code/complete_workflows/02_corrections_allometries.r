@@ -1,5 +1,6 @@
 # Script 2: Correct growth increments, remove outliers, join light data, and apply allometries.
 
+# modified 09 January 2020: add column flagging new recruits so that they can be excluded from later analyses
 # modified 11 November 2019: replace overall allometries with species-specific allometries
 # modified 30 October 2019: move binning to another script.
 # modified 22 October 2019 to correctly add new recruits to production -- also make the code a lot tidier.
@@ -69,6 +70,11 @@ bci_diamgrowthrate <- map2(bci_full[-7], bci_full[-1], function(old, new) {
   if_else(is.na(old$dbh_corr), new$dbh_corr / census_interval, annual_increment(meas_old = old$dbh_corr, meas_new = new$dbh_corr, census_interval = census_interval))
 })
 
+# Added 09 Jan 2020: flag the new recruits
+bci_recruitstatus <- map2(bci_full[-7], bci_full[-1], function(old, new) {
+  is.na(old$dbh_corr) & !is.na(new$dbh_corr)
+})
+
 # Amendment 11 Oct. 2017 : Add dbh increment (raw), used to detect production outliers.
 
 bci_dbhincs <- map2(bci_full[-7], bci_full[-1], function(old, new) {
@@ -78,7 +84,7 @@ bci_dbhincs <- map2(bci_full[-7], bci_full[-1], function(old, new) {
 
 # Add columns to the bci_full data frames.
 
-bcicensusdat <- map(1:6, ~ cbind(bci_full[-1][[.]], production = bci_production[[.]], diam_growth_rate = bci_diamgrowthrate[[.]], bci_dbhincs[[.]]))
+bcicensusdat <- map(1:6, ~ cbind(bci_full[-1][[.]], production = bci_production[[.]], diam_growth_rate = bci_diamgrowthrate[[.]], bci_dbhincs[[.]], recruit = bci_recruitstatus[[.]]))
 bcicensusdat <- map(bcicensusdat, function(x) x %>%
                       filter(DFstatus == 'alive') %>%
                       mutate(dbh_corr = dbh_corr/10,
