@@ -1,4 +1,5 @@
 # Create piecewise data for plotting.
+# Modified 13 Jan 2020: Use imputed production totals (1 segment production) to create total production bins (but not individual)
 # Modified 09 Jan 2020: Fix incorrect number of individuals in some of the observed data.
 # Modified 13 Dec 2019: Create both observed and predicted data in this script. 
 # Modified 13 Dec 2019: Use the new up to date correction factor based on the true correction of Jensen's Inequality.
@@ -18,7 +19,7 @@ fg_names <- c("fg1", "fg2", "fg3", "fg4", "fg5", "unclassified")
 load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
 
 # Load raw data
-load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
+load(file.path(gdrive_path, 'data/rawdataobj_withimputedproduction.RData'))
 
 binedgedata <- densitybin_byyear %>% filter(fg == 'all', year == 1995) 
 area_core <- 42.84
@@ -67,7 +68,7 @@ write.csv(totalvolbins_fg, file.path(fp_out, 'obs_totalvol.csv'), row.names = FA
 
 # Observed individual production
 obs_indivprod_df <- map(alltreedat[-1],
-                         function(x) fakebin_across_years(dat_values = x$production, dat_classes = x$dbh_corr, edges = binedgedata, n_census = 1))
+                         function(x) with(x %>% filter(!recruit), fakebin_across_years(dat_values = production, dat_classes = dbh_corr, edges = binedgedata, n_census = 1)))
 obs_indivprod_df <- cbind(fg = 'all', year = rep(years, each = nrow(binedgedata)), do.call(rbind, obs_indivprod_df))
 
 obs_indivprod_fg <- replicate(length(fg_names), list())
@@ -76,8 +77,8 @@ for (i in 1:length(fg_names)) {
   for (j in 1:length(years)) {
     obs_indivprod_fg[[i]][[j]] <-
       cbind(fg = fg_names[i], year = years[j],
-            fakebin_across_years(dat_values = fgdat[[i]][[j+1]]$production,
-                                 dat_classes = fgdat[[i]][[j+1]]$dbh_corr,
+            fakebin_across_years(dat_values = fgdat[[i]][[j+1]] %>% filter(!recruit) %>% pull(production),
+                                 dat_classes = fgdat[[i]][[j+1]] %>% filter(!recruit) %>% pull(dbh_corr),
                                  edges = binedgedata,
                                  n_census = 1))
   }
@@ -225,11 +226,13 @@ write.csv(fitted_totalvol, file.path(fp_out, 'fitted_totalvol.csv'), row.names =
 # In previous workflow this code was in createlightplotdata_final.r
 
 dat90 <- alltree_light_90 %>%
+  filter(!recruit) %>%
   select(dbh_corr, production, light_received, crownarea, fg) %>%
   mutate(production_area = production/crownarea, light_area = light_received/crownarea) %>%
   mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg)))
 
 dat95 <- alltree_light_95 %>%
+  filter(!recruit) %>%
   select(dbh_corr, production, light_received, crownarea, fg) %>%
   mutate(production_area = production/crownarea, light_area = light_received/crownarea) %>%
   mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg)))
@@ -392,7 +395,7 @@ write.csv(unscaledlightbydbhfakebin_fg, file.path(fp_out, 'unscaledlightbydbhfak
 
 # Observed individual diameter growth
 obs_indivdiamgrowth_df <- map(alltreedat[-1],
-                        function(x) fakebin_across_years(dat_values = x$diam_growth_rate, dat_classes = x$dbh_corr, edges = binedgedata, n_census = 1))
+                        function(x) with(x %>% filter(!recruit), fakebin_across_years(dat_values = diam_growth_rate, dat_classes = dbh_corr, edges = binedgedata, n_census = 1)))
 obs_indivdiamgrowth_df <- cbind(fg = 'all', year = rep(years, each = nrow(binedgedata)), do.call(rbind, obs_indivdiamgrowth_df))
 
 obs_indivdiamgrowth_fg <- replicate(length(fg_names), list())
@@ -401,8 +404,8 @@ for (i in 1:length(fg_names)) {
   for (j in 1:length(years)) {
     obs_indivdiamgrowth_fg[[i]][[j]] <-
       cbind(fg = fg_names[i], year = years[j],
-            fakebin_across_years(dat_values = fgdat[[i]][[j+1]]$diam_growth_rate,
-                                 dat_classes = fgdat[[i]][[j+1]]$dbh_corr,
+            fakebin_across_years(dat_values = fgdat[[i]][[j+1]] %>% filter(!recruit) %>% pull(diam_growth_rate),
+                                 dat_classes = fgdat[[i]][[j+1]] %>% filter(!recruit) %>% pull(dbh_corr),
                                  edges = binedgedata,
                                  n_census = 1))
   }

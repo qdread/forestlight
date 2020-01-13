@@ -144,7 +144,7 @@ sbatch --export=scaling=light,guild=alltree,year=1995,model=vonb,NS=1000,NW=5000
 # Chains that did not converge (rerun)
 # ====================================
 
-sbatch --export=scaling=production,guild=alltree,year=1995,model=production2,NS=1000,NW=5000,seed=2517 --time=7-00:00:00 --job-name=p2_a fitpiecewise.sh
+sbatch --export=scaling=production,guild=alltree,year=1995,model=production2,NS=1000,NW=5000,seed=2517 --time=7-00:00:00 --job-name=p2_a --array=2 fitpiecewise.sh
 
 sbatch --export=scaling=production,guild=fg3,year=1995,model=density3,NS=1000,NW=5000,seed=3 --time=4-00:00:00 --job-name=d3_3 fitpiecewise_newargs.sh # old model, new model fitting parameters
 

@@ -1,5 +1,7 @@
 # Script 3: Create log-bins for all variables.
 
+# Modified on 13 January 2020: Use imputed production (1 segment) to create total production bins -- note this must now be run AFTER models are all fit.
+# Modified on 13 January 2020: For individual production, diameter growth, and production per area, remove the recruits.
 # Modified on 06 November 2019: prioritize single year binning, separating multiple year binning elsewhere
 # Modified on 05 November 2019: Use packaged functions
 # Script split off on 30 October 2019.
@@ -14,7 +16,7 @@ library(forestscaling)
 
 
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users',user,'Google Drive/ForestLight'))
-load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
+load(file.path(gdrive_path, 'data/rawdataobj_withimputedproduction.RData'))
 group_names <- c('all','all_classified','fg1','fg2','fg3','fg4','fg5','unclassified')
 fg_names <- c('fg1','fg2','fg3','fg4','fg5','unclassified')
 years <- seq(1990, 2010, 5)
@@ -37,6 +39,15 @@ dbhbin_all <- logbin(x = allyeardbh, y = NULL, n = numbins)
 allyeardbh_fg <- fgdat %>% map(~ map(., ~ pull(., dbh_corr)) %>% unlist)
 
 # The dbhbin_ objects can be used as the edges argument in logbin_setedges()
+
+# Make versions of input data without the new recruits
+alltreedat_norecruits <- map(alltreedat, ~ filter(., !recruit))
+alltreedat_classified_norecruits <- map(alltreedat_classified, ~ filter(., !recruit))
+fgdat_norecruits <- map(fgdat, ~ map(., ~ filter(., !recruit)))
+
+allyeardbh_norecruits <- map(alltreedat_norecruits[-1], ~ pull(., dbh_corr)) %>% unlist
+allyeardbh_classified_norecruits <- map(alltreedat_classified_norecruits[-1], ~ pull(., dbh_corr)) %>% unlist
+allyeardbh_fg_norecruits <- fgdat_norecruits %>% map(~ map(., ~ pull(., dbh_corr)) %>% unlist)
 
 # Bin density and individual production by year using the above generated bin edges.
 
@@ -63,17 +74,18 @@ densitybin_5census <- cbind(fg = rep(group_names, each = numbins),
 # Individual production 
 # Take the mean and 2.5, 50 (median), 97.5 quantiles within each bin.
 # Do it across all years, and for separate years.
-prodbin_all_byyear <- alltreedat[-1] %>% map(~ fakebin_across_years(dat_values = .$production, dat_classes = .$dbh_corr, edges = dbhbin_allclassified, n_census = 1))
-prodbin_fg_byyear <- alltreedat[-1] %>%
+# Exclude new recruits (added 13 Jan 2020)
+prodbin_all_byyear <- alltreedat_norecruits[-1] %>% map(~ fakebin_across_years(dat_values = .$production, dat_classes = .$dbh_corr, edges = dbhbin_allclassified, n_census = 1))
+prodbin_fg_byyear <- alltreedat_norecruits[-1] %>%
   map(function(dat) {
     dat %>%
       group_by(fg) %>%
       do(fakebin_across_years(dat_values = .$production, dat_classes = .$dbh_corr, edges = dbhbin_allclassified, n_census = 1))
   })
 
-allyearprod <- map(alltreedat[-1], ~ pull(., production)) %>% unlist
-allyearprod_classified <- map(alltreedat_classified[-1], ~ pull(., production)) %>% unlist
-allyearprod_fg <- fgdat %>% map(~ map(., ~ pull(., production)) %>% unlist)
+allyearprod <- map(alltreedat_norecruits[-1], ~ pull(., production)) %>% unlist
+allyearprod_classified <- map(alltreedat_classified_norecruits[-1], ~ pull(., production)) %>% unlist
+allyearprod_fg <- fgdat_norecruits %>% map(~ map(., ~ pull(., production)) %>% unlist)
 
 # Combine single year bin into single df.
 indivproductionbin_byyear <- bind_rows(
@@ -83,10 +95,10 @@ indivproductionbin_byyear <- bind_rows(
   select(-mean_n_individuals)
 
 # Combine multiple year bin into single df.
-prodbin_all_5census <- fakebin_across_years(dat_values = allyearprod, dat_classes = allyeardbh, edges = dbhbin_all)
-prodbin_allclassified_5census <- fakebin_across_years(dat_values = allyearprod_classified, dat_classes = allyeardbh_classified, edges = dbhbin_allclassified)
+prodbin_all_5census <- fakebin_across_years(dat_values = allyearprod, dat_classes = allyeardbh_norecruits, edges = dbhbin_all)
+prodbin_allclassified_5census <- fakebin_across_years(dat_values = allyearprod_classified, dat_classes = allyeardbh_classified_norecruits, edges = dbhbin_allclassified)
 
-prodbin_fg_5census <- map2(allyearprod_fg, allyeardbh_fg, ~ fakebin_across_years(dat_values = .x, dat_classes = .y, edges = dbhbin_allclassified))
+prodbin_fg_5census <- map2(allyearprod_fg, allyeardbh_fg_norecruits, ~ fakebin_across_years(dat_values = .x, dat_classes = .y, edges = dbhbin_allclassified))
 
 indivproductionbin_5census <- cbind(fg = rep(group_names, each = numbins),
                                     rbind(prodbin_all_5census, prodbin_allclassified_5census, do.call('rbind', prodbin_fg_5census)))
@@ -94,11 +106,11 @@ indivproductionbin_5census <- cbind(fg = rep(group_names, each = numbins),
 # Total production
 # Do the binning for each year separately, as for density, then find min, max, and median.
 
-totalprodbin_alltree_byyear <- alltreedat[-1] %>% map(~ logbin_setedges(x = .$dbh_corr, y = .$production, edges = dbhbin_all))
-totalprodbin_allclassified_byyear <- alltreedat_classified[-1] %>% map(~ logbin_setedges(x = .$dbh_corr, y = .$production, edges = dbhbin_allclassified))
+totalprodbin_alltree_byyear <- alltreedat[-1] %>% map(~ logbin_setedges(x = .$dbh_corr, y = .$production_imputed1, edges = dbhbin_all))
+totalprodbin_allclassified_byyear <- alltreedat_classified[-1] %>% map(~ logbin_setedges(x = .$dbh_corr, y = .$production_imputed1, edges = dbhbin_allclassified))
 
 totalprodbin_fg_byyear <- fgdat %>%
-  map(~ map(.[-1], function(z) logbin_setedges(x = z$dbh_corr, y = z$production, edges = dbhbin_allclassified)))
+  map(~ map(.[-1], function(z) logbin_setedges(x = z$dbh_corr, y = z$production_imputed1, edges = dbhbin_allclassified)))
 
 totalprodbin_all_5census <- bin_across_years(totalprodbin_alltree_byyear)
 totalprodbin_allclassified_5census <- bin_across_years(totalprodbin_allclassified_byyear)
@@ -202,9 +214,9 @@ light_per_area_bins_all <- logbin(x = na.omit(light_per_area_all), n = numbins)
 light_per_area_bins_allclassified <- logbin(x = na.omit(light_per_area_allclassified), n = numbins)
 light_per_area_bins_fg <- map(light_per_area_fg, ~ logbin(x = na.omit(.), n = numbins))
 
-indivprodperareabin_alltree_2census <- binprod(dat = alltreedat[2:3], bindat = light_per_area_bins_all)
-indivprodperareabin_allclassified_2census <- binprod(dat = alltreedat_classified[2:3], bindat = light_per_area_bins_allclassified)
-indivprodperareabin_fg_2census <- map2(fgdat, light_per_area_bins_fg, ~ binprod(dat = .x[2:3], bindat = .y))
+indivprodperareabin_alltree_2census <- binprod(dat = alltreedat_norecruits[2:3], bindat = light_per_area_bins_all)
+indivprodperareabin_allclassified_2census <- binprod(dat = alltreedat_classified_norecruits[2:3], bindat = light_per_area_bins_allclassified)
+indivprodperareabin_fg_2census <- map2(fgdat_norecruits, light_per_area_bins_fg, ~ binprod(dat = .x[2:3], bindat = .y))
 
 indivprodperareabin_2census <- cbind(fg = rep(group_names, each = numbins), 
                                      rbind(indivprodperareabin_alltree_2census, indivprodperareabin_allclassified_2census, do.call('rbind', indivprodperareabin_fg_2census)))
@@ -216,13 +228,13 @@ indivprodperareabin_2census <- cbind(fg = rep(group_names, each = numbins),
 # and once for ratio fg1:fg3 (fast:slow)
 
 totalprodbin_byyear_bydiam <- fgdat %>%
-  map(~ map(.[-1], function(z) logbin_setedges(x = z$dbh_corr, y = z$production, edges = dbhbin_allclassified)))
+  map(~ map(.[-1], function(z) logbin_setedges(x = z$dbh_corr, y = z$production_imputed1, edges = dbhbin_allclassified)))
 
 densitybin_byyear_bydiam <- fgdat %>%
   map(~ map(.[-1], function(z) logbin_setedges(x = z$dbh_corr, y = NULL, edges = dbhbin_allclassified)))
 
 totalprodbin_byyear_bylight <- fgdat %>%
-  map(~ map(.[2:3], function(z) logbin_setedges(x = z$light_received/z$crownarea, y = z$production, edges = light_per_area_bins_allclassified)))
+  map(~ map(.[2:3], function(z) logbin_setedges(x = z$light_received/z$crownarea, y = z$production_imputed1, edges = light_per_area_bins_allclassified)))
 
 densitybin_byyear_bylight <- fgdat %>%
   map(~ map(.[2:3], function(z) logbin_setedges(x = z$light_received/z$crownarea, y = NULL, edges = light_per_area_bins_allclassified)))
