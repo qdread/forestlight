@@ -259,7 +259,6 @@ dev.off()
 # Specify dodging with a certain width of error bar
 # Model fit 1 = power law
 # Model fit 2 = power law exp
-obs_indivprod2 <- obs_indivprod
 obs_indivprod <- obs_indivprod %>%
   filter(mean_n_individuals > 20)
 p <- plot_prod(year_to_plot = 1995,
@@ -268,7 +267,10 @@ p <- plot_prod(year_to_plot = 1995,
           x_limits = c(1, 280),
           y_limits = c(0.001, 2000),
           y_breaks = c(0.001,0.1, 10, 1000),
-          error_bar_width = 0.1,
+          plot_errorbar = TRUE,
+          error_min = 'q25',
+          error_max = 'q75',
+          #error_bar_width = 0.1,
           y_labels = c(0.001,0.1,10,1000),
           dodge_width = 0.05)
 p0 <- p + annotation_custom(grob_text_a) 
@@ -280,7 +282,6 @@ pdf(file.path(gdrive_path,'Figures/Fig_3/Main/Fig_3a_Growth.pdf'))
 grid.draw(p1)
 dev.off()
 
-obs_totalprod <- obs_totalprod2
 obs_totalprod <- obs_totalprod %>%
   filter(bin_count > 20)
 grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.2, y = 0.89, hjust = 0,
@@ -517,7 +518,7 @@ load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
 # Process the raw data to get one single data frame with a lot of rows.
 
 # Get only year, func group, dbh, and production (no more is needed to plot right now)
-raw_prod <- do.call(rbind, map2(alltreedat, seq(1985,2010,5), function(x, y) cbind(year = y, x %>% select(fg, dbh_corr, production))))
+raw_prod <- do.call(rbind, map2(alltreedat, seq(1985,2010,5), function(x, y) cbind(year = y, x %>% filter(!recruit) %>% select(fg, dbh_corr, production))))
 
 raw_prod <- raw_prod %>%
   mutate(fg = if_else(!is.na(fg), paste0('fg', fg), 'unclassified'))
