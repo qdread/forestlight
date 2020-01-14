@@ -13,10 +13,9 @@ PROD = 1
 # Set path to data on google drive
 #devtools::install_github('qdread/forestscaling')
 
-gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users',Sys.info()['user'],'Google Drive/ForestLight'))
+gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google Drive/ForestLight'))
 
 library(forestscaling) # Packaged all the functions and ggplot2 themes here!
-
 library(tidyverse)
 library(egg)
 library(scales)
@@ -153,12 +152,15 @@ p_mean_1panel <- ggplot(obs_light_binned_plotdata) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot),
             aes(x = light_area, y = q50, color = fg)) +
   # Comment out the following line to remove error bars, or change ci_min and ci_max to q25 and q75 to use quantiles instead of the CI of mean.
-  geom_errorbar(aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max, group = fg, color = fg, width = error_bar_width * width), position = position_dodge(width = dodge_width)) + 
-  geom_point(aes(x = bin_midpoint, y = mean, group = fg, fill = fg), size = geom_size, shape = 21, position = position_dodge(width = dodge_width)) +
+  geom_errorbar(aes(x = bin_midpoint, ymin = q25, ymax = q75, 
+                    group = fg, color = fg, width = 0), #width = error_bar_width * width), 
+                position = position_dodge(width = dodge_width)) + 
+  geom_point(aes(x = bin_midpoint, y = mean, group = fg, fill = fg),
+             size = geom_size, shape = 21, position = position_dodge(width = dodge_width)) +
   
   scale_x_log10(name = title_x, limits = c(1.1, 412)) + 
-  scale_y_log10(name = title_y, position = "right", breaks = c(0.003, 0.01, 0.03, 0.1), 
-                labels = c(0.003, 0.01, 0.03, 0.1)) +
+  scale_y_log10(name = title_y, position = "right", breaks = c(0.01, 0.03, 0.1, 0.3), 
+                labels = c( 0.01, 0.03, 0.1, 0.3)) +
   scale_color_manual(name = 'Functional group', values = guild_fills_nb0, labels = fg_labels) +
   scale_fill_manual(values = guild_fills_nb, labels = fg_labels, guide = FALSE) +
   theme_plant() + theme_no_x()
