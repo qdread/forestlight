@@ -141,7 +141,7 @@ dodge_width <- 0.03
 error_bar_width <- 0.04
 
 # Do some additional computation to correct the error bar width for the number of groups in each bin
-obs_light_binned_plotdata <- obs_light_binned %>% filter(year == year_to_plot, mean_n_individuals >= 20, !fg %in% c('alltree', 'unclassified')) %>%
+obs_light_binned_plotdata <- obs_light_binned %>% filter(year == year_to_plot, mean_n_individuals >= 10, !fg %in% c('alltree', 'unclassified')) %>%
   group_by(bin_midpoint, year) %>% 
   mutate(width = sum(c('fg1','fg2','fg3','fg4','fg5') %in% fg)) %>% 
   ungroup
@@ -183,9 +183,62 @@ bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortality
 mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv')) # Load raw data
 fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
 
+library(broom)
+
+mort_slopes <- fitted_mort %>%
+  filter(light_per_area > 10) %>%
+  filter(light_per_area < 100)%>%
+  nest(-fg) %>% #group variable
+  mutate(
+    fit = map(data, ~ lm(log(q50) ~ log(light_per_area), data = .x)),
+    tidied = map(fit, tidy)
+  ) %>%
+  unnest(tidied)%>%
+  filter(term != '(Intercept)')
+mort_slopes
+
+
+growth_slopes <- obs_light_binned_plotdata %>%
+  filter( bin_midpoint > 10,  bin_midpoint < 100) %>%
+  nest(-fg) %>% #group variable
+  mutate(
+    fit = map(data, ~ lm(log(mean) ~ log(bin_midpoint), data = .x)),
+    tidied = map(fit, tidy)
+  ) %>%
+  unnest(tidied)%>%
+  filter(term != '(Intercept)')
+growth_slopes
+fast_change <- growth_slopes$estimate[growth_slopes$fg == "fg1"] - mort_slopes$estimate[mort_slopes$fg == "fg1"]
+fast_change 
+slow_change <- growth_slopes$estimate[growth_slopes$fg == "fg3"] - mort_slopes$estimate[mort_slopes$fg == "fg3"]
+slow_change
+fast_slow_change <- fast_change - slow_change
+fast_slow_change #0.3343871, #0.41
+pioneer_change <- growth_slopes$estimate[growth_slopes$fg == "fg2"] - mort_slopes$estimate[mort_slopes$fg == "fg2"]
+pioneer_change
+breeder_change <- growth_slopes$estimate[growth_slopes$fg == "fg4"] - mort_slopes$estimate[mort_slopes$fg == "fg4"]
+breeder_change
+
+pioneer_breeder_change <- pioneer_change - breeder_change
+pioneer_breeder_change  #0.492387, #0.68
+
+
+
+prod_ratio_light_fs <- prod_ratio_light   %>%
+  filter(n_individuals > 10) %>%
+  filter(ID == "Fast-Slow")
+prod_ratio_light_fs <- prod_ratio_light   %>%
+  
+  prod_ratio_light_pb <- prod_ratio_light   %>%
+  filter(n_individuals > 10) %>%
+  filter(ID == "Breeder-Pioneer")
+lmfast_slow <- lm(log(production_ratio) ~ log(bin_midpoint), data = prod_ratio_light_fs)
+summary(lmfast_slow )
+lm_pb <- lm(log(production_ratio) ~ log(bin_midpoint), data = prod_ratio_light_pb)
+summary(lm_pb)
 # Truncate fitted mortality lines to not exceed the range of the observed data, using 20 individuals as the cutoff.
 obs_range_mort <- bin_mort %>% 
-  filter(variable %in% 'light_per_area', lived + died > 20) %>%
+  filter(variable %in% 'light_per_area', lived + died > 10) %>%
   group_by(fg) %>%
   summarize(min_obs = min(bin_midpoint), max_obs = max(bin_midpoint))
 
