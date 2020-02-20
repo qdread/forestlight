@@ -242,10 +242,12 @@ grob_text_a <- grobTree(textGrob("a", x = 0.05, y = 0.91, gp = gpar(col = "black
 grob_text_b <- grobTree(textGrob("b", x = 0.05, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 grob_text_c <- grobTree(textGrob("c", x = 0.05, y = 0.95, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 geom_size = 4
+obs_dens <- obs_dens %>%
+  filter(bin_count > 10)
 p <- plot_dens(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
           model_fit = DENS,
-          x_limits = c(.8, 260),
+          x_limits = c(.8, 230),
           y_limits = c(0.003, 10000),
           y_labels = c(0.001, 0.1, 10,1000),
           y_breaks = c(0.001, 0.1,  10, 1000))
@@ -261,15 +263,15 @@ dev.off()
 # Specify dodging with a certain width of error bar
 # Model fit 1 = power law
 # Model fit 2 = power law exp
-obs_indivprod <- obs_indivprod %>%
-  filter(mean_n_individuals > 20)
+#obs_indivprod <- obs_indivprod %>%
+ # filter(mean_n_individuals > 10)
 p <- plot_prod(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           model_fit = PROD,
-          x_limits = c(1, 280),
+          x_limits = c(1, 230),
           y_limits = c(0.001, 2000),
           y_breaks = c(0.001,0.1, 10, 1000),
-          plot_errorbar = TRUE,
+          plot_errorbar = T,
           error_min = 'q25',
           error_max = 'q75',
           error_bar_width = 0,
@@ -284,9 +286,10 @@ pdf(file.path(gdrive_path,'Figures/Fig_3/Main/Fig_3a_Growth.pdf'))
 grid.draw(p1)
 dev.off()
 
-obs_totalprod <- obs_totalprod %>%
-  filter(bin_count > 20)
-grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.2, y = 0.89, hjust = 0,
+
+#obs_totalprod <- obs_totalprod %>%
+  #filter(bin_count > 20)
+grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.17, y = 0.87, hjust = 0,
                                gp = gpar(col = "gray42", fontsize = 20))) 
 p <- plot_totalprod(year_to_plot = 1995,
                fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
@@ -299,7 +302,7 @@ p <- plot_totalprod(year_to_plot = 1995,
                preddat = fitted_totalprod)
 p
 p0 <-  p + annotation_custom(grob_text_c) + annotation_custom(grob_text)
-p0
+#p0
 # p0 + geom_abline(intercept = 2, slope = 0, color ="gray72",linetype="dashed", size=.75)
 
 p1 <- set_panel_size(p0, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
@@ -633,15 +636,15 @@ tot_light1 <- tot_light + scale_y_continuous(position = "left", trans = "log10",
                             name = expression(paste('Total Light Intercepted (W cm'^-1,' ha'^-1,')'))) +
   theme(aspect.ratio = 0.75) 
 plot(tot_light1 )
-grob_text <- grobTree(textGrob("Solar Energy Equivalence", x = 0.2, y = 0.85, hjust = 0,
+grob_text <- grobTree(textGrob("Solar Equivalence", x = 0.27, y = 0.80, hjust = 0,
                                gp = gpar(col = "gray52", fontsize = 18))) 
 
-grob_text2 <- grobTree(textGrob("b", x = 0.05, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
+grob_text2 <- grobTree(textGrob("a", x = 0.05, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 tot_light2 <- tot_light  + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
                              labels = c("0.1", "1", "10", "100"), limits = c(100, 450000),
                              name = expression(atop('Total Light Intercepted',paste('(W m'^3, ' cm'^-1,' ha'^-1,')'))))  +
   theme(aspect.ratio = 0.75) + 
-  geom_abline(intercept = log10(110000), slope = 0, color ="gray72",linetype="dashed", size=.75) +
+  geom_abline(intercept = log10(70000), slope = 0, color ="gray72",linetype="dashed", size=.75) +
   annotation_custom(grob_text) + annotation_custom(grob_text2)
 plot(tot_light2)
 p_tot_light <- tot_light2
@@ -694,23 +697,25 @@ fgs <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified')
 allslopes <- rbind(growth_slopes_atmiddle, light_slopes_atmiddle) %>%
   ungroup %>%
   mutate(fg = factor(fg, levels = fgs, labels = fg_full_names))
-grob1 <- grobTree(textGrob("Light Capture", x = 0.05, y = 0.94, hjust = 0,
+grob0 <- grobTree(textGrob("b", x = 0.05, y = 0.9,  hjust = 0,
+                           gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
+grob1 <- grobTree(textGrob("Light Capture", x = 0.65, y = 0.94, hjust = 0,
                            gp = gpar(col = "gold3", fontsize = 18))) 
-grob2 <- grobTree(textGrob("Production", x = 0.05, y = 0.86, hjust = 0,
+grob2 <- grobTree(textGrob("Production", x = 0.65, y = 0.86, hjust = 0,
                            gp = gpar(col = "darkgreen", fontsize = 18)))# fontface="italic"
 grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.25, y = 0.52, hjust = 0,
                            gp = gpar(col = "black", fontsize = 18))) #, fontface = "bold")))
 # Plot
 
 slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, color = variable)) +
-  geom_hline(yintercept = 0, linetype = 'dotted', size = 1) +
+  geom_hline(yintercept = 0, linetype = 'dashed', size = .75) +
   geom_errorbar(position = position_dodge(width = 0.6), size = 1, width = 0) +
   geom_point(position = position_dodge(width = 0.6), shape = 21, size = 2.5, stroke = 1) +
-  labs( x = NULL, y = 'Scaling Slopes') +#x = 'Life History Guild', +
+  labs( x = NULL, y = 'Scaling Slope') +#x = 'Life History Guild', +
   scale_y_continuous(limits = c(-1.05, 1.3)) +#, labels = c("-1", "-0.5", "0", "0.5", "1")) +
   scale_color_manual(values = c('gold2', 'darkgreen'), labels = c('Total Light', 'Total Growth')) +
   theme_plant() + theme(axis.text.x = element_text(angle = 25, hjust = 1, face = "italic", size = 18)) +
-  annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3)
+  annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3) +annotation_custom(grob0)
 
 #grid.newpage()
 #grid.draw(slopes)
