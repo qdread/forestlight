@@ -639,7 +639,7 @@ plot(tot_light1 )
 grob_text <- grobTree(textGrob("Solar Equivalence", x = 0.27, y = 0.80, hjust = 0,
                                gp = gpar(col = "gray52", fontsize = 18))) 
 
-grob_text2 <- grobTree(textGrob("a", x = 0.05, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
+grob_text2 <- grobTree(textGrob("a", x = 0.06, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 tot_light2 <- tot_light  + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
                              labels = c("0.1", "1", "10", "100"), limits = c(100, 450000),
                              name = expression(atop('Total Light Intercepted',paste('(W m'^3, ' cm'^-1,' ha'^-1,')'))))  +
@@ -697,7 +697,7 @@ fgs <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified')
 allslopes <- rbind(growth_slopes_atmiddle, light_slopes_atmiddle) %>%
   ungroup %>%
   mutate(fg = factor(fg, levels = fgs, labels = fg_full_names))
-grob0 <- grobTree(textGrob("b", x = 0.05, y = 0.9,  hjust = 0,
+grob0 <- grobTree(textGrob("b", x = 0.04, y = 0.9,  hjust = 0,
                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 grob1 <- grobTree(textGrob("Light Capture", x = 0.65, y = 0.94, hjust = 0,
                            gp = gpar(col = "gold3", fontsize = 18))) 
@@ -978,12 +978,12 @@ prod_ratio_light <- breeder_stats_bylight_byyear %>%
 p <- prod_ratio_light   %>%
   filter(n_individuals > 10) %>%
   ggplot(aes(x = bin_midpoint, y = production_ratio, fill = ID)) +
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
+  geom_point(shape = 21, size = 4,  stroke = .5, color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   theme_plant() +
   scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(1,330), breaks=c(1, 10, 100)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.003,100),
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
                 name = expression("Production Ratio"))
 
 p
@@ -999,12 +999,12 @@ dev.off()
 p <- prod_ratio_diam   %>%
   filter(n_individuals > 10) %>%
   ggplot(aes(x = bin_midpoint, y = production_ratio, fill = ID)) +
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
+  geom_point(shape = 21, size = 4,  stroke = .5, color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey")) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   theme_plant() +
   scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(1,150), breaks=c(1, 10, 100)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.003,100),
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
                 name = expression("Production Ratio")) +
   theme_no_y()
 
@@ -1023,11 +1023,11 @@ p <- prod_ratio_diam %>%
   filter(n_individuals > 10) %>%
   ggplot(aes(x = bin_midpoint, y = density_ratio, fill = ID)) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
+  geom_point(shape = 21, size = 4,  stroke = .5,  color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
   
   scale_x_log10(limits=c(.7,160),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.003,100),
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
                 name = expression("Ratio")) +
   theme_plant() +
   theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
