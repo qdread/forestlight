@@ -272,7 +272,7 @@ p <- plot_prod(year_to_plot = 1995,
           plot_errorbar = TRUE,
           error_min = 'q25',
           error_max = 'q75',
-          #error_bar_width = 0.1,
+          error_bar_width = 0,
           y_labels = c(0.001,0.1,10,1000),
           dodge_width = 0.05)
 p0 <- p + annotation_custom(grob_text_a) 
@@ -375,7 +375,7 @@ p <- plot_prod(year_to_plot = 1995,
                y_limits = c(0.02, 1),
                y_breaks = c(0.03, 0.1, 0.3, 1),
                y_labels = c(0.03, 0.1, 0.3, 1),
-               #error_bar_width = 0.01,
+               error_bar_width = 0,
                dodge_width = 0.05,
                obsdat = obs_indivdiamgrowth,
                preddat = fitted_indivdiamgrowth,
@@ -613,12 +613,14 @@ p_tot_vol <- p00
 
 #------Fig 4b------
 # Plot total light using the "totalprod" function
+
 tot_light <- plot_totalprod(year_to_plot = 1995,
                             fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                             model_fit_density = DENS, 
                             model_fit_production = PROD,
                             x_limits = c(0.9,150),
                             y_limits = c(100, 200000),
+                            geom_size = 3,
                             y_breaks = c(100, 1000, 10000, 100000),
                             y_labels = c("0.1", "1", "10", "100"),
                             y_name = expression(paste('Total Light Intercepted (kW cm'^-1,' ha'^-1,')')),
@@ -632,7 +634,7 @@ tot_light1 <- tot_light + scale_y_continuous(position = "left", trans = "log10",
   theme(aspect.ratio = 0.75) 
 plot(tot_light1 )
 grob_text <- grobTree(textGrob("Solar Energy Equivalence", x = 0.2, y = 0.85, hjust = 0,
-                               gp = gpar(col = "gray42", fontsize = 18))) 
+                               gp = gpar(col = "gray52", fontsize = 18))) 
 
 grob_text2 <- grobTree(textGrob("b", x = 0.05, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 tot_light2 <- tot_light  + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
@@ -655,6 +657,79 @@ grid.newpage()
 grid.draw(g3)
 ggsave(g3, height = 7.6, width = 6, filename = file.path(gdrive_path,'Figures/Fig_5/fig5.pdf'))
 
+
+# Symmetry plot -----------------------------------------------------------
+
+
+# Load parameter df to find the point at which to evaluate the fitted slopes, then load the fitted slopes
+
+params <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_paramci_by_fg.csv'), stringsAsFactors = FALSE)
+
+xvalues <- params %>% 
+  filter(variable == 'density', model == DENS) %>%
+  group_by(fg) %>%
+  summarize(mid_cutoff = (mean[parameter == 'tau_high'] + mean[parameter == 'tau_low'])/2)
+
+# Load fitted slopes of total growth and total light.
+
+growth_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+light_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/light_piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+growth_slopes_atmiddle <- growth_slopes %>% 
+  filter(variable == 'total_production', dens_model == DENS, prod_model == PROD) %>%
+  left_join(xvalues) %>%
+  mutate(diff = abs(dbh - mid_cutoff)) %>%
+  group_by(fg) %>%
+  filter(diff == min(diff))
+
+light_slopes_atmiddle <- light_slopes %>% 
+  filter(variable == 'total_incoming_light', dens_model == DENS, prod_model == PROD) %>%
+  left_join(xvalues) %>%
+  mutate(diff = abs(dbh - mid_cutoff)) %>%
+  group_by(fg) %>%
+  filter(diff == min(diff))
+
+fg_full_names <- c('Fast', 'Pioneer', 'Slow', 'Breeder', 'Medium', 'All Trees', 'Unclassified')
+fgs <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified')
+
+allslopes <- rbind(growth_slopes_atmiddle, light_slopes_atmiddle) %>%
+  ungroup %>%
+  mutate(fg = factor(fg, levels = fgs, labels = fg_full_names))
+grob1 <- grobTree(textGrob("Light Capture", x = 0.05, y = 0.94, hjust = 0,
+                           gp = gpar(col = "gold3", fontsize = 18))) 
+grob2 <- grobTree(textGrob("Production", x = 0.05, y = 0.86, hjust = 0,
+                           gp = gpar(col = "darkgreen", fontsize = 18)))# fontface="italic"
+grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.25, y = 0.52, hjust = 0,
+                           gp = gpar(col = "black", fontsize = 18))) #, fontface = "bold")))
+# Plot
+
+slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, color = variable)) +
+  geom_hline(yintercept = 0, linetype = 'dotted', size = 1) +
+  geom_errorbar(position = position_dodge(width = 0.6), size = 1, width = 0) +
+  geom_point(position = position_dodge(width = 0.6), shape = 21, size = 2.5, stroke = 1) +
+  labs( x = NULL, y = 'Scaling Slopes') +#x = 'Life History Guild', +
+  scale_y_continuous(limits = c(-1.05, 1.3)) +#, labels = c("-1", "-0.5", "0", "0.5", "1")) +
+  scale_color_manual(values = c('gold2', 'darkgreen'), labels = c('Total Light', 'Total Growth')) +
+  theme_plant() + theme(axis.text.x = element_text(angle = 25, hjust = 1, face = "italic", size = 18)) +
+  annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3)
+
+#grid.newpage()
+#grid.draw(slopes)
+#pdf(file.path(gdrive_path, 'Figures/Fig_5/Growth Light symmetry.pdf'))
+#grid.draw(slopes)
+#dev.off()
+
+
+g_tot_light <- ggplotGrob(p_tot_light)
+g_tot_vol <- ggplotGrob(p_tot_vol)
+g_slopes <- ggplotGrob(slopes)
+
+g3 <- rbind(g_tot_light, g_slopes, size = "first")
+g3$widths <- unit.pmax(g_tot_light$widths,g_slopes$widths)
+grid.newpage()
+grid.draw(g3)
+ggsave(g3, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Fig_5/fig5.pdf'))
+
+#-------------------------------------------------------------------------------------------
 
 #----------------------Supplementals Max Growth by Light ----------------------------------------------------
 
@@ -840,7 +915,6 @@ dev.off()
 
 # Plot: total unscaled light energy by dbh --------------------------------
 
-
 alpha_value <- 0.6
 hexfill2 <- scale_fill_gradient(low = 'forestgreen', high = 'navy', trans = 'log', breaks = c(1,3,10,30,100,300))
 exl <- expression(atop('Intercepted Light', paste('per Individual (W)')))
@@ -867,67 +941,6 @@ pdf(file.path(gdrive_path,'Figures/Fig_5/Indiv_light.pdf'))
 grid.draw(p2)
 dev.off()
 
-
-# Symmetry plot -----------------------------------------------------------
-
-
-# Load parameter df to find the point at which to evaluate the fitted slopes, then load the fitted slopes
-
-params <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_paramci_by_fg.csv'), stringsAsFactors = FALSE)
-
-xvalues <- params %>% 
-  filter(variable == 'density', model == DENS) %>%
-  group_by(fg) %>%
-  summarize(mid_cutoff = (mean[parameter == 'tau_high'] + mean[parameter == 'tau_low'])/2)
-
-# Load fitted slopes of total growth and total light.
-
-growth_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
-light_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/light_piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
-growth_slopes_atmiddle <- growth_slopes %>% 
-  filter(variable == 'total_production', dens_model == DENS, prod_model == PROD) %>%
-  left_join(xvalues) %>%
-  mutate(diff = abs(dbh - mid_cutoff)) %>%
-  group_by(fg) %>%
-  filter(diff == min(diff))
-
-light_slopes_atmiddle <- light_slopes %>% 
-  filter(variable == 'total_incoming_light', dens_model == DENS, prod_model == PROD) %>%
-  left_join(xvalues) %>%
-  mutate(diff = abs(dbh - mid_cutoff)) %>%
-  group_by(fg) %>%
-  filter(diff == min(diff))
-
-fg_full_names <- c('Fast', 'LL Pioneer', 'Slow', 'SL Breeder', 'Medium', 'All Trees', 'Unclassified')
-fgs <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified')
-
-allslopes <- rbind(growth_slopes_atmiddle, light_slopes_atmiddle) %>%
-  ungroup %>%
-  mutate(fg = factor(fg, levels = fgs, labels = fg_full_names))
-grob1 <- grobTree(textGrob("Light Capture", x = 0.75, y = 0.95, hjust = 0,
-                           gp = gpar(col = "gold3", fontsize = 18))) 
-grob2 <- grobTree(textGrob("Production", x = 0.75, y = 0.89, hjust = 0,
-                           gp = gpar(col = "darkgreen", fontsize = 18)))# fontface="italic"
-grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.35, y = 0.47, hjust = 0,
-                           gp = gpar(col = "black", fontsize = 18))) #, fontface = "bold")))
-# Plot
-
-p <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, color = variable)) +
-  geom_hline(yintercept = 0, linetype = 'dotted', size = 1) +
-  geom_errorbar(position = position_dodge(width = 0.5), size = 1, width = 0.7) +
-  geom_point(position = position_dodge(width = 0.5), size = 4) +
-  labs(x = 'Life History Guild', y = 'Scaling Slopes') +
-  scale_y_continuous(limits = c(-1.5, 1.5)) +
-  scale_color_manual(values = c('gold2', 'darkgreen'), labels = c('Total Light', 'Total Growth')) +
-  theme_plant() + theme(axis.text.x = element_text(angle = 35, hjust = 1, face = "italic", size = 15)) +
-  annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3)
-
-grid.newpage()
-grid.draw(p)
-pdf(file.path(gdrive_path, 'Figures/Fig_5/Growth Light symmetry.pdf'))
-grid.draw(p)
-dev.off()
-#-------------------------------------------------------------------------------------------
 
 
 ################################################################################################
