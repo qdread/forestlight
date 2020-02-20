@@ -183,8 +183,18 @@ bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortality
 mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv')) # Load raw data
 fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
 
+# Truncate fitted mortality lines to not exceed the range of the observed data, using 20 individuals as the cutoff.
+obs_range_mort <- bin_mort %>% 
+  filter(variable %in% 'light_per_area', lived + died > 20) %>%
+  group_by(fg) %>%
+  summarize(min_obs = min(bin_midpoint), max_obs = max(bin_midpoint))
+
+fitted_mort_trunc <- fitted_mort %>%
+  left_join(obs_range_mort) %>%
+  filter(light_per_area >= min_obs & light_per_area <= max_obs)
+
 geom_size = 4
-plightarea <- ggplot(data = fitted_mort %>% mutate(fg = factor(fg, labels = fg_labels))) +
+plightarea <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
   geom_point(data = bin_mort %>% filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) > 20)  %>% 
