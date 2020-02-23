@@ -190,7 +190,7 @@ mort_slopes <- fitted_mort %>%
   filter(light_per_area < 100)%>%
   nest(-fg) %>% #group variable
   mutate(
-    fit = map(data, ~ lm(log(q50) ~ log(light_per_area), data = .x)),
+    fit = map(data, ~ lm(log(q50)/5 ~ log(light_per_area), data = .x)),
     tidied = map(fit, tidy)
   ) %>%
   unnest(tidied)%>%
@@ -208,19 +208,19 @@ growth_slopes <- obs_light_binned_plotdata %>%
   unnest(tidied)%>%
   filter(term != '(Intercept)')
 growth_slopes
-fast_change <- growth_slopes$estimate[growth_slopes$fg == "fg1"] - mort_slopes$estimate[mort_slopes$fg == "fg1"]
-fast_change 
-slow_change <- growth_slopes$estimate[growth_slopes$fg == "fg3"] - mort_slopes$estimate[mort_slopes$fg == "fg3"]
-slow_change
+fast_change <- light_slopes$estimate[light_slopes$fg == "fg1"] - mort_slopes$estimate[mort_slopes$fg == "fg1"]
+fast_change #0.58
+slow_change <- light_slopes$estimate[light_slopes$fg == "fg3"] - mort_slopes$estimate[mort_slopes$fg == "fg3"]
+slow_change #0.22
 fast_slow_change <- fast_change - slow_change
-fast_slow_change #0.3343871, #0.41
-pioneer_change <- growth_slopes$estimate[growth_slopes$fg == "fg2"] - mort_slopes$estimate[mort_slopes$fg == "fg2"]
+fast_slow_change #0.3343871, #0.41, #0.36, #0.19
+pioneer_change <- light_slopes$estimate[light_slopes$fg == "fg2"] - mort_slopes$estimate[mort_slopes$fg == "fg2"]
 pioneer_change
-breeder_change <- growth_slopes$estimate[growth_slopes$fg == "fg4"] - mort_slopes$estimate[mort_slopes$fg == "fg4"]
+breeder_change <- light_slopes$estimate[light_slopes$fg == "fg4"] - mort_slopes$estimate[mort_slopes$fg == "fg4"]
 breeder_change
 
 pioneer_breeder_change <- pioneer_change - breeder_change
-pioneer_breeder_change  #0.492387, #0.68
+pioneer_breeder_change  #0.492387, #0.68, #0.34 #0.13
 
 
 
@@ -1049,7 +1049,7 @@ p <- prod_ratio_light   %>%
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
                 name = expression("Production Ratio"))
 
-p
+
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
