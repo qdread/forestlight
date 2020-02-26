@@ -320,7 +320,7 @@ plot_dens2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3",
     ggplot2::scale_color_manual(values = color_names) + ggplot2::scale_fill_manual(values = fill_names) + 
     theme_plant()
 }
-p <- plot_dens(year_to_plot = 1995,
+p <- plot_dens(year_to_plot = 1990,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
           model_fit = DENS,
           x_limits = c(.8, 230),
@@ -341,7 +341,7 @@ dev.off()
 # Model fit 1 = power law
 # Model fit 2 = power law exp
 
-plot_prod2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3", 
+plot_prod2 <- function (year_to_plot = 1990, fg_names = c("fg1", "fg2", "fg3", 
                                                           "fg4", "fg5", "all"), model_fit = 1, x_limits, x_breaks = c(1, 
                                                                                                                       3, 10, 30, 100, 300), y_limits, y_labels, y_breaks, fill_names = c("#BFE046", 
                                                                                                                                                                                          "#267038", "#27408b", "#87Cefa", "gray87"), color_names = c("#BFE046", 
@@ -396,7 +396,7 @@ plot_prod2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3",
 
 obs_indivprod <- obs_indivprod %>%
   filter(mean_n_individuals >= 20)
-p <- plot_prod2(year_to_plot = 1995,
+p <- plot_prod2(year_to_plot = 1990,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           model_fit = PROD,
           x_limits = c(1, 230),
@@ -465,7 +465,7 @@ plot_totalprod2 <-function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3
                                   size = 0.75)
   p
 } 
-p <- plot_totalprod2(year_to_plot = 1995,
+p <- plot_totalprod2(year_to_plot = 1990,
                fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                model_fit_density = DENS, 
                model_fit_production = PROD,
@@ -495,7 +495,7 @@ dev.off()
 
 
 ### Add height  
-plot_totalprod3 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3", 
+plot_totalprod3 <- function (year_to_plot = 1990, fg_names = c("fg1", "fg2", "fg3", 
                                                                "fg4", "fg5", "all"), model_fit_density = 1, model_fit_production = 1, 
                              x_limits, x_breaks = c(1, 3, 10, 30, 100, 300), y_limits = c(0.03, 
                                                                                           100), y_breaks = c(0.01, 0.1, 1, 10, 100, 1000), y_labels, 
@@ -534,7 +534,7 @@ plot_totalprod3 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg
                                   size = 0.75)
   p
 }
-p <- plot_totalprod3(year_to_plot = 1995,
+p <- plot_totalprod3(year_to_plot = 1990,
                     fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                     model_fit_density = DENS, 
                     model_fit_production = PROD,
@@ -585,7 +585,7 @@ dev.off()
 
 # ------------------------ Individual growth plot using diameter -------------------------
 
-p <- plot_prod(year_to_plot = 1995,
+p <- plot_prod(year_to_plot = 1990,
                fg_names = c('fg1','fg2','fg3','fg4','fg5'),
                model_fit = PROD,
                x_limits = c(1, 230),
@@ -762,7 +762,7 @@ theme_plant2 <- function () {
                  legend.position = "none", rect = ggplot2::element_rect(fill = "transparent"), 
                  text = ggplot2::element_text(family = "Helvetica"))
 }
-plot_prod_withrawdata2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3", 
+plot_prod_withrawdata2 <- function (year_to_plot = 1990, fg_names = c("fg1", "fg2", "fg3", 
                                                                       "fg4", "fg5", "unclassified"), 
                                     full_names = c("Fast", "Slow", "Pioneer", "Breeder", "Medium", "Unclassified"), func_names = c("power law", 
                                                                                                                                                                                     "2-segment power law"), x_limits = c(1, 300), x_breaks = c(1, 
@@ -803,7 +803,7 @@ plot_prod_withrawdata2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg
   return(p)
 }
 
-p <- plot_prod_withrawdata2(year_to_plot = 1995,
+p <- plot_prod_withrawdata2(year_to_plot = 1990,
                            fg_names = c('fg1','fg2','fg3','fg4','fg5','unclassified'),
                            full_names = c('Fast', 'Pioneer', 'Slow', 'Breeder', 'Medium', 'Unclassified'),
                            x_limits = c(1, 316),
@@ -847,7 +847,7 @@ totalvolbins_fg <- read.csv(file.path(fp_plot, 'obs_totalvol.csv'), stringsAsFac
 # Plot total volume using the "totalprod" function
 totalvolbins_fg <- totalvolbins_fg %>%
   filter(bin_count >= 20)
-p <- plot_totalprod(year_to_plot = 1995,
+p <- plot_totalprod2(year_to_plot = 1995,
                     fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                     model_fit_density = DENS, 
                     model_fit_production = PROD,
@@ -887,7 +887,7 @@ dev.off()
 # Plot total light using the "totalprod" function
 totallightbins_fg <- totallightbins_fg %>%
   filter(bin_count >= 20)
-tot_light <- plot_totalprod(year_to_plot = 1995,
+tot_light <- plot_totalprod(year_to_plot = 1990,
                             fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                             model_fit_density = DENS, 
                             model_fit_production = PROD,
@@ -1155,7 +1155,6 @@ p_crown <- ggplot() + geom_point(alpha = 0.01, data = alltree_light_95, aes(x = 
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
 
-
 p_crown <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(g_crown)
@@ -1259,7 +1258,7 @@ prod_ratio_diam <- breeder_stats_bydiam_byyear %>%
   rbind(fastslow_stats_bydiam_byyear %>% 
           mutate(ID = 'Fast-Slow') %>%
           rename(production_ratio = fastslow_production_ratio, density_ratio = fastslow_density_ratio)) %>%
-  filter(year == 1995)
+  filter(year == 1990)
 
 prod_ratio_light <- breeder_stats_bylight_byyear %>% 
   mutate(ID = 'Breeder-Pioneer') %>%
@@ -1267,7 +1266,7 @@ prod_ratio_light <- breeder_stats_bylight_byyear %>%
   rbind(fastslow_stats_bylight_byyear %>% 
           mutate(ID = 'Fast-Slow') %>%
           rename(production_ratio = fastslow_production_ratio, density_ratio = fastslow_density_ratio)) %>%
-  filter(year == 1995)
+  filter(year == 1990)
 
 # ---------------------------------   Fig 6a  Production by light ------------------------------------
 
@@ -1402,14 +1401,14 @@ grob_a <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
                             gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 
 PCA_diam <- score_bin_bydiam %>%
-  filter(year == 1995, n_individuals >= 20) %>%
+  filter(year == 1990, n_individuals >= 20) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   geom_errorbar(width = error_bar_width) +theme_plant() +
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
   scale_x_log10(name = 'Diameter (cm)', limits = c(.8,100)) + 
-  annotation_custom(grob_a) +
+  annotation_custom(grob_b) +
   scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = "PCA Score") #+
   #theme(axis.text.y=element_blank()) + theme(axis.ticks.y = element_blank())
 PCA_diam
@@ -1440,7 +1439,7 @@ grob_f <- grobTree(textGrob("Fast:Slow", x = 0.13, y = 0.83,  hjust = 0,
                             gp = gpar(col = "gray43",  fontface = "italic",fontsize = 20))) 
 error_bar_width <- .15
 PCA_light <- PCA_score_by_light %>%
-  filter(year == 1995, n_individuals >= 20) %>%
+  filter(year == 1990, n_individuals >= 20) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
   geom_errorbar(width = error_bar_width) +theme_plant() +
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
