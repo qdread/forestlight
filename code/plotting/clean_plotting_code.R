@@ -328,7 +328,7 @@ p <- plot_dens(year_to_plot = 1995,
           x_breaks = c(1, 10, 100),
           y_labels = c(0.001, 0.1, 10,1000),
           y_breaks = c(0.001, 0.1,  10, 1000))
-p <- p +annotation_custom(grob_text_b)
+#p <- p +annotation_custom(grob_text_b)
 
 p1 <- set_panel_size(p, width=unit(8,"cm"), height=unit(7,"cm"))
 grid.newpage()
@@ -349,15 +349,15 @@ plot_prod2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3",
                         y_name = expression(paste("Growth (kg y"^-1, ")")), average = "mean", 
                         plot_errorbar = FALSE, error_min = "ci_min", error_max = "ci_max", 
                         error_bar_width = 0.1, error_bar_thickness = 0.5, dodge_width = 0.03, 
-                        dodge_errorbar = TRUE, geom_size = 3.5, obsdat = obs_indivprod, 
+                        dodge_errorbar = TRUE, geom_size = 4, obsdat = obs_indivprod, 
                         preddat = fitted_indivprod, plot_abline = TRUE, abline_slope = 2, 
-                        abline_intercept = -1.6) 
+                        abline_intercept = -1.3) 
 {
   pos <- if (dodge_errorbar) 
     ggplot2::position_dodge(width = dodge_width)
   else "identity"
   obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == 
-                                       year_to_plot, !is.na(mean), mean_n_individuals > 10) %>% 
+                                       year_to_plot, !is.na(mean), mean_n_individuals >= 20) %>% 
     dplyr::group_by(bin_midpoint) %>% dplyr::mutate(width = error_bar_width * 
                                                       dplyr::n()) %>% dplyr::ungroup()
   obs_limits <- obsdat %>% dplyr::group_by(fg) %>% dplyr::summarize(min_obs = min(bin_midpoint), 
@@ -396,7 +396,7 @@ plot_prod2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3",
 
 obs_indivprod <- obs_indivprod %>%
   filter(mean_n_individuals >= 20)
-p <- plot_prod(year_to_plot = 1995,
+p <- plot_prod2(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           model_fit = PROD,
           x_limits = c(1, 230),
@@ -408,7 +408,7 @@ p <- plot_prod(year_to_plot = 1995,
           error_bar_width = 0,
           y_labels = c(0.001,0.1,10,1000),
           dodge_width = 0.05)
-p0 <- p + annotation_custom(grob_text_a) 
+p0 <- p #+ annotation_custom(grob_text_a) 
 
 p1 <- set_panel_size(p0, width=unit(8,"cm"), height=unit(7,"cm"))
 grid.newpage()
@@ -1021,7 +1021,7 @@ p <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in%
   geom_errorbar(width = 0.4) + geom_point(size = 4) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
   scale_x_discrete(name = 'Life History Strategy', labels = fg_labels2) +
-  scale_y_continuous(expression(paste('Max. Growth Rate (kg yr'^-1, ' m'^-1.34,')')), 
+  scale_y_continuous(expression(paste('Max. Growth Rate (kg yr'^-1, ' m'^-2,')')), 
                                 limits = c(.6, 1.1),
                                 breaks = seq(0, 1, 0.2), labels = seq(0, 1, 0.2)) +
  theme_plant() + theme(aspect.ratio = 0.75)
@@ -1133,8 +1133,8 @@ unscaledlightbydbhfakebin_fg <- read.csv(file.path(fp_plot, 'unscaledlightbydbhf
 # Plot: raw data ----------------------------------------------------------
 
 exl2 <- expression(paste('Light per Crown Area (W cm'^-1, 'm'^-2, ')', sep = ''))
-exl <- expression(atop('Light per Crown Area', paste('(W cm'^-1, 'm'^-1.34, ')')))
-exv <- expression(atop('Light per Crown Volume', paste('(W cm'^-1, 'm'^-1.67, ')')))
+exl <- expression(atop('Light per Crown Area', paste('(W cm'^-1, 'm'^-2, ')')))
+exv <- expression(atop('Light per Crown Volume', paste('(W cm'^-1, 'm'^-3, ')')))
 exv2 <- expression(paste('Light per Crown Volume (W cm'^-1, ')', sep = ''))
 exd <- 'Diameter (cm)'
 
@@ -1213,7 +1213,7 @@ ggsave(g5, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Fi
 
 # Plot: total unscaled light energy by dbh --------------------------------
 
-alpha_value <- 0.6
+alpha_value <- 1
 hexfill2 <- scale_fill_gradient(low = 'forestgreen', high = 'navy', trans = 'log', breaks = c(1,3,10,30,100,300))
 exl <- expression(atop('Intercepted Light', paste('per Individual (W)')))
 exd <- 'Diameter (cm)'
@@ -1228,15 +1228,17 @@ p <- ggplot() +
   scale_x_log10(name = exd) +
   scale_y_log10(name = exl, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), 
                 labels = trans_format("log10", math_format(10^.x))) +
-  theme_plant() +
+  theme_plant() + theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
   hex_scale_log_colors +
   guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
+p
+ggsave(file.path(gdrive_path,'Figures/Fig_4/Indiv_light.pdf'), plot = p)
   #geom_abline(intercept = 0.903027, slope = 2.343608)
-p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p2)
 pdf(file.path(gdrive_path,'Figures/Fig_4/Indiv_light.pdf'))
-grid.draw(p2)
+grid.draw(p)
 dev.off()
 
 
@@ -1436,7 +1438,7 @@ grob_p <- grobTree(textGrob("Pioneer:Breeder", x = 0.13, y = 0.93,  hjust = 0,
 
 grob_f <- grobTree(textGrob("Fast:Slow", x = 0.13, y = 0.83,  hjust = 0,
                             gp = gpar(col = "gray43",  fontface = "italic",fontsize = 20))) 
-
+error_bar_width <- .15
 PCA_light <- PCA_score_by_light %>%
   filter(year == 1995, n_individuals >= 20) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
@@ -1449,18 +1451,9 @@ PCA_light <- PCA_score_by_light %>%
                 name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
   scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score') 
 PCA_light
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_6/PCA_Scores/PCA_light.pdf'))
-grid.draw(p1)
-dev.off()
 
 
 
-
-grob1_1 <- grobTree(textGrob("1:1", x = 0.5, y = 0.5,  hjust = 0,
-                             gp = gpar(col = "black", fontsize = 25))) 
 
 g_light  <- ggplotGrob(PCA_light)
 g_diam <- ggplotGrob(PCA_diam)
