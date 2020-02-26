@@ -10,8 +10,8 @@ user <- Sys.info()['user']
 gdrive_path <- ifelse(user == 'qread', '~/google_drive/ForestLight/', file.path('/Users',user,'Google Drive/ForestLight'))
 github_path <- ifelse(user == 'qread', '~/Documents/GitHub/forestlight', file.path('/Users',user,'Documents/GitHub/forestlight'))
 
-bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting_aug2018/obs_mortalitybins.csv')) # Load binned data
-mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting_aug2018/obs_mortalityindividuals.csv')) # Load raw data
+bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalitybins.csv')) # Load binned data
+mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv')) # Load raw data
 
 
 # Make some simple plots --------------------------------------------------
@@ -111,3 +111,27 @@ plightvolume <- ggplot() +
 pdf(file.path(gdrive_path, 'figs/mortality_bubblecharts.pdf'), height = 6, width = 7)
   plightarea; pdiam; plightvolume
 dev.off()
+
+
+# Diameter plot with logit scale ------------------------------------------
+
+ysc <- scale_y_continuous(breaks = c(0.03, 0.3, .1), labels = c(0.03, 0.3, 0.1), limits = c(0.02, .5),
+                   name = expression(paste("Mortality (5 yr"^-1,")")), trans = 'logit')
+
+pdiamlogit <- ggplot() +
+  # geom_smooth(data = mort %>% filter(!fg %in% c('unclassified')) %>% mutate(fg = factor(fg, labels = fg_labels)),
+  #             aes(x = dbh, y = as.numeric(!alive), group = fg, color = fg),
+  #             method = 'glm', method.args = list(family = "binomial"),
+  #             alpha = 0.3, lwd = 1.5) +
+  geom_point(data = bin_mort %>% filter(variable == 'dbh', !fg %in% c('all','unclassified'), (lived+died) > 10, died > 0)  %>% mutate(fg = factor(fg, labels = fg_labels)),
+             aes(x = bin_midpoint, y = mortality, fill = fg, size = lived + died),
+             pch = 21) +
+  scale_x_log10(name = 'Diameter (cm)') +
+  ysc +
+  scale_size_continuous(name = 'Individuals', trans = 'log', breaks = 10^(0:3)) +
+  scale_color_manual(values = guild_fills_nb) +
+  scale_fill_manual(values = guild_fills_nb) +
+  theme_bw() +
+  ggtitle('Mortality rate by size')
+
+ggsave(file.path(gdrive_path, 'figs/mortality_diameter_logity.pdf'), pdiamlogit, height = 5, width = 6)
