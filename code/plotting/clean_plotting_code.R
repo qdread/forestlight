@@ -1302,7 +1302,7 @@ p <- prod_ratio_diam   %>%
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey")) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
   theme_plant() +
-  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(1,150), breaks=c(1, 10, 100)) +
+  scale_x_log10(name = 'Diameter (cm)', limits=c(1,150), breaks=c(1, 10, 100)) +
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
                 name = expression("Production Ratio")) +
   theme_no_y()
