@@ -9,10 +9,10 @@ gdrive_path <- '/Users/jgradym/Google Drive/ForestLight'
 github_path <- '/Users/jgradym/Documents/GitHub/forestlight'
 
 load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r'))
-source(file.path(github_path, 'code/allfunctions27july.r'))
 
 library(dplyr)
 library(ggplot2)
+library(forestscaling)
 
 # Create bins
 # -----------
@@ -21,7 +21,7 @@ num_bins <- 20
 
 log_midpoints <- function(a) exp(log(a)[-length(a)] + diff(log(a))/2)
 
-lightperarearange <- with(alltree_light_95, range(light_received/crownarea)) # 1.09 to 412
+lightperarearange <- with(alltree_light_95, range(light_received/crownarea)) # 1.04 to 412
 lightperarearange[2] <- lightperarearange[2] + 1
 
 lightperareabinbounds <- exp(seq(log(lightperarearange[1]), log(lightperarearange[2]), length.out = num_bins + 1))
