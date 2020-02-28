@@ -9,7 +9,6 @@
 DENS = 3
 PROD = 1
 
-
 # Set path to data on google drive
 #devtools::install_github('qdread/forestscaling')
 
