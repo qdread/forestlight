@@ -141,6 +141,32 @@ ratio_fitted_lightarea <- map2_dfr(list(data.frame(ratio = 'fast:slow', variable
 
 write_csv(ratio_fitted_lightarea, file.path(gdrive_path, 'data/data_piecewisefits/ratio_fittedvalues_lightarea.csv'))
 
+# Save parameters in a table
+# Parameters for each fit
+dens_pars_fg_lightarea <- map(densfit_alltrees, function(fit) {
+  extract(fit, c('alpha')) %>% bind_cols
+})
+prod_pars_fg_lightarea <- map(prodfit_alltrees, function(fit) {
+  extract(fit, c('beta0', 'beta1')) %>% bind_cols
+})
+
+allpars_lightarea <- map2(dens_pars_fg_lightarea, prod_pars_fg_lightarea, bind_cols) %>%
+  map2_dfr(paste0('fg', 1:4), ~ data.frame(fg = .y, .x)) %>%
+  mutate(totalprod_slope = beta1 - alpha - 1)
+
+allpars_lightarea_quantiles <- allpars_lightarea %>%
+  mutate(id = rep(1:3000, 4)) %>%
+  pivot_longer(-c(id, fg)) %>%
+  pivot_wider(id_cols = id, names_from = c(fg, name), values_from = value) %>%
+  transmute(fast_slow_density_slope = -fg1_alpha + fg3_alpha,
+            fast_slow_production_slope = fg1_totalprod_slope - fg3_totalprod_slope,
+            pioneer_breeder_density_slope = -fg2_alpha + fg4_alpha,
+            pioneer_breeder_production_slope = fg2_totalprod_slope - fg4_totalprod_slope) %>%
+  apply(2, quantile, probs = c(0.025, 0.25, 0.5, 0.75, 0.975)) 
+
+data.frame(variable = 'light per area', slope = dimnames(allpars_lightarea_quantiles)[[2]], t(allpars_lightarea_quantiles)) %>%
+  setNames(c('variable','ratio','q025', 'q25', 'q50', 'q75', 'q975')) %>%
+  write_csv(file.path(gdrive_path, 'data/data_piecewisefits/ratio_parameters_lightbyarea.csv'))
 
 # Plotting ----------------------------------------------------------------
 
