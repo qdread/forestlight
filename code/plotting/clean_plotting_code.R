@@ -1419,6 +1419,50 @@ pdf(file.path(gdrive_path, 'Figures/Fig_6/PCA_Scores/PCA_diam.pdf'))
 grid.draw(p1)
 dev.off()
 
+#--------------------- Alternative Fig 6A and 6B with fitted lines plotted ------------
+
+# Load fitted values
+ratio_fitted_diam <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/ratio_fittedvalues.csv'))
+ratio_fitted_lightarea <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/ratio_fittedvalues_lightarea.csv'))
+
+# Truncate fitted lines for display
+ratio_fitted_lightarea_prod <- ratio_fitted_lightarea %>%
+  filter(variable == 'total production', light_area > 7) %>%
+  mutate(ratio = if_else(ratio == 'fast:slow', 'Fast-Slow', 'Breeder-Pioneer'))
+
+ratio_fitted_diam_density <- ratio_fitted_diam %>%
+  filter(variable == 'density', (ratio == 'fast:slow' & dbh < 48) | (ratio == 'pioneer:breeder') & dbh < 15) %>%
+  mutate(ratio = if_else(ratio == 'fast:slow', 'Fast-Slow', 'Breeder-Pioneer'))
+
+prod_ratio_withfits <- prod_ratio_light   %>%
+  filter(n_individuals >= 20) %>%
+  ggplot() +
+  geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975, group = ratio, fill = ratio), alpha = 0.5, data = ratio_fitted_lightarea_prod) +
+  geom_line(aes(x = light_area, y = q50, group = ratio), data = ratio_fitted_lightarea_prod) +
+  geom_point(aes(x = bin_midpoint, y = production_ratio, fill = ID), shape = 21, size = 4.5,  stroke = .5, color = "black")+
+  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
+  theme_plant() + 
+  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(2,330), breaks=c(3,  30,  300)) +
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
+                name = NULL)
+
+dens_ratio_withfits <- prod_ratio_diam %>% 
+  filter(density_ratio > 0) %>%
+  filter(n_individuals >= 20) %>%
+  ggplot() +
+  geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = ratio, fill = ratio), alpha = 0.5, data = ratio_fitted_diam_density) +
+  geom_line(aes(x = dbh, y = q50, group = ratio), data = ratio_fitted_diam_density) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
+  geom_point(aes(x = bin_midpoint, y = density_ratio, fill = ID), shape = 21, size = 4.5,  stroke = .5,  color = "black")+
+  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
+  
+  scale_x_log10(limits=c(1,100),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
+                name = expression("Ratio")) + 
+  theme_plant() +
+  theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()) 
 
 #-------------------------------  PCA score by light ----------------------------------
 

@@ -73,7 +73,55 @@ prodpars_byfg_df <- map2_dfr(prodpars_byfg, ys, ~ data.frame(year = .y, map2_dfr
 denspars_byfg_df <- map2_dfr(denspars_byfg, ys, ~ data.frame(year = .y, map2_dfr(.x, fgs, function(dat, fg) data.frame(fg = fg, parameter = names(dat), value = dat))))
 
 # Write outputs temporarily so that models do not need to be run again
-write_csv(prodpars_byfg_df, '~/google_drive/ForestLight/data/data_piecewisefits/allyearfits_prodpars.csv')
-write_csv(denspars_byfg_df, '~/google_drive/ForestLight/data/data_piecewisefits/allyearfits_denspars.csv')
+write_csv(rbind(prodpars_byfg_df, prodpars_alltrees_df), '~/google_drive/ForestLight/data/data_piecewisefits/allyearfits_prodpars.csv')
+write_csv(rbind(denspars_byfg_df, denspars_alltrees_df), '~/google_drive/ForestLight/data/data_piecewisefits/allyearfits_denspars.csv')
+
+# Also write model fits in case
+save(prodfit_alltrees, prodfit_byfg, densfit_alltrees, densfit_byfg, file = '~/Dropbox/Q/projects/forestlight/fitsallyears.RData')
 
 # Get total production slopes using cutoffs from the data.
+
+prodpars_byfg_df <- read_csv('~/google_drive/ForestLight/data/data_piecewisefits/allyearfits_prodpars.csv')
+denspars_byfg_df <- read_csv('~/google_drive/ForestLight/data/data_piecewisefits/allyearfits_denspars.csv')
+
+allpars_wide <- prodpars_byfg_df %>%
+  rbind(denspars_byfg_df) %>%
+  pivot_wider(id_cols = c(year, fg), names_from = parameter) %>%
+  mutate(dens_slope_low = -alpha_low - 1,
+         dens_slope_mid = -alpha_mid - 1,
+         dens_slope_high = -alpha_high - 1) %>%
+  rename(cutoff_low = tau_low, cutoff_high = tau_high, indivprod_intercept = beta0, indivprod_slope = beta1) %>%
+  mutate(totalprod_slope_low = dens_slope_low + indivprod_slope,
+         totalprod_slope_mid = dens_slope_mid + indivprod_slope,
+         totalprod_slope_high = dens_slope_high + indivprod_slope) %>%
+  select(year, fg, contains("slope"), contains("cutoff")) %>%
+  arrange(fg, year)
+
+allpars_wide %>% filter(fg == 'alltree')
+
+write_csv(allpars_wide, '~/google_drive/ForestLight/data/data_piecewisefits/allyearfits_allslopes.csv')
+
+
+### Figure showing slopes across all years
+
+plotpars_long <- allpars_wide %>%
+  pivot_longer(cols = -c(year, fg), names_to = 'parameter') %>%
+  filter(parameter %in% c('indivprod_slope', 'dens_slope_mid', 'totalprod_slope_mid'), !fg %in% 'unclassified')
+
+ggplot(plotpars_long, aes(x = year, y = value)) +
+  facet_grid(parameter ~ fg, scales = 'free_y') +
+  geom_point(size = 2) +
+  geom_line() +
+  theme_bw()
+
+# z scores by year
+allpars_long <- allpars_wide %>%
+  pivot_longer(cols = -c(year, fg), names_to = 'parameter') 
+
+zscores <- allpars_long %>%
+  group_by(fg, parameter) %>%
+  mutate(z = (value - mean(value))/sd(value))
+
+ggplot(zscores, aes(x = factor(year), y = abs(z))) + geom_boxplot() + theme_bw() + ggtitle('parameter z-scores by year')
+
+
