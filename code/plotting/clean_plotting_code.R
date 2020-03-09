@@ -14,6 +14,7 @@ PROD = 1
 
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google Drive/ForestLight'))
 
+library(broom)
 library(forestscaling) # Packaged all the functions and ggplot2 themes here!
 library(tidyverse)
 library(egg)
@@ -181,20 +182,32 @@ guild_colors_nb <- c("#3B4403", "#02330A", "#031a49", "#02394F", "gray")
 bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalitybins.csv')) # Load binned data
 mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv')) # Load raw data
 fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
+growth_diam <-  read_csv(file.path(gdrive_path, 'data/clean_summary_tables/clean_parameters_individualdiametergrowth.csv')) 
+growth_diam2 <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_indivdiamgrowth.csv'))
 
-library(broom)
-
-mort_slopes <- fitted_mort %>%
-  filter(light_per_area > 10) %>%
-  filter(light_per_area < 100)%>%
+growth_diam_slopes<- growth_diam2 %>%
+  filter(bin_midpoint < 10.4, year == "1995") %>%
   nest(-fg) %>% #group variable
   mutate(
-    fit = map(data, ~ lm(log(q50)/5 ~ log(light_per_area), data = .x)),
+    fit = map(data, ~ lm(log(median) ~ log(bin_midpoint), data = .x)),
+    tidied = map(fit, tidy)
+  ) %>%
+  unnest(tidied)%>%
+  filter(term != '(Intercept)')
+growth_diam_slopes
+  
+mort_slopes <- bin_mort %>%
+  filter(bin_midpoint < 10.4, variable == "dbh") %>%
+  nest(-fg) %>% #group variable
+  mutate(
+    fit = map(data, ~ lm(log(mortality) ~ log(bin_midpoint), data = .x)),
     tidied = map(fit, tidy)
   ) %>%
   unnest(tidied)%>%
   filter(term != '(Intercept)')
 mort_slopes
+
+growth_diam_slopes$estimate + mort_slopes$estimate 
 
 
 growth_slopes <- obs_light_binned_plotdata %>%
