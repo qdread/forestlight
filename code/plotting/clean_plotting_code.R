@@ -1450,7 +1450,6 @@ prod_ratio_withfits
 
 dens_ratio_withfits <- prod_ratio_diam %>% 
   filter(density_ratio > 0) %>%
-  filter(n_individuals >= 20) %>%
   ggplot() +
   geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = ratio, fill = ratio), alpha = 0.4, data = ratio_fitted_diam_density) +
   geom_line(aes(x = dbh, y = q50, group = ratio, color = ratio), data = ratio_fitted_diam_density) +
