@@ -184,8 +184,13 @@ mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindi
 fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
 growth_diam <-  read_csv(file.path(gdrive_path, 'data/clean_summary_tables/clean_parameters_individualdiametergrowth.csv')) 
 growth_diam2 <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_indivdiamgrowth.csv'))
+growth_light <- 
 
-growth_diam_slopes<- growth_diam2 %>%
+growth_diam2_bins <- growth_diam2 %>%
+  filter(year == "1995", bin_mi)
+growth_diam2_bins$mean - bin_mort$mortality
+
+growth_diam_slopes_under_10 <- growth_diam2 %>%
   filter(bin_midpoint < 10.4, year == "1995") %>%
   nest(-fg) %>% #group variable
   mutate(
@@ -194,9 +199,20 @@ growth_diam_slopes<- growth_diam2 %>%
   ) %>%
   unnest(tidied)%>%
   filter(term != '(Intercept)')
-growth_diam_slopes
-  
-mort_slopes <- bin_mort %>%
+growth_diam_slopes_under_10
+
+growth_diam_all <- growth_diam2 %>%
+  filter(year == "1995") %>%
+  nest(-fg) %>% #group variable
+  mutate(
+    fit = map(data, ~ lm(log(median) ~ log(bin_midpoint), data = .x)),
+    tidied = map(fit, tidy)
+  ) %>%
+  unnest(tidied)%>%
+  filter(term != '(Intercept)')
+growth_diam_all
+
+mort_slopes_under_10 <- bin_mort %>%
   filter(bin_midpoint < 10.4, variable == "dbh") %>%
   nest(-fg) %>% #group variable
   mutate(
@@ -205,9 +221,40 @@ mort_slopes <- bin_mort %>%
   ) %>%
   unnest(tidied)%>%
   filter(term != '(Intercept)')
-mort_slopes
+mort_slopes_under_10 
 
-growth_diam_slopes$estimate + mort_slopes$estimate 
+growth_diam_slopes_under_10$estimate + mort_slopes_under_10 $estimate 
+
+
+growth_diam_slopes_over_10 <- growth_diam2 %>%
+  filter(bin_midpoint > 10.4, year == "1995") %>%
+  nest(-fg) %>% #group variable
+  mutate(
+    fit = map(data, ~ lm(log(median) ~ log(bin_midpoint), data = .x)),
+    tidied = map(fit, tidy)
+  ) %>%
+  unnest(tidied)%>%
+  filter(term != '(Intercept)')
+growth_diam_slopes_over_10
+
+mort_slopes_over_10 <- bin_mort %>%
+  filter(bin_midpoint > 10.4, variable == "dbh", mortality > 0) %>%
+  nest(-fg) %>% #group variable
+  mutate(
+    fit = map(data, ~ lm(log(mortality) ~ log(bin_midpoint), data = .x)),
+    tidied = map(fit, tidy)
+  ) %>%
+  unnest(tidied)%>%
+  filter(term != '(Intercept)')
+mort_slopes_over_10 
+
+growth_diam_slopes_over_10$estimate + mort_slopes_over_10 $estimate 
+
+diff <- 
+
+
+
+
 
 
 growth_slopes <- obs_light_binned_plotdata %>%
@@ -857,6 +904,9 @@ totalvolbins_fg <- read.csv(file.path(fp_plot, 'obs_totalvol.csv'), stringsAsFac
 
 #------Fig 4a------
 # Plot total volume using the "totalprod" function
+
+rough_slope_all <- (log(1650.623080)  -	log(844.331539)) / (log(36.878615) - log(4.919149))	
+1650.623080/844.331539
 totalvolbins_fg <- totalvolbins_fg %>%
   filter(bin_count >= 20)
 p <- plot_totalprod2(year_to_plot = 1995,
@@ -1462,6 +1512,7 @@ prod_ratio_withfits <- prod_ratio_light   %>%
 prod_ratio_withfits 
 
 dens_ratio_withfits <- prod_ratio_diam %>% 
+  filter(n_individuals >= 20) %>%
   filter(density_ratio > 0) %>%
   ggplot() +
   geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = ratio, fill = ratio), alpha = 0.4, data = ratio_fitted_diam_density) +
@@ -1473,10 +1524,23 @@ dens_ratio_withfits <- prod_ratio_diam %>%
   scale_x_log10(limits=c(1,100),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
                 name = expression("Ratio")) + 
-  theme_plant() +
-  theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
-        axis.ticks.y = element_blank()) 
+  theme_plant() #+
+  #theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
+   #     axis.ticks.y = element_blank()) 
 dens_ratio_withfits 
+
+#from prod_ratio_diam
+slope_tall_short_abun_diam <- (log(12.71153846) - log(0.49578652)) / (log(15.553354)-	log(2.074624)) #1.610388
+slope_fast_slow_abun_diam <- (log(0.63755459) - log(0.08550466)) / (log(49.176558)-	log(3.688981)) #0.776
+
+#from prod_ratio_light
+slope_tall_short_prod_light <- (log(	1.482158e+02) - log(1.383494e+00)) / (log(197.429506)-	log(9.938286)) #1.56
+slope_fast_slow_prod_light <- (log(7.664753e-01) - log(1.110092e-01)) / (log(358.948522)-log(7.370576)) #0.497
+
+#from abundance vs diameter slopes
+fast_slow_abund_diam <- (-1.71 - -2.40 ) #0.69, vs 0.78
+tall_short_abund_diam <- (-1.45 - -3.02 ) #1.57, vs 1.56
+
 #-------------------------------  PCA score by light ----------------------------------
 
 # Combine
