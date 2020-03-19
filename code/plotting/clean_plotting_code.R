@@ -253,10 +253,6 @@ growth_diam_slopes_over_10$estimate + mort_slopes_over_10 $estimate
 diff <- 
 
 
-
-
-
-
 growth_slopes <- obs_light_binned_plotdata %>%
   filter( bin_midpoint > 10,  bin_midpoint < 100) %>%
   nest(-fg) %>% #group variable
@@ -455,7 +451,7 @@ plot_prod2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3",
 
 obs_indivprod <- obs_indivprod %>%
   filter(mean_n_individuals >= 20)
-p <- plot_prod2(year_to_plot = 1995,
+p <- plot_prod(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5'),
           model_fit = PROD,
           x_limits = c(1, 230),
@@ -476,7 +472,7 @@ pdf(file.path(gdrive_path,'Figures/Fig_3/Main/Fig_3a_Growth.pdf'))
 grid.draw(p1)
 dev.off()
 
-geom
+
 obs_totalprod <- obs_totalprod %>%
   filter(bin_count >= 20)
 grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.17, y = 0.88, hjust = 0,
@@ -906,7 +902,7 @@ totalvolbins_fg <- read.csv(file.path(fp_plot, 'obs_totalvol.csv'), stringsAsFac
 # Plot total volume using the "totalprod" function
 
 rough_slope_all <- (log(1650.623080)  -	log(844.331539)) / (log(36.878615) - log(4.919149))	
-1650.623080/844.331539
+
 totalvolbins_fg <- totalvolbins_fg %>%
   filter(bin_count >= 20)
 p <- plot_totalprod2(year_to_plot = 1995,
@@ -1039,16 +1035,17 @@ grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.25, y = 0.52, hjust = 0,
                            gp = gpar(col = "black", fontsize = 18))) #, fontface = "bold")))
 # Plot
 
-slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, color = variable)) +
+slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, fill =  variable, color =variable)) +
   geom_hline(yintercept = 0, linetype = 'dashed', size = .75) +
-  geom_errorbar(position = position_dodge(width = 0.6), size = 1, width = 0) +
-  geom_point(position = position_dodge(width = 0.6), shape = 21, size = 2.5, stroke = 1) +
+  geom_point(position = position_dodge(width = 0.6), shape = 21, size = 3, color = "black", stroke = 0.5) +
+  geom_errorbar(position = position_dodge(width = 0.6), size = 0.75, width = 0) +
   labs( x = NULL, y = 'Scaling Slope') +#x = 'Life History Guild', +
   scale_y_continuous(limits = c(-1.05, 1.3)) +#, labels = c("-1", "-0.5", "0", "0.5", "1")) +
-  scale_color_manual(values = c('gold2', 'darkgreen'), labels = c('Total Light', 'Total Growth')) +
+  scale_fill_manual(values = c('gold1', 'darkolivegreen3')) +
+  scale_color_manual(values = c('gold3', 'darkgreen')) +
   theme_plant() + theme(axis.text.x = element_text(angle = 25, hjust = 1, face = "italic", size = 18)) +
   annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3) +annotation_custom(grob0)
-
+slopes
 #grid.newpage()
 #grid.draw(slopes)
 #pdf(file.path(gdrive_path, 'Figures/Fig_5/Growth Light symmetry.pdf'))
@@ -1084,7 +1081,7 @@ p <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in%
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
   scale_x_discrete(name = 'Life History Strategy', labels = fg_labels2) +
   scale_y_continuous(expression(paste('Max. Growth Rate (kg yr'^-1, ' m'^-2,')')), 
-                                limits = c(.6, 1.1),
+                                limits = c(0.6, 1.1),
                                 breaks = seq(0, 1, 0.2), labels = seq(0, 1, 0.2)) +
  theme_plant() + theme(aspect.ratio = 0.75)
 p
@@ -1499,7 +1496,7 @@ ratio_fitted_diam_density <- ratio_fitted_diam %>%
 prod_ratio_withfits <- prod_ratio_light   %>%
   filter(n_individuals >= 20) %>%
   ggplot() +
-  geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975, group = ratio, fill = ratio), alpha = 0.4, data = ratio_fitted_lightarea_prod) +
+  geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975, group = ratio, fill = ratio), alpha = 0.3, data = ratio_fitted_lightarea_prod) +
   geom_line(aes(x = light_area, y = q50, group = ratio,  color = ratio), data = ratio_fitted_lightarea_prod) +
   geom_point(aes(x = bin_midpoint, y = production_ratio, fill = ID), shape = 21, size = 4.5,  stroke = .5, color = "black")+
   scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
@@ -1510,6 +1507,22 @@ prod_ratio_withfits <- prod_ratio_light   %>%
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
                 name = NULL)
 prod_ratio_withfits 
+p1 <- set_panel_size(prod_ratio_withfits , width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_6/Prod_ratio_fits.pdf'))
+grid.draw(p1)
+dev.off()
+ratio_fitted_diam_density2 <- ratio_fitted_diam_density %>%
+  filter(if(ratio == "Breeder-Pioneer") dbh > 2.2 else dbh > 1.2 & dbh < 178)
+  
+prod_ratio_light_filt <- prod_ratio_light %>% filter(n_individuals >= 20, density_ratio > 0, ID == "Breeder-Pioneer")
+lm3 <- lm(log(prod_ratio_light_filt$production_ratio) ~ log(prod_ratio_light_filt$bin_midpoint))
+summary(lm3) #1.19 breeder pioneer production
+
+prod_ratio_light_filt2 <- prod_ratio_light %>% filter(n_individuals >= 20, density_ratio > 0, ID == "Fast-Slow")
+lm4 <- lm(log(prod_ratio_light_filt2$production_ratio) ~ log(prod_ratio_light_filt2$bin_midpoint))
+summary(lm4) #0.760 fast slow density
 
 dens_ratio_withfits <- prod_ratio_diam %>% 
   filter(n_individuals >= 20) %>%
@@ -1524,10 +1537,24 @@ dens_ratio_withfits <- prod_ratio_diam %>%
   scale_x_log10(limits=c(1,100),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
                 name = expression("Ratio")) + 
-  theme_plant() #+
-  #theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
-   #     axis.ticks.y = element_blank()) 
+  theme_plant() +
+  theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
+       axis.ticks.y = element_blank()) 
 dens_ratio_withfits 
+p1 <- set_panel_size(dens_ratio_withfits  , width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+pdf(file.path(gdrive_path, 'Figures/Fig_6/Dens_ratio_fits.pdf'))
+grid.draw(p1)
+dev.off()
+prod_ratio_diam_filt <- prod_ratio_diam %>% filter(n_individuals >= 20, density_ratio > 0, ID == "Breeder-Pioneer")
+lm1 <- lm(log(prod_ratio_diam_filt$density_ratio) ~ log(prod_ratio_diam_filt$bin_midpoint))
+summary(lm1) #1.56 breeder pioneer density
+
+prod_ratio_diam_filt2 <- prod_ratio_diam %>% filter(n_individuals >= 20, density_ratio > 0, ID == "Fast-Slow")
+lm2 <- lm(log(prod_ratio_diam_filt2$density_ratio) ~ log(prod_ratio_diam_filt2$bin_midpoint))
+summary(lm2) #0.75 fast slow density
+
 
 #from prod_ratio_diam
 slope_tall_short_abun_diam <- (log(12.71153846) - log(0.49578652)) / (log(15.553354)-	log(2.074624)) #1.610388
