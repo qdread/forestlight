@@ -250,9 +250,6 @@ mort_slopes_over_10
 
 growth_diam_slopes_over_10$estimate + mort_slopes_over_10 $estimate 
 
-diff <- 
-
-
 growth_slopes <- obs_light_binned_plotdata %>%
   filter( bin_midpoint > 10,  bin_midpoint < 100) %>%
   nest(-fg) %>% #group variable
@@ -397,10 +394,12 @@ dev.off()
 # Model fit 2 = power law exp
 
 plot_prod2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3", 
-                                                          "fg4", "fg5", "all"), model_fit = 1, x_limits, x_breaks = c(1, 
-                                                                                                                      3, 10, 30, 100, 300), y_limits, y_labels, y_breaks, fill_names = c("#BFE046", 
-                                                                                                                                                                                         "#267038", "#27408b", "#87Cefa", "gray87"), color_names = c("#BFE046", 
-                                                                                                                                                                                                                                                     "#267038", "#27408b", "#87Cefa", "gray"), x_name = "Diameter (cm)", 
+                                                          "fg4", "fg5", "all"), 
+                        model_fit = 1, x_limits, x_breaks = c(1, 3, 10, 30, 100, 300),
+                        y_limits, y_labels, y_breaks, 
+                        fill_names = c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
+                        color_names = c("#BFE046",  "#267038", "#27408b", "#87Cefa", "gray"), 
+                        x_name = "Diameter (cm)", 
                         y_name = expression(paste("Growth (kg y"^-1, ")")), average = "mean", 
                         plot_errorbar = FALSE, error_min = "ci_min", error_max = "ci_max", 
                         error_bar_width = 0.1, error_bar_thickness = 0.5, dodge_width = 0.03, 
@@ -434,9 +433,9 @@ plot_prod2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3",
   p <- p + ggplot2::geom_line(data = preddat[preddat$fg == 
                                                "fg5", ], ggplot2::aes(x = dbh, y = q50), color = "gray") + 
     ggplot2::geom_point(data = obsdat, ggplot2::aes_string(x = "bin_midpoint", 
-                                                           y = average, group = "fg", fill = "fg"), size = geom_size, 
-                        color = "black", shape = 21, position = pos) + ggplot2::scale_x_log10(name = x_name, 
-                                                                                              limits = x_limits, breaks = x_breaks) + ggplot2::scale_y_log10(name = y_name, 
+                                                           y = average, group = "fg", fill = "fg", arrange(rev(y_labels))), size = geom_size, 
+                        color = "black", shape = 21, position = pos) + 
+    ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + ggplot2::scale_y_log10(name = y_name, 
                                                                                                                                                              limits = y_limits, breaks = y_breaks, labels = y_labels) + 
     theme_no_x() + ggplot2::theme(rect = ggplot2::element_rect(fill = "transparent")) + 
     ggplot2::scale_color_manual(values = color_names) + ggplot2::scale_fill_manual(values = fill_names) + 
@@ -463,12 +462,13 @@ p <- plot_prod(year_to_plot = 1995,
           error_bar_width = 0,
           y_labels = c(0.001,0.1,10,1000),
           dodge_width = 0.05)
-p0 <- p #+ annotation_custom(grob_text_a) 
+#p0 <- p #+ annotation_custom(grob_text_a) 
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 
-p1 <- set_panel_size(p0, width=unit(8,"cm"), height=unit(7,"cm"))
+#p1 <- set_panel_size(p0, width=unit(8,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
-pdf(file.path(gdrive_path,'Figures/Fig_3/Main/Fig_3a_Growth.pdf'))
+pdf(file.path(gdrive_path,'Figures/Fig_3/Fig_3a_Growth_new.pdf'))
 grid.draw(p1)
 dev.off()
 
@@ -660,7 +660,6 @@ p1 <- p + theme(axis.text.x = element_text(), axis.ticks.x = element_line()) +
 
 grid.newpage()
 grid.draw(p1)
-
 ggsave(file.path(gdrive_path,'Figures/Fig_3/Diameter/Diam_growth.pdf'), p1, width = 7, height = 5.3)
 
 # ------------------------   WAIC of Piecewise Models  -----------------------------------
