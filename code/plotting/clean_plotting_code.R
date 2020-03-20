@@ -340,19 +340,18 @@ plot_dens2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3",
                                                                                                                                                                                          "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), color_names = c("black", 
                                                                                                                                                                                                                                                                 "#BFE046", "#267038", "#27408b", "#87Cefa", "gray"), x_name = "Diameter (cm)", 
                         y_name = expression(paste("Density (n ha"^-1, "cm"^-1, ")")), 
-                        geom_size = 3.5, obsdat = obs_dens, preddat = pred_dens, plot_abline = TRUE, 
+                        geom_size = 4, obsdat = obs_dens, preddat = pred_dens, plot_abline = TRUE, 
                         abline_slope = -2, abline_intercept = 4) 
 {
-  obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == 
-                                       year_to_plot, bin_count > 10) %>% dplyr::filter(bin_value > 
-                                                                                         0)
+  obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == year_to_plot, bin_count >= 20) %>% 
+    dplyr::filter(bin_value >  0) %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1')))
   obs_limits <- obsdat %>% dplyr::group_by(fg) %>% dplyr::summarize(min_obs = min(bin_midpoint), 
                                                                     max_obs = max(bin_midpoint))
-  preddat <- preddat %>% dplyr::left_join(obs_limits) %>% dplyr::filter(dens_model %in% 
-                                                                          model_fit, fg %in% fg_names, year == year_to_plot) %>% 
+  preddat <- preddat %>% dplyr::left_join(obs_limits) %>% dplyr::filter(dens_model %in% model_fit, 
+             fg %in% fg_names, year == year_to_plot) %>% 
     dplyr::filter_at(dplyr::vars(dplyr::starts_with("q")), 
-                     dplyr::all_vars(. > min(y_limits))) %>% dplyr::filter(dbh >= 
-                                                                             min_obs & dbh <= max_obs)
+                     dplyr::all_vars(. > min(y_limits))) %>% 
+    dplyr::filter(dbh >=  min_obs & dbh <= max_obs) %>%  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1')))
   p <- ggplot2::ggplot() + ggplot2::geom_ribbon(data = preddat, 
                                                 ggplot2::aes(x = dbh, ymin = q025, ymax = q975, group = fg, 
                                                              fill = fg), alpha = 0.4)
@@ -362,8 +361,8 @@ plot_dens2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3",
                                   size = 0.75)
   }
   p + ggplot2::geom_line(data = preddat, ggplot2::aes(x = dbh, 
-                                                      y = q50, group = fg, color = fg)) + ggplot2::geom_line(data = preddat[preddat$fg == 
-                                                                                                                              "fg5", ], ggplot2::aes(x = dbh, y = q50), color = "gray") + 
+                                                      y = q50, group = fg, color = fg)) + 
+    ggplot2::geom_line(data = preddat[preddat$fg == "fg5", ], ggplot2::aes(x = dbh, y = q50), color = "gray") + 
     ggplot2::geom_point(data = obsdat, ggplot2::aes(x = bin_midpoint, 
                                                     y = bin_value, group = fg, fill = fg), size = geom_size, 
                         shape = 21, color = "black") + ggplot2::scale_x_log10(name = x_name, 
@@ -372,7 +371,7 @@ plot_dens2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3",
     ggplot2::scale_color_manual(values = color_names) + ggplot2::scale_fill_manual(values = fill_names) + 
     theme_plant()
 }
-p <- plot_dens(year_to_plot = 1995,
+p <- plot_dens2(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
           model_fit = DENS,
           x_limits = c(.8, 230),
@@ -382,57 +381,56 @@ p <- plot_dens(year_to_plot = 1995,
           y_breaks = c(0.001, 0.1,  10, 1000))
 #p <- p +annotation_custom(grob_text_b)
 
-p1 <- set_panel_size(p, width=unit(8,"cm"), height=unit(7,"cm"))
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
-pdf(file.path(gdrive_path,'Figures/Fig_3/Main/Fig_3b_Density.pdf'))
+pdf(file.path(gdrive_path,'Figures/Fig_3/Fig_3b_Density.pdf'))
 grid.draw(p1)
 dev.off()
 
 # Specify dodging with a certain width of error bar
 # Model fit 1 = power law
 # Model fit 2 = power law exp
-
-plot_prod2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3", 
-                        "fg4", "fg5", "all"), model_fit = 1, x_limits, x_breaks = c(1, 3, 10, 30, 100, 300),
-                        y_limits, y_labels, y_breaks, 
-                        fill_names = c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
-                        color_names = c("#BFE046",  "#267038", "#27408b", "#87Cefa", "gray"), 
-                        x_name = "Diameter (cm)", 
-                        y_name = expression(paste("Growth (kg y"^-1, ")")), average = "mean", 
-                        plot_errorbar = FALSE, error_min = "ci_min", error_max = "ci_max", 
-                        error_bar_width = 0.1, error_bar_thickness = 0.5, dodge_width = 0.03, 
-                        dodge_errorbar = TRUE, geom_size = 4, obsdat = obs_indivprod, 
-                        preddat = fitted_indivprod, plot_abline = TRUE, abline_slope = 2, 
-                        abline_intercept = -1.3) 
+plot_prod2 <- 
+function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3", 
+          "fg4", "fg5", "all"), model_fit = 1, x_limits, x_breaks = c(1, 
+          3, 10, 30, 100, 300), y_limits, y_labels, y_breaks, fill_names = c("#BFE046", 
+           "#267038", "#27408b", "#87Cefa", "gray87"), color_names = c("#BFE046", 
+           "#267038", "#27408b", "#87Cefa", "gray"), x_name = "Diameter (cm)", 
+          y_name = expression(paste("Growth (kg y"^-1, ")")), average = "mean", 
+          plot_errorbar = FALSE, error_min = "ci_min", error_max = "ci_max", 
+          error_bar_width = 0.1, error_bar_thickness = 0.5, dodge_width = 0.03, 
+          dodge_errorbar = TRUE, geom_size = 4, obsdat = obs_indivprod, 
+          preddat = fitted_indivprod, plot_abline = TRUE, abline_slope = 2, 
+          abline_intercept = -1.3) 
 {
   pos <- if (dodge_errorbar) 
     ggplot2::position_dodge(width = dodge_width)
   else "identity"
-  obsdat <- obsdat %>% arrange(desc(fg)) %>% dplyr::filter(fg %in% fg_names, year == 
-     year_to_plot, !is.na(mean), mean_n_individuals >= 20) %>% 
-    dplyr::group_by(bin_midpoint)  %>% dplyr::mutate(width = error_bar_width * 
-     dplyr::n()) %>% dplyr::ungroup()
+  obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == 
+                                       year_to_plot, !is.na(mean), mean_n_individuals >= 20) %>% 
+    dplyr::group_by(bin_midpoint) %>% dplyr::mutate(width = error_bar_width * 
+                                                      dplyr::n()) %>% dplyr::ungroup() %>% arrange(desc(fg))
   obs_limits <- obsdat %>% dplyr::group_by(fg) %>% dplyr::summarize(min_obs = min(bin_midpoint), 
-                max_obs = max(bin_midpoint))
-  preddat <- preddat %>% arrange(desc(fg)) %>% dplyr::left_join(obs_limits) %>% dplyr::filter(prod_model %in% 
-             model_fit, fg %in% fg_names, year == year_to_plot) %>% 
+                                                                    max_obs = max(bin_midpoint))
+  preddat <- preddat %>% dplyr::left_join(obs_limits) %>% dplyr::filter(prod_model %in% 
+                                                                          model_fit, fg %in% fg_names, year == year_to_plot) %>% 
     dplyr::filter_at(dplyr::vars(dplyr::starts_with("q")), 
                      dplyr::all_vars(. > min(y_limits))) %>% dplyr::filter(dbh >= 
-           min_obs & dbh <= max_obs)
+                                                                             min_obs & dbh <= max_obs) %>% arrange(desc(fg))
   p <- ggplot2::ggplot() + ggplot2::geom_ribbon(data = preddat, 
-      ggplot2::aes(x = dbh, ymin = q025, ymax = q975, group = fg, 
-      fill = fg), alpha = 0.4) + ggplot2::geom_line(data = preddat, 
-      ggplot2::aes(x = dbh, y = q50, group = fg, color = fg))
+       ggplot2::aes(x = dbh, ymin = q025, ymax = q975, group = fg, 
+       fill = fg), alpha = 0.4) + ggplot2::geom_line(data = preddat, 
+       ggplot2::aes(x = dbh, y = q50, group = fg, color = fg))
   if (plot_errorbar) {
     p <- p + ggplot2::geom_errorbar(data = obsdat, ggplot2::aes_string(x = "bin_midpoint", 
-         ymin = error_min, ymax = error_max, group = "fg", 
-         color = "fg", width = "width"), position = pos, size = error_bar_thickness)
+    ymin = error_min, ymax = error_max, group = "fg", 
+    color = "fg", width = "width"), position = pos, size = error_bar_thickness)
   }
   p <- p + ggplot2::geom_line(data = preddat[preddat$fg == 
-       "fg5", ], ggplot2::aes(x = dbh, y = q50), color = "gray") + 
+                                               "fg5", ], ggplot2::aes(x = dbh, y = q50), color = "gray") + 
     ggplot2::geom_point(data = obsdat, ggplot2::aes_string(x = "bin_midpoint", 
-     y = average, group = "fg", fill = "fg", size = geom_size, 
+    y = average, group = "fg", fill = "fg"), size = geom_size, 
     color = "black", shape = 21, position = pos) + ggplot2::scale_x_log10(name = x_name, 
     limits = x_limits, breaks = x_breaks) + ggplot2::scale_y_log10(name = y_name, 
     limits = y_limits, breaks = y_breaks, labels = y_labels) + 
@@ -441,8 +439,8 @@ plot_prod2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3",
     theme_plant()
   if (plot_abline) {
     p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
-         slope = abline_slope, color = "gray72", linetype = "dashed", 
-         size = 0.75)
+                                  slope = abline_slope, color = "gray72", linetype = "dashed", 
+                                  size = 0.75)
   }
   p
 }
@@ -461,8 +459,8 @@ p <- plot_prod2(year_to_plot = 1995,
           error_bar_width = 0,
           y_labels = c(0.001,0.1,10,1000),
           dodge_width = 0.05)
-#p0 <- p #+ annotation_custom(grob_text_a) 
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p0 <- p #+ annotation_custom(grob_text_a) 
+p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
 
 #p1 <- set_panel_size(p0, width=unit(8,"cm"), height=unit(7,"cm"))
 grid.newpage()
@@ -475,8 +473,6 @@ dev.off()
 obs_totalprod <- obs_totalprod %>%
   filter(bin_count >= 20)
 grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.17, y = 0.88, hjust = 0,
-                               gp = gpar(col = "gray52", fontsize = 20))) 
-grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.11, y = 0.88, hjust = 0,
                                gp = gpar(col = "gray52", fontsize = 20))) 
 
 
@@ -533,12 +529,12 @@ p0 <-  p + annotation_custom(grob_text_c) + annotation_custom(grob_text)
 #p0
 # p0 + geom_abline(intercept = 2, slope = 0, color ="gray72",linetype="dashed", size=.75)
 
-p1 <- set_panel_size(p0, width=unit(12,"cm"), height=unit(14.4,"cm"))
+p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
 
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Fig_3/Main/Fig_3c_Total_Production.pdf'))
+pdf(file.path(gdrive_path,'Figures/Fig_3/Fig_3c_Total_Production.pdf'))
 grid.draw(p1)
 dev.off()
 
@@ -1029,7 +1025,7 @@ grob1 <- grobTree(textGrob("Light Capture", x = 0.65, y = 0.94, hjust = 0,
                            gp = gpar(col = "gold3", fontsize = 18))) 
 grob2 <- grobTree(textGrob("Production", x = 0.65, y = 0.86, hjust = 0,
                            gp = gpar(col = "darkgreen", fontsize = 18)))# fontface="italic"
-grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.25, y = 0.52, hjust = 0,
+grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.25, y = 0.51, hjust = 0,
                            gp = gpar(col = "black", fontsize = 18))) #, fontface = "bold")))
 # Plot
 
@@ -1212,11 +1208,11 @@ p_crown <- ggplot() + geom_point(alpha = 0.01, data = alltree_light_95, aes(x = 
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
 
-p_crown <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p_crown2 <- set_panel_size(p_crown, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
-grid.draw(g_crown)
+grid.draw(p_crown2)
 pdf(file.path(gdrive_path,'Figures/Fig_5/Fig_5a.pdf'))
-grid.draw(g_crown)
+grid.draw(p_crown2)
 dev.off()
 
 #name = expression(atop('Total Light Intercepted',paste('(W m'^3, ' cm'^-1,' ha'^-1,')'))))  
@@ -1239,18 +1235,18 @@ ggplot() +
 grob1 <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 p_vol <- ggplot() +
-  #geom_point(alpha = 0.01, data = alltree_light_95, 
-   #          aes(x = dbh_corr, y = light_received/crownvolume), color = 'chartreuse3') +
+  geom_point(alpha = 0.01, data = alltree_light_95, 
+             aes(x = dbh_corr, y = light_received/crownvolume), color = 'chartreuse3') +
   geom_pointrange(data = lightpervolfakebin_fg %>% filter(fg %in% 'all'), 
                   aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
   scale_x_log10(name = exd) +
-  scale_y_log10(name = exv, breaks = c(10, 100)) +
+  scale_y_log10(name = exv, breaks = c(1, 10, 100)) +
   theme_plant() + annotation_custom(grob1)
-p_vol <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p_vol2 <- set_panel_size(p_vol, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
-grid.draw(g_vol)
+grid.draw(p_vol2)
 pdf(file.path(gdrive_path,'Figures/Fig_5/Fig_5b.pdf'))
-grid.draw(g_vol)
+grid.draw(p_vol)
 dev.off()
 
 
