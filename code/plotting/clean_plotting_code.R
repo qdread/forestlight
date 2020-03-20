@@ -481,7 +481,7 @@ grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.11, y = 0.
                                gp = gpar(col = "gray52", fontsize = 20))) 
 
 
-plot_totalprod2 <-function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3", 
+plot_totalprod2 <-function(year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3", 
                                                               "fg4", "fg5", "all"), model_fit_density = 1, model_fit_production = 1, 
                             x_limits, x_breaks = c(1, 3, 10, 30, 100, 300), y_limits = c(0.03, 
                                                                                          100), y_breaks = c(0.01, 0.1, 1, 10, 100, 1000), y_labels, 
@@ -494,7 +494,7 @@ plot_totalprod2 <-function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3
                             abline_intercept = 2) 
 {
   obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == 
-                                       year_to_plot, bin_count > 10) %>% dplyr::filter(bin_value > 
+                                       year_to_plot, bin_count >= 20) %>% dplyr::filter(bin_value > 
                                                                                          0)
   obs_limits <- obsdat %>% dplyr::group_by(fg) %>% dplyr::summarize(min_obs = min(bin_midpoint), 
                                                                     max_obs = max(bin_midpoint))
