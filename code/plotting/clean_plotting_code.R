@@ -184,7 +184,7 @@ mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindi
 fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
 growth_diam <-  read_csv(file.path(gdrive_path, 'data/clean_summary_tables/clean_parameters_individualdiametergrowth.csv')) 
 growth_diam2 <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_indivdiamgrowth.csv'))
-growth_light <- 
+
 
 growth_diam2_bins <- growth_diam2 %>%
   filter(year == "1995", bin_mi)
