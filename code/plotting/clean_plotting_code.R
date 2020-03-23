@@ -477,36 +477,38 @@ grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.17, y = 0.
 
 
 plot_totalprod2 <-function(year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg3", 
-                                                              "fg4", "fg5", "all"), model_fit_density = 1, model_fit_production = 1, 
+                          "fg4", "fg5", "all"), model_fit_density = 1, model_fit_production = 1, 
                             x_limits, x_breaks = c(1, 3, 10, 30, 100, 300), y_limits = c(0.03, 
-                                                                                         100), y_breaks = c(0.01, 0.1, 1, 10, 100, 1000), y_labels, 
+                             100), y_breaks = c(0.01, 0.1, 1, 10, 100, 1000), y_labels, 
                             fill_names = c("black", "#BFE046", "#267038", "#27408b", 
-                                           "#87Cefa", "gray87"), color_names = c("black", "#BFE046", 
-                                                                                 "#267038", "#27408b", "#87Cefa", "gray"), x_name = "Diameter (cm)", 
+                            "#87Cefa", "gray87"), color_names = c("black", "#BFE046", 
+                            "#267038", "#27408b", "#87Cefa", "gray"), x_name = "Diameter (cm)", 
                             y_name = expression(paste("Production (kg ha"^-1, " cm"^-1, 
-                                                      " y"^-1, ")")), geom_size = 4.5, obsdat = obs_totalprod, 
+                            " y"^-1, ")")), geom_size = 4.5, obsdat = obs_totalprod, 
                             preddat = fitted_totalprod, plot_abline = TRUE, abline_slope = 0, 
                             abline_intercept = 2) 
 {
   obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == 
-                                       year_to_plot, bin_count >= 20) %>% dplyr::filter(bin_value > 0) %>% arrange(desc(fg))
-  obs_limits <- obsdat %>% dplyr::group_by(fg) %>% dplyr::summarize(min_obs = min(bin_midpoint), 
-                                                                    max_obs = max(bin_midpoint))
+            year_to_plot, bin_count >= 20) %>% dplyr::filter(bin_value > 0) %>% arrange(desc(fg))
+  obs_limits <- obsdat %>% dplyr::group_by(fg) %>% 
+    dplyr::summarize(min_obs = min(bin_midpoint), 
+    max_obs = max(bin_midpoint)) %>% arrange(desc(fg))
   preddat <- preddat %>% dplyr::left_join(obs_limits) %>% dplyr::filter(dens_model %in% 
-                                                                          model_fit_density, prod_model %in% model_fit_production, 
-                                                                        fg %in% fg_names, year == year_to_plot) %>% 
+             model_fit_density, prod_model %in% model_fit_production, 
+             fg %in% fg_names, year == year_to_plot) %>% 
     arrange(desc(fg)) %>% 
     dplyr::filter_at(dplyr::vars(dplyr::starts_with("q")), 
   dplyr::all_vars(. > min(y_limits))) %>% dplyr::filter(dbh >=  min_obs & dbh <= max_obs)
   p <- ggplot2::ggplot() + ggplot2::geom_ribbon(data = preddat, 
-                                                aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), 
-                                                alpha = 0.4) + ggplot2::geom_line(data = preddat, aes(x = dbh, 
-                                                                                                      y = q50, group = fg, color = fg)) + ggplot2::geom_point(data = obsdat, 
-                                                                                                                                                              aes(x = bin_midpoint, y = bin_value, group = fg, fill = fg), 
-                                                                                                                                                              size = geom_size, color = "black", shape = 21) + ggplot2::scale_x_log10(name = x_name, 
-                                                                                                                                                                                                                                      limits = x_limits, breaks = x_breaks) + ggplot2::scale_y_log10(name = y_name, 
-                                                                                                                                                                                                                                                                                                     limits = y_limits, breaks = y_breaks, labels = y_labels, 
-                                                                                                                                                                                                                                                                                                     position = "right") + ggplot2::scale_color_manual(values = color_names) + 
+     aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), 
+     alpha = 0.4) + ggplot2::geom_line(data = preddat, aes(x = dbh, 
+     y = q50, group = fg, color = fg)) + 
+    ggplot2::geom_point(data = obsdat, 
+    aes(x = bin_midpoint, y = bin_value, group = fg, fill = fg), 
+   size = geom_size, color = "black", shape = 21) + ggplot2::scale_x_log10(name = x_name, 
+  limits = x_limits, breaks = x_breaks) + ggplot2::scale_y_log10(name = y_name, 
+    limits = y_limits, breaks = y_breaks, labels = y_labels, 
+   position = "right") + ggplot2::scale_color_manual(values = color_names) + 
     ggplot2::scale_fill_manual(values = fill_names) + theme_plant() + 
     theme(aspect.ratio = 1)
   if (plot_abline) 
@@ -553,20 +555,19 @@ plot_totalprod3 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg2", "fg
                                             "#87Cefa", "gray87"), color_names = c("black", "#BFE046", 
                                                                                   "#267038", "#27408b", "#87Cefa", "gray"), x_name = "Diameter (cm)", 
                              y_name = expression(paste("Production (kg ha"^-1, " cm"^-1, 
-                                                       " y"^-1, ")")), geom_size = 3, obsdat = obs_totalprod, 
+                                                       " y"^-1, ")")), geom_size = 4, obsdat = obs_totalprod, 
                              preddat = fitted_totalprod, plot_abline = TRUE, abline_slope = 0, 
                              abline_intercept = 2) 
 {
   obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == 
-                                       year_to_plot, bin_count >= 20) %>% dplyr::filter(bin_value > 
-                                                                                         0)
+                                       year_to_plot, bin_count >= 20) %>% dplyr::filter(bin_value >  0) %>% arrange(desc(fg))
   obs_limits <- obsdat %>% dplyr::group_by(fg) %>% dplyr::summarize(min_obs = min(bin_midpoint), 
-                                                                    max_obs = max(bin_midpoint))
+                                                                    max_obs = max(bin_midpoint)) %>% arrange(desc(fg))
   preddat <- preddat %>% dplyr::left_join(obs_limits) %>% dplyr::filter(dens_model %in% 
                                                                           model_fit_density, prod_model %in% model_fit_production, 
                                                                         fg %in% fg_names, year == year_to_plot) %>% dplyr::filter_at(dplyr::vars(dplyr::starts_with("q")), 
                                                                                                                                      dplyr::all_vars(. > min(y_limits))) %>% dplyr::filter(dbh >= 
-                                                                                                                                                                                             min_obs & dbh <= max_obs)
+                                                                                                                                                                                             min_obs & dbh <= max_obs) %>% arrange(desc(fg))
   p <- ggplot2::ggplot() + ggplot2::geom_ribbon(data = preddat, 
                                                 aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), 
                                                 alpha = 0.4) + ggplot2::geom_line(data = preddat, aes(x = dbh, 
@@ -601,7 +602,7 @@ p0 <- p + scale_x_log10(name = 'Diameter (cm)',
                                     name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 40))) +
   scale_y_log10(position = "left", limits = c(0.5, 200), breaks = c(0.1, 1, 10, 100),labels = c(0.1, 1, 10, 100),
                 name =expression(atop('Total Production', paste('(kg ha'^-1,' cm'^-1,' yr'^-1,')')))) +
-  theme(aspect.ratio = 0.8) + theme_plant2() +geom_point(size = 1)
+  theme(aspect.ratio = 0.8) +geom_point(size = 1)
 p0
 
                                
@@ -610,7 +611,23 @@ p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Fig_3/Height/Fig_3c_Total_Production_Height.pdf'))
+pdf(file.path(gdrive_path,'Figures/Fig_3/Fig_3c_Total_Production_Height.pdf'))
+grid.draw(p1)
+dev.off()
+
+p0 <- p + scale_x_log10(name = 'Diameter (cm)',
+                        breaks = c(1,3,10,30,100,300), limits = c(0.9, 230),
+                        sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
+                                            name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 40))) +
+  scale_y_log10(position = "right", limits = c(0.5, 200), breaks = c(0.1, 1, 10, 100),labels = c(0.1, 1, 10, 100),
+                name =expression(atop('Total Production', paste('(kg ha'^-1,' cm'^-1,' yr'^-1,')')))) 
+p0
+
+p1 <- set_panel_size(p0, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Fig_3/Fig_3c_Total_Production_Height2.pdf'))
 grid.draw(p1)
 dev.off()
 
@@ -824,14 +841,13 @@ plot_prod_withrawdata2 <- function (year_to_plot = 1995, fg_names = c("fg1", "fg
                                     abline_intercept = -2.1, plot_fits = FALSE) 
 {
   obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == 
-                                       year_to_plot)
+                                       year_to_plot) %>% arrange(desc(fg))
   obs_limits <- obsdat %>% dplyr::group_by(fg) %>% dplyr::summarize(min_obs = min(production), 
-                                                                    max_obs = max(production))
+                                                                    max_obs = max(production)) %>% arrange(desc(fg))
   preddat <- preddat %>% dplyr::left_join(obs_limits) %>% dplyr::filter(fg %in% 
-                                                                          fg_names, year == year_to_plot) %>% dplyr::filter_at(dplyr::vars(dplyr::starts_with("q")), 
-                                                                                                                               dplyr::all_vars(. > min(y_limits))) %>% dplyr::filter(dbh >= 
-                                                                                                                                                                                       min_obs & dbh <= max_obs) %>% dplyr::mutate(prod_model = factor(prod_model, 
-                                                                                                                                                                                                                                                       labels = func_names))
+             fg_names, year == year_to_plot) %>% dplyr::filter_at(dplyr::vars(dplyr::starts_with("q")), 
+             dplyr::all_vars(. > min(y_limits))) %>% dplyr::filter(dbh >=  min_obs & dbh <= max_obs) %>% dplyr::mutate(prod_model = factor(prod_model, 
+             labels = func_names)) %>% arrange(desc(fg))
   labels <- setNames(full_names, fg_names)
   p <- ggplot2::ggplot() + ggplot2::geom_hex(data = obsdat, 
                                              ggplot2::aes(x = dbh_corr, y = production)) + ggplot2::facet_wrap(~fg, 
@@ -955,7 +971,7 @@ tot_light <- plot_totalprod(year_to_plot = 1995,
 tot_light
 tot_light1 <- tot_light + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
                             labels = c("0.1", "1", "10", "100"), limits = c(100, 400000),
-                            name = expression(paste('Total Light Intercepted (W cm'^-1,' ha'^-1,')'))) +
+                            name = expression(paste('Total Light Intercepted (kW cm'^-1,' ha'^-1,')'))) +
   theme(aspect.ratio = 0.75) 
 plot(tot_light1 )
 grob_text <- grobTree(textGrob("Solar Equivalence", x = 0.27, y = 0.80, hjust = 0,
@@ -964,7 +980,7 @@ grob_text <- grobTree(textGrob("Solar Equivalence", x = 0.27, y = 0.80, hjust = 
 grob_text2 <- grobTree(textGrob("a", x = 0.06, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 tot_light2 <- tot_light  + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
                              labels = c("0.1", "1", "10", "100"), limits = c(100, 450000),
-                             name = expression(atop('Total Light Intercepted',paste('(W m'^3, ' cm'^-1,' ha'^-1,')'))))  +
+                             name = expression(atop('Total Light Intercepted',paste('(kW cm'^-1,' ha'^-1,')'))))  +
   theme(aspect.ratio = 0.75) + 
   geom_abline(intercept = log10(70000), slope = 0, color ="gray72",linetype="dashed", size=.75) +
   annotation_custom(grob_text) + annotation_custom(grob_text2)
