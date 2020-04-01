@@ -137,7 +137,7 @@ obs_totalprod <- data_to_bin %>%
 
 obs_indivprod <- data_to_bin %>%
   group_by(fg) %>%
-  group_modify(~ fakebin_across_years(dat_values = .$production, dat_classes = .$light_received_byarea, edges = binedgedat, n_census = 1))
+  group_modify(~ cloudbin_across_years(dat_values = .$production, dat_classes = .$light_received_byarea, edges = binedgedat, n_census = 1))
 
 # Themes
 alpha_level <- 0.5
