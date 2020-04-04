@@ -1201,10 +1201,8 @@ unscaledlightbydbhfakebin_fg <- read.csv(file.path(fp_plot, 'unscaledlightbydbhf
 
 # Plot: raw data ----------------------------------------------------------
 
-exl2 <- expression(paste('Light per Crown Area (W cm'^-1, 'm'^-2, ')', sep = ''))
-exl <- expression(atop('Light per Crown Area', paste('(W cm'^-1, 'm'^-2, ')')))
-exv <- expression(atop('Light per Crown Volume', paste('(W cm'^-1, 'm'^-3, ')')))
-exv2 <- expression(paste('Light per Crown Volume (W cm'^-1, ')', sep = ''))
+exl <- expression(atop('Light per Crown Area', paste('(W m'^-2, ')')))
+exv <- expression(atop('Light per Crown Volume', paste('(W m'^-3, ')')))
 exd <- 'Diameter (cm)'
 
 fg_names = c('fg1','fg2','fg3','fg4','fg5','unclassified')
