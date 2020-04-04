@@ -1195,9 +1195,9 @@ dev.off()
 # ------------------------------- Fig 5 Light Interception  ------------------------------------
 ################################################################################################
 
-lightperareafakebin_fg <- read.csv(file.path(fp_plot, 'lightperareafakebin_fg.csv'), stringsAsFactors = FALSE)
-lightpervolfakebin_fg <- read.csv(file.path(fp_plot, 'lightpervolfakebin_fg.csv'), stringsAsFactors = FALSE)
-unscaledlightbydbhfakebin_fg <- read.csv(file.path(fp_plot, 'unscaledlightbydbhfakebin_fg.csv'), stringsAsFactors = FALSE)
+lightperareacloudbin_fg <- read.csv(file.path(fp_plot, 'lightperareacloudbin_fg.csv'), stringsAsFactors = FALSE)
+lightpervolcloudbin_fg <- read.csv(file.path(fp_plot, 'lightpervolcloudbin_fg.csv'), stringsAsFactors = FALSE)
+unscaledlightbydbhcloudbin_fg <- read.csv(file.path(fp_plot, 'unscaledlightbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
 
 # Plot: raw data ----------------------------------------------------------
 
@@ -1214,7 +1214,7 @@ labels <- setNames(full_names, fg_names)
 grob0 <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 p_crown <- ggplot() + geom_point(alpha = 0.01, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownarea), color = 'chartreuse3') +
-  geom_pointrange(data = lightperareafakebin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
   scale_x_log10(name = exd) +
   scale_y_log10(name = exl) +
   theme_plant() +annotation_custom(grob0) +
@@ -1234,7 +1234,7 @@ dev.off()
 alpha_value <- 0.05
 ggplot() +
   geom_point(alpha = 0.05, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received/crownarea), color = 'chartreuse3') +
-  geom_pointrange(data = lightperareafakebin_fg %>% filter(!fg %in% 'all', !is.na(fg)), 
+  geom_pointrange(data = lightperareacloudbin_fg %>% filter(!fg %in% 'all', !is.na(fg)), 
                   aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
   facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = labels)) +
   scale_x_log10(name = exd) +
@@ -1251,7 +1251,7 @@ grob1 <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
 p_vol <- ggplot() +
   geom_point(alpha = 0.01, data = alltree_light_95, 
              aes(x = dbh_corr, y = light_received/crownvolume), color = 'chartreuse3') +
-  geom_pointrange(data = lightpervolfakebin_fg %>% filter(fg %in% 'all'), 
+  geom_pointrange(data = lightpervolcloudbin_fg %>% filter(fg %in% 'all'), 
                   aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
   scale_x_log10(name = exd) +
   scale_y_log10(name = exv, breaks = c(1, 10, 100)) +
@@ -1289,7 +1289,7 @@ labels = trans_format("log10", math_format(10^.x))
 
 p <- ggplot() +
   geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received)) +
-  geom_pointrange(data = unscaledlightbydbhfakebin_fg %>% filter(fg %in% 'all'), 
+  geom_pointrange(data = unscaledlightbydbhcloudbin_fg %>% filter(fg %in% 'all'), 
                   aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
   scale_x_log10(name = exd) +
   scale_y_log10(name = exl, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), 
