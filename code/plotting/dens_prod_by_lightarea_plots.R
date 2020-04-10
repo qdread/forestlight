@@ -4,18 +4,19 @@
 
 # Load data ---------------------------------------------------------------
 
-gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google Drive/ForestLight'))
+gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight', '/Users/jgradym/Google Drive/ForestLight')
+github_path <- ifelse(Sys.info()['user'] == 'qread', '~/Documents/GitHub', '/Users/jgradym/Documents/GitHub')
 
 library(tidyverse)
 library(rstan)
 library(forestscaling)
 
 #### Extract model output to get the fitted values, slopes, etc.
-load('~/Dropbox/Q/projects/forestlight/fits_bylight_forratio.RData')
+load(file.path(gdrive_path, 'data/data_piecewisefits/fits_bylight_forratio.RData')
 
 # source the extra extraction functions that aren't in the package
-source('~/Documents/GitHub/forestscalingworkflow/R_functions/model_output_extraction_functions.r')
-source('~/Documents/GitHub/forestlight/stan/get_ratio_slopes_fromfit.R')
+source(file.path(github_path, 'forestscalingworkflow/R_functions/model_output_extraction_functions.r'))
+source(file.path(github_path, 'forestlight/stan/get_ratio_slopes_fromfit.R'))
 
 
 # Get the statistics on the ratio trends.
