@@ -63,6 +63,10 @@ grob_short <- grobTree(textGrob("Short", x = 0.04, y = 0.67,  hjust = 0,
 grob_all <- grobTree(textGrob("All", x = 0.04, y = 0.60,  hjust = 0,
                                 gp = gpar(col = "black", fontsize = 13, fontface = "italic"))) 
 
+# I wanted to add annotation_grob() these below outside of the main plot in lieu of a legend but ggplot won't let you.
+# found something at https://stackoverflow.com/questions/12409960/ggplot2-annotate-outside-of-plot but it screws with the border and proportions
+#if you know a better fix I'd love to hear it
+
 grob_fast2 <- grobTree(textGrob("Fast", x = 1.1, y = 0.95,  hjust = 0,
                                gp = gpar(col = "#BFE046", fontsize = 13, fontface = "italic"))) 
 grob_tall2 <- grobTree(textGrob("Tall", x = 1.1, y = 0.88,  hjust = 0,
@@ -131,6 +135,7 @@ pdf(file.path(gdrive_path,'Figures/Light_Individual/light_area.pdf'))
 grid.draw(p1)
 dev.off()
 
+#code to crop out white space - may only work on unix/macs
 system2(command = "pdfcrop", 
         args  = c(file.path(gdrive_path,'Figures/Light_Individual/light_area.pdf'), 
                   file.path(gdrive_path,'Figures/Light_Individual/light_area.pdf')) 
@@ -218,10 +223,6 @@ title_x <- expression(paste('Light per Crown Area (W m'^-2,')',sep=''))
 title_y <- expression(atop('Growth per Crown Area', paste('(kg yr'^-1, ' m'^-2,')', sep='')))
 scale_y_log10(name =  expression(atop('Growth per Crown Area',
                                       paste('(kg y'^-1, ' m'^-2,')'))))
-# Colors
-colors <- c('black',"#BFE046","#267038" , "#27408b", "#87Cefa", "gray87" ) # #BFE046= light green,#267038=dark green,27408b=dark blue,"#87Cefa" = light blue,    
-fg_colors <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87Cefa", fg5 = "gray70",  alltree = 'black') #unclassified = 'brown',
-fg_colors2 <- c(fg1 = "#BFE046", fg2 = "#27408b" , fg3 = "#267038", fg4 =  "#87Cefa", fg5 = "gray87",  alltree = 'black') #unclassified = 'brown',
 
 # New File path needed
 obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
@@ -246,10 +247,7 @@ cast_pars <- dcast(melt_pars, fg+year~parameter+variable)
 dodge_width <- 0.07
 error_bar_width <- 0.04
 
-#arrange_lh <- quote(arrange(factor(fg, levels = c('all', 'fg5','fg2','fg4','fg1','fg3'))))
 
-str(arrange_lh )
-parse(arrange_lh)
 # Do some additional computation to correct the error bar width for the number of groups in each bin
 obs_light_binned_plotdata <- obs_light_binned %>% 
   arrange(factor(fg, levels = c('all', 'fg5','fg4','fg2', 'fg3', 'fg1'))) %>%
@@ -529,8 +527,8 @@ plot_dens2 <- function (year_to_plot = 1995,
     dplyr::filter(dbh >=  min_obs & dbh <= max_obs) %>%  
     arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1')))
   p <- ggplot2::ggplot() + ggplot2::geom_ribbon(data = preddat, 
-                                                ggplot2::aes(x = dbh, ymin = q025, ymax = q975, group = fg, 
-                                                             fill = fg), alpha = 0.4)
+                                                ggplot2::aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), 
+                                                alpha = 0.4)
   if (plot_abline) {
     p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
                                   slope = abline_slope, color = "gray72", linetype = "dashed", 
@@ -710,9 +708,9 @@ minmax_prod_bycensus <- obs_totalprod %>%
 
 p <- ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax = range_max, color = fg)) +
   geom_errorbar(size = 1) +
-  scale_x_log10(name = 'Diameter (cm)', breaks = c(1,3,10,30,100,300)) + 
-  scale_y_log10(expression(paste('Total Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),
-                breaks = 10^(-2:3), labels = as.character(10^(-2:3)), limits = c(0.1, 700)) +
+  scale_x_log10(name = 'Diameter (cm)', breaks = c(1, 10, 100 )) + 
+  scale_y_log10(expression(paste('Total Production (kg cm'^-1,'ha'^-1,' yr'^-1,')')),
+                breaks = 10^(-2:3), labels = as.character(10^(-2:3)), limits = c(0.1, 200)) +
   scale_color_manual(values = guild_fills2) +
   theme_plant()
 p
@@ -942,10 +940,6 @@ dens_ratio <- prod_ratio_diam %>%
 dens_ratio 
 
 # combine
-grob1 <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
-                           gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
-grob1_1 <- grobTree(textGrob("1:1", x = 0.5, y = 0.5,  hjust = 0,
-                             gp = gpar(col = "black", fontsize = 25))) 
 
 g_dens  <- ggplotGrob(dens_ratio )
 g_prod <- ggplotGrob(prod_ratio)
@@ -976,6 +970,8 @@ system2(command = "pdfcrop",
 )
 
 # -------------------- ----- Supp: Production ratio by diameter, abundance by light  -----------------------------
+grob_a <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
+                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
                             gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 grob_p <- grobTree(textGrob("Short:Tall", x = 0.13, y = 0.93,  hjust = 0,
@@ -1028,25 +1024,17 @@ system2(command = "pdfcrop",
 
 
 # -------------------- ------   Supp: PCA score   -----------------------------
-## by Diameter
+## by Light
 
 fastslowscore_bin_bylight <- fastslowscore_bin_bylight_byyear %>%
   left_join(fastslow_stats_bylight_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
   mutate(ID = "Fast-Slow")
 
-breederscore_bin_bylight<- breederscore_bin_bylight_byyear  %>%
+breederscore_bin_bylight <- breederscore_bin_bylight_byyear  %>%
   left_join(breeder_stats_bylight_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
   mutate(ID = "Short-Tall")
 
 PCA_score_by_light <- rbind(fastslowscore_bin_bylight,breederscore_bin_bylight)
-
-grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
-                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
-grob_p <- grobTree(textGrob("Short:Tall", x = 0.13, y = 0.93,  hjust = 0,
-                            gp = gpar(col = "black", fontface = "italic", fontface = "bold", fontsize = 20))) 
-
-grob_f <- grobTree(textGrob("Fast:Slow", x = 0.13, y = 0.83,  hjust = 0,
-                            gp = gpar(col = "gray43",  fontface = "italic",fontsize = 20))) 
 
 error_bar_width <- .15
 
@@ -1065,7 +1053,6 @@ PCA_light
 
 
 # PCA by Diameter
-score_bin_bydiam <- rbind(fastslowscore_bin_bydiam, breederscore_bin_bydiam)
 
 fastslowscore_bin_bydiam <- fastslowscore_bin_bydiam_byyear %>%
   left_join(fastslow_stats_bydiam_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
@@ -1074,6 +1061,9 @@ fastslowscore_bin_bydiam <- fastslowscore_bin_bydiam_byyear %>%
 breederscore_bin_bydiam <- breederscore_bin_bydiam_byyear %>%
   left_join(breeder_stats_bydiam_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
   mutate(ID = 'Short-Tall')
+
+score_bin_bydiam <- rbind(fastslowscore_bin_bydiam, breederscore_bin_bydiam)
+
 
 grob_a <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
                             gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
@@ -1107,19 +1097,6 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/PCA.pdf')) 
 )
 
-
-
-#just for fun
-ratio_fitted_diam_density2 <- ratio_fitted_diam_density %>%
-  filter(if(ratio == "Short-Tall") dbh > 2.2 else dbh > 1.2 & dbh < 178)
-
-prod_ratio_light_filt <- prod_ratio_light %>% filter(n_individuals >= 20, density_ratio > 0, ID == "Short-Tall")
-lm3 <- lm(log(prod_ratio_light_filt$production_ratio) ~ log(prod_ratio_light_filt$bin_midpoint))
-summary(lm3) #1.19 bshort tall production
-
-prod_ratio_light_filt2 <- prod_ratio_light %>% filter(n_individuals >= 20, density_ratio > 0, ID == "Fast-Slow")
-lm4 <- lm(log(prod_ratio_light_filt2$production_ratio) ~ log(prod_ratio_light_filt2$bin_midpoint))
-summary(lm4) #0.60 fast slow density
 
 
 #---------------------------------------------------------------------------------------------
@@ -1164,58 +1141,6 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path,'Figures/Supplementals/Diameter_Growth/Diam_growth.pdf')) 
 )
 
-
-# ------------------------   WAIC of Piecewise Models  -----------------------------------
-
-# This section was edited by QDR, 20 Jun 2019, for the updated model fits.
-
-pc <- file.path(gdrive_path, 'data/data_piecewisefits')
-ics <- read.csv(file.path(pc, 'piecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
-ics$fg <- factor(ics$fg , labels = c("All", "Fast", "Tall", "Slow", "Short", "Medium", "Unclassified"))
-
-# Density model
-base_size <- 11
-p <- ggplot(ics %>% filter(criterion == 'WAIC', 
-                           variable == 'density', !fg %in% 'Unclassified'), 
-            aes(x = factor(dens_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
-  facet_wrap(~ fg, labeller = label_value, scales = 'free_y') +
-  geom_pointrange() +
-  theme_bw(base_size = base_size, base_family = "",
-           base_line_size = base_size/22, base_rect_size = base_size/11)+
-  theme(strip.background = element_blank(),panel.grid = element_blank(), 
-        text = element_text(size = 14),strip.text = element_text(size=12)) +
-  labs(x = 'Segments in Density Function', y = "Widely Applicable Information Criterion (WAIC)")
-p
-
-p1 <- set_panel_size(p, width=unit(3.5,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p1)
-pdf(file.path(gdrive_path, 'Figures/Supplementals/WAIC/WAIC_density.pdf'))
-grid.draw(p1)
-dev.off()
-
-# Growth model
-
-p <- ggplot(ics %>% filter(criterion == 'WAIC', 
-                           variable == 'production', !fg %in% 'Unclassified'), 
-            aes(x = factor(prod_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
-  facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
-  geom_pointrange() + #theme_facet +
-  theme_bw(base_size = base_size, base_family = "",
-          base_line_size = base_size/22, base_rect_size = base_size/11)+
-  theme(strip.background = element_blank(),panel.grid = element_blank(), 
-        text = element_text(size = 14),strip.text = element_text(size=12)) +
-  labs(x = 'Segments in Growth Function',  y = "Widely Applicable Information Criterion (WAIC)")
-
-
-p1 <- set_panel_size(p, width=unit(4,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p1)
-pdf(file.path(gdrive_path, 'Figures/Supplementals/WAIC/WAIC_growth.pdf'))
-grid.draw(p1)
-dev.off()
-
-#---------------------------------------------------------------------------------------------
 
 #-------------------   Plot Slopes vs Size for each life history group  -------------------
 
@@ -1277,19 +1202,60 @@ dev.off()
 
 
 
+# ------------------------   WAIC of Piecewise Models  -----------------------------------
+
+# This section was edited by QDR, 20 Jun 2019, for the updated model fits.
+
+pc <- file.path(gdrive_path, 'data/data_piecewisefits')
+ics <- read.csv(file.path(pc, 'piecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
+ics$fg <- factor(ics$fg , labels = c("All", "Fast", "Tall", "Slow", "Short", "Medium", "Unclassified"))
+
+# Density model
+base_size <- 11
+p <- ggplot(ics %>% filter(criterion == 'WAIC', 
+                           variable == 'density', !fg %in% 'Unclassified'), 
+            aes(x = factor(dens_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
+  facet_wrap(~ fg, labeller = label_value, scales = 'free_y') +
+  geom_pointrange() +
+  theme_bw(base_size = base_size, base_family = "",
+           base_line_size = base_size/22, base_rect_size = base_size/11)+
+  theme(strip.background = element_blank(),panel.grid = element_blank(), 
+        text = element_text(size = 14),strip.text = element_text(size=12)) +
+  labs(x = 'Segments in Density Function', y = "Widely Applicable Information Criterion (WAIC)")
+p
+
+p1 <- set_panel_size(p, width=unit(3.5,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+pdf(file.path(gdrive_path, 'Figures/Supplementals/WAIC/WAIC_density.pdf'))
+grid.draw(p1)
+dev.off()
+
+# Growth model
+
+p <- ggplot(ics %>% filter(criterion == 'WAIC', 
+                           variable == 'production', !fg %in% 'Unclassified'), 
+            aes(x = factor(prod_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
+  facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
+  geom_pointrange() + #theme_facet +
+  theme_bw(base_size = base_size, base_family = "",
+          base_line_size = base_size/22, base_rect_size = base_size/11)+
+  theme(strip.background = element_blank(),panel.grid = element_blank(), 
+        text = element_text(size = 14),strip.text = element_text(size=12)) +
+  labs(x = 'Segments in Growth Function',  y = "Widely Applicable Information Criterion (WAIC)")
+
+
+p1 <- set_panel_size(p, width=unit(4,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+pdf(file.path(gdrive_path, 'Figures/Supplementals/WAIC/WAIC_growth.pdf'))
+grid.draw(p1)
+dev.off()
+
+#---------------------------------------------------------------------------------------------
+
 #----------------------   Hex Plot of Growth Scaling  ---------------------------
 
-
-fp <- file.path(gdrive_path,'data/data_forplotting') ## CHANGE PATH AS NEEDED
-
-for (i in dir(fp, pattern = '.csv')) {
-  n <- gsub('.csv','',i)
-  assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
-}
-
-
-# Load raw data
-load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
 
 # Process the raw data to get one single data frame with a lot of rows.
 
@@ -1298,7 +1264,6 @@ raw_prod <- do.call(rbind, map2(alltreedat, seq(1985,2010,5), function(x, y) cbi
 
 raw_prod <- raw_prod %>%
   mutate(fg = if_else(!is.na(fg), paste0('fg', fg), 'unclassified'))
-
 
 
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
@@ -1373,7 +1338,7 @@ plot_prod_withrawdata2 <- function (year_to_plot = 1995,
     ggplot2::coord_fixed(ratio = aspect_ratio) + 
     ggplot2::theme(legend.position = "right", 
                    strip.background = ggplot2::element_blank(), 
-                   strip.text = ggplot2::element_text(size = 20), 
+                   strip.text = ggplot2::element_text(size = 13), 
                    legend.key = ggplot2::element_rect(fill = NA))
   if (plot_abline) 
     p <- p + ggplot2::geom_abline(slope = abline_slope, intercept = abline_intercept, linetype = "dashed") + 
@@ -1386,7 +1351,7 @@ plot_prod_withrawdata2 <- function (year_to_plot = 1995,
 
 p <- plot_prod_withrawdata2(year_to_plot = 1995,
                            fg_names = c('fg1','fg2','fg3','fg4','fg5','unclassified'),
-                           full_names = c('Fast', 'Pioneer', 'Slow', 'Breeder', 'Medium', 'Unclassified'),
+                           full_names = c('Fast', 'Tall', 'Slow', 'Short', 'Medium', 'Unclassified'),
                            x_limits = c(1, 316),
                            x_breaks = c(1,10, 100),
                            y_limits = c(0.001, 1000),
@@ -1407,10 +1372,7 @@ dev.off()
 
 
 
-
 # ------------------------------- Total Volume Plot ------------------------------------
-
-
 
 # Section added by QDR 20 June 2019: new plots of total light scalings and total volume scalings, including fits and CIs
 
@@ -1460,7 +1422,7 @@ system2(command = "pdfcrop",
 
 
 
-#----------------------Supplementals Max Growth by Light ----------------------------------------------------
+#---------------------- Max Growth by Light ----------------------------------------------------
 
 ### -----
 
@@ -1489,52 +1451,81 @@ system2(command = "pdfcrop",
 )
 
 #---------------------------- Median binned growth by light + fg --------------------------------
-p_median_panels <- ggplot(obs_light_binned %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_labels2)) +
- # facet_wrap(~ fg, labeller = label_value,scales = 'free_y') +
-  geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
-              aes(x = light_area, ymin = q025, ymax = q975,group=fg, color=NA, fill = fg),
+fg_labels2 <- c("fg1" = "Fast", "fg2" = "Tall", "fg3" = "Slow", "fg4" = "Short", "fg5" = "Medium")
+theme_facet2 <- function () 
+{
+  ggplot2::theme(strip.background = ggplot2::element_rect(fill = NA), 
+                 panel.border = ggplot2::element_rect(color = "black", 
+                                                      fill = NA, size = 0.75),
+                 legend.position = "none", 
+                 panel.background = ggplot2::element_blank(), 
+                 strip.text.x = ggplot2::element_text(size = 13), 
+                 axis.text = ggplot2::element_text(size = 13, color = "black"), 
+                 axis.ticks.length = ggplot2::unit(0.2, "cm"),
+                 axis.title = ggplot2::element_text(size = 13))
+}
+
+p_median_panels <- ggplot(obs_light_binned %>% 
+                            filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
+  facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labels2)) +
+  geom_ribbon(data = pred_light_5groups %>% 
+                filter(year == year_to_plot), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, color=NA, fill = fg),
               alpha = 0.5) +
-  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
-            aes(x = light_area, y = q50,group = fg, color=fg), size=0.5) +
+  geom_line(data = pred_light_5groups %>% 
+              filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
+            aes(x = light_area, y = q50, group = fg, color = fg), size = 0.5) +
   geom_segment(aes(x = bin_midpoint, xend = bin_midpoint, y = q25, yend = q75), size = 0.3) +
-  #geom_segment(aes(x = bin_midpoint, xend = bin_midpoint, y = q025, yend = q975)) +
-  geom_segment(data = cast_pars %>% filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
-               aes(x = x_max_q50 * 0.5, xend = x_max_q50 * 2, y = y_max_q50 * 0.5, yend = y_max_q50 * 2), color = 'brown1', size = .5) +
+  geom_segment(data = cast_pars %>% 
+                 filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
+               aes(x = x_max_q50 * 0.5, xend = x_max_q50 * 2, y = y_max_q50 * 0.5, yend = y_max_q50 * 2), 
+               color = 'brown1', size = .5) +
   geom_point(shape=21, aes(x = bin_midpoint, y = median)) +
   scale_color_manual(values = guild_fills ) +
-  scale_fill_manual(values = guild_colors)+
-  scale_x_log10(name = title_x, breaks=c(1,10,100)) + 
-  scale_y_log10(name = title_y, labels=signif, breaks=c(0.01,0.1,1,10)) +
-  theme_plant() + theme_facet()
+  scale_fill_manual(values = guild_colors) +
+  scale_x_log10(name = title_x, breaks = c(1,10,100)) + 
+  scale_y_log10(name = title_y, labels = signif, breaks = c(0.01,0.1,1,10)) +
+  theme_plant_small() + 
+  theme_facet2()
 
 p_median_panels
 
-pdf(file.path(gdrive_path, "Figures/Fig_4/Growth by light_Medians.pdf"))
+pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/median_growth_light_max.pdf"))
 p_median_panels
 dev.off()
 
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Growth_light/median_growth_light_max.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Growth_light/median_growth_light_max.pdf')) 
+)
+
+
 #---------------------------- Raw growth by light + fg --------------------------------
-p_raw_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% c('alltree','unclassified'))) +
-  facet_wrap(~ fg, labeller = labeller(fg = fg_labels)) +
-  geom_point(shape = 21,aes(x = light_area, y = production_area, alpha = fg)) +
+p_raw_panels <- ggplot(obs_light_raw %>% 
+                         filter(year == year_to_plot, !fg %in% c('alltree','unclassified'))) +
+  facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labels2)) +
+  geom_point(shape = 21,  alpha = 0.1, aes(x = light_area, y = production_area)) + #alpha = fg
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
               aes(x = light_area, ymin = q025, ymax = q975, group=fg,color=NA,fill=fg), alpha = 0.5) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
-            aes(x = light_area, y = q50, group=fg, color=fg), size=0.25) +
+            aes(x = light_area, y = q50, group=fg, color=fg), size= 1) +
   #scale_alpha_manual(values = c(0.15, 0.15, 0.05, 0.008, 0.008)) +
   scale_alpha_manual(values = c(0.15, 0.15, 0.15, 0.15, 0.15)) +
   scale_x_log10(name = title_x) + 
   scale_y_log10(name = title_y, breaks=c(0.001,0.01,1),labels=signif) +
-  scale_color_manual(values = fg_colors) +
-  scale_fill_manual(values = fg_colors) +
-  theme_plant() + theme_facet()
+  scale_color_manual(values = guild_colors) +
+  scale_fill_manual(values = guild_colors) +
+  theme_plant() + theme_facet2()
 
 p_raw_panels
-pdf(file.path(gdrive_path, "Figures/Fig_4/Growth by light/Raw.pdf"))
+pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/growth_light_fg_raw_alph0.1.pdf"))
 p_raw_panels
 dev.off()
 
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Growth_light/growth_light_fg_raw_alph0.1.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Growth_light/growth_light_fg_raw_alph0.1.pdf')) 
+)
 
 # colored hexagon plot ----------------------------------------------------
 
@@ -1549,13 +1540,13 @@ hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RCol
                                              labels = c(1,10,100,1000), limits=c(1,5000))
 
 unique(obs_light_raw$fg)
-p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% 'Unclassified')) +
-  facet_wrap(~ fg, nrow = 3) +
+p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, c('alltree','unclassified'))) +
+  facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labels2)) +
   geom_hex(aes(x = light_area, y = production_area)) +
   #geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
   #          aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
-            aes(x = light_area, y = q50), color = 'black') +
+            aes(x = light_area, y = q50), size = 1, color = 'black') +
   #geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q025, color = fg),  linetype = 'dotted') +
   #geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), aes(x = light_area, y = q975, color = fg),  linetype = 'dotted') +
   scale_x_log10(name = title_x) + 
@@ -1573,10 +1564,14 @@ p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, !fg %in% '
 p_hex_panels
 #p <-set_panel_size(p_hex_panels, width=unit(10,"cm"), height=unit(6,"cm"))
 #plot(p)
-pdf(file.path(gdrive_path, "Figures/Fig_4/growth_light_heat_map.pdf"))
+pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/growth_light_hex.pdf"))
 p_hex_panels
 dev.off()
 
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Growth_light/growth_light_hex.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Growth_light/growth_light_hex.pdf')) 
+)
 
 
 
@@ -1593,281 +1588,22 @@ dev.off()
 
 
 
-
-################################################################################################
-# ------------------------------- Fig 5 Light Interception  ------------------------------------
-################################################################################################
-
-lightperareacloudbin_fg <- read.csv(file.path(fp_plot, 'lightperareacloudbin_fg.csv'), stringsAsFactors = FALSE)
-lightpervolcloudbin_fg <- read.csv(file.path(fp_plot, 'lightpervolcloudbin_fg.csv'), stringsAsFactors = FALSE)
-unscaledlightbydbhcloudbin_fg <- read.csv(file.path(fp_plot, 'unscaledlightbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
-
-# Plot: raw data ----------------------------------------------------------
-
-exl <- expression(atop('Light per Crown Area', paste('(W m'^-2, ')')))
-exv <- expression(atop('Light per Crown Volume', paste('(W m'^-3, ')')))
-exd <- 'Diameter (cm)'
-
-fg_names = c('fg1','fg2','fg3','fg4','fg5','unclassified')
-full_names = c('Fast', 'Pioneer', 'Slow', 'Breeder', 'Medium', 'Unclassified')
-labels <- setNames(full_names, fg_names)
-
-#----------------------   Fig 5a: Light per crown area by diameter -----------------------------
-# All together
-grob0 <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
-                           gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
-p_crown <- ggplot() + geom_point(alpha = 0.01, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownarea), color = 'chartreuse3') +
-  geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exl) +
-  theme_plant() +annotation_custom(grob0) +
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())
-
-p_crown2 <- set_panel_size(p_crown, width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p_crown2)
-pdf(file.path(gdrive_path,'Figures/Fig_5/Fig_5a.pdf'))
-grid.draw(p_crown2)
-dev.off()
-
-#name = expression(atop('Total Light Intercepted',paste('(W m'^3, ' cm'^-1,' ha'^-1,')'))))  
-# Supp: Each group
-alpha_value <- 0.05
-ggplot() +
-  geom_point(alpha = 0.05, data = alltree_light_95 %>% filter(!is.na(fg)), aes(x = dbh_corr, y = light_received/crownarea), color = 'chartreuse3') +
-  geom_pointrange(data = lightperareacloudbin_fg %>% filter(!fg %in% 'all', !is.na(fg)), 
-                  aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  facet_wrap(~ fg, ncol = 2, labeller = labeller(fg = labels)) +
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exl) +
-  theme_facet2()
-
-
-
-#----------------------   Fig 5b: Light per crown volume by diameter -----------------------------
-
-# All together
-grob1 <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
-                           gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
-p_vol <- ggplot() +
-  geom_point(alpha = 0.01, data = alltree_light_95, 
-             aes(x = dbh_corr, y = light_received/crownvolume), color = 'chartreuse3') +
-  geom_pointrange(data = lightpervolcloudbin_fg %>% filter(fg %in% 'all'), 
-                  aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exv, breaks = c(1, 10, 100)) +
-  theme_plant() + annotation_custom(grob1)
-p_vol2 <- set_panel_size(p_vol, width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p_vol2)
-pdf(file.path(gdrive_path,'Figures/Fig_5/Fig_5b.pdf'))
-grid.draw(p_vol)
-dev.off()
-
-
-grob1 <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
-                           gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
-
-g_crown <- ggplotGrob(p_crown)
-g_vol <- ggplotGrob(p_vol)
-
-
-g5 <- rbind(g_crown, g_vol, size = "first")
-g5$widths <- unit.pmax(g_crown$widths,g_vol$widths)
-grid.newpage()
-grid.draw(g5)
-ggsave(g5, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Fig_4/Fig_4.pdf'))
-
-# Plot: total unscaled light energy by dbh --------------------------------
-
-alpha_value <- 1
-hexfill2 <- scale_fill_gradient(low = 'forestgreen', high = 'navy', trans = 'log', breaks = c(1,3,10,30,100,300))
-exl <- expression(atop('Intercepted Light', paste('per Individual (W)')))
-exd <- 'Diameter (cm)'
-
-labels = trans_format("log10", math_format(10^.x))
-
-
-p <- ggplot() +
-  geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received)) +
-  geom_pointrange(data = unscaledlightbydbhcloudbin_fg %>% filter(fg %in% 'all'), 
-                  aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exl, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), 
-                labels = trans_format("log10", math_format(10^.x))) +
-  theme_plant() + theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
-  hex_scale_log_colors +
-  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
-p
-ggsave(file.path(gdrive_path,'Figures/Fig_4/Indiv_light.pdf'), plot = p)
-  #geom_abline(intercept = 0.903027, slope = 2.343608)
-p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
-grid.newpage()
-grid.draw(p2)
-pdf(file.path(gdrive_path,'Figures/Fig_4/Indiv_light.pdf'))
-grid.draw(p)
-dev.off()
-
-
-
-################################################################################################
-# ------------------------------- Fig 6 Life History Ratios ------------------------------------
-################################################################################################
-
-
-# ------------------------------- Fig 6 Relative Abundance & Production ------------------------------------
-
-# Load 1995 bin data
-load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
-
-prod_ratio_diam <- breeder_stats_bydiam_byyear %>% 
-  mutate(ID = 'Breeder-Pioneer') %>%
-  rename(production_ratio = breeder_production_ratio, density_ratio = breeder_density_ratio) %>%
-  rbind(fastslow_stats_bydiam_byyear %>% 
-          mutate(ID = 'Fast-Slow') %>%
-          rename(production_ratio = fastslow_production_ratio, density_ratio = fastslow_density_ratio)) %>%
-  filter(year == 1995)
-
-prod_ratio_light <- breeder_stats_bylight_byyear %>% 
-  mutate(ID = 'Breeder-Pioneer') %>%
-  rename(production_ratio = breeder_production_ratio, density_ratio = breeder_density_ratio) %>%
-  rbind(fastslow_stats_bylight_byyear %>% 
-          mutate(ID = 'Fast-Slow') %>%
-          rename(production_ratio = fastslow_production_ratio, density_ratio = fastslow_density_ratio)) %>%
-  filter(year == 1995)
-
-# ---------------------------------   Fig 6a  Production by light ------------------------------------
-
-grob1_1a <- grobTree(textGrob("1:1", x = 0.5, y = 0.52,  hjust = 0,
-                             gp = gpar(col = "black", fontsize = 19))) 
-
-prod_ratio <- prod_ratio_light   %>%
-  filter(n_individuals >= 20) %>%
-  ggplot(aes(x = bin_midpoint, y = production_ratio, fill = ID)) +
-  geom_point(shape = 21, size = 4.5,  stroke = .5, color = "black")+
-  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
-  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  theme_plant() + #annotation_custom(grob0) + #annotation_custom(grob1_1a) + 
-  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(2,330), breaks=c(3,  30,  300)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
-                name = NULL) #name = expression("Ratio"))
-
-prod_ratio
-p1 <- set_panel_size(prod_ratio, width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_6/Fig_6a_Production_light.pdf'))
-grid.draw(p1)
-dev.off()
-
-
-#----------------------------- Fig 6B Abundance by Diameter ----------------------------
-grob1_1 <- grobTree(textGrob("1:1", x = 0.5, y = 0.54,  hjust = 0,
-                             gp = gpar(col = "black", fontsize = 19))) 
-
-grob_r <- grobTree(textGrob("Replacement", x = 0.55, y = 0.35,  hjust = 0,
-                             gp = gpar(col = "black", fontsize = 20))) 
-
-dens_ratio <- prod_ratio_diam %>% 
-  filter(density_ratio > 0) %>%
-  filter(n_individuals >= 20) %>%
-  ggplot(aes(x = bin_midpoint, y = density_ratio, fill = ID)) +
-  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
-  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
-  
-  scale_x_log10(limits=c(1,100),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
-                name = expression("Ratio")) + 
-  theme_plant() + #annotation_custom(grob1) + annotation_custom(grob1_1) + 
-  #annotation_custom(grob_r) + 
-  theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
-        axis.ticks.y = element_blank()) 
-dens_ratio 
-
-p1 <- set_panel_size(dens_ratio , width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_6/Fig_6b_Density.pdf'))
-grid.draw(p1)
-dev.off()
-
-
-
-
-
-#--------------------- Alternative Fig 6A and 6B with fitted lines plotted ------------
-
-# Load fitted values
-ratio_fitted_diam <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/ratio_fittedvalues.csv'))
-ratio_fitted_lightarea <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/ratio_fittedvalues_lightarea.csv'))
-
-# Truncate fitted lines for display
-ratio_fitted_lightarea_prod <- ratio_fitted_lightarea %>%
-  filter(variable == 'total production', light_area > 7) %>%
-  mutate(ratio = if_else(ratio == 'fast:slow', 'Fast-Slow', 'Breeder-Pioneer'))
-
-ratio_fitted_diam_density <- ratio_fitted_diam %>%
-  filter(variable == 'density', (ratio == 'fast:slow' & dbh < 48) | (ratio == 'pioneer:breeder') & dbh < 15) %>%
-  mutate(ratio = if_else(ratio == 'fast:slow', 'Fast-Slow', 'Breeder-Pioneer'))
-
-prod_ratio_withfits <- prod_ratio_light   %>%
-  filter(n_individuals >= 20) %>%
-  ggplot() +
-  geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975, group = ratio, fill = ratio), alpha = 0.3, data = ratio_fitted_lightarea_prod) +
-  geom_line(aes(x = light_area, y = q50, group = ratio,  color = ratio), data = ratio_fitted_lightarea_prod) +
-  geom_point(aes(x = bin_midpoint, y = production_ratio, fill = ID), shape = 21, size = 4.5,  stroke = .5, color = "black")+
-  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
-  scale_color_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey50"))+
-  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  theme_plant() + 
-  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(2,330), breaks=c(3,  30,  300)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
-                name = NULL)
-prod_ratio_withfits 
-p1 <- set_panel_size(prod_ratio_withfits , width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_6/Prod_ratio_fits.pdf'))
-grid.draw(p1)
-dev.off()
+#just for fun - ratio analysis
 ratio_fitted_diam_density2 <- ratio_fitted_diam_density %>%
-  filter(if(ratio == "Breeder-Pioneer") dbh > 2.2 else dbh > 1.2 & dbh < 178)
-  
-prod_ratio_light_filt <- prod_ratio_light %>% filter(n_individuals >= 20, density_ratio > 0, ID == "Breeder-Pioneer")
+  filter(if(ratio == "Short-Tall") dbh > 2.2 else dbh > 1.2 & dbh < 178)
+
+prod_ratio_light_filt <- prod_ratio_light %>% filter(n_individuals >= 20, density_ratio > 0, ID == "Short-Tall")
 lm3 <- lm(log(prod_ratio_light_filt$production_ratio) ~ log(prod_ratio_light_filt$bin_midpoint))
-summary(lm3) #1.19 breeder pioneer production
+summary(lm3) #1.19 bshort tall production
 
 prod_ratio_light_filt2 <- prod_ratio_light %>% filter(n_individuals >= 20, density_ratio > 0, ID == "Fast-Slow")
 lm4 <- lm(log(prod_ratio_light_filt2$production_ratio) ~ log(prod_ratio_light_filt2$bin_midpoint))
-summary(lm4) #0.760 fast slow density
+summary(lm4) #0.60 fast slow density
 
-dens_ratio_withfits <- prod_ratio_diam %>% 
-  filter(n_individuals >= 20) %>%
-  filter(density_ratio > 0) %>%
-  ggplot() +
-  geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = ratio, fill = ratio), alpha = 0.4, data = ratio_fitted_diam_density) +
-  geom_line(aes(x = dbh, y = q50, group = ratio, color = ratio), data = ratio_fitted_diam_density) +
-  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  geom_point(aes(x = bin_midpoint, y = density_ratio, fill = ID), shape = 21, size = 4.5,  stroke = .5,  color = "black")+
-  scale_fill_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey"))+
-  scale_color_manual(values = c("Breeder-Pioneer" = "black", "Fast-Slow" = "grey50"))+
-  scale_x_log10(limits=c(1,100),breaks=c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
-                name = expression("Ratio")) + 
-  theme_plant() +
-  theme(axis.title.y = element_blank(),axis.text.y = element_blank(),
-       axis.ticks.y = element_blank()) 
-dens_ratio_withfits 
-p1 <- set_panel_size(dens_ratio_withfits  , width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p1)
-pdf(file.path(gdrive_path, 'Figures/Fig_6/Dens_ratio_fits.pdf'))
-grid.draw(p1)
-dev.off()
-prod_ratio_diam_filt <- prod_ratio_diam %>% filter(n_individuals >= 20, density_ratio > 0, ID == "Breeder-Pioneer")
+
+
+
+prod_ratio_diam_filt <- prod_ratio_diam %>% filter(n_individuals >= 20, density_ratio > 0, ID == "Short-Tall")
 lm1 <- lm(log(prod_ratio_diam_filt$density_ratio) ~ log(prod_ratio_diam_filt$bin_midpoint))
 summary(lm1) #1.56 breeder pioneer density
 
@@ -1894,9 +1630,8 @@ tall_short_abund_diam <- (-1.45 - -3.02 ) #1.57, vs 1.56
 # some exploration of growth vs mortality rates
 growth_diam2 <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_indivdiamgrowth.csv'))
 
-
 growth_diam2_bins <- growth_diam2 %>%
-  filter(year == "1995", bin_mi)
+  filter(year == "1995", bin_min)
 growth_diam2_bins$mean - bin_mort$mortality
 
 growth_diam_slopes_under_10 <- growth_diam2 %>%
