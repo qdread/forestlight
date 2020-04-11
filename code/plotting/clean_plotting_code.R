@@ -63,6 +63,10 @@ grob_short <- grobTree(textGrob("Short", x = 0.04, y = 0.67,  hjust = 0,
                                 gp = gpar(col = "#87Cefa", fontsize = 13, fontface = "italic"))) 
 grob_all <- grobTree(textGrob("All", x = 0.04, y = 0.60,  hjust = 0,
                                 gp = gpar(col = "black", fontsize = 13, fontface = "italic"))) 
+grob_slow3 <- grobTree(textGrob("Slow", x = 0.04, y = 0.81,  hjust = 0,
+                               gp = gpar(col = "#27408b", fontsize = 13, fontface = "italic"))) 
+grob_short3 <- grobTree(textGrob("Short", x = 0.04, y = 0.74,  hjust = 0,
+                                gp = gpar(col = "#87Cefa", fontsize = 13, fontface = "italic"))) 
 
 # Quentin, I wanted to add annotation_grob() these below outside of the main plot in lieu of a legend but ggplot won't let you.
 # found something at https://stackoverflow.com/questions/12409960/ggplot2-annotate-outside-of-plot but it screws with the border and proportions
@@ -143,8 +147,6 @@ system2(command = "pdfcrop",
 )
 
 #----------------------   Fig 1b: Light per crown volume by diameter -----------------------------
-
-
 
 p <- ggplot() +
   geom_point(alpha = 0.01, data = alltree_light_95, 
@@ -596,8 +598,10 @@ plot_totalprod2 <-function(year_to_plot = 1995,
                            abline_intercept = 2) 
 {
   pos <-  ggplot2::position_dodge(width = dodge_width)
-  obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == year_to_plot, bin_count >= 20) %>% 
-    dplyr::filter(bin_value > 0) %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1')))
+  obsdat <- obsdat %>% 
+    dplyr::filter(fg %in% fg_names, year == year_to_plot, bin_count >= 20) %>% 
+    dplyr::filter(bin_value > 0) %>% 
+    arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1')))
   obs_limits <- obsdat %>% dplyr::group_by(fg) %>% 
     dplyr::summarize(min_obs = min(bin_midpoint), 
     max_obs = max(bin_midpoint)) 
@@ -622,8 +626,8 @@ plot_totalprod2 <-function(year_to_plot = 1995,
     ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
     ggplot2::scale_y_log10(name = y_name, 
                            limits = y_limits, breaks = y_breaks, labels = y_labels,  position = "right") + 
-    ggplot2::scale_color_manual(values = color_names) + 
-    ggplot2::scale_fill_manual(values = fill_names) + 
+    ggplot2::scale_color_manual(values = guild_colors2) + 
+    ggplot2::scale_fill_manual(values = guild_fills2) + 
     theme_plant() + 
     theme(aspect.ratio = 1)
   if (plot_abline) 
@@ -880,13 +884,13 @@ prod_ratio_light <- breeder_stats_bylight_byyear %>%
 ratio_fitted_diam <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/ratio_fittedvalues.csv'))
 ratio_fitted_lightarea <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/ratio_fittedvalues_lightarea.csv'))
 
-# Truncate fitted lines for display
+# Limited fitted lines to plotted data bins (min 20 pairs)
 ratio_fitted_lightarea_prod <- ratio_fitted_lightarea %>%
-  filter(variable == 'total production', light_area > 7) %>%
+  filter(variable == 'total production', light_area > 7, light_area < 197) %>%
   mutate(ratio = if_else(ratio == 'fast:slow', 'Fast-Slow', 'Short-Tall'))
 
 ratio_fitted_diam_density <- ratio_fitted_diam %>%
-  filter(variable == 'density', (ratio == 'fast:slow' & dbh < 48) | (ratio == 'pioneer:breeder') & dbh < 15) %>%
+  filter(variable == 'density', (ratio == 'fast:slow' & dbh < 66) | (ratio == 'pioneer:breeder') & dbh < 16) %>%
   mutate(ratio = if_else(ratio == 'fast:slow', 'Fast-Slow', 'Short-Tall'))
 
 # ---------------------------------   Fig 6a  Production by light ------------------------------------
@@ -897,20 +901,30 @@ prod_ratio <- prod_ratio_light   %>%
   ggplot() + #aes(x = bin_midpoint, y = production_ratio, fill = ID)) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
   geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975, group = ratio, fill = ratio),
-              alpha = 0.3, data = ratio_fitted_lightarea) +
-              #alpha = 0.3, data = ratio_fitted_lightarea_prod) +
-  geom_line(aes(x = light_area, y = q50, group = ratio,  color = ratio), data = ratio_fitted_lightarea) +
-  #geom_line(aes(x = light_area, y = q50, group = ratio,  color = ratio), data = ratio_fitted_lightarea_prod) +
+              alpha = 0.3, data = ratio_fitted_lightarea_prod) +
+  geom_line(aes(x = light_area, y = q50, group = ratio,  color = ratio), data = ratio_fitted_lightarea_prod) +
   geom_point(aes(x = bin_midpoint, y = production_ratio, fill = ID), 
-             shape = 21, size = 4.5,  stroke = .5, color = "black") +
+             shape = 21, size = 4,  stroke = .5, color = "black") +
   scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey"))+
   scale_color_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey50")) +
-  theme_plant() + 
-  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(2,330), breaks=c(3,  30,  300)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
+  theme_plant_small()+ 
+  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(2,300), breaks=c(3,  30,  300)) +
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,400), position = "right",
                 name = "Production Ratio") 
 prod_ratio
 
+prod_ratio2 <- set_panel_size(prod_ratio, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(prod_ratio2)
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/Prod_ratio.pdf'))
+grid.draw(prod_ratio2)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/Prod_ratio.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/Prod_ratio.pdf')) 
+)
 #----------------------------- Fig 6B Abundance by Diameter ----------------------------
 dens_ratio <- prod_ratio_diam %>% 
   filter(density_ratio > 0) %>%
@@ -926,7 +940,7 @@ dens_ratio <- prod_ratio_diam %>%
   scale_x_log10(limits = c(1,100), breaks = c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
   scale_y_log10(labels = signif, breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
                 name = expression("Density Ratio")) + 
-  theme_plant_small() + theme_no_y()
+  theme_plant() + theme_no_y()
 dens_ratio 
 
 # combine
@@ -978,7 +992,7 @@ p_r_d <- prod_ratio_diam   %>%
   scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey")) +
   theme_plant() + annotation_custom(grob_b) + 
   scale_x_log10(name = 'Diameter (cm)', limits=c(1,150), breaks=c(1, 10, 100)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.03,100),
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.03,100), 
                 name = expression("Production Ratio")) 
 
 p_r_d 
@@ -1345,7 +1359,285 @@ pdf(file.path(gdrive_path, "Figures/Supplementals/Piecewise_Slopes/slopes_2_seg_
 p
 dev.off()
 
+# --------------------------- light scaling, to make ratios
+#### Extract model output to get the fitted values, slopes, etc.
+load(file.path(gdrive_path, 'data/data_piecewisefits/fits_bylight_forratio.RData'))
 
+# source the extra extraction functions that aren't in the package
+source(file.path(github_path, 'forestscalingworkflow/R_functions/model_output_extraction_functions.r'))
+source(file.path(github_path, 'forestlight/stan/get_ratio_slopes_fromfit.R'))
+
+
+# Get the statistics on the ratio trends.
+la_pred <- logseq(1,412,101)
+x_min <- 7
+parnames_prod <- c('beta0', 'beta1')
+
+# Predicted values for each fit.
+dens_pred_fg_lightarea <- map(densfit_alltrees, function(fit) {
+  pars_fg <- extract(fit, c('alpha')) %>% bind_cols
+  pmap(pars_fg, pdf_pareto, x = la_pred, xmin = x_min)
+})
+prod_pred_fg_lightarea <- map(prodfit_alltrees, function(fit) {
+  pars_fg <- extract(fit, parnames_prod) %>% bind_cols
+  pmap(pars_fg, powerlaw_log, x = la_pred)
+})
+
+# Get total production including correction factors.
+
+corr_factor <- function(y, y_fit, n_pars) {
+  y_fit <- do.call(cbind, y_fit)
+  # Get residuals by subtracting log y from linear predictor
+  resids <- -1 * sweep(log(y_fit), 1, log(y))
+  
+  # Sum of squared residuals
+  ssq_resid <- apply(resids^2, 2, sum)
+  # Standard error of estimates
+  sse <- (ssq_resid / (length(y) - n_pars))^0.5
+  # Correction factors
+  exp((sse^2)/2)
+}
+
+# We need all fitted values for production, not just the 101 values, to calculate correction factor.
+# Recreate stan data
+# Load data
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r')) # doesn't include imputed values
+
+get_stan_data <- function(dat, x_min) with(dat, list(N = nrow(dat), x = dat$light_received_byarea, y = dat$production, x_min = x_min))
+
+stan_data_list <- alltree_light_95 %>%
+  filter(!recruit) %>%
+  filter(!fg %in% 5, !is.na(fg), light_received_byarea >= x_min) %>%
+  mutate(fg = paste0('fg', fg)) %>%
+  group_by(fg) %>%
+  group_map(~ get_stan_data(., x_min))
+
+prod_pred_all_lightarea <- map2(stan_data_list, prodfit_alltrees, function(dat, fit) {
+  pars_fg <- extract(fit, parnames_prod) %>% bind_cols
+  pmap(pars_fg, powerlaw_log, x = dat$x)
+})
+
+prod_cf_fg_lightarea <- map2(stan_data_list, prod_pred_all_lightarea, ~ corr_factor(y = .x$y, y_fit = .y, n_pars = 2))
+
+totalprod_pred_fg_lightarea <- map2(dens_pred_fg_lightarea, prod_pred_fg_lightarea, ~ do.call(cbind, .x) * do.call(cbind, .y)) %>%
+  map2(prod_cf_fg_lightarea, ~ sweep(.x, 2, .y, `*`))
+
+
+# Get credible intervals --------------------------------------------------
+
+# Multiply density and total production times number of individuals, and divide by area
+area_core <- 42.84
+fg_names <- c('Fast', 'Tall', 'Slow', 'Short')
+
+dens_pred_fg_lightarea_quantiles <- map2(dens_pred_fg_lightarea, map(stan_data_list, 'N'), function(dat, N) {
+  do.call(cbind, dat) %>%
+    sweep(2, N/area_core, `*`) %>%
+    apply(1, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE) %>%
+    t %>% as.data.frame %>% setNames(c('q025', 'q50', 'q975')) %>%
+    mutate(light_area = la_pred)
+})
+
+dens_pred_dat <- map2_dfr(dens_pred_fg_lightarea_quantiles, fg_names,
+                          ~ data.frame(fg = .y, .x)) %>%
+  mutate(fg = factor(fg, levels = fg_names))
+
+prod_pred_fg_lightarea_quantiles <- map(prod_pred_fg_lightarea, function(dat) {
+  do.call(cbind, dat) %>%
+    apply(1, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE) %>%
+    t %>% as.data.frame %>% setNames(c('q025', 'q50', 'q975')) %>%
+    mutate(light_area = la_pred)
+}) 
+
+prod_pred_dat <- map2_dfr(prod_pred_fg_lightarea_quantiles, fg_names,
+                          ~ data.frame(fg = .y, .x)) %>%
+  mutate(fg = factor(fg, levels = fg_names))
+
+totalprod_pred_fg_lightarea_quantiles <- map2(totalprod_pred_fg_lightarea, map(stan_data_list, 'N'), function(dat, N) {
+  dat %>%
+    sweep(2, N/area_core, `*`) %>%
+    apply(1, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE) %>%
+    t %>% as.data.frame %>% setNames(c('q025', 'q50', 'q975')) %>%
+    mutate(light_area = la_pred)
+})
+
+totalprod_pred_dat <- map2_dfr(totalprod_pred_fg_lightarea_quantiles, fg_names,
+                               ~ data.frame(fg = .y, .x)) %>%
+  mutate(fg = factor(fg, levels = fg_names))
+
+
+# Plots -------------------------------------------------------------------
+
+# Need to manually create observed data here: density, indiv. production, and total production *scaled by light per area*
+
+data_to_bin <- alltree_light_95 %>%
+  filter(fg %in% 1:4) %>%
+  mutate(fg = factor(fg, labels = fg_names)) %>%
+  select(fg, light_received_byarea, production)
+
+# Determine bin edges by binning all
+binedgedat <- with(data_to_bin, logbin(light_received_byarea, n = 20))
+
+obs_dens <- data_to_bin %>%
+  group_by(fg) %>%
+  group_modify(~ logbin_setedges(x = .$light_received_byarea, edges = binedgedat))
+
+obs_totalprod <- data_to_bin %>%
+  group_by(fg) %>%
+  group_modify(~ logbin_setedges(x = .$light_received_byarea, y = .$production, edges = binedgedat))
+
+obs_indivprod <- data_to_bin %>%
+  group_by(fg) %>%
+  group_modify(~ cloudbin_across_years(dat_values = .$production, dat_classes = .$light_received_byarea, edges = binedgedat, n_census = 1))
+
+
+# Themes
+
+fill_scale <- scale_fill_manual(values = guild_fills[1:4], name = NULL, labels = fg_names, guide = guide_legend(override.aes = list(shape = 21)))
+color_scale <- scale_color_manual(values = guild_colors[1:4], name = NULL, labels = fg_names, guide = FALSE)
+
+# Production
+l_growth<- ggplot() +
+  geom_ribbon(data = prod_pred_dat %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3, show.legend = F) +
+  geom_line(data = prod_pred_dat %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
+             aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
+             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
+  scale_x_log10(c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(7,400)) +
+  scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
+  annotation_custom(grob_fast) + annotation_custom(grob_tall) + 
+  annotation_custom(grob_slow3) + annotation_custom(grob_short3) +
+  theme_plant_small() + theme_no_x() +
+  fill_scale +
+  color_scale
+l_growth
+
+l_growth2 <- set_panel_size(l_growth, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(l_growth2 )
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth.pdf'))
+grid.draw(l_growth2 )
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth.pdf')) 
+)
+
+
+# Looking at the lower end
+l_growth_low<- ggplot() +
+  geom_ribbon(data = prod_pred_dat %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3, show.legend = F) +
+  geom_line(data = prod_pred_dat %>% filter(light_area >= 7),  
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
+             aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
+             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
+  scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(1, 600)) +
+  scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
+  annotation_custom(grob_fast) + annotation_custom(grob_tall) + 
+  annotation_custom(grob_slow3) + annotation_custom(grob_short3) +
+  theme_plant_small() + theme_no_x() +
+  fill_scale +
+  color_scale
+l_growth_low
+
+
+l_growth_low2 <- set_panel_size(l_growth_low , width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(l_growth_low2)
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth_v2.pdf'))
+grid.draw(l_growth_low2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth_v2.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth_v2.pdf')) 
+)
+# Density
+l_abun <- ggplot() +
+  geom_ribbon(data = dens_pred_dat %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = alpha_level) +
+  geom_line(data = dens_pred_dat %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_dens %>% filter(bin_count >= 20, bin_value > 0), 
+             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
+             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
+  scale_x_log10(c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(7,400)) +
+  scale_y_log10(labels = signif, limits = c(0.01, 200), name = parse(text = 'Abundance~(ha^-1~cm^-1)')) +
+  theme_plant_small() + theme_no_x() +
+  fill_scale +
+  color_scale
+l_abun
+l_abun2 <- set_panel_size(l_abun, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(l_abun2 )
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density.pdf'))
+grid.draw(l_abun2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density.pdf')) 
+)
+
+
+# Looking at the lower end
+# Density
+l_abun_low <- ggplot() +
+  geom_ribbon(data = dens_pred_dat %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
+  geom_line(data = dens_pred_dat %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_dens %>% filter(bin_count >= 20, bin_value > 0), 
+             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
+             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
+  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), breaks = c(3, 30, 300),limits = c(1,400)) +
+  scale_y_log10(labels = signif, limits = c(0.01, 300), name = parse(text = 'Abundance~(ha^-1~cm^-1)')) +
+  theme_plant_small() +
+  fill_scale +
+  color_scale
+l_abun_low
+
+
+l_abun_low2 <- set_panel_size(l_abun_low, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(l_abun_low2 )
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density_v2.pdf'))
+grid.draw(l_abun_low2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density_v2.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density_v2.pdf')) 
+)
+
+
+l_prod_low <- ggplot() +
+  geom_ribbon(data = totalprod_pred_dat %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3, show.legend = F) +
+  geom_line(data = totalprod_pred_dat %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_totalprod %>% filter(bin_count >= 20, bin_value > 0), 
+             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
+             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
+  scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(1,600)) +
+  scale_y_log10(labels = signif, limits = c(0.01, 10), position = "right",
+                name  = expression(atop('Total Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
+  theme_plant_small() + theme_no_x() +
+  fill_scale + 
+  color_scale
+
+l_prod_low
+l_prod_low2 <- set_panel_size(l_prod_low, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(l_prod_low2)
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod_v3.pdf'))
+grid.draw(l_prod_low2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod_v3.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod_v3.pdf')) 
+)
 
 # ------------------------   WAIC of Piecewise Models  -----------------------------------
 
