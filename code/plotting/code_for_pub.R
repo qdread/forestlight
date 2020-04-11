@@ -3,7 +3,7 @@ DENS = 3
 PROD = 1
 
 
-#maybe change theme_plant to include the legend?
+#maybe change/add a theme_plant to include the legend?
 
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google_Drive/ForestLight'))
 
@@ -586,7 +586,8 @@ dev.off()
 #-------------------------- Heat Map of Growth Scaling -----------------------
 #--------------------- Growth by LH Hex ----------------------------
 # Get only year, func group, dbh, and production (no more is needed to plot right now)
-raw_prod <- do.call(rbind, map2(alltreedat, seq(1985,2010,5), function(x, y) cbind(year = y, x %>% filter(!recruit) %>% select(fg, dbh_corr, production))))
+raw_prod <- do.call(rbind, map2(alltreedat, seq(1985,2010,5), 
+                                function(x, y) cbind(year = y, x %>% filter(!recruit) %>% select(fg, dbh_corr, production))))
 
 raw_prod <- raw_prod %>%
   mutate(fg = if_else(!is.na(fg), paste0('fg', fg), 'unclassified'))
@@ -635,6 +636,189 @@ p <- p + theme(legend.position = 'right', legend.text=element_text(size=13), leg
                 breaks = c(0.01, 1, 100), name = expression(paste('Growth (kg yr'^-1,')'))) 
 
 p 
+
+# ------------------------- Light Scaling --------------------------
+#### Extract model output to get the fitted values, slopes, etc.
+load(file.path(gdrive_path, 'data/data_piecewisefits/fits_bylight_forratio.RData'))
+
+# source the extra extraction functions that aren't in the package
+source(file.path(github_path, 'forestscalingworkflow/R_functions/model_output_extraction_functions.r'))
+source(file.path(github_path, 'forestlight/stan/get_ratio_slopes_fromfit.R'))
+
+
+# Get the statistics on the ratio trends.
+la_pred <- logseq(1,412,101)
+x_min <- 7
+parnames_prod <- c('beta0', 'beta1')
+
+# Predicted values for each fit.
+dens_pred_fg_lightarea <- map(densfit_alltrees, function(fit) {
+  pars_fg <- extract(fit, c('alpha')) %>% bind_cols
+  pmap(pars_fg, pdf_pareto, x = la_pred, xmin = x_min)
+})
+prod_pred_fg_lightarea <- map(prodfit_alltrees, function(fit) {
+  pars_fg <- extract(fit, parnames_prod) %>% bind_cols
+  pmap(pars_fg, powerlaw_log, x = la_pred)
+})
+
+# Get total production including correction factors.
+
+corr_factor <- function(y, y_fit, n_pars) {
+  y_fit <- do.call(cbind, y_fit)
+  # Get residuals by subtracting log y from linear predictor
+  resids <- -1 * sweep(log(y_fit), 1, log(y))
+  
+  # Sum of squared residuals
+  ssq_resid <- apply(resids^2, 2, sum)
+  # Standard error of estimates
+  sse <- (ssq_resid / (length(y) - n_pars))^0.5
+  # Correction factors
+  exp((sse^2)/2)
+}
+
+# We need all fitted values for production, not just the 101 values, to calculate correction factor.
+# Recreate stan data
+# Load data
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r')) # doesn't include imputed values
+
+get_stan_data <- function(dat, x_min) with(dat, list(N = nrow(dat), x = dat$light_received_byarea, y = dat$production, x_min = x_min))
+
+stan_data_list <- alltree_light_95 %>%
+  filter(!recruit) %>%
+  filter(!fg %in% 5, !is.na(fg), light_received_byarea >= x_min) %>%
+  mutate(fg = paste0('fg', fg)) %>%
+  group_by(fg) %>%
+  group_map(~ get_stan_data(., x_min))
+
+prod_pred_all_lightarea <- map2(stan_data_list, prodfit_alltrees, function(dat, fit) {
+  pars_fg <- extract(fit, parnames_prod) %>% bind_cols
+  pmap(pars_fg, powerlaw_log, x = dat$x)
+})
+
+prod_cf_fg_lightarea <- map2(stan_data_list, prod_pred_all_lightarea, ~ corr_factor(y = .x$y, y_fit = .y, n_pars = 2))
+
+totalprod_pred_fg_lightarea <- map2(dens_pred_fg_lightarea, prod_pred_fg_lightarea, ~ do.call(cbind, .x) * do.call(cbind, .y)) %>%
+  map2(prod_cf_fg_lightarea, ~ sweep(.x, 2, .y, `*`))
+
+
+# Get credible intervals --------------------------------------------------
+
+# Multiply density and total production times number of individuals, and divide by area
+area_core <- 42.84
+fg_names <- c('Fast', 'Tall', 'Slow', 'Short')
+
+dens_pred_fg_lightarea_quantiles <- map2(dens_pred_fg_lightarea, map(stan_data_list, 'N'), function(dat, N) {
+  do.call(cbind, dat) %>%
+    sweep(2, N/area_core, `*`) %>%
+    apply(1, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE) %>%
+    t %>% as.data.frame %>% setNames(c('q025', 'q50', 'q975')) %>%
+    mutate(light_area = la_pred)
+})
+
+dens_pred_dat <- map2_dfr(dens_pred_fg_lightarea_quantiles, fg_names,
+                          ~ data.frame(fg = .y, .x)) %>%
+  mutate(fg = factor(fg, levels = fg_names))
+
+prod_pred_fg_lightarea_quantiles <- map(prod_pred_fg_lightarea, function(dat) {
+  do.call(cbind, dat) %>%
+    apply(1, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE) %>%
+    t %>% as.data.frame %>% setNames(c('q025', 'q50', 'q975')) %>%
+    mutate(light_area = la_pred)
+}) 
+
+prod_pred_dat <- map2_dfr(prod_pred_fg_lightarea_quantiles, fg_names,
+                          ~ data.frame(fg = .y, .x)) %>%
+  mutate(fg = factor(fg, levels = fg_names))
+
+totalprod_pred_fg_lightarea_quantiles <- map2(totalprod_pred_fg_lightarea, map(stan_data_list, 'N'), function(dat, N) {
+  dat %>%
+    sweep(2, N/area_core, `*`) %>%
+    apply(1, quantile, probs = c(0.025, 0.5, 0.975), na.rm = TRUE) %>%
+    t %>% as.data.frame %>% setNames(c('q025', 'q50', 'q975')) %>%
+    mutate(light_area = la_pred)
+})
+
+totalprod_pred_dat <- map2_dfr(totalprod_pred_fg_lightarea_quantiles, fg_names,
+                               ~ data.frame(fg = .y, .x)) %>%
+  mutate(fg = factor(fg, levels = fg_names))
+
+
+data_to_bin <- alltree_light_95 %>%
+  filter(fg %in% 1:4) %>%
+  mutate(fg = factor(fg, labels = fg_names)) %>%
+  select(fg, light_received_byarea, production)
+
+# Determine bin edges by binning all
+binedgedat <- with(data_to_bin, logbin(light_received_byarea, n = 20))
+
+obs_dens <- data_to_bin %>%
+  group_by(fg) %>%
+  group_modify(~ logbin_setedges(x = .$light_received_byarea, edges = binedgedat))
+
+obs_totalprod <- data_to_bin %>%
+  group_by(fg) %>%
+  group_modify(~ logbin_setedges(x = .$light_received_byarea, y = .$production, edges = binedgedat))
+
+obs_indivprod <- data_to_bin %>%
+  group_by(fg) %>%
+  group_modify(~ cloudbin_across_years(dat_values = .$production, dat_classes = .$light_received_byarea, edges = binedgedat, n_census = 1))
+
+
+fill_scale <- scale_fill_manual(values = guild_fills[1:4], name = NULL, labels = fg_names, guide = guide_legend(override.aes = list(shape = 21)))
+color_scale <- scale_color_manual(values = guild_colors[1:4], name = NULL, labels = fg_names, guide = FALSE)
+
+
+#------- Growth with light
+l_growth <- ggplot() +
+  geom_ribbon(data = prod_pred_dat %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), 
+              alpha = 0.3, show.legend = F) +
+  geom_line(data = prod_pred_dat %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
+             aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
+             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
+  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(7,400)) +
+  scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
+  theme_plant +
+  fill_scale +
+  color_scale
+l_growth
+
+#------ abundance with light
+l_abun <- ggplot() +
+  geom_ribbon(data = dens_pred_dat %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), 
+              alpha = 0.3, show.legend =F ) +
+  geom_line(data = dens_pred_dat %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_dens %>% filter(bin_count >= 20, bin_value > 0), 
+             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
+             shape = 21, color = 'black', size = 4) +
+  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(7,400)) +
+  scale_y_log10(labels = signif, limits = c(0.01, 200), name = parse(text = 'Abundance~(ha^-1~cm^-1)')) +
+  theme_plant + 
+  fill_scale +
+  color_scale
+l_abun 
+
+l_prod <- ggplot() +
+  geom_ribbon(data = totalprod_pred_dat %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), show.legend = F, alpha = 0.3) +
+  geom_line(data = totalprod_pred_dat %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_totalprod %>% filter(bin_count >= 20, bin_value > 0), 
+             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
+             shape = 21, color = 'black', size = 4, show.legend = T) +
+  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(7,400)) +
+  scale_y_log10(labels = signif, limits = c(0.01, 10), 
+                name  = expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
+  theme_plant +
+  fill_scale + 
+  color_scale
+
+l_prod 
+
 # ------------------------   WAIC of Piecewise Models  -----------------------------------
 
 
