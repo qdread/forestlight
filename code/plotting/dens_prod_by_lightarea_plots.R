@@ -78,7 +78,7 @@ totalprod_pred_fg_lightarea <- map2(dens_pred_fg_lightarea, prod_pred_fg_lightar
 
 # Multiply density and total production times number of individuals, and divide by area
 area_core <- 42.84
-fg_names <- c('fast', 'tall', 'slow', 'short')
+fg_names <- c('Fast', 'Tall', 'Slow', 'Short')
 
 dens_pred_fg_lightarea_quantiles <- map2(dens_pred_fg_lightarea, map(stan_data_list, 'N'), function(dat, N) {
   do.call(cbind, dat) %>%
@@ -140,6 +140,7 @@ obs_indivprod <- data_to_bin %>%
   group_by(fg) %>%
   group_modify(~ cloudbin_across_years(dat_values = .$production, dat_classes = .$light_received_byarea, edges = binedgedat, n_census = 1))
 
+
 # Themes
 alpha_level <- 0.5
 guild_colors <- c("black", "#99AF3C", "#1D5128", "#1e3160", "#6BA3BF", "#D6D6D6")
@@ -150,43 +151,98 @@ theme_set(theme_bw() +
                   strip.background = element_blank(),
                   legend.position = 'bottom'))
 
-fill_scale <- scale_fill_manual(values = guild_fills[2:5], name = 'Functional guild', labels = fg_names, guide = guide_legend(override.aes = list(shape = 21)))
-color_scale <- scale_color_manual(values = guild_fills[2:5], name = 'Functional guild', labels = fg_names, guide = FALSE)
+fill_scale <- scale_fill_manual(values = guild_fills[2:5], name = NULL, labels = fg_names, guide = guide_legend(override.aes = list(shape = 21)))
+color_scale <- scale_color_manual(values = guild_colors[2:5], name = NULL, labels = fg_names, guide = FALSE)
 
-# Density
-p_dens <- ggplot() +
-  geom_ribbon(data = dens_pred_dat %>% filter(light_area >= 7), aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = alpha_level) +
-  geom_line(data = dens_pred_dat %>% filter(light_area >= 7), aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_dens %>% filter(bin_count >= 20, bin_value > 0), aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg), shape = 21, color = 'black', size = 2, show.legend = FALSE) +
-  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(7,400)) +
-  scale_y_log10(name = parse(text = 'Abundance~(ha^-1~cm^-1)')) +
-  fill_scale +
-  color_scale
 
 # Production
 p_indivprod <- ggplot() +
-  geom_ribbon(data = prod_pred_dat %>% filter(light_area >= 7), aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = alpha_level) +
-  geom_line(data = prod_pred_dat %>% filter(light_area >= 7), aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), aes(x = bin_midpoint, y = median, group = fg, fill = fg), , shape = 21, color = 'black', size = 2, show.legend = FALSE) +
+  geom_ribbon(data = prod_pred_dat %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = alpha_level) +
+  geom_line(data = prod_pred_dat %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
+             aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
+             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(7,400)) +
-  scale_y_log10(name = parse(text = 'Individual~growth~(kg~y^-1)')) +
+  scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
+  annotation_custom(grob_fast) + annotation_custom(grob_tall) + 
+  annotation_custom(grob_slow3) + annotation_custom(grob_short3) +
+  theme_plant_small() + theme_no_x() +
   fill_scale +
   color_scale
+p_indivprod 
 
-# Total production
-p_totalprod <- ggplot() +
-  geom_ribbon(data = totalprod_pred_dat %>% filter(light_area >= 7), aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = alpha_level) +
-  geom_line(data = totalprod_pred_dat %>% filter(light_area >= 7), aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_totalprod %>% filter(bin_count >= 20, bin_value > 0), aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg), shape = 21, color = 'black', size = 2, show.legend = FALSE) +
+p_indivprod2 <- set_panel_size(p_indivprod , width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p_indivprod2 )
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth.pdf'))
+grid.draw(p_indivprod2 )
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth.pdf')) 
+)
+# Density
+p_dens <- ggplot() +
+  geom_ribbon(data = dens_pred_dat %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = alpha_level) +
+  geom_line(data = dens_pred_dat %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_dens %>% filter(bin_count >= 20, bin_value > 0), 
+             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
+             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(7,400)) +
-  scale_y_log10(name = parse(text = 'Total~production~(kg~y^-1~ha^-1~cm^-1)')) +
+  scale_y_log10(labels = signif, limits = c(0.01, 200), name = parse(text = 'Abundance~(ha^-1~cm^-1)')) +
+  theme_plant_small() + theme_no_x() +
   fill_scale +
   color_scale
+p_dens
+p_dens2 <- set_panel_size(p_dens, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p_dens2 )
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density.pdf'))
+grid.draw(p_dens2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density.pdf')) 
+)
 
+
+p_totalprod <- ggplot() +
+  geom_ribbon(data = totalprod_pred_dat %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = alpha_level) +
+  geom_line(data = totalprod_pred_dat %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_totalprod %>% filter(bin_count >= 20, bin_value > 0), 
+             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
+             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
+  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(7,400)) +
+  scale_y_log10(labels = signif, limits = c(0.01, 10), 
+                name  = expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
+  theme_plant_small() +
+  fill_scale + 
+  color_scale
+  #fill_scale + theme_plant + guide
+  #color_scale
+p_totalprod
+p_totalprod2 <- set_panel_size(p_totalprod, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p_totalprod2)
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod.pdf'))
+grid.draw(p_totalprod2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod.pdf')) 
+)
 # Save plots
-fp_fig <- file.path(gdrive_path, 'figs/light_area_plots_mar2020')
+ggsave(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod.pdf'), p_totalprod, height = 5, width = 8)
+ggsave(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth.pdf'), p_indivprod, height = 5, width = 8)
+ggsave(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density.pdf'), p_dens, height = 5, width = 8)
 
-ggsave(file.path(fp_fig, 'density_scaled_lightperarea.png'), p_dens, height = 5, width = 5, dpi = 300)
 ggsave(file.path(fp_fig, 'production_scaled_lightperarea.png'), p_indivprod, height = 5, width = 5, dpi = 300)
 ggsave(file.path(fp_fig, 'totalproduction_scaled_lightperarea.png'), p_totalprod, height = 5, width = 5, dpi = 300)
 
