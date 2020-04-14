@@ -13,6 +13,7 @@ PROD = 1
 #devtools::install_github('qdread/forestscaling')
 
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google_Drive/ForestLight'))
+github_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/Documents/GitHub/', file.path('/Users/jgradym/Documents/GitHub'))
 
 library(broom)
 library(forestscaling) # Packaged all the functions and ggplot2 themes here!
@@ -24,6 +25,7 @@ library(gtable)
 library(grid)
 library(reshape2)
 library(hexbin)
+library(rstan)
 library(Hmisc, pos = 100)
 
 # Define color schemes and labels
@@ -203,7 +205,13 @@ fgbci$fg5 <- match(fgbci$fg5, c(2,3,1,4,5))
 fgbci$PC_slow_to_fast <- -fgbci$X1new
 fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 
-
+binomial <- paste(fgbci$genus, fgbci$species, sep = " ")
+binomial
+unique(binomial)
+fgbci[fgbci$genus == "Luehea",]
+#anacardium excelsum  = slow
+#Luehea seemannii = slow
+fa
 #Classification description: 
 
 # Quentin: I went through my email and found the explanation Nadja gave for how groups are defined. 
@@ -851,7 +859,7 @@ p_tot_light <- tot_light2
 g_tot_light <- ggplotGrob(p_tot_light)
 
 # compare slopes
-slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, fill =  variable, color =variable)) +
+slope <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, fill =  variable, color =variable)) +
   geom_hline(yintercept = 0, linetype = 'dashed', size = .75) +
   geom_point(position = position_dodge(width = 0.6), shape = 21, size = 4, color = "black", stroke = 0.5) +
   geom_errorbar(position = position_dodge(width = 0.6), size = 0.75, width = 0) +
@@ -861,9 +869,9 @@ slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = 
   scale_color_manual(values = c('gold3', 'darkgreen')) +
   theme_plant_small() + theme(axis.text.x = element_text(angle = 18, hjust = 1, face = "italic", size = 14)) +
   annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3) +annotation_custom(grob0)
-slopes
+slope
 
-g_slopes <- ggplotGrob(slopes)
+g_slopes <- ggplotGrob(slope)
 
 combo <- rbind(g_tot_light, g_slopes, size = "first")
 combo$widths <- unit.pmax(g_tot_light$widths,g_slopes$widths)
@@ -1227,7 +1235,7 @@ system2(command = "pdfcrop",
 )
 #------------------------
 
-p_median_panels <- ggplot(obs_light_binned %>% 
+p_mean_panels <- ggplot(obs_light_binned %>% 
                             filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
   facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
   geom_ribbon(data = pred_light_5groups %>% 
@@ -1242,7 +1250,7 @@ p_median_panels <- ggplot(obs_light_binned %>%
                  filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
                aes(x = x_max_q50 * 0.5, xend = x_max_q50 * 2, y = y_max_q50 * 0.5, yend = y_max_q50 * 2), 
                color = 'brown1', size = .5) +
-  geom_point(shape=21, aes(x = bin_midpoint, y = median)) +
+  geom_point(shape = 21, aes(x = bin_midpoint, y = mean)) +
   scale_color_manual(values = guild_fills ) +
   scale_fill_manual(values = guild_colors) +
   scale_x_log10(name = title_x, breaks = c(1,10,100)) + 
@@ -1250,15 +1258,15 @@ p_median_panels <- ggplot(obs_light_binned %>%
   theme_plant_small() + 
   theme_facet2()
 
-p_median_panels
+p_mean_panels
 
-pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/median_growth_light_max.pdf"))
-p_median_panels
+pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/mean_growth_light_max.pdf"))
+p_mean_panels
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path,'Figures/Supplementals/Growth_light/median_growth_light_max.pdf'), 
-                    file.path(gdrive_path,'Figures/Supplementals/Growth_light/median_growth_light_max.pdf')) 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Growth_light/mean_growth_light_max.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Growth_light/mean_growth_light_max.pdf')) 
 )
 
 
@@ -1300,7 +1308,7 @@ system2(command = "pdfcrop",
 param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg3", "fg4"))
 fg_labels2 <- c("Fast", "Tall", "Medium", "Slow", "Short")
 p <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
-            aes(x = fg, y = q50, ymin = q025, ymax = q975)) + 
+            aes(x = fg, y = mean, ymin = q025, ymax = q975)) + 
   #geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 1) + 
   geom_errorbar(width = 0.4) + geom_point(size = 4) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
@@ -1317,8 +1325,6 @@ system2(command = "pdfcrop",
         args    = c(file.path(gdrive_path,'Figures/Supplementals/Growth_light/max_g_light_slope.pdf'), 
                     file.path(gdrive_path,'Figures/Supplementals/Growth_light/max_g_light_slope.pdf')) 
 )
-
-#---------------------------- Median binned growth by light + fg --------------------------------
 
 
 
@@ -1422,7 +1428,6 @@ corr_factor <- function(y, y_fit, n_pars) {
 # We need all fitted values for production, not just the 101 values, to calculate correction factor.
 # Recreate stan data
 # Load data
-load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r')) # doesn't include imputed values
 
 get_stan_data <- function(dat, x_min) with(dat, list(N = nrow(dat), x = dat$light_received_byarea, y = dat$production, x_min = x_min))
 
@@ -1523,7 +1528,7 @@ l_growth<- ggplot() +
   geom_line(data = prod_pred_dat %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
   geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
-             aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
+             aes(x = bin_midpoint, y = mean, group = fg, fill = fg), 
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(7,400)) +
   scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
@@ -1547,13 +1552,13 @@ system2(command = "pdfcrop",
 
 
 # Looking at the lower end
-l_growth_low<- ggplot() +
+l_growth_low <- ggplot() +
   geom_ribbon(data = prod_pred_dat %>% filter(light_area >= 7), 
               aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3, show.legend = F) +
   geom_line(data = prod_pred_dat %>% filter(light_area >= 7),  
             aes(x = light_area, y = q50, group = fg, color = fg)) +
   geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
-             aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
+             aes(x = bin_midpoint, y = mean, group = fg, fill = fg), 
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(1, 600)) +
   scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
@@ -1578,7 +1583,7 @@ system2(command = "pdfcrop",
 # Density
 l_abun <- ggplot() +
   geom_ribbon(data = dens_pred_dat %>% filter(light_area >= 7), 
-              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = alpha_level) +
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
   geom_line(data = dens_pred_dat %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
   geom_point(data = obs_dens %>% filter(bin_count >= 20, bin_value > 0), 
@@ -1770,7 +1775,7 @@ plot_prod_withrawdata2 <- function (year_to_plot = 1995,
     ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) + 
     ggplot2::scale_linetype_manual(name = "Growth fit", values = line_types) + 
     hex_scale + 
-    theme_plant2() + 
+    theme_plant_small() + 
     ggplot2::coord_fixed(ratio = aspect_ratio) + 
     ggplot2::theme(legend.position = "right", 
                    strip.background = ggplot2::element_blank(), 
