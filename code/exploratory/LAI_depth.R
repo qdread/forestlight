@@ -50,7 +50,7 @@ mlm2 #0.37 slope
 ggplot(data = pfd,aes( x = LAI, y = PFD, fill = Species, color = Species )) +
   geom_point(size = 6, shape = 21, color = "black") + theme_plant  +
   scale_y_log10() +
-  scale_x_log10() +
+  scale_x_log10(limits = c(0.3, 10)) +
   geom_smooth(method = "lm", alpha = 0.2, aes(fill = Species, color = Species))
 
 #semi-log
@@ -64,8 +64,13 @@ ggplot(data = pfd,aes( x = LAI, y = PFD, fill = Species, color = Species )) +
 mlm_pdf <- lmer(log(PFD) ~ LAI + (LAI |Species), pfd) 
 mlm_pdf # 0.33 sloep
 
-#no Cecropia 
+#no cecropia
 pfd2 <- pfd %>% filter(Species != "Cecropia")
+mlm_pdf2 <- lmer(log(PFD) ~ LAI + (LAI |Species), pfd2) 
+mlm_pdf # 0.33 sloep
+
+#no Cecropia 
+
 mlm2_pdf <- lmer(log(PFD) ~ LAI + (LAI |Species), pfd2) 
 mlm2_pdf  #0.37 slope
 
@@ -77,3 +82,26 @@ lm2_pfd
 
 lm3_pfd <- lm(log(PFD) ~ LAI + Species, pfd2)
 lm3_pfd
+
+lm_each_pfd <-  pfd %>%
+  nest(-Species) %>% #group variable
+  mutate(
+    fit = map(data, ~ lm(log(PFD) ~ LAI, data = .x)),
+    tidied = map(fit, tidy)
+  ) %>%
+  unnest(tidied)%>%
+  filter(term != '(Intercept)')
+lm_each_pfd
+mean(lm_each_pfd$estimate) #0.331
+
+
+lm_each_pfd2 <-  pfd2 %>%
+  nest(-Species) %>% #group variable
+  mutate(
+    fit = map(data, ~ lm(log(PFD) ~ LAI, data = .x)),
+    tidied = map(fit, tidy)
+  ) %>%
+  unnest(tidied)%>%
+  filter(term != '(Intercept)')
+lm_each_pfd2
+mean(lm_each_pfd2$estimate) #0.331
