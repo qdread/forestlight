@@ -1,6 +1,7 @@
-#from Kitijama, 2005 Annals of Botany, using datathief 1.7
+#from Kitijama, 2005 Annals of Botany, using datathief 1.7 to digitize data
 library(tidyverse)
 library(broom)
+library(lme4)
 
 lai <- read_csv('/Users/jgradym/Google_Drive/ForestLight/data/data_forplotting/LAI_Depth.csv')
 ggplot(data = lai,aes( x = Depth, y = LAI, fill = Species, color = Species )) +
@@ -8,17 +9,18 @@ ggplot(data = lai,aes( x = Depth, y = LAI, fill = Species, color = Species )) +
   scale_y_log10() +
   scale_x_log10() +
   geom_smooth(method = "lm", alpha = 0.2, aes(fill = Species, color = Species))
+
+# with species
 lm1 <- lm(log(LAI) ~ log(Depth)+ Species, data = lai)
-summary(lm1) # 0.35
-#Coefficients:
-#  Estimate Std. Error t value Pr(>|t|)    
-#  log(Depth)         0.353899   0.025583  13.834  < 2e-16 ***
+summary(lm1) # 0.351, r2 = 0.99
 
-#Residual standard error: 0.2065 on 55 degrees of freedom
-#Multiple R-squared:  0.9562,	Adjusted R-squared:  0.9522 
-#F-statistic: 240.2 on 5 and 55 DF,  p-value: < 2.2e-16
+# without species
+lm2 <- lm(log(LAI) ~ log(Depth)+ Species, data = lai)
+summary(lm2) # 0.54, r2 = 0.38
 
-
+# calculated separately
+lm3 <- lm(log(LAI) ~ log(Depth), data = lai2)
+summary(lm3)
 lm_each <-  lai %>%
   nest(-Species) %>% #group variable
   mutate(
@@ -28,20 +30,17 @@ lm_each <-  lai %>%
   unnest(tidied)%>%
   filter(term != '(Intercept)')
 lm_each
-#> lm_each
-# A tibble: 5 x 8
-#Species    data              fit    term       estimate std.error statistic  p.value
-#<chr>      <list>            <list> <chr>         <dbl>     <dbl>     <dbl>    <dbl>
-# 1 Castilla   <tibble [9 × 2]>  <lm>   log(Depth)    0.420    0.0275    15.2   1.26e- 6
-#2 Luehea     <tibble [11 × 2]> <lm>   log(Depth)    0.323    0.0218    14.8   1.26e- 7
-#3 Anacardium <tibble [19 × 2]> <lm>   log(Depth)    0.389    0.0248    15.7   1.54e-11
-#4 Antirrhoea <tibble [13 × 2]> <lm>   log(Depth)    0.357    0.0171    20.9   3.33e-10
-#5 Cecropia   <tibble [9 × 2]>  <lm>   log(Depth)    0.202    0.226      0.891 4.02e- 1
+mean(lm_each$estimate) #0.331
 
-growth_diam_slopes_under_10
-  lm(log(LAI) ~ log(Depth)+ Species, data = lai)
-summary(lm1) # 0.35
 
-trans <- data.frame("LAI" = c(0.44, 3.8, 8), "Trans" = c(60, 20.5, 5.4))
-lm2 <- lm(log(Trans) ~ log(LAI), data = trans)
-summary(lm2) #-0.75
+# Mixed Model
+lai2 <- lai %>% filter(Species != "Cecropia") #Cecropia is weird
+
+# all 5 species
+mlm <- lmer(log(LAI) ~ log(Depth) + (log(Depth) |Species), lai) 
+mlm # 0.33 sloep
+
+#no Cecropia 
+mlm2 <- lmer(log(LAI) ~ log(Depth) + (log(Depth) |Species), lai2) 
+mlm2 #0.37 slope
+
