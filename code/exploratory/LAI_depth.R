@@ -4,6 +4,8 @@ library(broom)
 library(lme4)
 
 lai <- read_csv('/Users/jgradym/Google_Drive/ForestLight/data/data_forplotting/LAI_Depth.csv')
+pfd <- read_csv('/Users/jgradym/Google_Drive/ForestLight/data/data_forplotting/PFD_LAI.csv')
+
 ggplot(data = lai,aes( x = Depth, y = LAI, fill = Species, color = Species )) +
   geom_point(size = 6, shape = 21, color = "black") + theme_plant  +
   scale_y_log10() +
@@ -44,3 +46,34 @@ mlm # 0.33 sloep
 mlm2 <- lmer(log(LAI) ~ log(Depth) + (log(Depth) |Species), lai2) 
 mlm2 #0.37 slope
 
+### PFD analysis
+ggplot(data = pfd,aes( x = LAI, y = PFD, fill = Species, color = Species )) +
+  geom_point(size = 6, shape = 21, color = "black") + theme_plant  +
+  scale_y_log10() +
+  scale_x_log10() +
+  geom_smooth(method = "lm", alpha = 0.2, aes(fill = Species, color = Species))
+
+#semi-log
+ggplot(data = pfd,aes( x = LAI, y = PFD, fill = Species, color = Species )) +
+  geom_point(size = 6, shape = 21, color = "black") + theme_plant  +
+  scale_y_log10() +
+  scale_x_continuous() +
+  geom_smooth(method = "lm", alpha = 0.2, aes(fill = Species, color = Species))
+
+# all 5 species
+mlm_pdf <- lmer(log(PFD) ~ LAI + (LAI |Species), pfd) 
+mlm_pdf # 0.33 sloep
+
+#no Cecropia 
+pfd2 <- pfd %>% filter(Species != "Cecropia")
+mlm2_pdf <- lmer(log(PFD) ~ LAI + (LAI |Species), pfd2) 
+mlm2_pdf  #0.37 slope
+
+# pfd all
+lm_pfd <- lm(log(PFD) ~ LAI, pfd)
+lm_pfd
+lm2_pfd <- lm(log(PFD) ~ LAI + Species, pfd)
+lm2_pfd
+
+lm3_pfd <- lm(log(PFD) ~ LAI + Species, pfd2)
+lm3_pfd
