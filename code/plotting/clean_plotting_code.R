@@ -46,7 +46,7 @@ year_to_plot = 1995
 geom_size <- 4
 
 # To add back the legend
-theme_plant2<- theme_plant() +theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+theme_plant2<- theme_plant() + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
 theme_plant <- theme_plant() + 
   theme(plot.margin=grid::unit(c(0,0,0,0), "mm"), legend.position = "right", legend.text = element_text(size = 14 ), 
         legend.key = element_blank())
@@ -367,7 +367,9 @@ unique(fitted_mort_trunc$fg)
 p <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = bin_mort %>% filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) >= 20)  %>% 
+  geom_point(data = bin_mort %>% 
+               filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), 
+                      (lived+died) >= 20)  %>% 
                mutate(fg = factor(fg, labels = fg_labels)),
              aes(x = bin_midpoint, y = mortality, fill = fg),
              shape = 21, size = geom_size) +
@@ -880,7 +882,8 @@ p_tot_light <- tot_light2
 g_tot_light <- ggplotGrob(p_tot_light)
 
 # compare slopes
-slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, fill =  variable, color =variable)) +
+slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), 
+                 aes(x = fg, y = q50, ymin = q025, ymax = q975, fill =  variable, color =variable)) +
   geom_hline(yintercept = 0, linetype = 'dashed', size = .75) +
   geom_point(position = position_dodge(width = 0.6), shape = 21, size = 4, color = "black", stroke = 0.5) +
   geom_errorbar(position = position_dodge(width = 0.6), size = 0.75, width = 0) +
@@ -952,7 +955,8 @@ prod_ratio <- prod_ratio_light   %>%
   geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
   geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975, group = ratio, fill = ratio),
               alpha = 0.3, data = ratio_fitted_lightarea_prod) +
-  geom_line(aes(x = light_area, y = q50, group = ratio,  color = ratio), data = ratio_fitted_lightarea_prod) +
+  geom_line(aes(x = light_area, y = q50, group = ratio,  color = ratio), 
+            data = ratio_fitted_lightarea_prod) +
   geom_point(aes(x = bin_midpoint, y = production_ratio, fill = ID), 
              shape = 21, size = 4,  stroke = .5, color = "black") +
   scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey"))+
@@ -980,8 +984,10 @@ dens_ratio <- prod_ratio_diam %>%
   filter(density_ratio > 0) %>%
   filter(n_individuals >= 20) %>%
   ggplot() +
-  geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = ratio, fill = ratio), alpha = 0.4, data = ratio_fitted_diam_density) +
-  geom_line(aes(x = dbh, y = q50, group = ratio, color = ratio), data = ratio_fitted_diam_density) +
+  geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = ratio, fill = ratio), 
+              alpha = 0.4, data = ratio_fitted_diam_density) +
+  geom_line(aes(x = dbh, y = q50, group = ratio, color = ratio), 
+            data = ratio_fitted_diam_density) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
   geom_point(aes(x = bin_midpoint, y = density_ratio, fill = ID),
              shape = 21, size = 4.5,  stroke = .5,  color = "black") +
@@ -1256,7 +1262,7 @@ system2(command = "pdfcrop",
 )
 #------------------------
 
-p_median_panels <- ggplot(obs_light_binned %>% 
+p_mean_panels <- ggplot(obs_light_binned %>% 
                             filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
   facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
   geom_ribbon(data = pred_light_5groups %>% 
@@ -1271,7 +1277,7 @@ p_median_panels <- ggplot(obs_light_binned %>%
                  filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
                aes(x = x_max_q50 * 0.5, xend = x_max_q50 * 2, y = y_max_q50 * 0.5, yend = y_max_q50 * 2), 
                color = 'brown1', size = .5) +
-  geom_point(shape=21, aes(x = bin_midpoint, y = median)) +
+  geom_point(shape=21, aes(x = bin_midpoint, y = mean)) +
   scale_color_manual(values = guild_fills ) +
   scale_fill_manual(values = guild_colors) +
   scale_x_log10(name = title_x, breaks = c(1,10,100)) + 
@@ -1279,15 +1285,15 @@ p_median_panels <- ggplot(obs_light_binned %>%
   theme_plant_small() + 
   theme_facet2()
 
-p_median_panels
+p_mean_panels
 
-pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/median_growth_light_max.pdf"))
-p_median_panels
+pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/mean_growth_light_max.pdf"))
+p_mean_panels
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path,'Figures/Supplementals/Growth_light/median_growth_light_max.pdf'), 
-                    file.path(gdrive_path,'Figures/Supplementals/Growth_light/median_growth_light_max.pdf')) 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Growth_light/mean_growth_light_max.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Growth_light/mean_growth_light_max.pdf')) 
 )
 
 
@@ -1299,7 +1305,7 @@ p_raw_panels <- ggplot(obs_light_raw %>%
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
               aes(x = light_area, ymin = q025, ymax = q975, group=fg,color=NA,fill=fg), alpha = 0.5) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
-            aes(x = light_area, y = q50, group=fg, color=fg), size= 1) +
+            aes(x = light_area, y = q50, group = fg, color = fg), size= 1) +
   #scale_alpha_manual(values = c(0.15, 0.15, 0.05, 0.008, 0.008)) +
   scale_alpha_manual(values = c(0.15, 0.15, 0.15, 0.15, 0.15)) +
   scale_x_log10(name = title_x) + 
@@ -1328,7 +1334,9 @@ system2(command = "pdfcrop",
 # Remove all tree and unclassified groups
 param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg3", "fg4"))
 fg_labels2 <- c("Fast", "Tall", "Medium", "Slow", "Short")
-p <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
+p <- ggplot(param_ci %>% 
+              filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', 
+                                !fg %in% c('alltree','unclassified')),
             aes(x = fg, y = q50, ymin = q025, ymax = q975)) + 
   #geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 1) + 
   geom_errorbar(width = 0.4) + geom_point(size = 4) +
@@ -1347,8 +1355,6 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path,'Figures/Supplementals/Growth_light/max_g_light_slope.pdf')) 
 )
 
-#---------------------------- Median binned growth by light + fg --------------------------------
-
 
 
 #-------------------   Plot Slopes vs Size for each life history group  -------------------
@@ -1359,7 +1365,10 @@ slopes$variable <- factor(slopes$variable, labels = c("Density", "Individual Gro
 colors <- c("sienna4", "yellowgreen", "springgreen4")
 
 # Using 3 segment density and 1 segment production
-p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) | (is.na(dens_model) & prod_model == 1) | (dens_model == 3 & prod_model == 1), !fg %in% 'Unclassified'), 
+p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) |
+                                (is.na(dens_model) & prod_model == 1) | 
+                                (dens_model == 3 & prod_model == 1), 
+                              !fg %in% 'Unclassified'), 
             aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
   facet_wrap(~ fg, scale = 'free_y', labeller = label_value) +
   geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
@@ -1384,7 +1393,9 @@ p
 dev.off()
 
 # Using 3 segment density and 2 segment production
-p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) | (is.na(dens_model) & prod_model == 2) | (dens_model == 3 & prod_model == 2), !fg %in% 'Unclassified'), 
+p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) |
+                                (is.na(dens_model) & prod_model == 2) | 
+                                (dens_model == 3 & prod_model == 2), !fg %in% 'Unclassified'), 
             aes(x = dbh, y = q50, ymin = q025, ymax = q975, color = variable, fill = variable)) +
   facet_wrap(~ fg,scale = "free_y", labeller = label_value) +
   geom_hline(yintercept = 0, linetype = 'dashed', col = "springgreen4", size = 0.3) +
@@ -1552,7 +1563,7 @@ l_growth<- ggplot() +
   geom_line(data = prod_pred_dat %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
   geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
-             aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
+             aes(x = bin_midpoint, y = mean, group = fg, fill = fg), 
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(7,400)) +
   scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
@@ -1582,7 +1593,7 @@ l_growth_low<- ggplot() +
   geom_line(data = prod_pred_dat %>% filter(light_area >= 7),  
             aes(x = light_area, y = q50, group = fg, color = fg)) +
   geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
-             aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
+             aes(x = bin_midpoint, y = mean, group = fg, fill = fg), 
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(1, 600)) +
   scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
