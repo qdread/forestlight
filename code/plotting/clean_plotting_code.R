@@ -13,7 +13,7 @@ PROD = 1
 #devtools::install_github('qdread/forestscaling')
 
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google_Drive/ForestLight'))
-github_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Documents/Github'))
+github_path <- ifelse(Sys.info()['user'] == 'qread', '~/documents/github/', file.path('/Users/jgradym/Documents/Github'))
 
 library(broom)
 library(forestscaling) # Packaged all the functions and ggplot2 themes here!
@@ -118,22 +118,21 @@ exd <- 'Diameter (cm)'
 
 #----------------------   Fig 1a: Light per crown volume by diameter -----------------------------
 
-p <- ggplot() + geom_point(alpha = 0.01, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownarea), color = 'chartreuse3') +
-  geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exl) +
-  theme_plant() 
-p
+p <- ggplot() + geom_point(alpha = 0.01, data = alltree_light_95, 
+                           aes(x = dbh_corr, y = light_received_byarea), color = 'chartreuse3') +
+  geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), 
+                  aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
+  scale_x_log10(limits = c(0.8, 300), name = exd) +
+  scale_y_log10(name = exl, limits = c(0.8, 1000)) +
+  theme_plant_small() 
+
 
 # --- to add secondary height axis, first mask theme_no_x() above
 area <- p + scale_x_log10(name = 'Diameter (cm)',
-                        breaks = c(1,10,100), limits = c(0.8, 230),
+                        breaks = c(1,10,100), limits = c(0.8, 300),
                         sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
-                                            name = "Height (m)", breaks = c(3, 10, 30))) +
-  theme_plant_small() 
-
+                                            name = "Height (m)", breaks = c(3, 10, 30))) 
 area
-
 
 p1 <- set_panel_size(area, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
@@ -147,16 +146,20 @@ system2(command = "pdfcrop",
         args  = c(file.path(gdrive_path,'Figures/Light_Individual/light_area.pdf'), 
                   file.path(gdrive_path,'Figures/Light_Individual/light_area.pdf')) 
 )
+lm1 <- lm(log(light_received_byarea) ~ log(dbh_corr), data = alltree_light_95)
+summary(lm1)
+confint(lm1)
 
+exp(0.987*log(100)) #94.2
 #----------------------   Fig 1b: Light per crown volume by diameter -----------------------------
 
 vol <- ggplot() +
   geom_point(alpha = 0.01, data = alltree_light_95, 
              aes(x = dbh_corr, y = light_received_byvolume), color = 'chartreuse3') +
   geom_pointrange(data = lightpervolcloudbin_fg %>% filter(fg %in% 'all'), 
-                  aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  scale_x_log10(name = exd) +
-  scale_y_log10(name = exv, breaks = c(1, 10, 100)) +
+                  aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
+  scale_x_log10(limits = c(0.8, 300), name = exd) +
+  scale_y_log10(name = exv, breaks = c(1, 10, 100), limits = c(0.8, 200)) +
   theme_plant_small()
 
 vol
@@ -168,7 +171,15 @@ grid.draw(p1)
 pdf(file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf'))
 grid.draw(p1)
 dev.off()
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf'), 
+                  file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf')) 
+)
 
+lm1 <- lm(log(light_received_byvolume) ~ log(dbh_corr), data = alltree_light_95)
+summary(lm1)
+confint(lm1)
+exp(0.448*log(100)) #7.9
 #combine
 
 g_area  <- ggplotGrob(area)
@@ -177,11 +188,11 @@ g1 <- rbind(g_area , g_vol , size = "first")
 g1$widths <- unit.pmax(g_area$widths, g_vol$widths)
 grid.newpage()
 grid.draw(g1)
-ggsave(g6, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf'))
+ggsave(g1, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Light_Individual/light_combo.pdf'))
 
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf'), 
-                  file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf')) 
+        args  = c(file.path(gdrive_path,'Figures/Light_Individual/light_combo.pdf'), 
+                  file.path(gdrive_path,'Figures/Light_Individual/light_combo.pdf')) 
 )
 
 
