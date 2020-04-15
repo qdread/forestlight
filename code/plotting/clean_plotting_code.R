@@ -26,6 +26,7 @@ library(grid)
 library(reshape2)
 library(hexbin)
 library(Hmisc, pos = 100)
+library(rstan)
 
 # Define color schemes and labels
 
@@ -100,6 +101,14 @@ for (i in dir(fp, pattern = 'pred_|fitted_')) {
   n <- gsub('.csv','',i)
   assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
 }
+
+#### Extract model output to get the fitted values, slopes, etc.
+load(file.path(gdrive_path, 'data/data_piecewisefits/fits_bylight_forratio.RData'))
+
+# source the extra extraction functions that aren't in the package
+source(file.path(github_path, 'forestscalingworkflow/R_functions/model_output_extraction_functions.r'))
+source(file.path(github_path, 'forestlight/stan/get_ratio_slopes_fromfit.R'))
+
 
 ################################################################################################
 # ------------------------------ Fig 1: Light Interception ---------------------------------
@@ -326,16 +335,14 @@ p <- ggplot(obs_light_binned_plotdata) +
                 labels = c( 0.01, 0.03, 0.1, 0.3)) +
   scale_color_manual(name = 'Functional group', values = guild_fills, labels = fg_labels) +
   scale_fill_manual(values = guild_fills, labels = fg_labels, guide = FALSE) +
-  theme_no_x() +theme_plant2
+  theme_no_x() + theme_plant2
 p
-
-
 
 p2 <- set_panel_size(p, width = unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p2)
 
-pdf(file.path(gdrive_path, "Figures/Life History/LH_b.pdf"))
+pdf(file.path(gdrive_path, "Figures/Life_History/LH_b.pdf"))
 grid.draw(p2)
 dev.off()
 
@@ -483,7 +490,7 @@ plot_prod2 <-
                           size = geom_size, color = "black", shape = 21, position = pos) + 
       ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
       ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) + 
-      theme_no_x() + 
+      #theme_no_x() + 
       ggplot2::theme(rect = ggplot2::element_rect(fill = "transparent")) + 
       ggplot2::scale_color_manual(values = color_names) + 
       ggplot2::scale_fill_manual(values = fill_names) + 
@@ -568,18 +575,22 @@ plot_dens2 <- function (year_to_plot = 1995,
   {
   pos <-  ggplot2::position_dodge(width = dodge_width)
   obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == year_to_plot, bin_count >= 20) %>% 
-    dplyr::filter(bin_value >  0) %>% 
+    dplyr::filter(bin_value > 0) %>% 
     arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1')))
   obs_limits <- obsdat %>% dplyr::group_by(fg) %>% 
-    dplyr::summarize(min_obs = min(bin_midpoint), max_obs = max(bin_midpoint))
+    dplyr::summarize(min_obs = min(bin_midpoint), 
+                     max_obs = max(bin_midpoint))
   preddat <- preddat %>% dplyr::left_join(obs_limits) %>% 
-    dplyr::filter(dens_model %in% model_fit, fg %in% fg_names, year == year_to_plot) %>% 
-    dplyr::filter_at(dplyr::vars(dplyr::starts_with("q")), dplyr::all_vars(. > min(y_limits))) %>% 
+    dplyr::filter(dens_model %in% model_fit, fg %in% fg_names, 
+                  year == year_to_plot) %>% 
+    dplyr::filter_at(dplyr::vars(dplyr::starts_with("q")), 
+                     dplyr::all_vars(. > min(y_limits))) %>% 
     dplyr::filter(dbh >=  min_obs & dbh <= max_obs) %>%  
     arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1')))
-  p <- ggplot2::ggplot() + ggplot2::geom_ribbon(data = preddat, 
-                                                ggplot2::aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), 
-                                                alpha = 0.4)
+  p <- ggplot2::ggplot() + 
+    ggplot2::geom_ribbon(data = preddat, 
+                         ggplot2::aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), 
+                         alpha = 0.4)
   if (plot_abline) {
     p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
                                   slope = abline_slope, color = "gray72", linetype = "dashed", 
@@ -684,7 +695,8 @@ plot_totalprod2 <-function(year_to_plot = 1995,
     theme(aspect.ratio = 1)
   if (plot_abline) 
     p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
-                                  slope = abline_slope, color = "gray72", linetype = "dashed", size = 0.75)
+                                  slope = abline_slope, color = "gray72", 
+                                  linetype = "dashed", size = 0.75)
   p
 } 
 p <- plot_totalprod2(year_to_plot = 1995,
@@ -714,8 +726,11 @@ dev.off()
 p0 <- p + scale_x_log10(name = 'Diameter (cm)',
                         breaks = c(1, 3, 10, 30,100), limits = c(0.7, 230),
                         sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
-                                            name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 30, 40))) +
-  scale_y_log10(position = "right", limits = c(0.5, 200), breaks = c(0.1, 1, 10, 100),labels = c(0.1, 1, 10, 100), 
+                                            name = "Height (m)", 
+                                            breaks = c(2, 3, 5, 10, 20, 30, 40))) +
+  scale_y_log10(position = "right", limits = c(0.5, 200), 
+                breaks = c(0.1, 1, 10, 100),
+                labels = c(0.1, 1, 10, 100), 
                 name = expression(paste("Production (kg cm"^-1, " ha"^-1, "  y"^-1, ")"))) +
   geom_point(size = 1) + annotation_custom(grob_text)
 p0
@@ -732,10 +747,13 @@ dev.off()
 p0 <- p + scale_x_log10(name = 'Diameter (cm)',
                         breaks = c(1,10,100), limits = c(0.7, 230),
                         sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
-                                            name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 30, 40))) +
-  scale_y_log10(position = "left", limits = c(0.5, 200), breaks = c(0.1, 1, 10, 100),labels = c(0.1, 1, 10, 100),
+                                            name = "Height (m)", 
+                                            breaks = c(2, 3, 5, 10, 20, 30, 40))) +
+  scale_y_log10(position = "left", limits = c(0.5, 200), 
+                breaks = c(0.1, 1, 10, 100),
+                labels = c(0.1, 1, 10, 100),
                 name =expression(atop('Total Production', paste('(kg ha'^-1,' cm'^-1,' yr'^-1,')')))) +
-  theme(aspect.ratio = 0.8) +geom_point(size = 1)
+  theme(aspect.ratio = 0.8) + geom_point(size = 1)
 
 p0
 
@@ -763,7 +781,8 @@ p <- ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax =
   geom_errorbar(size = 1) +
   scale_x_log10(name = 'Diameter (cm)', breaks = c(1, 10, 100 )) + 
   scale_y_log10(expression(paste('Total Production (kg cm'^-1,'ha'^-1,' yr'^-1,')')),
-                breaks = 10^(-2:3), labels = as.character(10^(-2:3)), limits = c(0.1, 200)) +
+                breaks = 10^(-2:3), labels = as.character(10^(-2:3)), 
+                limits = c(0.1, 200)) +
   scale_color_manual(values = guild_fills2) +
   theme_plant()
 p
@@ -869,11 +888,15 @@ tot_light <- plot_totalprod(year_to_plot = 1995,
                             plot_abline = FALSE)
 
 
-tot_light2 <- tot_light  + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
-                                              labels = c("0.1", "1", "10", "100"), limits = c(100, 450000),
-                                              name = expression(atop('Total Light Intercepted',paste('(kW cm'^-1,' ha'^-1,')'))))  +
+tot_light2 <- tot_light  + 
+  scale_y_continuous(position = "left", trans = "log10", 
+                     breaks = c(100, 1000, 10000, 100000),
+                     labels = c("0.1", "1", "10", "100"), 
+                     limits = c(100, 450000),
+                     name = expression(atop('Total Light Intercepted',paste('(kW cm'^-1,' ha'^-1,')'))))  +
   theme(aspect.ratio = 0.75) + 
-  geom_abline(intercept = log10(70000), slope = 0, color ="gray72",linetype="dashed", size=.75) +
+  geom_abline(intercept = log10(70000), slope = 0, color ="gray72",
+              linetype="dashed", size=.75) +
   annotation_custom(grob_text) + annotation_custom(grob_text2)
 plot(tot_light2)
 p_tot_light <- tot_light2
@@ -919,18 +942,22 @@ load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
 
 prod_ratio_diam <- breeder_stats_bydiam_byyear %>% 
   mutate(ID = 'Short-Tall') %>%
-  rename(production_ratio = breeder_production_ratio, density_ratio = breeder_density_ratio) %>%
+  rename(production_ratio = breeder_production_ratio, 
+         density_ratio = breeder_density_ratio) %>%
   rbind(fastslow_stats_bydiam_byyear %>% 
           mutate(ID = 'Fast-Slow') %>%
-          rename(production_ratio = fastslow_production_ratio, density_ratio = fastslow_density_ratio)) %>%
+          rename(production_ratio = fastslow_production_ratio, 
+                 density_ratio = fastslow_density_ratio)) %>%
   filter(year == 1995)
 
 prod_ratio_light <- breeder_stats_bylight_byyear %>% 
   mutate(ID = 'Short-Tall') %>%
-  rename(production_ratio = breeder_production_ratio, density_ratio = breeder_density_ratio) %>%
+  rename(production_ratio = breeder_production_ratio, 
+         density_ratio = breeder_density_ratio) %>%
   rbind(fastslow_stats_bylight_byyear %>% 
           mutate(ID = 'Fast-Slow') %>%
-          rename(production_ratio = fastslow_production_ratio, density_ratio = fastslow_density_ratio)) %>%
+          rename(production_ratio = fastslow_production_ratio, 
+                 density_ratio = fastslow_density_ratio)) %>%
   filter(year == 1995)
 
 # Load fitted values
@@ -943,11 +970,11 @@ ratio_fitted_lightarea_prod <- ratio_fitted_lightarea %>%
   mutate(ratio = if_else(ratio == 'fast:slow', 'Fast-Slow', 'Short-Tall'))
 
 ratio_fitted_diam_density <- ratio_fitted_diam %>%
-  filter(variable == 'density', (ratio == 'fast:slow' & dbh < 66) | (ratio == 'pioneer:breeder') & dbh < 16) %>%
+  filter(variable == 'density', (ratio == 'fast:slow' & dbh < 66) | 
+           (ratio == 'pioneer:breeder') & dbh < 16) %>%
   mutate(ratio = if_else(ratio == 'fast:slow', 'Fast-Slow', 'Short-Tall'))
 
 # ---------------------------------   Fig 6a  Production by light ------------------------------------
-
 
 prod_ratio <- prod_ratio_light   %>%
   filter(n_individuals >= 20) %>%
@@ -961,10 +988,12 @@ prod_ratio <- prod_ratio_light   %>%
              shape = 21, size = 4,  stroke = .5, color = "black") +
   scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey"))+
   scale_color_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey50")) +
-  theme_plant_small()+ 
-  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(2,300), breaks=c(3,  30,  300)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,400), position = "right",
-                name = "Production Ratio") 
+  theme_plant_small() + 
+  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), 
+                limits = c(2,300), breaks = c(3, 30, 300)) +
+  scale_y_log10(labels = signif, breaks = c(0.01,0.1, 1,10,100,1000), 
+                limits = c(0.01,400), position = "left",
+                name = "Ratio") 
 prod_ratio
 
 prod_ratio2 <- set_panel_size(prod_ratio, width=unit(10.25,"cm"), height=unit(7,"cm"))
@@ -990,13 +1019,15 @@ dens_ratio <- prod_ratio_diam %>%
             data = ratio_fitted_diam_density) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
   geom_point(aes(x = bin_midpoint, y = density_ratio, fill = ID),
-             shape = 21, size = 4.5,  stroke = .5,  color = "black") +
+             shape = 21, size = 4,  stroke = .5,  color = "black") +
   scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey")) +
   scale_color_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey50")) +
-  scale_x_log10(limits = c(1,100), breaks = c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
-  scale_y_log10(labels = signif, breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
+  scale_x_log10(limits = c(1,100), breaks = c(1,10, 100), 
+                name = expression(paste('Diameter (cm)'))) + 
+  scale_y_log10(labels = signif, breaks = c(0.01,0.1, 1,10,100,1000), 
+                limits=c(0.01,200),
                 name = expression("Density Ratio")) + 
-  theme_plant() + theme_no_y()
+  theme_plant_small() +theme_no_y()
 dens_ratio 
 
 # combine
@@ -1337,7 +1368,7 @@ fg_labels2 <- c("Fast", "Tall", "Medium", "Slow", "Short")
 p <- ggplot(param_ci %>% 
               filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', 
                                 !fg %in% c('alltree','unclassified')),
-            aes(x = fg, y = q50, ymin = q025, ymax = q975)) + 
+            aes(x = fg, y = mean, ymin = q025, ymax = q975)) + 
   #geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 1) + 
   geom_errorbar(width = 0.4) + geom_point(size = 4) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
@@ -1358,6 +1389,10 @@ system2(command = "pdfcrop",
 
 
 #-------------------   Plot Slopes vs Size for each life history group  -------------------
+
+pc <- file.path(gdrive_path, 'data/data_piecewisefits')
+ics <- read.csv(file.path(pc, 'piecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
+ics$fg <- factor(ics$fg , labels = c("All", "Fast", "Tall", "Slow", "Short", "Medium", "Unclassified"))
 
 slopes <- read.csv(file.path(pc, 'piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 slopes$fg <- factor(slopes$fg , labels = c("All", "Fast", "Tall", "Slow", "Short", "Medium", "Unclassified"))
@@ -1380,8 +1415,10 @@ p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) |
   geom_line(size = 1.25) +
   scale_x_log10(name = 'Diameter (cm)', expand = c(0,0)) +
   theme_bw() + 
-  theme(strip.background = element_blank(), panel.grid = element_blank(),strip.text = element_text(size = 12),
-        legend.position = 'bottom',legend.spacing.x=unit(.2, "cm"),legend.title=element_blank(),
+  theme(strip.background = element_blank(), panel.grid = element_blank(),
+        strip.text = element_text(size = 12),
+        legend.position = 'bottom', 
+        legend.spacing.x=unit(.2, "cm"), legend.title=element_blank(),
         legend.text=element_text(size = 12),axis.title = element_text(size = 15),
         axis.text = element_text(color = "black", size = 11)) +
   labs(y = 'Slope') +
@@ -1421,13 +1458,6 @@ p
 dev.off()
 
 # --------------------------- light scaling, to make ratios
-#### Extract model output to get the fitted values, slopes, etc.
-load(file.path(gdrive_path, 'data/data_piecewisefits/fits_bylight_forratio.RData'))
-
-# source the extra extraction functions that aren't in the package
-source(file.path(github_path, 'forestscalingworkflow/R_functions/model_output_extraction_functions.r'))
-source(file.path(github_path, 'forestlight/stan/get_ratio_slopes_fromfit.R'))
-
 
 # Get the statistics on the ratio trends.
 la_pred <- logseq(1,412,101)
@@ -1462,7 +1492,6 @@ corr_factor <- function(y, y_fit, n_pars) {
 # We need all fitted values for production, not just the 101 values, to calculate correction factor.
 # Recreate stan data
 # Load data
-load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r')) # doesn't include imputed values
 
 get_stan_data <- function(dat, x_min) with(dat, list(N = nrow(dat), x = dat$light_received_byarea, y = dat$production, x_min = x_min))
 
@@ -1618,7 +1647,7 @@ system2(command = "pdfcrop",
 # Density
 l_abun <- ggplot() +
   geom_ribbon(data = dens_pred_dat %>% filter(light_area >= 7), 
-              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = alpha_level) +
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
   geom_line(data = dens_pred_dat %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
   geom_point(data = obs_dens %>% filter(bin_count >= 20, bin_value > 0), 
@@ -1703,10 +1732,6 @@ system2(command = "pdfcrop",
 # ------------------------   WAIC of Piecewise Models  -----------------------------------
 
 # This section was edited by QDR, 20 Jun 2019, for the updated model fits.
-
-pc <- file.path(gdrive_path, 'data/data_piecewisefits')
-ics <- read.csv(file.path(pc, 'piecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
-ics$fg <- factor(ics$fg , labels = c("All", "Fast", "Tall", "Slow", "Short", "Medium", "Unclassified"))
 
 # Density model
 base_size <- 11
@@ -1810,7 +1835,7 @@ plot_prod_withrawdata2 <- function (year_to_plot = 1995,
     ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) + 
     ggplot2::scale_linetype_manual(name = "Growth fit", values = line_types) + 
     hex_scale + 
-    theme_plant2() + 
+    theme_plant_small() + 
     ggplot2::coord_fixed(ratio = aspect_ratio) + 
     ggplot2::theme(legend.position = "right", 
                    strip.background = ggplot2::element_blank(), 
@@ -1837,9 +1862,11 @@ p <- plot_prod_withrawdata2(year_to_plot = 1995,
                            plot_abline = FALSE,
                            plot_fits = TRUE)
 
-p <- p + theme(legend.position = 'right', legend.text=element_text(size=13), legend.title=element_text(size=15)) + 
+p <- p + theme(legend.position = 'right', legend.text = element_text(size = 13), 
+               legend.title = element_text(size = 15)) + 
   scale_y_log10(labels = c(0.01, 1, 100), 
-                breaks = c(0.01, 1, 100), name = expression(paste('Growth (kg yr'^-1,')'))) 
+                breaks = c(0.01, 1, 100), 
+                name = expression(paste('Growth (kg yr'^-1,')'))) 
 
 p 
 pdf(file.path(gdrive_path, 'Figures/Supplementals/Growth_Hex/growth_hex.pdf'))
