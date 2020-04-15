@@ -13,7 +13,6 @@ PROD = 1
 #devtools::install_github('qdread/forestscaling')
 
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google_Drive/ForestLight'))
-github_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/Documents/GitHub/', file.path('/Users/jgradym/Documents/GitHub'))
 
 library(broom)
 library(forestscaling) # Packaged all the functions and ggplot2 themes here!
@@ -25,7 +24,6 @@ library(gtable)
 library(grid)
 library(reshape2)
 library(hexbin)
-library(rstan)
 library(Hmisc, pos = 100)
 
 # Define color schemes and labels
@@ -117,32 +115,30 @@ exv <- expression(atop('Light per Crown Volume', paste('(W m'^-3, ')')))
 exd <- 'Diameter (cm)'
 
 
+#----------------------   Fig 1a: Light per crown volume by diameter -----------------------------
 
-#----------------------   Fig 1a: Light per crown area by diameter -----------------------------
 p <- ggplot() + geom_point(alpha = 0.01, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownarea), color = 'chartreuse3') +
-  geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
-  scale_x_log10(limits = c(0.8, 230), name = exd) +
-  scale_y_log10(limits = c(1, 1000), name = exl) +
+  geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  scale_x_log10(name = exd) +
+  scale_y_log10(name = exl) +
   theme_plant() 
-
+p
 
 # --- to add secondary height axis, first mask theme_no_x() above
-area <- p + scale_x_log10(name = 'Diameter (cm)',
-                          breaks = c(1,10,100), limits = c(0.8, 230),
-                          sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
-                                              name = "Height (m)", breaks = c(3, 10, 30))) +
-  theme_plant_small() + theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "cm")) 
+p0 <- p + scale_x_log10(name = 'Diameter (cm)',
+                        breaks = c(1,10,100), limits = c(0.8, 230),
+                        sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
+                                            name = "Height (m)", breaks = c(3, 10, 30))) #+
+
+p0
 
 
-
-
-p1 <- set_panel_size(area, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
 pdf(file.path(gdrive_path,'Figures/Light_Individual/light_area.pdf'))
 grid.draw(p1)
 dev.off()
-
 
 #code to crop out white space - may only work on unix/macs
 system2(command = "pdfcrop", 
@@ -150,43 +146,28 @@ system2(command = "pdfcrop",
                   file.path(gdrive_path,'Figures/Light_Individual/light_area.pdf')) 
 )
 
-
-
-
 #----------------------   Fig 1b: Light per crown volume by diameter -----------------------------
 
-vol <- ggplot() +
+p <- ggplot() +
   geom_point(alpha = 0.01, data = alltree_light_95, 
-             aes(x = dbh_corr, y = light_received/crownvolume), color = 'chartreuse3') +
+             aes(x = dbh_corr, y = light_received_byvolume), color = 'chartreuse3') +
   geom_pointrange(data = lightpervolcloudbin_fg %>% filter(fg %in% 'all'), 
-                  aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
-  scale_x_log10(limits = c(0.8, 230), name = exd) +
+                  aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  scale_x_log10(name = exd) +
   scale_y_log10(name = exv, breaks = c(1, 10, 100)) +
-  theme_plant_small() + theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "cm"))
+  theme_plant()
 
-p1 <- set_panel_size(area, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
 pdf(file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf'))
 grid.draw(p1)
 dev.off()
 
-
 system2(command = "pdfcrop", 
         args  = c(file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf'), 
                   file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf')) 
 )
-
-
-g_area  <- ggplotGrob(area )
-g_vol <- ggplotGrob(vol)
-light <- rbind(g_area, g_vol, size = "first")
-light$widths <- unit.pmax(g_area$widths, g_vol$widths )
-grid.newpage()
-grid.draw(light)
-pdf(file.path(gdrive_path,'Figures/Light_Individual/light_all.pdf'))
-grid.draw(light)
-dev.off()
 ################################################################################################
 # ---------------------------- Fig 3: Life Histories Classification and Rates -------------------------
 ################################################################################################
@@ -205,13 +186,7 @@ fgbci$fg5 <- match(fgbci$fg5, c(2,3,1,4,5))
 fgbci$PC_slow_to_fast <- -fgbci$X1new
 fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 
-binomial <- paste(fgbci$genus, fgbci$species, sep = " ")
-binomial
-unique(binomial)
-fgbci[fgbci$genus == "Luehea",]
-#anacardium excelsum  = slow
-#Luehea seemannii = slow
-fa
+
 #Classification description: 
 
 # Quentin: I went through my email and found the explanation Nadja gave for how groups are defined. 
@@ -250,7 +225,7 @@ dev.off()
 title_x <- expression(paste('Light per Crown Area (W m'^-2,')',sep=''))
 title_y <- expression(atop('Growth per Crown Area', paste('(kg yr'^-1, ' m'^-2,')', sep='')))
 scale_y_log10(name =  expression(atop('Growth per Crown Area',
-                                      paste('(kg yr'^-1, ' m'^-2,')'))))
+                                      paste('(kg y'^-1, ' m'^-2,')'))))
 
 # New File path needed
 obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
@@ -299,7 +274,7 @@ p <- ggplot(obs_light_binned_plotdata) +
   scale_x_log10(name = title_x, limits = c(1.5, 412)) + 
   scale_y_log10(name = title_y, position = "right", breaks = c(0.01, 0.03, 0.1, 0.3), 
                 labels = c( 0.01, 0.03, 0.1, 0.3)) +
-  scale_color_manual(name = 'Life History', values = guild_fills, labels = fg_labels) +
+  scale_color_manual(name = 'Functional group', values = guild_fills, labels = fg_labels) +
   scale_fill_manual(values = guild_fills, labels = fg_labels, guide = FALSE) +
   theme_no_x() +theme_plant2
 p
@@ -378,7 +353,7 @@ dev.off()
 grob_text_a <- grobTree(textGrob("a", x = 0.06, y = 0.92, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 grob_text_b <- grobTree(textGrob("b", x = 0.06, y = 0.88, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 grob_text_c <- grobTree(textGrob("c", x = 0.05, y = 0.95, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
-geom_size = 4
+geom_size = 2
 
 
 # Specify dodging with a certain width of error bar
@@ -398,7 +373,7 @@ plot_prod2 <-
             fill_names = guild_fills, # c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
             color_names = guild_colors, #c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
             x_name = "Diameter (cm)", 
-            y_name = expression(paste("Growth (kg yr"^-1, ")")),
+            y_name = expression(paste("Growth (kg y"^-1, ")")),
             average = "mean", 
             plot_errorbar = FALSE, 
             error_min = "ci_min",
@@ -456,7 +431,7 @@ plot_prod2 <-
                           size = geom_size, color = "black", shape = 21, position = pos) + 
       ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
       ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) + 
-      #theme_no_x() + 
+      theme_no_x() + 
       ggplot2::theme(rect = ggplot2::element_rect(fill = "transparent")) + 
       ggplot2::scale_color_manual(values = color_names) + 
       ggplot2::scale_fill_manual(values = fill_names) + 
@@ -491,7 +466,7 @@ p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
 
 grid.newpage()
 grid.draw(p1)
-pdf(file.path(gdrive_path,'Figures/Main_Scaling/Growth.pdf'))
+pdf(file.path(gdrive_path,'Figures/Main Scaling/Growth.pdf'))
 grid.draw(p1)
 dev.off()
 
@@ -530,7 +505,7 @@ plot_dens2 <- function (year_to_plot = 1995,
                         fill_names = guild_fills2, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
                         color_names = guild_colors2, #c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),  
                         x_name = "Diameter (cm)",
-                        y_name = expression(paste("Abundance (ha"^-1, " cm"^-1, ")")), 
+                        y_name = expression(paste("Density (n ha"^-1, "cm"^-1, ")")), 
                         geom_size = 4, 
                         obsdat = obs_dens, 
                         preddat = pred_dens, 
@@ -589,10 +564,10 @@ pdf(file.path(gdrive_path,'Figures/Main_Scaling/Density.pdf'))
 grid.draw(p1)
 dev.off()
 
-#system2(command = "pdfcrop", 
-#        args    = c(file.path(gdrive_path,'Figures/Main_Scaling/Density.pdf'), 
- #                   file.path(gdrive_path,'Figures/Main_Scaling/Density.pdf')) 
-#)
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Main_Scaling/Density.pdf'), 
+                    file.path(gdrive_path,'Figures/Main_Scaling/Density.pdf')) 
+)
 
 #------------------- Total Production ~ Diameter --------------------------
 obs_totalprod <- obs_totalprod %>%
@@ -613,7 +588,7 @@ plot_totalprod2 <-function(year_to_plot = 1995,
                            fill_names = guild_fills2, # c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
                            color_names = guild_colors2, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray"), 
                            x_name = "Diameter (cm)", 
-                           y_name = expression(paste("Production (kg  yr"^-1," ha"^-1," cm"^-1," )")),
+                           y_name = expression(paste("Production (kg cm"^-1, " ha"^-1, "  y"^-1, ")")),
                            geom_size = 4.5, 
                            obsdat = obs_totalprod, 
                            preddat = fitted_totalprod, 
@@ -681,11 +656,6 @@ pdf(file.path(gdrive_path,'Figures/Main_Scaling/Total_Production.pdf'))
 grid.draw(p1)
 dev.off()
 
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path,'Figures/Main_Scaling/Total_Production.pdf'), 
-                    file.path(gdrive_path,'Figures/Main_Scaling/Total_Production.pdf')) 
-)
-
 # ---------------- Add height sec axis
 
 #---------- Alternative to main plot
@@ -694,8 +664,8 @@ p0 <- p + scale_x_log10(name = 'Diameter (cm)',
                         sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
                                             name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 30, 40))) +
   scale_y_log10(position = "right", limits = c(0.5, 200), breaks = c(0.1, 1, 10, 100),labels = c(0.1, 1, 10, 100), 
-                name = expression(paste("Production (kg yr"^-1," ha"^-1," cm"^-1,")"))) +
-  annotation_custom(grob_text)
+                name = expression(paste("Production (kg cm"^-1, " ha"^-1, "  y"^-1, ")"))) +
+  geom_point(size = 1) + annotation_custom(grob_text)
 p0
 p1 <- set_panel_size(p0, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
 grid.newpage()
@@ -712,7 +682,8 @@ p0 <- p + scale_x_log10(name = 'Diameter (cm)',
                         sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
                                             name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 30, 40))) +
   scale_y_log10(position = "left", limits = c(0.5, 200), breaks = c(0.1, 1, 10, 100),labels = c(0.1, 1, 10, 100),
-                name =expression(atop('Total Production', paste('(kg  yr'^-1,'ha'^-1,' cm'^-1,')')))) 
+                name =expression(atop('Total Production', paste('(kg ha'^-1,' cm'^-1,' yr'^-1,')')))) +
+  theme(aspect.ratio = 0.8) +geom_point(size = 1)
 
 p0
 
@@ -739,7 +710,7 @@ minmax_prod_bycensus <- obs_totalprod %>%
 p <- ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax = range_max, color = fg)) +
   geom_errorbar(size = 1) +
   scale_x_log10(name = 'Diameter (cm)', breaks = c(1, 10, 100 )) + 
-  scale_y_log10(expression(paste('Total Production (kg yr'^-1,' ha'^-1,'cm'^-1,')')),
+  scale_y_log10(expression(paste('Total Production (kg cm'^-1,'ha'^-1,' yr'^-1,')')),
                 breaks = 10^(-2:3), labels = as.character(10^(-2:3)), limits = c(0.1, 200)) +
   scale_color_manual(values = guild_fills2) +
   theme_plant()
@@ -776,7 +747,7 @@ p <- plot_totalprod(year_to_plot = 1995,
                          geom_size = 4,
                          y_breaks = c(100, 1000, 10000, 100000),
                          y_labels = c("0.1", "1", "10", "100"),
-                         y_name = expression(paste('Total Light Intercepted (kW ha'^-1,' cm'^-1,')')),
+                         y_name = expression(paste('Total Light Intercepted (kW cm'^-1,' ha'^-1,')')),
                          preddat = fitted_totallight,
                          obsdat = totallightbins_fg,
                          plot_abline = FALSE)
@@ -817,16 +788,16 @@ allslopes <- rbind(growth_slopes_atmiddle, light_slopes_atmiddle) %>%
 grob0 <- grobTree(textGrob("b", x = 0.04, y = 0.9,  hjust = 0,
                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 grob1 <- grobTree(textGrob("Light Capture", x = 0.65, y = 0.94, hjust = 0,
-                           gp = gpar(col = "gold3", fontsize = 16))) 
+                           gp = gpar(col = "gold3", fontsize = 18))) 
 grob2 <- grobTree(textGrob("Production", x = 0.65, y = 0.86, hjust = 0,
-                           gp = gpar(col = "darkgreen", fontsize = 16)))
-grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.23, y = 0.51, hjust = 0,
-                           gp = gpar(col = "black", fontsize = 16))) 
+                           gp = gpar(col = "darkgreen", fontsize = 18)))
+grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.35, y = 0.51, hjust = 0,
+                           gp = gpar(col = "black", fontsize = 18))) 
 
 
 # Plot
-grob_text <- grobTree(textGrob("Solar Equivalence", x = 0.25, y = 0.80, hjust = 0,
-                               gp = gpar(col = "gray52", fontsize = 16))) 
+grob_text <- grobTree(textGrob("Solar Equivalence", x = 0.27, y = 0.80, hjust = 0,
+                               gp = gpar(col = "gray52", fontsize = 18))) 
 
 grob_text2 <- grobTree(textGrob("a", x = 0.06, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 totallightbins_fg <- totallightbins_fg %>%
@@ -840,7 +811,7 @@ tot_light <- plot_totalprod(year_to_plot = 1995,
                             geom_size = 3,
                             y_breaks = c(100, 1000, 10000, 100000),
                             y_labels = c("0.1", "1", "10", "100"),
-                            y_name = expression(paste('Total Light Intercepted (kW ha'^-1,' cm'^-1,')')),
+                            y_name = expression(paste('Total Light Intercepted (kW cm'^-1,' ha'^-1,')')),
                             preddat = fitted_totallight,
                             obsdat = totallightbins_fg,
                             plot_abline = FALSE)
@@ -848,8 +819,8 @@ tot_light <- plot_totalprod(year_to_plot = 1995,
 
 tot_light2 <- tot_light  + scale_y_continuous(position = "left", trans = "log10", breaks = c(100, 1000, 10000, 100000),
                                               labels = c("0.1", "1", "10", "100"), limits = c(100, 450000),
-                                              name = expression(atop('Total Light Intercepted',paste('(kW ha'^-1,' cm'^-1,' )'))))  +
-  theme(aspect.ratio = 0.75) + theme_plant_small() +
+                                              name = expression(atop('Total Light Intercepted',paste('(kW cm'^-1,' ha'^-1,')'))))  +
+  theme(aspect.ratio = 0.75) + 
   geom_abline(intercept = log10(70000), slope = 0, color ="gray72",linetype="dashed", size=.75) +
   annotation_custom(grob_text) + annotation_custom(grob_text2)
 plot(tot_light2)
@@ -859,7 +830,7 @@ p_tot_light <- tot_light2
 g_tot_light <- ggplotGrob(p_tot_light)
 
 # compare slopes
-slope <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, fill =  variable, color =variable)) +
+slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q50, ymin = q025, ymax = q975, fill =  variable, color =variable)) +
   geom_hline(yintercept = 0, linetype = 'dashed', size = .75) +
   geom_point(position = position_dodge(width = 0.6), shape = 21, size = 4, color = "black", stroke = 0.5) +
   geom_errorbar(position = position_dodge(width = 0.6), size = 0.75, width = 0) +
@@ -867,11 +838,11 @@ slope <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = q
   scale_y_continuous(limits = c(-1.05, 1.3)) +
   scale_fill_manual(values = c('gold1', 'darkolivegreen3')) +
   scale_color_manual(values = c('gold3', 'darkgreen')) +
-  theme_plant_small() + theme(axis.text.x = element_text(angle = 18, hjust = 1, face = "italic", size = 14)) +
+  theme_plant() + theme(axis.text.x = element_text(angle = 25, hjust = 1, face = "italic", size = 18)) +
   annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3) +annotation_custom(grob0)
-slope
+slopes
 
-g_slopes <- ggplotGrob(slope)
+g_slopes <- ggplotGrob(slopes)
 
 combo <- rbind(g_tot_light, g_slopes, size = "first")
 combo$widths <- unit.pmax(g_tot_light$widths,g_slopes$widths)
@@ -1235,7 +1206,7 @@ system2(command = "pdfcrop",
 )
 #------------------------
 
-p_mean_panels <- ggplot(obs_light_binned %>% 
+p_median_panels <- ggplot(obs_light_binned %>% 
                             filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
   facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
   geom_ribbon(data = pred_light_5groups %>% 
@@ -1250,7 +1221,7 @@ p_mean_panels <- ggplot(obs_light_binned %>%
                  filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
                aes(x = x_max_q50 * 0.5, xend = x_max_q50 * 2, y = y_max_q50 * 0.5, yend = y_max_q50 * 2), 
                color = 'brown1', size = .5) +
-  geom_point(shape = 21, aes(x = bin_midpoint, y = mean)) +
+  geom_point(shape=21, aes(x = bin_midpoint, y = median)) +
   scale_color_manual(values = guild_fills ) +
   scale_fill_manual(values = guild_colors) +
   scale_x_log10(name = title_x, breaks = c(1,10,100)) + 
@@ -1258,15 +1229,15 @@ p_mean_panels <- ggplot(obs_light_binned %>%
   theme_plant_small() + 
   theme_facet2()
 
-p_mean_panels
+p_median_panels
 
-pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/mean_growth_light_max.pdf"))
-p_mean_panels
+pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/median_growth_light_max.pdf"))
+p_median_panels
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path,'Figures/Supplementals/Growth_light/mean_growth_light_max.pdf'), 
-                    file.path(gdrive_path,'Figures/Supplementals/Growth_light/mean_growth_light_max.pdf')) 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Growth_light/median_growth_light_max.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Growth_light/median_growth_light_max.pdf')) 
 )
 
 
@@ -1308,7 +1279,7 @@ system2(command = "pdfcrop",
 param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg3", "fg4"))
 fg_labels2 <- c("Fast", "Tall", "Medium", "Slow", "Short")
 p <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
-            aes(x = fg, y = mean, ymin = q025, ymax = q975)) + 
+            aes(x = fg, y = q50, ymin = q025, ymax = q975)) + 
   #geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 1) + 
   geom_errorbar(width = 0.4) + geom_point(size = 4) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
@@ -1325,6 +1296,8 @@ system2(command = "pdfcrop",
         args    = c(file.path(gdrive_path,'Figures/Supplementals/Growth_light/max_g_light_slope.pdf'), 
                     file.path(gdrive_path,'Figures/Supplementals/Growth_light/max_g_light_slope.pdf')) 
 )
+
+#---------------------------- Median binned growth by light + fg --------------------------------
 
 
 
@@ -1428,6 +1401,7 @@ corr_factor <- function(y, y_fit, n_pars) {
 # We need all fitted values for production, not just the 101 values, to calculate correction factor.
 # Recreate stan data
 # Load data
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.r')) # doesn't include imputed values
 
 get_stan_data <- function(dat, x_min) with(dat, list(N = nrow(dat), x = dat$light_received_byarea, y = dat$production, x_min = x_min))
 
@@ -1528,7 +1502,7 @@ l_growth<- ggplot() +
   geom_line(data = prod_pred_dat %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
   geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
-             aes(x = bin_midpoint, y = mean, group = fg, fill = fg), 
+             aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(7,400)) +
   scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
@@ -1552,13 +1526,13 @@ system2(command = "pdfcrop",
 
 
 # Looking at the lower end
-l_growth_low <- ggplot() +
+l_growth_low<- ggplot() +
   geom_ribbon(data = prod_pred_dat %>% filter(light_area >= 7), 
               aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3, show.legend = F) +
   geom_line(data = prod_pred_dat %>% filter(light_area >= 7),  
             aes(x = light_area, y = q50, group = fg, color = fg)) +
   geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
-             aes(x = bin_midpoint, y = mean, group = fg, fill = fg), 
+             aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(1, 600)) +
   scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
@@ -1583,7 +1557,7 @@ system2(command = "pdfcrop",
 # Density
 l_abun <- ggplot() +
   geom_ribbon(data = dens_pred_dat %>% filter(light_area >= 7), 
-              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = alpha_level) +
   geom_line(data = dens_pred_dat %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
   geom_point(data = obs_dens %>% filter(bin_count >= 20, bin_value > 0), 
@@ -1647,7 +1621,7 @@ l_prod_low <- ggplot() +
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(1,600)) +
   scale_y_log10(labels = signif, limits = c(0.01, 10), position = "right",
-                name  = expression(atop('Total Production', paste('(kg yr'^-1,' ha'^-1,'cm'^-1,' )')))) +
+                name  = expression(atop('Total Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
   theme_plant_small() + theme_no_x() +
   fill_scale + 
   color_scale
@@ -1775,7 +1749,7 @@ plot_prod_withrawdata2 <- function (year_to_plot = 1995,
     ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) + 
     ggplot2::scale_linetype_manual(name = "Growth fit", values = line_types) + 
     hex_scale + 
-    theme_plant_small() + 
+    theme_plant2() + 
     ggplot2::coord_fixed(ratio = aspect_ratio) + 
     ggplot2::theme(legend.position = "right", 
                    strip.background = ggplot2::element_blank(), 
@@ -1836,14 +1810,14 @@ p <- plot_totalprod2(year_to_plot = 1995,
                     y_limits = c(5, 5500),
                     y_breaks = c(1, 10, 100, 1000),
                     y_labels = c(1, 10, 100, 1000),
-                    y_name = expression(paste('Total Crown Volume (m'^3,' ha'^-1,' cm'^-1,')')), 
+                    y_name = expression(paste('Total Crown Volume (m'^3, ' cm'^-1, ' ha'^-1,')')), 
                     preddat = fitted_totalvol,
                     obsdat = totalvolbins_fg, 
                     plot_abline = FALSE,
                     geom_size = 4)
 p
 p0 <- p + scale_y_continuous(position = "left", trans = "log10", limits = c(9, 5000),
-                            name = expression(atop('Total Crown Volume',paste('(m'^3,' ha'^-1,' cm'^-1,')')))) +
+                            name = expression(atop('Total Crown Volume',paste('(m'^3, ' cm'^-1,' ha'^-1,')')))) +
   theme_plant_small() 
 plot(p0)
 

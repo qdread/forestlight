@@ -78,7 +78,7 @@ Fig_1a #takes a minute, may tax computer
 
 Fig_1b <- ggplot() +
   geom_point(alpha = 0.01, data = alltree_light_95, 
-             aes(x = dbh_corr, y = light_received/crownvolume), color = 'chartreuse3') +
+             aes(x = dbh_corr, y = light_received_byvolume), color = 'chartreuse3') +
   geom_pointrange(data = lightpervolcloudbin_fg %>% filter(fg %in% 'all'), 
                   aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
   scale_x_log10(name = exd) +
