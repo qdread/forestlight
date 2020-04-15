@@ -13,6 +13,7 @@ PROD = 1
 #devtools::install_github('qdread/forestscaling')
 
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google_Drive/ForestLight'))
+github_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Documents/Github'))
 
 library(broom)
 library(forestscaling) # Packaged all the functions and ggplot2 themes here!
@@ -118,22 +119,23 @@ exd <- 'Diameter (cm)'
 #----------------------   Fig 1a: Light per crown volume by diameter -----------------------------
 
 p <- ggplot() + geom_point(alpha = 0.01, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownarea), color = 'chartreuse3') +
-  geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+  geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
   scale_x_log10(name = exd) +
   scale_y_log10(name = exl) +
   theme_plant() 
 p
 
 # --- to add secondary height axis, first mask theme_no_x() above
-p0 <- p + scale_x_log10(name = 'Diameter (cm)',
+area <- p + scale_x_log10(name = 'Diameter (cm)',
                         breaks = c(1,10,100), limits = c(0.8, 230),
                         sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
-                                            name = "Height (m)", breaks = c(3, 10, 30))) #+
+                                            name = "Height (m)", breaks = c(3, 10, 30))) +
+  theme_plant_small() + theme_no_x()
 
-p0
+area
 
 
-p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p1 <- set_panel_size(area, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
 pdf(file.path(gdrive_path,'Figures/Light_Individual/light_area.pdf'))
@@ -148,7 +150,7 @@ system2(command = "pdfcrop",
 
 #----------------------   Fig 1b: Light per crown volume by diameter -----------------------------
 
-p <- ggplot() +
+vol <- ggplot() +
   geom_point(alpha = 0.01, data = alltree_light_95, 
              aes(x = dbh_corr, y = light_received_byvolume), color = 'chartreuse3') +
   geom_pointrange(data = lightpervolcloudbin_fg %>% filter(fg %in% 'all'), 
@@ -157,21 +159,33 @@ p <- ggplot() +
   scale_y_log10(name = exv, breaks = c(1, 10, 100)) +
   theme_plant()
 
-<<<<<<< HEAD
+vol
 p1 <- set_panel_size(vol, width=unit(10.25,"cm"), height=unit(7,"cm"))
-=======
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
->>>>>>> 9fce4560eb77e815a0133356110076f544d60d7e
+
+
 grid.newpage()
 grid.draw(p1)
 pdf(file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf'))
 grid.draw(p1)
 dev.off()
 
+#combine
+
+g_area  <- ggplotGrob(area)
+g_vol<- ggplotGrob(vol)
+g1 <- rbind(g_area , g_vol , size = "first")
+g1$widths <- unit.pmax(g_area$widths, g_vol$widths)
+grid.newpage()
+grid.draw(g1)
+ggsave(g6, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf'))
+
 system2(command = "pdfcrop", 
         args  = c(file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf'), 
                   file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf')) 
 )
+
+
+
 ################################################################################################
 # ---------------------------- Fig 3: Life Histories Classification and Rates -------------------------
 ################################################################################################
