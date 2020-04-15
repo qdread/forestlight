@@ -150,7 +150,10 @@ lm1 <- lm(log(light_received_byarea) ~ log(dbh_corr), data = alltree_light_95)
 summary(lm1)
 confint(lm1)
 
+# using linear fit to estimate increase up to 100 cm dbh
 exp(0.987*log(100)) #94.2
+#using ratio of smallest and largest bin
+412.197295/9.477105 #44
 #----------------------   Fig 1b: Light per crown volume by diameter -----------------------------
 
 vol <- ggplot() +
@@ -159,6 +162,8 @@ vol <- ggplot() +
   geom_pointrange(data = lightpervolcloudbin_fg %>% filter(fg %in% 'all'), 
                   aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
   scale_x_log10(limits = c(0.8, 300), name = exd) +
+  #stat_smooth(method = "lm", color = "black", 
+   #           data = alltree_light_95, aes(x = dbh_corr, y = light_received_byvolume)) +
   scale_y_log10(name = exv, breaks = c(1, 10, 100), limits = c(0.8, 200)) +
   theme_plant_small()
 
@@ -180,6 +185,13 @@ lm1 <- lm(log(light_received_byvolume) ~ log(dbh_corr), data = alltree_light_95)
 summary(lm1)
 confint(lm1)
 exp(0.448*log(100)) #7.9
+# or nonlinear
+nlm1 <- nls(log(light_received_byvolume) ~ a * exp(b*log(dbh_corr)), 
+            start = list(a = 1, b = 0.1), data = alltree_light_95) 
+summary(nlm1)
+
+#ratio of largest points for volume
+35.6/8.5 #4.2
 #combine
 
 g_area  <- ggplotGrob(area)
@@ -215,7 +227,7 @@ fgbci$fg5 <- match(fgbci$fg5, c(2,3,1,4,5))
 fgbci$PC_slow_to_fast <- -fgbci$X1new
 fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 
-<<<<<<< HEAD
+
 binomial <- paste(fgbci$genus, fgbci$species, sep = " ")
 binomial
 unique(binomial)
@@ -223,10 +235,8 @@ fgbci[fgbci$genus == "Luehea",]
 fgbci[fgbci$genus == "Cecropia",]
 #anacardium excelsum  = slow
 #Luehea seemannii = slow
-fa
-=======
 
->>>>>>> 9fce4560eb77e815a0133356110076f544d60d7e
+
 #Classification description: 
 
 # Quentin: I went through my email and found the explanation Nadja gave for how groups are defined. 
