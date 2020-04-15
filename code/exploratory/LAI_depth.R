@@ -141,4 +141,4 @@ lm_each_pfd2 <-  pfd2 %>%
   unnest(tidied)%>%
   filter(term != '(Intercept)')
 lm_each_pfd2
-mean(lm_each_pfd2$estimate) #0.331
+mean(lm_each_pfd2$estimate) #0.49
