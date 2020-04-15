@@ -6,11 +6,32 @@ library(lme4)
 lai <- read_csv('/Users/jgradym/Google_Drive/ForestLight/data/data_forplotting/LAI_Depth.csv')
 pfd <- read_csv('/Users/jgradym/Google_Drive/ForestLight/data/data_forplotting/PFD_LAI.csv')
 
-ggplot(data = lai,aes( x = Depth, y = LAI, fill = Species, color = Species )) +
-  geom_point(size = 6, shape = 21, color = "black") + theme_plant  +
-  scale_y_log10() +
-  scale_x_log10() +
+ggplot(data = lai, 
+       aes(x = Depth, y = LAI, fill = Species, color = Species )) +
+  geom_point(size = 5, shape = 21, color = "black") + theme_plant  +
+  scale_y_log10(labels = signif) +
+  scale_x_log10(labels = signif, name = "Crown Depth (m)") +
   geom_smooth(method = "lm", alpha = 0.2, aes(fill = Species, color = Species))
+
+p <- ggplot(data = lai %>% filter(Species != "Cecropia"), 
+            aes(x = Depth, y = LAI, fill = Species, color = Species )) +
+  geom_point(size = 4.5, shape = 21, color = "black") + theme_plant  +
+  scale_y_log10(limits = c(0.6, 10),labels = signif, breaks = c(1, 3, 10)) +
+  scale_x_log10(limits = c(0.2, 15), breaks = c( 0.3, 1, 3, 10), labels = signif, name = "Crown Depth (m)") +
+  geom_smooth(method = "lm", alpha = 0.2, aes(fill = Species, color = Species))
+p
+
+
+p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p2)
+pdf(file.path(gdrive_path,'Figures/Supplementals/LAI/lai_depth.pdf'))
+grid.draw(p2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/LAI/lai_depth.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/LAI/lai_depth.pdf')) 
+)
 
 # with species
 lm1 <- lm(log(LAI) ~ log(Depth)+ Species, data = lai)
@@ -54,11 +75,27 @@ ggplot(data = pfd,aes( x = LAI, y = PFD, fill = Species, color = Species )) +
   geom_smooth(method = "lm", alpha = 0.2, aes(fill = Species, color = Species))
 
 #semi-log
-ggplot(data = pfd,aes( x = LAI, y = PFD, fill = Species, color = Species )) +
-  geom_point(size = 6, shape = 21, color = "black") + theme_plant  +
-  scale_y_log10() +
-  scale_x_continuous() +
+p <- ggplot(data = pfd %>% filter(Species != "Cecropia"),
+       aes( x = LAI, y = PFD, fill = Species, color = Species )) +
+  geom_point(size = 4.5, shape = 21, color = "black") + theme_plant  +
+  scale_y_log10(limits = c(2.5, 110), name = "% PFD Transmission") +
+  scale_x_continuous(limits = c(-0.3, 8)) +
   geom_smooth(method = "lm", alpha = 0.2, aes(fill = Species, color = Species))
+p
+pdf(file.path(gdrive_path,'Figures/Supplementals/LAI/lai_pfd.pdf'))
+p
+dev.off()
+
+p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p2)
+pdf(file.path(gdrive_path,'Figures/Supplementals/LAI/lai_pfd.pdf'))
+grid.draw(p2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/LAI/lai_pfd.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/LAI/lai_pfd.pdf')) 
+)
 
 # all 5 species
 mlm_pdf <- lmer(log(PFD) ~ LAI + (LAI |Species), pfd) 
