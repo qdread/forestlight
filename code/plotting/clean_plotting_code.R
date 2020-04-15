@@ -130,7 +130,7 @@ area <- p + scale_x_log10(name = 'Diameter (cm)',
                         breaks = c(1,10,100), limits = c(0.8, 230),
                         sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
                                             name = "Height (m)", breaks = c(3, 10, 30))) +
-  theme_plant_small() + theme_no_x()
+  theme_plant_small() 
 
 area
 
@@ -157,7 +157,7 @@ vol <- ggplot() +
                   aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
   scale_x_log10(name = exd) +
   scale_y_log10(name = exv, breaks = c(1, 10, 100)) +
-  theme_plant()
+  theme_plant_small()
 
 vol
 p1 <- set_panel_size(vol, width=unit(10.25,"cm"), height=unit(7,"cm"))
