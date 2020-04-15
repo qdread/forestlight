@@ -164,7 +164,7 @@ vol <- ggplot() +
   scale_y_log10(name = exv, breaks = c(1, 10, 100)) +
   theme_plant_small() + theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "cm"))
 
-p1 <- set_panel_size(area, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p1 <- set_panel_size(vol, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
 pdf(file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf'))
@@ -209,6 +209,7 @@ binomial <- paste(fgbci$genus, fgbci$species, sep = " ")
 binomial
 unique(binomial)
 fgbci[fgbci$genus == "Luehea",]
+fgbci[fgbci$genus == "Cecropia",]
 #anacardium excelsum  = slow
 #Luehea seemannii = slow
 fa
