@@ -27,7 +27,8 @@ library(reshape2)
 library(hexbin)
 library(Hmisc, pos = 100)
 library(rstan)
-
+library(lme4)
+library(sjstats)
 # Define color schemes and labels
 
 guild_fills <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray90")
@@ -752,7 +753,7 @@ p0 <- p + scale_x_log10(name = 'Diameter (cm)',
   scale_y_log10(position = "left", limits = c(0.5, 200), 
                 breaks = c(0.1, 1, 10, 100),
                 labels = c(0.1, 1, 10, 100),
-                name =expression(atop('Total Production', paste('(kg ha'^-1,' cm'^-1,' yr'^-1,')')))) +
+                name =expression(atop('Production', paste('(kg ha'^-1,' cm'^-1,' yr'^-1,')')))) +
   theme(aspect.ratio = 0.8) + geom_point(size = 1)
 
 p0
@@ -780,7 +781,7 @@ minmax_prod_bycensus <- obs_totalprod %>%
 p <- ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax = range_max, color = fg)) +
   geom_errorbar(size = 1) +
   scale_x_log10(name = 'Diameter (cm)', breaks = c(1, 10, 100 )) + 
-  scale_y_log10(expression(paste('Total Production (kg cm'^-1,'ha'^-1,' yr'^-1,')')),
+  scale_y_log10(expression(paste('Production (kg cm'^-1,'ha'^-1,' yr'^-1,')')),
                 breaks = 10^(-2:3), labels = as.character(10^(-2:3)), 
                 limits = c(0.1, 200)) +
   scale_color_manual(values = guild_fills2) +
@@ -1191,8 +1192,156 @@ system2(command = "pdfcrop",
 
 
 #---------------------------------------------------------------------------------------------
-# ------------------------ Supplements for growth, density scaling-  ------------------------- 
+# ------------------------ Supplements  ---------------------------- 
 #---------------------------------------------------------------------------------------------
+
+#--------------- LAI, Tranmittance and Crown Depth
+lai_0 <- read_csv('/Users/jgradym/Google_Drive/ForestLight/data/data_forplotting/LAI_Depth.csv')
+pfd_0 <- read_csv('/Users/jgradym/Google_Drive/ForestLight/data/data_forplotting/PFD_LAI.csv')
+lai <- lai_0 %>% filter(Species != "Cecropia")
+pfd <- pfd_0 %>% filter(Species != "Cecropia")
+
+
+fill_sp <- c("darkolivegreen4", "cadetblue2",  "brown3", "gray22") 
+color_sp <- c("darkolivegreen", "cadetblue3",  "brown4", "black") 
+
+# LAI vs Crown Depth
+depth <- ggplot(data = lai, 
+            aes(x = Depth, y = LAI, fill = Species, fill = Species, color = Species )) +
+  geom_smooth(method = "lm", alpha = 0.2, 
+              aes(fill = Species, color = Species),
+              show.legend = FALSE) +
+  geom_point(aes(fill = Species), size = 4.5, shape = 21, color = "black") + 
+    theme_plant  +
+  scale_y_log10(limits = c(0.6, 10),labels = signif, breaks = c(1, 3, 10)) +
+  scale_x_log10(limits = c(0.2, 15), breaks = c( 0.3, 1, 3, 10), 
+                labels = signif, name = "Crown Depth (m)") +
+  scale_color_manual(values = color_sp) +
+  scale_fill_manual(values = fill_sp) + guide +
+  annotation_custom(grob_a) +
+  theme(axis.title = element_text(margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt")))
+depth
+pdf(file.path(gdrive_path,'Figures/Supplementals/LAI/lai_depth.pdf'))
+grid.draw(depth)
+dev.off()
+depth2 <- set_panel_size(depth, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(depth2)
+pdf(file.path(gdrive_path,'Figures/Supplementals/LAI/lai_depth.pdf'))
+grid.draw(depth2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/LAI/lai_depth.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/LAI/lai_depth.pdf')) 
+)
+
+# Mixed model slopes
+lm1 <- lmer(log(LAI) ~ log(Depth)+ (log(Depth) |Species), data = lai)
+summary(lm1) # 0.33
+r2(lm1) #0.99
+
+# calculated separately
+lm2 <- lm(log(LAI) ~ log(Depth), data = lai)
+summary(lm2)
+lm_each <-  lai %>%
+  nest(-Species) %>% #group variable
+  mutate(
+    fit = map(data, ~ lm(log(LAI) ~ log(Depth), data = .x)),
+    tidied = map(fit, tidy)
+  ) %>%
+  unnest(tidied)%>%
+  filter(term != '(Intercept)')
+lm_each
+#average
+mean(lm_each$estimate) #0.37
+
+
+
+#--- Transmittance vs LAI 
+
+trans <- ggplot(data = pfd %>% filter(Species != "Cecropia"),
+            aes( x = LAI, y = PFD, fill = Species, color = Species )) +
+  geom_smooth(method = "lm", alpha = 0.3, 
+              aes(fill = Species, color = Species), show.legend = F) +
+  geom_point(aes(fill = Species), size = 4.5, shape = 21, color = "black") + 
+  theme_plant  +
+  scale_y_log10(limits = c(2.5, 200), name = "% PFD Transmittance") +
+  scale_x_continuous(limits = c(-0.3, 8)) +
+  scale_color_manual(values = color_sp) +
+  scale_fill_manual(values = fill_sp) + guide +
+  annotation_custom(grob_b) +
+  theme(axis.title = element_text(margin = margin(t = 1, r = 0, b = 0, l = 0, unit = "cm")))
+trans
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/LAI/lai_pfd.pdf'))
+trans
+dev.off()
+
+trans2 <- set_panel_size(trans, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(trans2 )
+pdf(file.path(gdrive_path,'Figures/Supplementals/LAI/lai_pfd.pdf'))
+grid.draw(trans2 )
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/LAI/lai_pfd.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/LAI/lai_pfd.pdf')) 
+)
+
+g_depth  <- ggplotGrob(depth)
+g_trans <- ggplotGrob(trans)
+g1 <- rbind(g_depth, g_trans, size = "first")
+g1$widths <- unit.pmax(g_depth $widths, g_trans$widths)
+grid.newpage()
+grid.draw(g1)
+ggsave(g1, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Light_Individual/light_combo.pdf'))
+
+
+# all 5 species
+mlm_pdf <- lmer(log(PFD) ~ LAI + (LAI |Species), pfd) 
+mlm_pdf # 0.33 sloep
+
+#no cecropia
+pfd2 <- pfd %>% filter(Species != "Cecropia")
+mlm_pdf2 <- lmer(log(PFD) ~ LAI + (LAI |Species), pfd2) 
+mlm_pdf # 0.33 sloep
+
+#no Cecropia 
+
+mlm2_pdf <- lmer(log(PFD) ~ LAI + (LAI |Species), pfd2) 
+mlm2_pdf  #0.37 slope
+
+# pfd all
+lm_pfd <- lm(log(PFD) ~ LAI, pfd)
+lm_pfd
+lm2_pfd <- lm(log(PFD) ~ LAI + Species, pfd)
+lm2_pfd
+
+lm3_pfd <- lm(log(PFD) ~ LAI + Species, pfd2)
+lm3_pfd
+
+lm_each_pfd <-  pfd %>%
+  nest(-Species) %>% #group variable
+  mutate(
+    fit = map(data, ~ lm(log(PFD) ~ LAI, data = .x)),
+    tidied = map(fit, tidy)
+  ) %>%
+  unnest(tidied)%>%
+  filter(term != '(Intercept)')
+lm_each_pfd
+mean(lm_each_pfd$estimate) #0.331
+
+
+lm_each_pfd2 <-  pfd2 %>%
+  nest(-Species) %>% #group variable
+  mutate(
+    fit = map(data, ~ lm(log(PFD) ~ LAI, data = .x)),
+    tidied = map(fit, tidy)
+  ) %>%
+  unnest(tidied)%>%
+  filter(term != '(Intercept)')
+lm_each_pfd2
+mean(lm_each_pfd2$estimate) #0.49
 
 
 # ------------------------ Diameter growth Scaling -------------------------
@@ -1390,11 +1539,11 @@ system2(command = "pdfcrop",
 
 #-------------------   Plot Slopes vs Size for each life history group  -------------------
 
-pc <- file.path(gdrive_path, 'data/data_piecewisefits')
-ics <- read.csv(file.path(pc, 'piecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
+piece <- file.path(gdrive_path, 'data/data_piecewisefits')
+ics <- read.csv(file.path(piece , 'piecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
 ics$fg <- factor(ics$fg , labels = c("All", "Fast", "Tall", "Slow", "Short", "Medium", "Unclassified"))
 
-slopes <- read.csv(file.path(pc, 'piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
+slopes <- read.csv(file.path(piece , 'piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 slopes$fg <- factor(slopes$fg , labels = c("All", "Fast", "Tall", "Slow", "Short", "Medium", "Unclassified"))
 slopes$variable <- factor(slopes$variable, labels = c("Density", "Individual Growth", "Production"))
 colors <- c("sienna4", "yellowgreen", "springgreen4")
@@ -1625,7 +1774,7 @@ l_growth_low<- ggplot() +
              aes(x = bin_midpoint, y = mean, group = fg, fill = fg), 
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(1, 600)) +
-  scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
+  scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~yr^-1)')) +
   annotation_custom(grob_fast) + annotation_custom(grob_tall) + 
   annotation_custom(grob_slow3) + annotation_custom(grob_short3) +
   theme_plant_small() + theme_no_x() +
@@ -1711,7 +1860,7 @@ l_prod_low <- ggplot() +
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(1,600)) +
   scale_y_log10(labels = signif, limits = c(0.01, 10), position = "right",
-                name  = expression(atop('Total Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
+                name  = expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
   theme_plant_small() + theme_no_x() +
   fill_scale + 
   color_scale
@@ -1932,9 +2081,35 @@ system2(command = "pdfcrop",
 #################
 
 
+#----------------------- individual light capture scaling --------------------------
+
+alpha_value <- 1
+hexfill2 <- scale_fill_gradient(low = 'forestgreen', high = 'navy', trans = 'log', breaks = c(1,3,10,30,100,300))
+exl <- expression(atop('Intercepted Light', paste('per Individual (W)')))
+exd <- 'Diameter (cm)'
+
+labels = trans_format("log10", math_format(10^.x))
+
+p <- ggplot() +
+  geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received)) +
+  geom_pointrange(data = unscaledlightbydbhcloudbin_fg %>% filter(fg %in% 'all'), 
+                  aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
+  scale_x_log10(name = exd) +
+  scale_y_log10(name = exl, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), 
+                labels = trans_format("log10", math_format(10^.x))) +
+  theme_plant() + theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
+  hex_scale_log_colors +
+  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
+p
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/indiv_light.pdf'))
+p
+dev.off()
 
 
-
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/indiv_light.pdf'), 
+                  file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/indiv_light.pdf')) 
+)
 
 #just for fun - ratio analysis
 ratio_fitted_diam_density2 <- ratio_fitted_diam_density %>%
