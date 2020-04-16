@@ -1676,7 +1676,7 @@ dens_pred_fg_lightarea_quantiles <- map2(dens_pred_fg_lightarea, map(stan_data_l
     mutate(light_area = la_pred)
 })
 
-dens_pred_dat <- map2_dfr(dens_pred_fg_lightarea_quantiles, fg_names,
+dens_pred_dat_lightarea <- map2_dfr(dens_pred_fg_lightarea_quantiles, fg_names,
                           ~ data.frame(fg = .y, .x)) %>%
   mutate(fg = factor(fg, levels = fg_names))
 
@@ -1687,7 +1687,7 @@ prod_pred_fg_lightarea_quantiles <- map(prod_pred_fg_lightarea, function(dat) {
     mutate(light_area = la_pred)
 }) 
 
-prod_pred_dat <- map2_dfr(prod_pred_fg_lightarea_quantiles, fg_names,
+prod_pred_dat_lightarea <- map2_dfr(prod_pred_fg_lightarea_quantiles, fg_names,
                           ~ data.frame(fg = .y, .x)) %>%
   mutate(fg = factor(fg, levels = fg_names))
 
@@ -1699,7 +1699,7 @@ totalprod_pred_fg_lightarea_quantiles <- map2(totalprod_pred_fg_lightarea, map(s
     mutate(light_area = la_pred)
 })
 
-totalprod_pred_dat <- map2_dfr(totalprod_pred_fg_lightarea_quantiles, fg_names,
+totalprod_pred_dat_lightarea <- map2_dfr(totalprod_pred_fg_lightarea_quantiles, fg_names,
                                ~ data.frame(fg = .y, .x)) %>%
   mutate(fg = factor(fg, levels = fg_names))
 
@@ -1716,15 +1716,15 @@ data_to_bin <- alltree_light_95 %>%
 # Determine bin edges by binning all
 binedgedat <- with(data_to_bin, logbin(light_received_byarea, n = 20))
 
-obs_dens <- data_to_bin %>%
+obs_dens_lightarea <- data_to_bin %>%
   group_by(fg) %>%
   group_modify(~ logbin_setedges(x = .$light_received_byarea, edges = binedgedat))
 
-obs_totalprod <- data_to_bin %>%
+obs_totalprod_lightarea <- data_to_bin %>%
   group_by(fg) %>%
   group_modify(~ logbin_setedges(x = .$light_received_byarea, y = .$production, edges = binedgedat))
 
-obs_indivprod <- data_to_bin %>%
+obs_indivprod_lightarea <- data_to_bin %>%
   group_by(fg) %>%
   group_modify(~ cloudbin_across_years(dat_values = .$production, dat_classes = .$light_received_byarea, edges = binedgedat, n_census = 1))
 
@@ -1736,11 +1736,11 @@ color_scale <- scale_color_manual(values = guild_colors[1:4], name = NULL, label
 
 # Production
 l_growth<- ggplot() +
-  geom_ribbon(data = prod_pred_dat %>% filter(light_area >= 7), 
+  geom_ribbon(data = prod_pred_dat_lightarea %>% filter(light_area >= 7), 
               aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3, show.legend = F) +
-  geom_line(data = prod_pred_dat %>% filter(light_area >= 7), 
+  geom_line(data = prod_pred_dat_lightarea %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
+  geom_point(data = obs_indivprod_lightarea %>% filter(mean_n_individuals >= 20), 
              aes(x = bin_midpoint, y = mean, group = fg, fill = fg), 
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(7,400)) +
@@ -1766,11 +1766,11 @@ system2(command = "pdfcrop",
 
 # Looking at the lower end
 l_growth_low<- ggplot() +
-  geom_ribbon(data = prod_pred_dat %>% filter(light_area >= 7), 
+  geom_ribbon(data = prod_pred_dat_lightarea %>% filter(light_area >= 7), 
               aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3, show.legend = F) +
-  geom_line(data = prod_pred_dat %>% filter(light_area >= 7),  
+  geom_line(data = prod_pred_dat_lightarea %>% filter(light_area >= 7),  
             aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
+  geom_point(data = obs_indivprod_lightarea %>% filter(mean_n_individuals >= 20), 
              aes(x = bin_midpoint, y = mean, group = fg, fill = fg), 
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(1, 600)) +
@@ -1795,11 +1795,11 @@ system2(command = "pdfcrop",
 )
 # Density
 l_abun <- ggplot() +
-  geom_ribbon(data = dens_pred_dat %>% filter(light_area >= 7), 
+  geom_ribbon(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
               aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
-  geom_line(data = dens_pred_dat %>% filter(light_area >= 7), 
+  geom_line(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_dens %>% filter(bin_count >= 20, bin_value > 0), 
+  geom_point(data = obs_dens_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
              aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(7,400)) +
@@ -1823,11 +1823,11 @@ system2(command = "pdfcrop",
 # Looking at the lower end
 # Density
 l_abun_low <- ggplot() +
-  geom_ribbon(data = dens_pred_dat %>% filter(light_area >= 7), 
+  geom_ribbon(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
               aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
-  geom_line(data = dens_pred_dat %>% filter(light_area >= 7), 
+  geom_line(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_dens %>% filter(bin_count >= 20, bin_value > 0), 
+  geom_point(data = obs_dens_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
              aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), breaks = c(3, 30, 300),limits = c(1,400)) +
@@ -1851,11 +1851,11 @@ system2(command = "pdfcrop",
 
 
 l_prod_low <- ggplot() +
-  geom_ribbon(data = totalprod_pred_dat %>% filter(light_area >= 7), 
+  geom_ribbon(data = totalprod_pred_dat_lightarea %>% filter(light_area >= 7), 
               aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3, show.legend = F) +
-  geom_line(data = totalprod_pred_dat %>% filter(light_area >= 7), 
+  geom_line(data = totalprod_pred_dat_lightarea %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_totalprod %>% filter(bin_count >= 20, bin_value > 0), 
+  geom_point(data = obs_totalprod_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
              aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(1,600)) +

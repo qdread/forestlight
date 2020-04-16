@@ -600,15 +600,16 @@ load(file.path(gdrive_path, 'data/data_forplotting/light_scaling_plotting_data.R
 fill_scale <- scale_fill_manual(values = guild_fills[1:4], name = NULL, labels = fg_names, guide = guide_legend(override.aes = list(shape = 21)))
 color_scale <- scale_color_manual(values = guild_colors[1:4], name = NULL, labels = fg_names, guide = FALSE)
 
+area_core <- 42.84
 
 #------- Growth with light
 l_growth <- ggplot() +
-  geom_ribbon(data = prod_pred_dat %>% filter(light_area >= 7), 
+  geom_ribbon(data = prod_pred_dat_lightarea %>% filter(light_area >= 7), 
               aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), 
               alpha = 0.3, show.legend = F) +
-  geom_line(data = prod_pred_dat %>% filter(light_area >= 7), 
+  geom_line(data = prod_pred_dat_lightarea %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_indivprod %>% filter(mean_n_individuals >= 20), 
+  geom_point(data = obs_indivprod_lightarea %>% filter(mean_n_individuals >= 20), 
              aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
              shape = 21, color = 'black', size = 4, show.legend = FALSE) +
   scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(7,400)) +
@@ -620,12 +621,12 @@ l_growth
 
 #------ abundance with light
 l_abun <- ggplot() +
-  geom_ribbon(data = dens_pred_dat %>% filter(light_area >= 7), 
+  geom_ribbon(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
               aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), 
               alpha = 0.3, show.legend =F ) +
-  geom_line(data = dens_pred_dat %>% filter(light_area >= 7), 
+  geom_line(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_dens %>% filter(bin_count >= 20, bin_value > 0), 
+  geom_point(data = obs_dens_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
              aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
              shape = 21, color = 'black', size = 4) +
   scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(7,400)) +
@@ -636,11 +637,11 @@ l_abun <- ggplot() +
 l_abun 
 
 l_prod <- ggplot() +
-  geom_ribbon(data = totalprod_pred_dat %>% filter(light_area >= 7), 
+  geom_ribbon(data = totalprod_pred_dat_lightarea %>% filter(light_area >= 7), 
               aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), show.legend = F, alpha = 0.3) +
-  geom_line(data = totalprod_pred_dat %>% filter(light_area >= 7), 
+  geom_line(data = totalprod_pred_dat_lightarea %>% filter(light_area >= 7), 
             aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_totalprod %>% filter(bin_count >= 20, bin_value > 0), 
+  geom_point(data = obs_totalprod_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
              aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
              shape = 21, color = 'black', size = 4, show.legend = T) +
   scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(7,400)) +
