@@ -423,7 +423,7 @@ geom_size = 2
 # ------------------- Individual Growth ~ Diameter --------------------------
 plot_prod2 <- 
   function (year_to_plot = 1995, 
-            fg_names = c("fg1", "fg2", "fg3",  "fg4", "fg5", "all"), 
+            fg_names = c("Fast", "Tall", "Slow",  "Short", "Medium", "All"), 
             model_fit = 1, 
             x_limits, 
             x_breaks = c(1, 3, 10, 30, 100, 300), 
@@ -480,10 +480,15 @@ plot_prod2 <-
     if (plot_errorbar) {
       p <- p + ggplot2::geom_errorbar(data = obsdat, 
                                       ggplot2::aes_string(x = "bin_midpoint", 
-                                                          ymin = error_min, ymax = error_max, group = "fg", 
-                                                          color = "fg", width = "width"), position = pos, size = error_bar_thickness)
+                                                          ymin = error_min, 
+                                                          ymax = error_max, 
+                                                          group = "fg", 
+                                                          color = "fg", 
+                                                          width = "width"), 
+                                      position = pos, 
+                                      size = error_bar_thickness)
     }
-    p <- p + ggplot2::geom_line(data = preddat[preddat$fg == "fg5", ], 
+    p <- p + ggplot2::geom_line(data = preddat[preddat$fg == "Medium", ], 
                                 ggplot2::aes(x = dbh, y = q50), color = "gray") + 
       ggplot2::geom_point(data = obsdat, 
                           ggplot2::aes_string(x = "bin_midpoint", 
@@ -508,7 +513,7 @@ obs_indivprod <- obs_indivprod %>%
   filter(mean_n_individuals >= 20)
 
 p <- plot_prod2(year_to_plot = 1995,
-                fg_names = c('fg1','fg2','fg3','fg4','fg5'),
+                #fg_names = c('fg1','fg2','fg3','fg4','fg5'),
                 model_fit = PROD,
                 x_limits = c(0.8, 200),
                 y_limits = c(0.001, 2000),
@@ -1369,8 +1374,7 @@ p <- plot_prod2(year_to_plot = 1995,
                plot_abline = FALSE,
                x_name = 'Diameter (cm)',
                y_name = expression(paste('Diameter growth (cm yr'^-1,')')))
-               #y_name = expression(atop('Diameter growth', paste('(cm yr'^-1,')'))))
-               #name = expression(atop('Total Crown Volume',paste('(m'^3, ' cm'^-1,' ha'^-1,')')))) +
+               
 p1 <- p + theme(axis.text.x = element_text(), axis.ticks.x = element_line()) + 
   annotation_custom(grob_fast) + annotation_custom(grob_tall) + annotation_custom(grob_medium) + 
   annotation_custom(grob_slow) + annotation_custom(grob_short) +
@@ -2065,7 +2069,7 @@ p <- plot_totalprod2(year_to_plot = 1995,
 p
 p0 <- p + scale_y_continuous(position = "left", trans = "log10", limits = c(9, 5000),
                             name = expression(atop('Total Crown Volume',paste('(m'^3, ' cm'^-1,' ha'^-1,')')))) +
-  theme_plant_small() 
+  theme_plant + guide
 plot(p0)
 
 p_tot_vol<- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
