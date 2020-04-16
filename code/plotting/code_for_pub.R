@@ -658,7 +658,7 @@ l_prod
 
 piece <- file.path(gdrive_path, 'data/data_piecewisefits')
 ics <- read.csv(file.path(piece, 'piecewise_ics_by_fg.csv'), stringsAsFactors = FALSE)
-ics$fg <- factor(ics$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
+ics$fg <- factor(ics$fg , labels = c("All", "Fast", "Tall", "Slow", "Short", "Medium", "Unclassified"))
 
 # Density model
 base_size <- 11
