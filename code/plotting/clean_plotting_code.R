@@ -777,16 +777,24 @@ minmax_prod_bycensus <- obs_totalprod %>%
   filter(bin_value > 0, !fg %in% 'unclassified') %>%
   group_by(fg, bin_midpoint) %>%
   summarize(range_min = min(bin_value), range_max = max(bin_value))
+minmax_prod_bycensus $fg <- factor(ics$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
 
 p <- ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax = range_max, color = fg)) +
   geom_errorbar(size = 1) +
   scale_x_log10(name = 'Diameter (cm)', breaks = c(1, 10, 100 )) + 
   scale_y_log10(expression(paste('Production (kg yr'^-1,' cm'^-1,' ha'^-1,')')),
                 breaks = 10^(-2:3), labels = as.character(10^(-2:3)), 
-                limits = c(0.1, 200)) +
+                limits = c(0.1, 2200)) + 
+  annotation_custom(grob_fast) +  annotation_custom(grob_slow) +
+  annotation_custom(grob_medium) + annotation_custom(grob_tall) + annotation_custom(grob_short) +
   scale_color_manual(values = guild_fills2) +
-  theme_plant()
+  theme_plant
 p
+
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
 pdf(file.path(gdrive_path,'Figures/Supplementals/Total_Prod_Range/Total_Prod_Range.pdf'))
 grid.draw(p)
 dev.off()
@@ -1863,16 +1871,18 @@ l_prod_low <- ggplot() +
   scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(1,600)) +
   scale_y_log10(labels = signif, limits = c(0.01, 10), position = "right",
                 name  = expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
-  theme_plant_small() +# theme_no_x() +
+  theme_plant_small() +theme(aspect.ratio = 1) +# theme_no_x() + 
   fill_scale + 
   color_scale
 
 l_prod_low
 l_prod_low2 <- set_panel_size(l_prod_low, width=unit(10.25,"cm"), height=unit(7,"cm"))
+l_prod_low2 <- set_panel_size(l_prod_low, width=unit(14,"cm"), height=unit(14,"cm"))
+
 grid.newpage()
 grid.draw(l_prod_low2)
 
-pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod_v3.pdf'))
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod_v4.pdf'))
 grid.draw(l_prod_low2)
 dev.off()
 system2(command = "pdfcrop", 
