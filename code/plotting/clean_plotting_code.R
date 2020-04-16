@@ -433,7 +433,7 @@ plot_prod2 <-
             fill_names = guild_fills, # c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
             color_names = guild_colors, #c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
             x_name = "Diameter (cm)", 
-            y_name = expression(paste("Growth (kg y"^-1, ")")),
+            y_name = expression(paste("Growth (kg yr"^-1, ")")),
             average = "mean", 
             plot_errorbar = FALSE, 
             error_min = "ci_min",
@@ -652,7 +652,7 @@ plot_totalprod2 <-function(year_to_plot = 1995,
                            fill_names = guild_fills2, # c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
                            color_names = guild_colors2, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray"), 
                            x_name = "Diameter (cm)", 
-                           y_name = expression(paste("Production (kg cm"^-1, " ha"^-1, "  y"^-1, ")")),
+                           y_name = expression(paste("Production (kg cm"^-1, " ha"^-1, "  yr"^-1, ")")),
                            geom_size = 4.5, 
                            obsdat = obs_totalprod, 
                            preddat = fitted_totalprod, 
@@ -732,8 +732,8 @@ p0 <- p + scale_x_log10(name = 'Diameter (cm)',
   scale_y_log10(position = "right", limits = c(0.5, 200), 
                 breaks = c(0.1, 1, 10, 100),
                 labels = c(0.1, 1, 10, 100), 
-                name = expression(paste("Production (kg cm"^-1, " ha"^-1, "  y"^-1, ")"))) +
-  geom_point(size = 1) + annotation_custom(grob_text)
+                name = expression(paste("Production (kg cm"^-1, " ha"^-1, "  yr"^-1, ")"))) +
+  annotation_custom(grob_text)
 p0
 p1 <- set_panel_size(p0, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
 grid.newpage()
@@ -753,7 +753,7 @@ p0 <- p + scale_x_log10(name = 'Diameter (cm)',
   scale_y_log10(position = "left", limits = c(0.5, 200), 
                 breaks = c(0.1, 1, 10, 100),
                 labels = c(0.1, 1, 10, 100),
-                name =expression(atop('Production', paste('(kg ha'^-1,' cm'^-1,' yr'^-1,')')))) +
+                name =expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
   theme(aspect.ratio = 0.8) + geom_point(size = 1)
 
 p0
@@ -781,7 +781,7 @@ minmax_prod_bycensus <- obs_totalprod %>%
 p <- ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax = range_max, color = fg)) +
   geom_errorbar(size = 1) +
   scale_x_log10(name = 'Diameter (cm)', breaks = c(1, 10, 100 )) + 
-  scale_y_log10(expression(paste('Production (kg cm'^-1,'ha'^-1,' yr'^-1,')')),
+  scale_y_log10(expression(paste('Production (kg yr'^-1,' cm'^-1,' ha'^-1,')')),
                 breaks = 10^(-2:3), labels = as.character(10^(-2:3)), 
                 limits = c(0.1, 200)) +
   scale_color_manual(values = guild_fills2) +
@@ -859,17 +859,17 @@ allslopes <- rbind(growth_slopes_atmiddle, light_slopes_atmiddle) %>%
   mutate(fg = factor(fg, levels = fgs, labels = fg_full_names))
 grob0 <- grobTree(textGrob("b", x = 0.04, y = 0.9,  hjust = 0,
                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
-grob1 <- grobTree(textGrob("Light Capture", x = 0.65, y = 0.94, hjust = 0,
+grob1 <- grobTree(textGrob("Solar", x = 0.68, y = 0.94, hjust = 0,
                            gp = gpar(col = "gold3", fontsize = 18))) 
-grob2 <- grobTree(textGrob("Production", x = 0.65, y = 0.86, hjust = 0,
+grob2 <- grobTree(textGrob("Production", x = 0.68, y = 0.86, hjust = 0,
                            gp = gpar(col = "darkgreen", fontsize = 18)))
-grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.35, y = 0.51, hjust = 0,
+grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.28, y = 0.51, hjust = 0,
                            gp = gpar(col = "black", fontsize = 18))) 
 
 
 # Plot
-grob_text <- grobTree(textGrob("Solar Equivalence", x = 0.27, y = 0.80, hjust = 0,
-                               gp = gpar(col = "gray52", fontsize = 18))) 
+grob_text <- grobTree(textGrob("Solar Equivalence", x = 0.28, y = 0.80, hjust = 0,
+                               gp = gpar(col = "gold3", fontsize = 18))) 
 
 grob_text2 <- grobTree(textGrob("a", x = 0.06, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 totallightbins_fg <- totallightbins_fg %>%
@@ -880,7 +880,7 @@ tot_light <- plot_totalprod(year_to_plot = 1995,
                             model_fit_production = PROD,
                             x_limits = c(0.9,150),
                             y_limits = c(100, 200000),
-                            geom_size = 3,
+                            geom_size = 3.5,
                             y_breaks = c(100, 1000, 10000, 100000),
                             y_labels = c("0.1", "1", "10", "100"),
                             y_name = expression(paste('Total Light Intercepted (kW cm'^-1,' ha'^-1,')')),
@@ -896,7 +896,7 @@ tot_light2 <- tot_light  +
                      limits = c(100, 450000),
                      name = expression(atop('Total Light Intercepted',paste('(kW cm'^-1,' ha'^-1,')'))))  +
   theme(aspect.ratio = 0.75) + 
-  geom_abline(intercept = log10(70000), slope = 0, color ="gray72",
+  geom_abline(intercept = log10(70000), slope = 0, color ="#C9B074",
               linetype="dashed", size=.75) +
   annotation_custom(grob_text) + annotation_custom(grob_text2)
 plot(tot_light2)
@@ -909,13 +909,15 @@ g_tot_light <- ggplotGrob(p_tot_light)
 slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), 
                  aes(x = fg, y = q50, ymin = q025, ymax = q975, fill =  variable, color =variable)) +
   geom_hline(yintercept = 0, linetype = 'dashed', size = .75) +
-  geom_point(position = position_dodge(width = 0.6), shape = 21, size = 4, color = "black", stroke = 0.5) +
   geom_errorbar(position = position_dodge(width = 0.6), size = 0.75, width = 0) +
+  geom_point( position = position_dodge(width = 0.6), shape = 21, size = 3.5, color = "black", stroke = 0.5) +
+  geom_errorbar(data = allslopes %>% filter(fg %in% c('Slow', 'All')), 
+                position = position_dodge(width = 0.6), size = 0.75, width = 0) +
   labs( x = NULL, y = 'Scaling Slope') +
   scale_y_continuous(limits = c(-1.05, 1.3)) +
   scale_fill_manual(values = c('gold1', 'darkolivegreen3')) +
   scale_color_manual(values = c('gold3', 'darkgreen')) +
-  theme_plant() + theme(axis.text.x = element_text(angle = 25, hjust = 1, face = "italic", size = 18)) +
+  theme_plant() + theme(axis.text.x = element_text(angle = 25,  vjust = .7, face = "italic", size = 18)) +
   annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3) +annotation_custom(grob0)
 slopes
 
@@ -1861,7 +1863,7 @@ l_prod_low <- ggplot() +
   scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(1,600)) +
   scale_y_log10(labels = signif, limits = c(0.01, 10), position = "right",
                 name  = expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
-  theme_plant_small() + theme_no_x() +
+  theme_plant_small() +# theme_no_x() +
   fill_scale + 
   color_scale
 
