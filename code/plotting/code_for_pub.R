@@ -140,7 +140,8 @@ obs_light_binned_plotdata <- obs_light_binned %>% filter(year == year_to_plot, m
 
 Fig_3b <- ggplot(obs_light_binned_plotdata) +
   geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
-              aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.4) +
+              aes(x = light_area, ymin = q025, ymax = q975, fill = fg), 
+              alpha = 0.4, show.legend = F) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot),
             aes(x = light_area, y = q50, color = fg)) +
   geom_errorbar(aes(x = bin_midpoint, ymin = q25, ymax = q75, 
@@ -175,10 +176,12 @@ fitted_mort_trunc <- fitted_mort %>%
 
 
 #Mortality
-Fig_3c<- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
-  geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
+Fig_3c <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
+  geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), 
+              alpha = 0.4, show.legend = F) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = bin_mort %>% filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) >= 20)  %>% 
+  geom_point(data = bin_mort %>% 
+               filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) >= 20)  %>% 
                mutate(fg = factor(fg, labels = fg_labels)),
              aes(x = bin_midpoint, y = mortality, fill = fg),
              shape = 21, size = geom_size) +
@@ -325,7 +328,7 @@ Fig_5b
 load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
 
 prod_ratio_diam <- breeder_stats_bydiam_byyear %>% 
-  mutate(ID = 'Breeder-Pioneer') %>%
+  mutate(ID = 'Short-Tall') %>%
   rename(production_ratio = breeder_production_ratio, density_ratio = breeder_density_ratio) %>%
   rbind(fastslow_stats_bydiam_byyear %>% 
           mutate(ID = 'Fast-Slow') %>%
@@ -363,7 +366,8 @@ prod_ratio <- prod_ratio_light   %>%
   ggplot() + 
   geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
   geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975, group = ratio, fill = ratio),
-              alpha = 0.3, data = ratio_fitted_lightarea_prod) +
+              alpha = 0.3, data = ratio_fitted_lightarea_prod,
+              show.legend = F) +
   geom_line(aes(x = light_area, y = q50, group = ratio,  color = ratio), data = ratio_fitted_lightarea_prod) +
   geom_point(aes(x = bin_midpoint, y = production_ratio, fill = ID), 
              shape = 21, size = 3.5,  stroke = .5, color = "black") +
@@ -372,7 +376,7 @@ prod_ratio <- prod_ratio_light   %>%
   theme_plant_small(legend = TRUE)  + 
   scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(2,330), breaks=c(3,  30,  300)) +
   scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
-                name = "Production Ratio") 
+                name = "Production Ratio") + guide
 prod_ratio
 
 #----------------------------- Fig 6B Abundance by Diameter ----------------------------
@@ -380,7 +384,8 @@ dens_ratio <- prod_ratio_diam %>%
   filter(density_ratio > 0) %>%
   filter(n_individuals >= 20) %>%
   ggplot() +
-  geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = ratio, fill = ratio), alpha = 0.4, data = ratio_fitted_diam_density) +
+  geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = ratio, fill = ratio), 
+              alpha = 0.4, data = ratio_fitted_diam_density, show.legend = F) +
   geom_line(aes(x = dbh, y = q50, group = ratio, color = ratio), data = ratio_fitted_diam_density) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
   geom_point(aes(x = bin_midpoint, y = density_ratio, fill = ID),
@@ -390,7 +395,7 @@ dens_ratio <- prod_ratio_diam %>%
   scale_x_log10(limits = c(1,100), breaks = c(1,10, 100), name = expression(paste('Diameter (cm)'))) + 
   scale_y_log10(labels = signif, breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.01,200),
                 name = expression("Density Ratio")) + 
-  theme_plant_small(legend = TRUE)  
+  theme_plant_small(legend = TRUE)  + guide
 dens_ratio 
 
 
@@ -479,8 +484,8 @@ p_hex_panels
 
 
 
-p_median_panels <- ggplot(obs_light_binned %>% 
-                            filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
+p_mean_panels <- ggplot(obs_light_binned %>% 
+                          filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
   facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
   geom_ribbon(data = pred_light_5groups %>% 
                 filter(year == year_to_plot), 
@@ -494,15 +499,15 @@ p_median_panels <- ggplot(obs_light_binned %>%
                  filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
                aes(x = x_max_q50 * 0.5, xend = x_max_q50 * 2, y = y_max_q50 * 0.5, yend = y_max_q50 * 2), 
                color = 'brown1', size = .5) +
-  geom_point(shape=21, aes(x = bin_midpoint, y = median)) +
+  geom_point(shape=21, aes(x = bin_midpoint, y = mean)) +
   scale_color_manual(values = guild_fills ) +
   scale_fill_manual(values = guild_colors) +
   scale_x_log10(name = title_x, breaks = c(1,10,100)) + 
   scale_y_log10(name = title_y, labels = signif, breaks = c(0.01,0.1,1,10)) +
   theme_plant_small() + 
-  theme_facet2(text_size = 13, show_strip_text = TRUE)
+  theme_facet2()
 
-p_median_panels
+p_mean_panels
 
 param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg3", "fg4"))
 fg_labels2 <- c("Fast", "Tall", "Medium", "Slow", "Short")
@@ -543,19 +548,14 @@ p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) | (is.na(den
   geom_line(size = 1.25) +
   scale_x_log10(name = 'Diameter (cm)', expand = c(0,0)) +
   theme_bw() + 
-  theme(strip.background = element_blank(), panel.grid = element_blank(),strip.text = element_text(size = 12),
-        legend.position = 'bottom',legend.spacing.x=unit(.2, "cm"),legend.title=element_blank(),
-        legend.text=element_text(size = 12),axis.title = element_text(size = 15),
+  theme(strip.background = element_blank(), panel.grid = element_blank(), strip.text = element_text(size = 12),
+        legend.position = 'bottom', legend.spacing.x = unit(.2, "cm"), legend.title = element_blank(),
+        legend.text  =element_text(size = 12), axis.title = element_text(size = 15),
         axis.text = element_text(color = "black", size = 11)) +
   labs(y = 'Slope') +
   ggtitle('Fitted Slopes: \n 3 Segment Density & 1 Segment Growth Models')+
   theme(plot.title = element_text(hjust=0.5)) 
 p 
-
-
-pdf(file.path(gdrive_path, "Figures/Supplementals/Piecewise_Slopes/slopes_2_seg_growth.pdf"))
-p
-dev.off()
 
 
 #-------------------------- Heat Map of Growth Scaling -----------------------
@@ -585,7 +585,8 @@ p0 <- plot_prod_withrawdata(year_to_plot = 1995,
                             plot_abline = FALSE,
                             plot_fits = PROD)
 
-p <- p0 + theme(legend.position = 'right', legend.text=element_text(size=13), legend.title=element_text(size=15)) + 
+p <- p0 + theme(legend.position = 'right', legend.text=element_text(size = 13), 
+                legend.title=element_text(size = 15)) + 
   scale_y_log10(labels = c(0.01, 1, 100), 
                 breaks = c(0.01, 1, 100), name = expression(paste('Growth (kg yr'^-1,')'))) +
   guides(linetype = FALSE)
@@ -629,7 +630,7 @@ l_abun <- ggplot() +
              shape = 21, color = 'black', size = 4) +
   scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(7,400)) +
   scale_y_log10(labels = signif, limits = c(0.01, 200), name = parse(text = 'Abundance~(ha^-1~cm^-1)')) +
-  theme_plant_small(legend = TRUE)  + 
+  theme_plant_small(legend = F)  + 
   fill_scale +
   color_scale
 l_abun 
@@ -645,7 +646,7 @@ l_prod <- ggplot() +
   scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(7,400)) +
   scale_y_log10(labels = signif, limits = c(0.01, 10), 
                 name  = expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
-  theme_plant_small(legend = TRUE)  +
+  theme_plant_small(legend = F)  +
   fill_scale + 
   color_scale
 
@@ -688,6 +689,7 @@ ggplot(ics %>% filter(criterion == 'WAIC',
 
 
 # ------------------- Total growth with height -------------------------
+
 p0 <- plot_totalprod(year_to_plot = 1995,
                      fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                      model_fit_density = DENS, 
@@ -702,7 +704,7 @@ p <- p0 + scale_x_log10(name = 'Diameter (cm)',
                         sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
                                             name = "Height (m)", breaks = c(2, 3, 5, 10, 20, 40))) +
   scale_y_log10(position = "left", limits = c(0.5, 200), breaks = c(0.1, 1, 10, 100),labels = c(0.1, 1, 10, 100),
-                name =expression(atop('Total Production', paste('(kg  cm'^-1,' ha'^-1,' yr'^-1,')')))) +
+                name =expression(atop('roduction', paste('(kg  cm'^-1,' ha'^-1,' yr'^-1,')')))) +
   theme(aspect.ratio = 0.8) +geom_point(size = 1)
 
 p
@@ -717,7 +719,7 @@ minmax_prod_bycensus <- obs_totalprod %>%
 p <- ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax = range_max, color = fg)) +
   geom_errorbar(size = 1) +
   scale_x_log10(name = 'Diameter (cm)', breaks = c(1,3,10,30,100,300)) + 
-  scale_y_log10(expression(paste('Total Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),
+  scale_y_log10(expression(paste('Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),
                 breaks = 10^(-2:3), labels = as.character(10^(-2:3)), limits = c(0.1, 200)) +
   scale_color_manual(values = guild_fills2) +
   theme_plant()
@@ -743,7 +745,7 @@ labels = trans_format("log10", math_format(10^.x))
 p <- ggplot() +
   geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received)) +
   geom_pointrange(data = unscaledlightbydbhcloudbin_fg %>% filter(fg %in% 'all'), 
-                  aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+                  aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
   scale_x_log10(name = exd) +
   scale_y_log10(name = exl, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), 
                 labels = trans_format("log10", math_format(10^.x))) +
