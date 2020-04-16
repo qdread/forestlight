@@ -52,7 +52,7 @@ theme_plant2<- theme_plant() + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
 theme_plant <- theme_plant() + 
   theme(plot.margin=grid::unit(c(0,0,0,0), "mm"), legend.position = "right", legend.text = element_text(size = 14 ), 
         legend.key = element_blank())
-guide <- guides(fill=guide_legend(title=NULL), color = F, override.aes=list(fill=NA))
+guide <- guides(color = guide_legend(title=NULL), fill = guide_legend(title=NULL)) #, color = F, override.aes=list(fill=NA))
 
 grob_fast <- grobTree(textGrob("Fast", x = 0.04, y = 0.95,  hjust = 0,
                             gp = gpar(col = "#BFE046", fontsize = 13, fontface = "italic"))) 
@@ -777,18 +777,16 @@ minmax_prod_bycensus <- obs_totalprod %>%
   filter(bin_value > 0, !fg %in% 'unclassified') %>%
   group_by(fg, bin_midpoint) %>%
   summarize(range_min = min(bin_value), range_max = max(bin_value))
-minmax_prod_bycensus $fg <- factor(ics$fg , labels = c("All", "Fast", "LL Pioneer", "Slow", "SL Breeder", "Medium", "Unclassified"))
+minmax_prod_bycensus $fg <- factor(minmax_prod_bycensus $fg , labels = c("All", "Fast", "Tall", "Slow", "Short", "Medium"))
 
 p <- ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax = range_max, color = fg)) +
   geom_errorbar(size = 1) +
-  scale_x_log10(name = 'Diameter (cm)', breaks = c(1, 10, 100 )) + 
-  scale_y_log10(expression(paste('Production (kg yr'^-1,' cm'^-1,' ha'^-1,')')),
+  scale_x_log10(name = 'Diameter (cm)', limits = c(0.8, 300),breaks = c(1, 10, 100 )) + 
+  scale_y_log10(expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')'))),
                 breaks = 10^(-2:3), labels = as.character(10^(-2:3)), 
-                limits = c(0.1, 2200)) + 
-  annotation_custom(grob_fast) +  annotation_custom(grob_slow) +
-  annotation_custom(grob_medium) + annotation_custom(grob_tall) + annotation_custom(grob_short) +
-  scale_color_manual(values = guild_fills2) +
-  theme_plant
+                limits = c(0.2, 200)) +  
+  scale_color_manual(values = guild_colors2) +
+  theme_plant + guide 
 p
 
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
@@ -1527,7 +1525,7 @@ fg_labels2 <- c("Fast", "Tall", "Medium", "Slow", "Short")
 p <- ggplot(param_ci %>% 
               filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', 
                                 !fg %in% c('alltree','unclassified')),
-            aes(x = fg, y = mean, ymin = q025, ymax = q975)) + 
+            aes(x = fg, y = q50, ymin = q025, ymax = q975)) + 
   #geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 1) + 
   geom_errorbar(width = 0.4) + geom_point(size = 4) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
