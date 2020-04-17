@@ -666,7 +666,7 @@ plot_totalprod2 <-function(year_to_plot = 1995,
                            dodge_width = 0.07,
                            abline_intercept = 2) 
 {
-  pos <-  ggplot2::position_dodge(width = dodge_width)
+  #pos <-  ggplot2::position_dodge(width = dodge_width)
   obsdat <- obsdat %>% 
     dplyr::filter(fg %in% fg_names, year == year_to_plot, bin_count >= 20) %>% 
     dplyr::filter(bin_value > 0) %>% 
@@ -713,10 +713,23 @@ p <- plot_totalprod2(year_to_plot = 1995,
                y_limits = c(0.5, 200),
                y_breaks = c(0.1, 1, 10, 100),
                y_labels = c(0.1, 1, 10, 100),
-               dodge_width = 0.0,
+               #dodge_width = 0.0,
                preddat = fitted_totalprod)
 
-
+Fig_4c <- plot_totalprod(year_to_plot = 1995,
+                         fg_names = fg_labels2,
+                         model_fit_density = DENS, 
+                         model_fit_production = PROD,
+                         x_limits = c(0.7,230),
+                         y_limits = c(0.5, 200),
+                         y_breaks = c(0.1, 1, 10, 100),
+                         y_labels = c(0.1, 1, 10, 100),
+                         preddat = fitted_totalprod)
+Fig_4c  + scale_x_log10(name = 'Diameter (cm)',
+                        breaks = c(1,10,100), limits = c(0.8, 230),
+                        sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
+                                            name = "Height (m)", breaks = c(3, 10, 30))) +
+  
 p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
 
 grid.newpage()
@@ -1423,7 +1436,7 @@ hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RCol
                                              labels = c(1,10,100,1000), limits=c(1,5000))
 
 unique(obs_light_raw$fg)
-p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, fg %nin% c('alltree','unclassified'))) +
+growth_light_hex<- ggplot(obs_light_raw %>% filter(year == year_to_plot, fg %nin% c('alltree','unclassified'))) +
   facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
   geom_hex(aes(x = light_area, y = production_area)) +
   #geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
@@ -1441,11 +1454,11 @@ p_hex_panels <- ggplot(obs_light_raw %>% filter(year == year_to_plot, fg %nin% c
         legend.position = c(0.7, 0.15),
         legend.text = element_text(size = 12),
         legend.title=element_text(size=15))
-p_hex_panels
+growth_light_hex
 
 
 pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/growth_light_hex.pdf"))
-p_hex_panels
+growth_light_hex
 dev.off()
 
 system2(command = "pdfcrop", 
@@ -1454,8 +1467,8 @@ system2(command = "pdfcrop",
 )
 #------------------------
 
-p_mean_panels <- ggplot(obs_light_binned %>% 
-                            filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
+growth_light_mean <- ggplot(obs_light_binned %>% 
+                              filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
   facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
   geom_ribbon(data = pred_light_5groups %>% 
                 filter(year == year_to_plot), 
@@ -1474,10 +1487,12 @@ p_mean_panels <- ggplot(obs_light_binned %>%
   scale_fill_manual(values = guild_colors) +
   scale_x_log10(name = title_x, breaks = c(1,10,100)) + 
   scale_y_log10(name = title_y, labels = signif, breaks = c(0.01,0.1,1,10)) +
-  theme_plant_small() + 
-  theme_facet2()
+  theme_plant_small() +
+  theme(strip.text = element_text(size=14))+
+  theme(panel.border = element_rect(fill=NA),
+        strip.background = element_rect(fill=NA))
 
-p_mean_panels
+growth_light_mean 
 
 pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/mean_growth_light_max.pdf"))
 p_mean_panels
@@ -1525,16 +1540,13 @@ system2(command = "pdfcrop",
 
 # Remove all tree and unclassified groups
 param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg3", "fg4"))
-fg_labels2 <- c("Fast", "Tall", "Medium", "Slow", "Short")
-p <- ggplot(param_ci %>% 
-              filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', 
-                                !fg %in% c('alltree','unclassified')),
-            aes(x = fg, y = q50, ymin = q025, ymax = q975)) + 
-  #geom_hline(yintercept = 1, linetype = 'dotted', color = 'black', size = 1) + 
+guild_labels2_ <- c("Fast", "Tall", "Medium", "Slow", "Short")
+p <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
+       aes(x = fg, y = q50, ymin = q025, ymax = q975)) + 
   geom_errorbar(width = 0.4) + geom_point(size = 4) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
-  scale_x_discrete(name = 'Life History Strategy', labels = fg_labels2) +
-  scale_y_continuous(expression(paste('Max. Growth Rate (kg yr'^-1, ' m'^-2,')')), 
+  theme(axis.text.x = element_text(angle = 25,  vjust = 0.7))+
+  scale_x_discrete(name = 'Life History Guild', labels = guild_labels2_) +
+  scale_y_continuous(expression(atop('Max. Growth Responsiveness',paste('to Light (kg yr'^-1, ' m'^-2,')'))), 
                      limits = c(0.6, 1.1),
                      breaks = seq(0, 1, 0.2), labels = seq(0, 1, 0.2)) +
   theme_plant() + theme(aspect.ratio = 0.75)
@@ -1575,6 +1587,7 @@ p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) |
   geom_ribbon(alpha = 0.3, size = 0.2) +
   geom_line(size = 1.25) +
   scale_x_log10(name = 'Diameter (cm)', expand = c(0,0)) +
+  scale_y_continuous(breaks = c(-15, -8, -5, -3, -2, 0, 2)) +
   theme_bw() + 
   theme(strip.background = element_blank(), panel.grid = element_blank(),
         strip.text = element_text(size = 12),
@@ -2048,7 +2061,7 @@ fitted_totalvol <- read.csv(file.path(fp, 'fitted_totalvol.csv'), stringsAsFacto
 totalvolbins_fg <- read.csv(file.path(fp, 'obs_totalvol.csv'), stringsAsFactors = FALSE)
 
 
-rough_slope_all <- (log(1650.623080)  -	log(844.331539)) / (log(36.878615) - log(4.919149))	
+#rough_slope_all <- (log(1650.623080)  -	log(844.331539)) / (log(36.878615) - log(4.919149))	
 
 totalvolbins_fg <- totalvolbins_fg %>%
   filter(bin_count >= 20)
