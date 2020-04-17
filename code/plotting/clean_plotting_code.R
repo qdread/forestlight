@@ -663,10 +663,10 @@ plot_totalprod2 <-function(year_to_plot = 1995,
                            preddat = fitted_totalprod, 
                            plot_abline = TRUE, 
                            abline_slope = 0, 
-                           dodge_width = 0.07,
+                           dodge_width = 0.0,
                            abline_intercept = 2) 
 {
-  #pos <-  ggplot2::position_dodge(width = dodge_width)
+  pos <-  ggplot2::position_dodge(width = dodge_width)
   obsdat <- obsdat %>% 
     dplyr::filter(fg %in% fg_names, year == year_to_plot, bin_count >= 20) %>% 
     dplyr::filter(bin_value > 0) %>% 
@@ -686,8 +686,8 @@ plot_totalprod2 <-function(year_to_plot = 1995,
   p <- ggplot2::ggplot() + 
     ggplot2::geom_ribbon(data = preddat, 
                          aes(x = dbh, ymin = q025, ymax = q975, 
-                             group = fg, fill = fg), alpha = 0.4) + 
-    ggplot2::geom_line(data = preddat, 
+                             group = fg, fill = fg), alpha = 0.4, show.legend = F) + 
+    ggplot2::geom_line(data = preddat, show.legend = F,
                        aes(x = dbh, y = q50, group = fg, color = fg)) + 
     ggplot2::geom_point(data = obsdat, position = pos,
     aes(x = bin_midpoint, y = bin_value, group = fg, fill = fg), 
@@ -715,21 +715,8 @@ p <- plot_totalprod2(year_to_plot = 1995,
                y_labels = c(0.1, 1, 10, 100),
                #dodge_width = 0.0,
                preddat = fitted_totalprod)
+p
 
-Fig_4c <- plot_totalprod(year_to_plot = 1995,
-                         fg_names = fg_labels2,
-                         model_fit_density = DENS, 
-                         model_fit_production = PROD,
-                         x_limits = c(0.7,230),
-                         y_limits = c(0.5, 200),
-                         y_breaks = c(0.1, 1, 10, 100),
-                         y_labels = c(0.1, 1, 10, 100),
-                         preddat = fitted_totalprod)
-Fig_4c  + scale_x_log10(name = 'Diameter (cm)',
-                        breaks = c(1,10,100), limits = c(0.8, 230),
-                        sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
-                                            name = "Height (m)", breaks = c(3, 10, 30))) +
-  
 p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
 
 grid.newpage()
@@ -2082,10 +2069,11 @@ p <- plot_totalprod2(year_to_plot = 1995,
 p
 p0 <- p + scale_y_continuous(position = "left", trans = "log10", limits = c(9, 5000),
                             name = expression(atop('Total Crown Volume',paste('(m'^3, ' cm'^-1,' ha'^-1,')')))) +
-  theme_plant + guide
+  theme_plant_small(legend = TRUE)  + guide +
+  scale_fill_manual(values = guild_fills2, labels = guild_labels2) 
 plot(p0)
 
-p_tot_vol<- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p_tot_vol<- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p_tot_vol)
 pdf(file.path(gdrive_path,'Figures/Supplementals/Total_Vol/total_vol.pdf'))
@@ -2096,9 +2084,6 @@ system2(command = "pdfcrop",
         args    = c(file.path(gdrive_path,'Figures/Supplementals/Total_Vol/total_vol.pdf'), 
                     file.path(gdrive_path,'Figures/Supplementals/Total_Vol/total_vol.pdf')) 
 )
-
-
-
 
 
 #----------------------- individual light capture scaling --------------------------
