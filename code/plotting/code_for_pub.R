@@ -37,7 +37,9 @@ guild_lookup <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','all','unclassif
 year_to_plot = 1995
 geom_size <- 4
 
-guide <- guides(fill=guide_legend(title=NULL), color = F, override.aes=list(fill=NA))
+
+guide <- guides(fill =guide_legend(title=NULL),  override.aes = list(fill = NA), color = F)
+guide2 <- guides(color = guide_legend(title = NULL))
 
 #---------------------------- Data ---------------------------- 
 load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
@@ -67,7 +69,7 @@ exd <- 'Diameter (cm)'
 
 #----------------------   Fig 1a: Light per crown volume by diameter -----------------------------
 
-Fig_1a <- ggplot() + 
+ggplot() + 
   geom_point(alpha = 0.01, data = alltree_light_95, 
              aes(x = dbh_corr, y = light_received_byarea), color = 'chartreuse3') +
   geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), 
@@ -75,12 +77,12 @@ Fig_1a <- ggplot() +
   scale_x_log10(name = exd) +
   scale_y_log10(name = exl) +
   theme_plant_small(legend = TRUE) 
-Fig_1a #takes a minute, may tax computer
+#takes a minute, may tax computer
 
 
 #----------------------   Fig 1b: Light per crown volume by diameter -----------------------------
 
-Fig_1b <- ggplot() +
+ ggplot() +
   geom_point(alpha = 0.01, data = alltree_light_95, 
              aes(x = dbh_corr, y = light_received_byvolume), color = 'chartreuse3') +
   geom_pointrange(data = lightpervolcloudbin_fg %>% filter(fg %in% 'all'), 
@@ -88,7 +90,7 @@ Fig_1b <- ggplot() +
   scale_x_log10(name = exd) +
   scale_y_log10(name = exv, breaks = c(1, 10, 100)) +
   theme_plant_small(legend = TRUE) 
-Fig_1b 
+
 ################################################################################################
 # ------------------------------ Fig 3: Life Histories ---------------------------------
 ################################################################################################
@@ -96,6 +98,8 @@ Fig_1b
 # ### Fig 3a, PCA
 
 fgbci <- read.table(file.path(gdrive_path, 'data/Ruger/fgroups_dynamics_new.txt'), stringsAsFactors = FALSE)
+fgbci$fg5 <- match(fgbci$fg5, c(2,3,1,4,5))
+fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 
 Fig_3a <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
   geom_point(shape = 21, size = geom_size, color = "black") + 
@@ -107,7 +111,7 @@ Fig_3a <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill
   theme_plant_small(legend = TRUE) + guide
 Fig_3a
 
-#########  Fig 3b
+#########  Fig 3b Growth by Light
 # Axis titles
 title_x <- expression(paste('Light per Crown Area (W m'^-2,')',sep=''))
 title_y <- expression(atop('Growth per Crown Area', paste('(kg yr'^-1, ' m'^-2,')', sep='')))
@@ -136,8 +140,10 @@ cast_pars <- dcast(melt_pars, fg+year~parameter+variable)
 dodge_width <- 0.03
 error_bar_width <- 0.04
 
-# Do some additional computation to correct the error bar width for the number of groups in each bin
-obs_light_binned_plotdata <- obs_light_binned %>% filter(year == year_to_plot, mean_n_individuals >= 20, !fg %in% c('alltree', 'unclassified')) %>%
+# correct the error bar width for the number of groups in each bin
+obs_light_binned_plotdata <- obs_light_binned %>% 
+  filter(year == year_to_plot, mean_n_individuals >= 20, !fg %in% c('alltree', 'unclassified')) %>%
+  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg2', 'fg3', 'fg1'))) %>%
   group_by(bin_midpoint, year) %>% 
   mutate(width = sum(c('fg1','fg2','fg3','fg4','fg5') %in% fg)) %>% 
   ungroup
@@ -162,9 +168,10 @@ Fig_3b <- ggplot(obs_light_binned_plotdata) +
   theme_plant_small(legend = TRUE)  +guide
 Fig_3b
 
-### ################## Fig 3c, Mortality
+### ################## Fig 3c, Mortality by Light 
 
 bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalitybins.csv')) # Load binned data
+bin_mort <- bin_mort %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg2', 'fg3', 'fg1'))) 
 mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv')) # Load raw data
 fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
 
@@ -174,14 +181,15 @@ obs_range_mort <- bin_mort %>%
   group_by(fg) %>%
   summarise(min_obs = min(bin_midpoint), max_obs = max(bin_midpoint))
 
-fitted_mort_trunc <- fitted_mort %>%
+fitted_mort_trunc <- fitted_mort %>%  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg2', 'fg3', 'fg1'))) %>%
   left_join(obs_range_mort) %>%
   filter(light_per_area >= min_obs & light_per_area <= max_obs)
 
 #Mortality
-Fig_3c <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = guild_labels))) +
+Fig_3c <- ggplot(data = fitted_mort_trunc %>% 
+                   mutate(fg = factor(fg, labels = guild_labels))) +
   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), 
-              alpha = 0.4, show.legend = F) +
+              alpha = 0.3, show.legend = F) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
   geom_point(data = bin_mort %>% 
                filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) >= 20)  %>% 
@@ -208,14 +216,18 @@ Fig_3c
 # in published version I altered plot_prod
 
 #---- Fig 4a
-#obs_indivprod$fg <- factor(obs_indivprod$fg, levels = c('all', 'fg5','fg4','fg2', 'fg3', 'fg1'))
-#obs_indivprod$fg <- factor(obs_indivprod$fg , labels = c('all' = "All", 'fg5' = "Medium", 'fg4' = "Short", "fg2" = "Tall", "fg3" = "Slow", "fg1" = "Fast"))
-#obs_indivprod <- obs_indivprod %>%
- # filter(mean_n_individuals >= 20)
+#please change the plotting order somehow! this didn't work...
+library(forcats)
+obs_indivprod <- obs_indivprod %>%
+  filter(mean_n_individuals >= 20) %>%
+  mutate(fg  = fct_reorder(fg, desc(fg))) 
+  #mutate(fg = factor(fg, levels = c("unclassified", "all", "fg5", "fg4", "fg2", "fg3", "fg1"))) 
 
+obs_indivprod$fg
+levels(obs_indivprod$fg)
 
 Fig_4a <- plot_prod(year_to_plot = 1995,
-                fg_names = fg_labels,
+                fg_names =  c("fg5", "fg4", "fg2", "fg3", "fg1"),
                 model_fit = PROD,
                 x_limits = c(1, 230),
                 y_limits = c(0.001, 2000),
@@ -226,7 +238,7 @@ Fig_4a <- plot_prod(year_to_plot = 1995,
                 error_bar_width = 0,
                 y_labels = c(0.001,0.1,10,1000),
                 dodge_width = 0.05)
-Fig_4a + theme_plant_small(legend = TRUE)  +guide + 
+Fig_4a + theme_plant_small(legend = TRUE)  + guide + 
   theme(axis.text.x = element_text(color = "black", size = 15),  
         axis.ticks.x = element_line(color = "black")) + 
   scale_fill_manual(values = guild_fills, labels = guild_labels) 
@@ -242,7 +254,7 @@ Fig_4b <- plot_dens(year_to_plot = 1995,
                 model_fit = DENS,
                 preddat = pred_dens, 
                 x_limits = c(.8, 230),
-                y_limits = c(0.01, 20000),
+                y_limits = c(0.001, 20000),
                 x_breaks = c(1, 10, 100),
                 y_labels = c(0.001, 0.1, 10,1000),
                 y_breaks = c(0.001, 0.1,  10, 1000))
@@ -269,7 +281,7 @@ Fig_4c  + scale_x_log10(name = 'Diameter (cm)',
   theme_plant_small(legend = TRUE)  + guide +
   scale_fill_manual(values = guild_fills2, labels = guild_labels2) 
 
-Fig_4c
+
 ########################################################################################
 # ------------------------------- Fig 5 Symmetry Plots ------------------------------------
 ########################################################################################
@@ -308,7 +320,6 @@ xvalues <- params %>%
   group_by(fg) %>%
   summarize(mid_cutoff = (mean[parameter == 'tau_high'] + mean[parameter == 'tau_low'])/2)
 
-
 growth_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 light_slopes <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/light_piecewise_fitted_slopes_by_fg.csv'), stringsAsFactors = FALSE)
 growth_slopes_atmiddle <- growth_slopes %>% 
@@ -331,9 +342,9 @@ allslopes <- rbind(growth_slopes_atmiddle, light_slopes_atmiddle) %>%
 
 grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.9,  hjust = 0,
                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
-grob1 <- grobTree(textGrob("Light Capture", x = 0.75, y = 0.94, hjust = 0,
+grob1 <- grobTree(textGrob("Light Capture", x = 0.65, y = 0.94, hjust = 0,
                            gp = gpar(col = "gold3", fontsize = 18))) 
-grob2 <- grobTree(textGrob("Production", x = 0.75, y = 0.86, hjust = 0,
+grob2 <- grobTree(textGrob("Production", x = 0.65, y = 0.86, hjust = 0,
                            gp = gpar(col = "darkgreen", fontsize = 18)))
 grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.35, y = 0.51, hjust = 0,
                            gp = gpar(col = "black", fontsize = 18))) 
@@ -436,7 +447,7 @@ dens_ratio
 # ------------------------------- Supplementals ------------------------------------
 ########################################################################################
 
-#---------------- LAI and Transmittance  ----------------
+#---------------- Fig. S1: LAI and Transmittance  ----------------
 lai_0 <- read_csv('/Users/jgradym/Google_Drive/ForestLight/data/data_forplotting/LAI_Depth.csv')
 pfd_0 <- read_csv('/Users/jgradym/Google_Drive/ForestLight/data/data_forplotting/PFD_LAI.csv')
 lai <- lai_0 %>% filter(Species != "Cecropia") 
@@ -448,7 +459,7 @@ color_sp <- c("darkolivegreen", "cadetblue3",  "brown4", "black")
 # LAI vs Crown Depth
 depth <- ggplot(data = lai, 
                 aes(x = Depth, y = LAI, fill = Species, fill = Species, color = Species )) +
-  geom_smooth(method = "lm", alpha = 0.2, 
+  geom_smooth(method = "lm", alpha = 0.3, 
               aes(fill = Species, color = Species),
               show.legend = FALSE) +
   geom_point(aes(fill = Species), size = 4, shape = 21, color = "black") + 
@@ -460,15 +471,25 @@ depth <- ggplot(data = lai,
   scale_fill_manual(values = fill_sp) + guide 
 depth
 
+# Transmittance vs LAI
+trans <- ggplot(data = pfd,
+                aes( x = LAI, y = PFD, fill = Species, color = Species )) +
+  geom_smooth(method = "lm", alpha = 0.3, 
+              aes(fill = Species, color = Species), show.legend = F) +
+  geom_point(aes(fill = Species), size = 4, shape = 21, color = "black") + 
+  theme_plant_small(legend = TRUE)  +
+  scale_y_log10(limits = c(2.5, 200), name = "% PFD Transmittance") +
+  scale_x_continuous(limits = c(-0.3, 8)) +
+  scale_color_manual(values = color_sp) +
+  scale_fill_manual(values = fill_sp) + guide 
+
+trans
+
+# ------------------------ Fig. S2: Diameter Growth  -------------------------
 
 
-# ------------------------ Diameter Growth  -------------------------
-
-#note: needs x axis values and ticks
-obs_indivdiamgrowth <- obs_indivdiamgrowth %>%
-  filter(mean_n_individuals >= 20)
 p <- plot_prod(year_to_plot = 1995,
-               fg_names = c('fg1','fg2','fg3','fg4','fg5'),
+               fg_names = c("fg1", "fg2", "fg3", "fg4", "fg5"),
                model_fit = PROD,
                x_limits = c(1, 230),
                y_limits = c(0.02, 1.3),
@@ -481,13 +502,15 @@ p <- plot_prod(year_to_plot = 1995,
                plot_abline = FALSE,
                x_name = 'Diameter (cm)',
                y_name = expression(paste('Diameter growth (cm yr'^-1,')')))
-p + theme_plant_small(legend = TRUE)  +guide + 
+p + theme_plant_small(legend = TRUE)  + guide + 
   theme(axis.text.x = element_text(color = "black", size = 15),  
         axis.ticks.x = element_line(color = "black")) + 
   scale_fill_manual(values = guild_fills, labels = guild_labels) 
  
+# ------------------------ Fig S3: See Fig 3, and Fig -------------------------
 
-# ------------------------ Growth per Crown Area ~ Light per Crown Area -------------------------
+
+# ------------------------ Fig S4: Growth per Crown Area ~ Light per Crown Area -------------------------
 # Axis titles
 title_x <- expression(paste('Light per Crown Area (W m'^-2,')',sep=''))
 title_y <- expression(atop('Growth per Crown Area', paste('(kg yr'^-1, ' m'^-2,')', sep='')))
@@ -527,7 +550,7 @@ growth_light_hex <- ggplot(obs_light_raw %>%
         legend.title=element_text(size=15))
 growth_light_hex
 
-#---------------------------- Mean Growth ~ Light --------------------------------
+#---------------------------- Fig S5 :Mean Growth ~ Light --------------------------------
 
 
 growth_light_mean <- ggplot(obs_light_binned %>% 
@@ -748,8 +771,8 @@ p <- ggplot(minmax_prod_bycensus,
   scale_x_log10(name = 'Diameter (cm)', breaks = c(1,3,10,30,100,300)) + 
   scale_y_log10(expression(paste('Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),
                 breaks = 10^(-2:3), labels = as.character(10^(-2:3)), limits = c(0.1, 200)) +
-  scale_color_manual(values = guild_fills2) +
-  theme_plant()
+  scale_color_manual(values = guild_colors2, labels = guild_labels2) +
+  theme_plant_small(legend = T) + guide2
 p
 
 
