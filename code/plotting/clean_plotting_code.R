@@ -44,16 +44,21 @@ guild_labels <- c('Fast','Tall', 'Slow', 'Short', 'Medium')
 guild_labels2 <- c('All', 'Fast','Tall', 'Slow', 'Short', 'Medium')
 guild_labels3 <- c('All', 'Fast','Tall', 'Slow', 'Short', 'Medium',  "Unclassified")
 
-
 guild_lookup <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','all','unclassified'), 
                            fg_name = c('Fast','Tall','Slow','Short','Medium','All','Unclassified'))
 
 year_to_plot = 1995
 geom_size <- 4
 
-
 guide <- guides(fill = guide_legend(title = NULL), override.aes = list(fill = NA), color = F)
 guide2 <- guides(color = guide_legend(title = NULL))
+
+
+grob_a <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
+                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
+grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
+                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
+
 #guide <- guides(color = guide_legend(title=NULL), fill = guide_legend(title=NULL)) #, color = F, override.aes=list(fill=NA))
 
 # To add back the legend
@@ -124,7 +129,6 @@ source(file.path(github_path, 'forestlight/stan/get_ratio_slopes_fromfit.R'))
 # ------------------------------ Fig 1: Light Interception ---------------------------------
 ################################################################################################
 
-
 lightperareacloudbin_fg <- read.csv(file.path(fp, 'lightperareacloudbin_fg.csv'), stringsAsFactors = FALSE)
 lightpervolcloudbin_fg <- read.csv(file.path(fp, 'lightpervolcloudbin_fg.csv'), stringsAsFactors = FALSE)
 unscaledlightbydbhcloudbin_fg <- read.csv(file.path(fp, 'unscaledlightbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
@@ -172,7 +176,7 @@ confint(lm1)
 # using linear fit to estimate increase up to 100 cm dbh
 exp(0.987*log(100)) #94.2
 #using ratio of smallest and largest bin
-412.197295/9.477105 #44
+412.197295/9.477105 #43
 #----------------------   Fig 1b: Light per crown volume by diameter -----------------------------
 
 vol <- ggplot() +
@@ -380,7 +384,7 @@ obs_range_mort <- bin_mort %>%
 fitted_mort_trunc <- fitted_mort %>%
   arrange(factor(fg, levels = c('fg5','fg4','fg2', 'fg3', 'fg1'))) %>%
   left_join(obs_range_mort) %>%
-  left_join(fg_lookup) %>%
+  left_join(guild_lookup) %>%
   filter(light_per_area >= min_obs & light_per_area <= max_obs)
 unique(fitted_mort_trunc$fg)
 
@@ -1038,6 +1042,7 @@ g6 <- cbind(g_prod, g_dens , size = "first")
 g6$heights <- unit.pmax(g_dens$heights, g_prod $heights)
 grid.newpage()
 grid.draw(g6)
+
 ggsave(g6, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Ratios/Ratio_no_line.pdf'))
 ggsave(g6, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Ratios/Ratio2.pdf'))
 
@@ -1053,6 +1058,7 @@ g6 <- rbind(g_prod, g_dens , size = "first")
 g6$widths <- unit.pmax(g_dens$widths, g_prod $widths)
 grid.newpage()
 grid.draw(g6)
+
 ggsave(g6, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf'))
 
 system2(command = "pdfcrop", 
@@ -1065,8 +1071,6 @@ system2(command = "pdfcrop",
 #---------------------------------------------------------------------------------------------
 # ------------------------ Supplements  ---------------------------- 
 #---------------------------------------------------------------------------------------------
-
-
 
 
 #---------------Fig S1:  LAI, Tranmittance and Crown Depth
@@ -1092,12 +1096,14 @@ depth <- ggplot(data = lai,
                 labels = signif, name = "Crown Depth (m)") +
   scale_color_manual(values = color_sp) +
   scale_fill_manual(values = fill_sp) + guide +
-  annotation_custom(grob_a) +
-  theme(axis.title = element_text(margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt")))
+  annotation_custom(grob_a) 
 depth
+
+
 pdf(file.path(gdrive_path,'Figures/Supplementals/LAI/lai_depth.pdf'))
 grid.draw(depth)
 dev.off()
+
 depth2 <- set_panel_size(depth, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(depth2)
@@ -1170,19 +1176,11 @@ grid.draw(g1)
 ggsave(g1, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Light_Individual/light_combo.pdf'))
 
 
-# all 5 species
+# all 4 species
 mlm_pdf <- lmer(log(PFD) ~ LAI + (LAI |Species), pfd) 
-mlm_pdf # 0.33 sloep
+mlm_pdf # 0.49 sloep
 
-#no cecropia
-pfd2 <- pfd %>% filter(Species != "Cecropia")
-mlm_pdf2 <- lmer(log(PFD) ~ LAI + (LAI |Species), pfd2) 
-mlm_pdf # 0.33 sloep
 
-#no Cecropia 
-
-mlm2_pdf <- lmer(log(PFD) ~ LAI + (LAI |Species), pfd2) 
-mlm2_pdf  #0.37 slope
 
 # pfd all
 lm_pfd <- lm(log(PFD) ~ LAI, pfd)
@@ -1190,8 +1188,6 @@ lm_pfd
 lm2_pfd <- lm(log(PFD) ~ LAI + Species, pfd)
 lm2_pfd
 
-lm3_pfd <- lm(log(PFD) ~ LAI + Species, pfd2)
-lm3_pfd
 
 lm_each_pfd <-  pfd %>%
   nest(-Species) %>% #group variable
@@ -1202,19 +1198,8 @@ lm_each_pfd <-  pfd %>%
   unnest(tidied)%>%
   filter(term != '(Intercept)')
 lm_each_pfd
-mean(lm_each_pfd$estimate) #0.331
+mean(lm_each_pfd$estimate) #0.49
 
-
-lm_each_pfd2 <-  pfd2 %>%
-  nest(-Species) %>% #group variable
-  mutate(
-    fit = map(data, ~ lm(log(PFD) ~ LAI, data = .x)),
-    tidied = map(fit, tidy)
-  ) %>%
-  unnest(tidied)%>%
-  filter(term != '(Intercept)')
-lm_each_pfd2
-mean(lm_each_pfd2$estimate) #0.49
 
 
 # ------------------------ Fig S2: Adapted from Fig 2a and Fig 1a in Ruger 2018 --------------------
@@ -1293,7 +1278,7 @@ growth_light_hex<- ggplot(obs_light_raw %>% filter(year == year_to_plot, fg %nin
   #          aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
             aes(x = light_area, y = q50), size = 1, color = 'black') +
-   scale_x_log10(name = title_x) + 
+  scale_x_log10(name = title_x) + 
   scale_y_log10(name = title_y, labels=signif) +
   hex_scale_log_colors + 
   theme_plant_small() +
@@ -1584,8 +1569,9 @@ dev.off()
 #-------------------------------------------------------------------------------
 
 # This section was edited by QDR, 20 Jun 2019, for the updated model fits.
-# Growth model
 
+# Growth model
+base_size <- 11
 p <- ggplot(ics %>% filter(criterion == 'WAIC', 
                            variable == 'production', !fg %in% 'Unclassified'), 
             aes(x = factor(prod_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
@@ -1610,7 +1596,7 @@ dev.off()
 #-------------------------------------------------------------------------------
 
 # Density model
-base_size <- 11
+
 p <- ggplot(ics %>% filter(criterion == 'WAIC', 
                            variable == 'density', !fg %in% 'Unclassified'), 
             aes(x = factor(dens_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
@@ -1746,10 +1732,6 @@ system2(command = "pdfcrop",
 
 ## -------------------- ------Fig S14: PCA score   -----------------------------
 
-grob_a <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
-                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
-grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
-                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 grob_p <- grobTree(textGrob("Short:Tall", x = 0.13, y = 0.93,  hjust = 0,
                             gp = gpar(col = "black", fontface = "italic", fontface = "bold", fontsize = 20))) 
 
@@ -1821,6 +1803,7 @@ gPCA <- rbind(g_light, g_diam, size = "first")
 gPCA$widths <- unit.pmax(g_light$widths,g_diam $widths)
 grid.newpage()
 grid.draw(gPCA)
+
 ggsave(gPCA, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/PCA.pdf'))
 
 system2(command = "pdfcrop", 
@@ -1830,8 +1813,183 @@ system2(command = "pdfcrop",
 #-------------------------------------------------------------------------------
 #----------------------Fig S15: Light Scaling -------------------
 #----------------------------------------------------------------------------
-# light scaling, to make ratios
 
+# Load plotting data
+load(file.path(gdrive_path, 'data/data_forplotting/light_scaling_plotting_data.RData'))
+fg_names <- c("Fast", "Tall", "Slow", "Short")
+fill_scale <- scale_fill_manual(values = guild_fills[1:4], name = NULL, labels = fg_names, guide = guide_legend(override.aes = list(shape = 21)))
+color_scale <- scale_color_manual(values = guild_colors[1:4], name = NULL, labels = fg_names, guide = FALSE)
+
+area_core <- 42.84
+
+obs_indivprod_lightarea$fg <- factor(obs_indivprod_lightarea$fg , labels = c("Fast", "Tall", "Slow", "Short"))
+
+
+#------------ Fig S15a: Growth with light
+
+l_growth <- ggplot() +
+  geom_ribbon(data = prod_pred_dat_lightarea %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3, show.legend = F) +
+  geom_line(data = prod_pred_dat_lightarea %>% filter(light_area >= 7),  
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_indivprod_lightarea %>% filter(mean_n_individuals >= 20), 
+             aes(x = bin_midpoint, y = mean, group = fg, fill = fg), 
+             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
+  scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(1, 600)) +
+  scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~yr^-1)')) +
+  annotation_custom(grob_fast) + annotation_custom(grob_tall) + 
+  annotation_custom(grob_slow3) + annotation_custom(grob_short3) +
+  theme_plant_small() + theme_no_x() +
+  fill_scale +
+  color_scale
+l_growth
+
+l_growth<- set_panel_size(l_growth , width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(l_growth)
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth_v2.pdf'))
+grid.draw(l_growth_low2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth_v2.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth_v2.pdf')) 
+)
+
+
+#------------ Fig S15b: GAbundance with light
+
+l_abun<- ggplot() +
+  geom_ribbon(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
+  geom_line(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_dens_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
+             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
+             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
+  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), breaks = c(3, 30, 300),limits = c(1,400)) +
+  scale_y_log10(labels = signif, limits = c(0.01, 300), name = parse(text = 'Abundance~(ha^-1~cm^-1)')) +
+  theme_plant_small() +
+  fill_scale +
+  color_scale
+l_abun
+
+l_abun2 <- set_panel_size(l_abun, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(l_abun2 )
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density_v2.pdf'))
+grid.draw(l_abun2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density_v2.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density_v2.pdf')) 
+)
+
+
+#----Fig S15C:Total prod scaling with light-----------
+
+l_prod<- ggplot() +
+  geom_ribbon(data = totalprod_pred_dat_lightarea %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3, show.legend = F) +
+  geom_line(data = totalprod_pred_dat_lightarea %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_totalprod_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
+             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
+             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
+  scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(1,600)) +
+  scale_y_log10(labels = signif, limits = c(0.01, 10), position = "right",
+                name  = expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
+  theme_plant_small() +theme(aspect.ratio = 1) +# theme_no_x() + 
+  fill_scale + 
+  color_scale
+
+l_prod
+l_prod2 <- set_panel_size(l_prod, width=unit(10.25,"cm"), height=unit(7,"cm"))
+l_prod2 <- set_panel_size(l_prod, width=unit(14,"cm"), height=unit(14,"cm"))
+
+grid.newpage()
+grid.draw(l_prod2)
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod_v4.pdf'))
+grid.draw(l_prod_low2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod_v3.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod_v3.pdf')) 
+)
+
+
+#---- Fig S15d: production ratio with light
+
+dens_ratio <- prod_ratio_diam %>% 
+  filter(density_ratio > 0) %>%
+  filter(n_individuals >= 20) %>%
+  ggplot() +
+  geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = ratio, fill = ratio), 
+              alpha = 0.4, data = ratio_fitted_diam_density) +
+  geom_line(aes(x = dbh, y = q50, group = ratio, color = ratio), 
+            data = ratio_fitted_diam_density) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+  geom_point(aes(x = bin_midpoint, y = density_ratio, fill = ID),
+             shape = 21, size = 4,  stroke = .5,  color = "black") +
+  scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey")) +
+  scale_color_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey50")) +
+  scale_x_log10(limits = c(1,100), breaks = c(1,10, 100), 
+                name = expression(paste('Diameter (cm)'))) + 
+  scale_y_log10(labels = signif, breaks = c(0.01,0.1, 1,10,100,1000), 
+                limits=c(0.01,200),
+                name = expression("Density Ratio"), position = "right") + 
+  theme_plant() #or small
+dens_ratio 
+
+
+# -------------------- ----- Supp: Production ratio by diameter, abundance by light  -----------------------------
+
+p_r_d <- prod_ratio_diam   %>%
+  filter(n_individuals >= 20) %>%
+  ggplot(aes(x = bin_midpoint, y = production_ratio, fill = ID)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
+  geom_point(shape = 21, size = 4,  stroke = .5, color = "black")+
+  scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey")) +
+  theme_plant() + annotation_custom(grob_b) + 
+  scale_x_log10(name = 'Diameter (cm)', limits=c(1,150), breaks=c(1, 10, 100)) +
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.03,100), 
+                name = expression("Production Ratio")) 
+
+p_r_d 
+
+a_r_l <- prod_ratio_light   %>%
+  filter(n_individuals >= 20) %>%
+  ggplot() + 
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+  geom_point(aes(x = bin_midpoint, y = density_ratio, fill = ID), 
+             shape = 21, size = 4.5,  stroke = .5, color = "black") +
+  scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey"))+
+  theme_plant() +  annotation_custom(grob_a) + annotation_custom(grob_f) + annotation_custom(grob_p) +
+  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(2,330), breaks=c(3,  30,  300)) +
+  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100), limits=c(0.01,100),
+                name = expression("Density Ratio")) +
+  theme(plot.title = element_text(size = 14, color = "black")) 
+
+a_r_l 
+
+g_p_r_d  <- ggplotGrob(p_r_d )
+g_a_r_l <- ggplotGrob(a_r_l )
+g_ratio_sup <- rbind(g_a_r_l ,g_p_r_d , size = "first")
+g_ratio_sup$widths <- unit.pmax(g_a_r_l$widths, g_p_r_d $widths)
+grid.newpage()
+grid.draw(g_ratio_sup )
+
+ggsave(g_ratio_sup , height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Ratio.pdf'))
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Ratio.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Ratio.pdf')) 
+)
+
+
+
+#---------------Into the weeds of the light scaling -------------
 # Get the statistics on the ratio trends.
 la_pred <- logseq(1,412,101)
 x_min <- 7
@@ -1901,7 +2059,7 @@ dens_pred_fg_lightarea_quantiles <- map2(dens_pred_fg_lightarea, map(stan_data_l
 })
 
 dens_pred_dat_lightarea <- map2_dfr(dens_pred_fg_lightarea_quantiles, fg_names,
-                          ~ data.frame(fg = .y, .x)) %>%
+                                    ~ data.frame(fg = .y, .x)) %>%
   mutate(fg = factor(fg, levels = fg_names))
 
 prod_pred_fg_lightarea_quantiles <- map(prod_pred_fg_lightarea, function(dat) {
@@ -1912,7 +2070,7 @@ prod_pred_fg_lightarea_quantiles <- map(prod_pred_fg_lightarea, function(dat) {
 }) 
 
 prod_pred_dat_lightarea <- map2_dfr(prod_pred_fg_lightarea_quantiles, fg_names,
-                          ~ data.frame(fg = .y, .x)) %>%
+                                    ~ data.frame(fg = .y, .x)) %>%
   mutate(fg = factor(fg, levels = fg_names))
 
 totalprod_pred_fg_lightarea_quantiles <- map2(totalprod_pred_fg_lightarea, map(stan_data_list, 'N'), function(dat, N) {
@@ -1924,7 +2082,7 @@ totalprod_pred_fg_lightarea_quantiles <- map2(totalprod_pred_fg_lightarea, map(s
 })
 
 totalprod_pred_dat_lightarea <- map2_dfr(totalprod_pred_fg_lightarea_quantiles, fg_names,
-                               ~ data.frame(fg = .y, .x)) %>%
+                                         ~ data.frame(fg = .y, .x)) %>%
   mutate(fg = factor(fg, levels = fg_names))
 
 
@@ -1957,167 +2115,4 @@ obs_indivprod_lightarea <- data_to_bin %>%
 
 fill_scale <- scale_fill_manual(values = guild_fills[1:4], name = NULL, labels = fg_names, guide = guide_legend(override.aes = list(shape = 21)))
 color_scale <- scale_color_manual(values = guild_colors[1:4], name = NULL, labels = fg_names, guide = FALSE)
-
-
-#----Fig S15a: Growth scaling with light -----------
-
-L_growth<- ggplot() +
-  geom_ribbon(data = prod_pred_dat_lightarea %>% filter(light_area >= 7), 
-              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3, show.legend = F) +
-  geom_line(data = prod_pred_dat_lightarea %>% filter(light_area >= 7),  
-            aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_indivprod_lightarea %>% filter(mean_n_individuals >= 20), 
-             aes(x = bin_midpoint, y = mean, group = fg, fill = fg), 
-             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
-  scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits=c(1, 600)) +
-  scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~yr^-1)')) +
-  annotation_custom(grob_fast) + annotation_custom(grob_tall) + 
-  annotation_custom(grob_slow3) + annotation_custom(grob_short3) +
-  theme_plant_small() + theme_no_x() +
-  fill_scale +
-  color_scale
-l_growth
-
-
-l_growth<- set_panel_size(l_growth , width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(l_growth)
-pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth_v2.pdf'))
-grid.draw(l_growth_low2)
-dev.off()
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth_v2.pdf'), 
-                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_growth_v2.pdf')) 
-)
-
-#----Fig S15b: Density scaling with light-----------
-l_abun<- ggplot() +
-  geom_ribbon(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
-              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
-  geom_line(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
-            aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_dens_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
-             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
-             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
-  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)'), breaks = c(3, 30, 300),limits = c(1,400)) +
-  scale_y_log10(labels = signif, limits = c(0.01, 300), name = parse(text = 'Abundance~(ha^-1~cm^-1)')) +
-  theme_plant_small() +
-  fill_scale +
-  color_scale
-l_abun
-
-
-l_abun2 <- set_panel_size(l_abun, width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(l_abun2 )
-pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density_v2.pdf'))
-grid.draw(l_abun2)
-dev.off()
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density_v2.pdf'), 
-                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_density_v2.pdf')) 
-)
-
-
-#----Fig S15C:Total prod scaling with light-----------
-
-
-l_prod<- ggplot() +
-  geom_ribbon(data = totalprod_pred_dat_lightarea %>% filter(light_area >= 7), 
-              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3, show.legend = F) +
-  geom_line(data = totalprod_pred_dat_lightarea %>% filter(light_area >= 7), 
-            aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_totalprod_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
-             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
-             shape = 21, color = 'black', size = 4, show.legend = FALSE) +
-  scale_x_log10(breaks = c(3, 30, 300), name = parse(text = 'Light~per~crown~area~(W~m^-2)'), limits = c(1,600)) +
-  scale_y_log10(labels = signif, limits = c(0.01, 10), position = "right",
-                name  = expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
-  theme_plant_small() +theme(aspect.ratio = 1) +# theme_no_x() + 
-  fill_scale + 
-  color_scale
-
-l_prod
-l_prod2 <- set_panel_size(l_prod, width=unit(10.25,"cm"), height=unit(7,"cm"))
-l_prod2 <- set_panel_size(l_prod, width=unit(14,"cm"), height=unit(14,"cm"))
-
-grid.newpage()
-grid.draw(l_prod2)
-
-pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod_v4.pdf'))
-grid.draw(l_prod_low2)
-dev.off()
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod_v3.pdf'), 
-                    file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/light_totalprod_v3.pdf')) 
-)
-
-#---- Fig S15d: production ratio with light
-
-dens_ratio <- prod_ratio_diam %>% 
-  filter(density_ratio > 0) %>%
-  filter(n_individuals >= 20) %>%
-  ggplot() +
-  geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = ratio, fill = ratio), 
-              alpha = 0.4, data = ratio_fitted_diam_density) +
-  geom_line(aes(x = dbh, y = q50, group = ratio, color = ratio), 
-            data = ratio_fitted_diam_density) +
-  geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
-  geom_point(aes(x = bin_midpoint, y = density_ratio, fill = ID),
-             shape = 21, size = 4,  stroke = .5,  color = "black") +
-  scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey")) +
-  scale_color_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey50")) +
-  scale_x_log10(limits = c(1,100), breaks = c(1,10, 100), 
-                name = expression(paste('Diameter (cm)'))) + 
-  scale_y_log10(labels = signif, breaks = c(0.01,0.1, 1,10,100,1000), 
-                limits=c(0.01,200),
-                name = expression("Density Ratio")) + 
-  theme_plant_small() +theme_no_y()
-dens_ratio 
-
-
-# -------------------- ----- Supp: Production ratio by diameter, abundance by light  -----------------------------
-
-p_r_d <- prod_ratio_diam   %>%
-  filter(n_individuals >= 20) %>%
-  ggplot(aes(x = bin_midpoint, y = production_ratio, fill = ID)) +
-  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  geom_point(shape = 21, size = 4,  stroke = .5, color = "black")+
-  scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey")) +
-  theme_plant() + annotation_custom(grob_b) + 
-  scale_x_log10(name = 'Diameter (cm)', limits=c(1,150), breaks=c(1, 10, 100)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100,1000), limits=c(0.03,100), 
-                name = expression("Production Ratio")) 
-
-p_r_d 
-
-a_r_l <- prod_ratio_light   %>%
-  filter(n_individuals >= 20) %>%
-  ggplot() + 
-  geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
-  geom_point(aes(x = bin_midpoint, y = density_ratio, fill = ID), 
-             shape = 21, size = 4.5,  stroke = .5, color = "black") +
-  scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey"))+
-  theme_plant() +  annotation_custom(grob_a) + annotation_custom(grob_f) + annotation_custom(grob_p) +
-  scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), limits=c(2,330), breaks=c(3,  30,  300)) +
-  scale_y_log10(labels=signif,breaks = c(0.01,0.1, 1,10,100), limits=c(0.01,100),
-                name = expression("Density Ratio")) +
-  theme(plot.title = element_text(size = 14, color = "black")) 
-
-a_r_l 
-
-
-g_p_r_d  <- ggplotGrob(p_r_d )
-g_a_r_l <- ggplotGrob(a_r_l )
-g_ratio_sup <- rbind(g_a_r_l ,g_p_r_d , size = "first")
-g_ratio_sup$widths <- unit.pmax(g_a_r_l$widths, g_p_r_d $widths)
-grid.newpage()
-grid.draw(g_ratio_sup )
-
-ggsave(g_ratio_sup , height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Ratio.pdf'))
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Ratio.pdf'), 
-                    file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Ratio.pdf')) 
-)
-
 
