@@ -1,10 +1,7 @@
-
 DENS = 3
 PROD = 1
 
-
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google_Drive/ForestLight'))
-
 
 library(forestscaling) 
 library(tidyverse)
@@ -99,7 +96,9 @@ ggplot() +
 
 fgbci <- read.table(file.path(gdrive_path, 'data/Ruger/fgroups_dynamics_new.txt'), stringsAsFactors = FALSE)
 fgbci$fg5 <- match(fgbci$fg5, c(2,3,1,4,5))
+fgbci$PC_slow_to_fast <- -fgbci$X1new
 fgbci$PC_breeder_to_pioneer <- fgbci$X2new
+
 
 Fig_3a <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
   geom_point(shape = 21, size = geom_size, color = "black") + 
@@ -117,7 +116,6 @@ title_x <- expression(paste('Light per Crown Area (W m'^-2,')',sep=''))
 title_y <- expression(atop('Growth per Crown Area', paste('(kg yr'^-1, ' m'^-2,')', sep='')))
 scale_y_log10(name =  expression(atop('Growth per Crown Area',
                                       paste('(kg y'^-1, ' m'^-2,')'))))
-
 
 obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
 obs_light_raw <- read.csv(file.path(fp, 'obs_light_raw.csv'), stringsAsFactors = FALSE)
@@ -206,12 +204,9 @@ Fig_3c <- ggplot(data = fitted_mort_trunc %>%
 Fig_3c
 
 
-
 ########################################################################################
 # ------------------------------- Fig 4 Scaling Plots ------------------------------------
 ########################################################################################
-
-
 
 #---- Fig 4a: Growth scaling
 
@@ -657,7 +652,7 @@ p
 # ---------------------- Fig S9: WAIC of Piecewise Growth Scaling in Fig 4a --------------------------
 
 # Growth ~ Stem Diameter, 1 vs 2 piecewise fit
-
+base_size <- 11
 ggplot(ics %>% filter(criterion == 'WAIC', 
                       variable == 'production', !fg %in% 'Unclassified'), 
        aes(x = factor(prod_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
@@ -673,7 +668,6 @@ ggplot(ics %>% filter(criterion == 'WAIC',
 
 # Population Density ~ Stem Diameter 
 
-base_size <- 11
 ggplot(ics %>% filter(criterion == 'WAIC', 
                       variable == 'density', !fg %in% 'Unclassified'), 
        aes(x = factor(dens_model), y = IC_value, ymin = IC_value - IC_stderr, ymax = IC_value + IC_stderr)) +
@@ -723,8 +717,8 @@ p <- ggplot() +
   guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
 p
 
-#-------------- Fig S13: Total Crown volume Scaling 
 
+#-------------- Fig S13: Total Crown volume Scaling -----------------------------
 
 totalvolbins_fg <- read.csv(file.path(fp, 'obs_totalvol.csv'), stringsAsFactors = FALSE)
 
@@ -747,73 +741,8 @@ p +theme_plant_small(legend = TRUE)  + guide +
   scale_fill_manual(values = guild_fills2, labels = guild_labels2) 
 
 
-
-# Load plotting data
-load(file.path(gdrive_path, 'data/data_forplotting/light_scaling_plotting_data.RData'))
-fg_names <- c("Fast", "Tall", "Slow", "Short")
-fill_scale <- scale_fill_manual(values = guild_fills[1:4], name = NULL, labels = fg_names, guide = guide_legend(override.aes = list(shape = 21)))
-color_scale <- scale_color_manual(values = guild_colors[1:4], name = NULL, labels = fg_names, guide = FALSE)
-
-area_core <- 42.84
-
-obs_indivprod_lightarea$fg <- factor(obs_indivprod_lightarea$fg , labels = c("Fast", "Tall", "Slow", "Short"))
-#------- Growth with light
-l_growth <- ggplot() +
-  geom_ribbon(data = prod_pred_dat_lightarea %>% filter(light_area >= 7), 
-              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), 
-              alpha = 0.3, show.legend = F) +
-  geom_line(data = prod_pred_dat_lightarea %>% filter(light_area >= 7), 
-            aes(x = light_area, y = q50, group = fg, color = fg), show.legend = F) +
-  geom_point(data = obs_indivprod_lightarea %>% filter(mean_n_individuals >= 20), 
-             aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
-             shape = 21, color = 'black', size = 4, show.legend = T) +
-  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)')) +
-  scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
-  fill_scale +
-  color_scale +
-  theme_plant_small(legend = T)
-l_growth
-
-#------ abundance with light
-l_abun <- ggplot() +
-  geom_ribbon(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
-              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), 
-              alpha = 0.3, show.legend =F ) +
-  geom_line(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
-            aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_dens_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
-             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
-             shape = 21, color = 'black', size = 4) +
-  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)')) +
-  scale_y_log10(labels = signif, limits = c(0.01, 200), name = parse(text = 'Abundance~(ha^-1~cm^-1)')) +
-  theme_plant_small(legend = T) +
-  fill_scale +
-  color_scale
-l_abun 
-
-l_prod <- ggplot() +
-  geom_ribbon(data = totalprod_pred_dat_lightarea %>% filter(light_area >= 7), 
-              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), show.legend = F, alpha = 0.3) +
-  geom_line(data = totalprod_pred_dat_lightarea %>% filter(light_area >= 7), 
-            aes(x = light_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = obs_totalprod_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
-             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
-             shape = 21, color = 'black', size = 4, show.legend = T) +
-  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)')) +
-  scale_y_log10(labels = signif, limits = c(0.01, 10), 
-                name  = expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
-  theme_plant_small(legend = T) +
-  fill_scale + 
-  color_scale
-
-l_prod 
-
-
-
-
-
-# -------------------- ------   PCA scores   -----------------------------
-## by Light
+# --------------------Fig S14: Mean PCA scores   -----------------------------
+##-- Fig S14a: Mean score  by Light
 
 fastslowscore_bin_bylight <- fastslowscore_bin_bylight_byyear %>%
   left_join(fastslow_stats_bylight_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
@@ -841,7 +770,7 @@ PCA_light <- PCA_score_by_light %>%
 PCA_light
 
 
-#---- PCA by Diameter
+#---- Fig S14b: PCA by Diameter
 
 fastslowscore_bin_bydiam <- fastslowscore_bin_bydiam_byyear %>%
   left_join(fastslow_stats_bydiam_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
@@ -865,4 +794,71 @@ PCA_diam <- score_bin_bydiam %>%
   scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = "PCA Score") +
   theme_plant_small(legend = T) + guide
 PCA_diam
+
+
+#------------------ Fig S15:Light Scaling---------------------
+
+# Load plotting data
+load(file.path(gdrive_path, 'data/data_forplotting/light_scaling_plotting_data.RData'))
+fg_names <- c("Fast", "Tall", "Slow", "Short")
+fill_scale <- scale_fill_manual(values = guild_fills[1:4], name = NULL, labels = fg_names, guide = guide_legend(override.aes = list(shape = 21)))
+color_scale <- scale_color_manual(values = guild_colors[1:4], name = NULL, labels = fg_names, guide = FALSE)
+
+area_core <- 42.84
+
+obs_indivprod_lightarea$fg <- factor(obs_indivprod_lightarea$fg , labels = c("Fast", "Tall", "Slow", "Short"))
+#------------ Fig S15a: Growth with light
+l_growth <- ggplot() +
+  geom_ribbon(data = prod_pred_dat_lightarea %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), 
+              alpha = 0.3, show.legend = F) +
+  geom_line(data = prod_pred_dat_lightarea %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg), show.legend = F) +
+  geom_point(data = obs_indivprod_lightarea %>% filter(mean_n_individuals >= 20), 
+             aes(x = bin_midpoint, y = median, group = fg, fill = fg), 
+             shape = 21, color = 'black', size = 4, show.legend = T) +
+  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)')) +
+  scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
+  fill_scale +
+  color_scale +
+  theme_plant_small(legend = T)
+l_growth
+
+#------------ Fig S15b: Abundance with light
+l_abun <- ggplot() +
+  geom_ribbon(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), 
+              alpha = 0.3, show.legend =F ) +
+  geom_line(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_dens_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
+             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
+             shape = 21, color = 'black', size = 4) +
+  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)')) +
+  scale_y_log10(labels = signif, limits = c(0.01, 200), name = parse(text = 'Abundance~(ha^-1~cm^-1)')) +
+  theme_plant_small(legend = T) +
+  fill_scale +
+  color_scale
+l_abun 
+
+#------------ Fig S15c: Production with light
+l_prod <- ggplot() +
+  geom_ribbon(data = totalprod_pred_dat_lightarea %>% filter(light_area >= 7), 
+              aes(x = light_area, ymin = q025, ymax = q975, group = fg, fill = fg), show.legend = F, alpha = 0.3) +
+  geom_line(data = totalprod_pred_dat_lightarea %>% filter(light_area >= 7), 
+            aes(x = light_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = obs_totalprod_lightarea %>% filter(bin_count >= 20, bin_value > 0), 
+             aes(x = bin_midpoint, y = bin_value/area_core, group = fg, fill = fg),
+             shape = 21, color = 'black', size = 4, show.legend = T) +
+  scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)')) +
+  scale_y_log10(labels = signif, limits = c(0.01, 10), 
+                name  = expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
+  theme_plant_small(legend = T) +
+  fill_scale + 
+  color_scale
+
+l_prod 
+
+#------------ Fig S15d: PRatio with light - See Fig 6a
+
 
