@@ -21,12 +21,17 @@ guild_fills2 <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
 guild_colors <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 guild_colors2 <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 
-fg_names <- paste('fg', 1:5, sep = '')
-fg_labels <- c('Fast','Tall', 'Slow', 'Short', 'Medium')
-fg_labels2 <- c('Fast','Tall', 'Slow', 'Short', 'Medium', 'All')
+fg_labels <- c("fg1", "fg2","fg3", "fg4", "fg5")
+fg_labels2 <- c("all", "fg1", "fg2","fg3", "fg4", "fg5")
+fg_labels3 <- c("all", "fg1", "fg2","fg3", "fg4", "fg5", "unclassified")
+
+guild_names <- paste('fg', 1:5, sep = '')
+guild_labels <- c('Fast','Tall', 'Slow', 'Short', 'Medium')
+guild_labels2 <- c('All', 'Fast','Tall', 'Slow', 'Short', 'Medium')
+guild_labels3 <- c('All', 'Fast','Tall', 'Slow', 'Short', 'Medium',  "Unclassified")
 
 
-fg_lookup <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','all','unclassified'), 
+guild_lookup <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','all','unclassified'), 
                         fg_name = c('Fast','Tall','Slow','Short','Medium','All','Unclassified'))
 
 year_to_plot = 1995
@@ -43,7 +48,6 @@ for (i in dir(fp, pattern = 'obs_')) {
   assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
 }
 
-
 for (i in dir(fp, pattern = 'pred_|fitted_')) {
   n <- gsub('.csv','',i)
   assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
@@ -52,11 +56,9 @@ for (i in dir(fp, pattern = 'pred_|fitted_')) {
 # ------------------------------ Fig 1: Light Interception ---------------------------------
 ################################################################################################
 
-
 lightperareacloudbin_fg <- read.csv(file.path(fp, 'lightperareacloudbin_fg.csv'), stringsAsFactors = FALSE)
 lightpervolcloudbin_fg <- read.csv(file.path(fp, 'lightpervolcloudbin_fg.csv'), stringsAsFactors = FALSE)
 unscaledlightbydbhcloudbin_fg <- read.csv(file.path(fp, 'unscaledlightbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
-
 
 exl <- expression(atop('Light per Crown Area', paste('(W m'^-2, ')')))
 exv <- expression(atop('Light per Crown Volume', paste('(W m'^-3, ')')))
@@ -65,13 +67,15 @@ exd <- 'Diameter (cm)'
 
 #----------------------   Fig 1a: Light per crown volume by diameter -----------------------------
 
-Fig_1a <- ggplot() + geom_point(alpha = 0.01, data = alltree_light_95, aes(x = dbh_corr, y = light_received/crownarea), color = 'chartreuse3') +
-  geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
+Fig_1a <- ggplot() + 
+  geom_point(alpha = 0.01, data = alltree_light_95, 
+             aes(x = dbh_corr, y = light_received_byarea), color = 'chartreuse3') +
+  geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), 
+                  aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
   scale_x_log10(name = exd) +
   scale_y_log10(name = exl) +
   theme_plant_small(legend = TRUE) 
 Fig_1a #takes a minute, may tax computer
-
 
 
 #----------------------   Fig 1b: Light per crown volume by diameter -----------------------------
@@ -91,7 +95,7 @@ Fig_1b
 
 # ### Fig 3a, PCA
 
-fgbci <- read_csv(file.path(gdrive_path, 'data/functionalgroups.csv'))
+fgbci <- read.table(file.path(gdrive_path, 'data/Ruger/fgroups_dynamics_new.txt'), stringsAsFactors = FALSE)
 
 Fig_3a <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
   geom_point(shape = 21, size = geom_size, color = "black") + 
@@ -99,7 +103,7 @@ Fig_3a <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill
   scale_y_continuous(limits = c(-6,6), breaks = seq(-6,6,3))+
   scale_x_continuous(limits = c(-6,6), breaks = seq(-6,6,3))+
   scale_color_manual(values = guild_colors)+
-  scale_fill_manual(values = guild_fills, labels = fg_labels) + 
+  scale_fill_manual(values = guild_fills, labels = guild_labels) + 
   theme_plant_small(legend = TRUE) + guide
 Fig_3a
 
@@ -154,7 +158,7 @@ Fig_3b <- ggplot(obs_light_binned_plotdata) +
   scale_y_log10(name = title_y, position = "right", breaks = c(0.01, 0.03, 0.1, 0.3), 
                 labels = c( 0.01, 0.03, 0.1, 0.3)) +
   scale_color_manual(values = guild_colors) +
-  scale_fill_manual(values = guild_fills, labels = fg_labels) +
+  scale_fill_manual(values = guild_fills, labels = guild_labels) +
   theme_plant_small(legend = TRUE)  +guide
 Fig_3b
 
@@ -174,15 +178,14 @@ fitted_mort_trunc <- fitted_mort %>%
   left_join(obs_range_mort) %>%
   filter(light_per_area >= min_obs & light_per_area <= max_obs)
 
-
 #Mortality
-Fig_3c <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
+Fig_3c <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = guild_labels))) +
   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), 
               alpha = 0.4, show.legend = F) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
   geom_point(data = bin_mort %>% 
                filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) >= 20)  %>% 
-               mutate(fg = factor(fg, labels = fg_labels)),
+               mutate(fg = factor(fg, labels = guild_labels)),
              aes(x = bin_midpoint, y = mortality, fill = fg),
              shape = 21, size = geom_size) +
   scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), breaks = c(3, 30, 300), limits = c(1.5, 412)) +
@@ -201,15 +204,18 @@ Fig_3c
 ########################################################################################
 
 
-
-# I'm trying to keep the original function, but we should reverse geom order here: %>% arrange(desc(fg))
+# I'm trying to keep the original function, but ideally we would reverse geom order here: %>% arrange(desc(fg))
 # in published version I altered plot_prod
 
 #---- Fig 4a
-obs_indivprod <- obs_indivprod %>%
-  filter(mean_n_individuals >= 20)
+#obs_indivprod$fg <- factor(obs_indivprod$fg, levels = c('all', 'fg5','fg4','fg2', 'fg3', 'fg1'))
+#obs_indivprod$fg <- factor(obs_indivprod$fg , labels = c('all' = "All", 'fg5' = "Medium", 'fg4' = "Short", "fg2" = "Tall", "fg3" = "Slow", "fg1" = "Fast"))
+#obs_indivprod <- obs_indivprod %>%
+ # filter(mean_n_individuals >= 20)
+
+
 Fig_4a <- plot_prod(year_to_plot = 1995,
-                fg_names = c('fg1','fg2','fg3','fg4','fg5'),
+                fg_names = fg_labels,
                 model_fit = PROD,
                 x_limits = c(1, 230),
                 y_limits = c(0.001, 2000),
@@ -220,41 +226,50 @@ Fig_4a <- plot_prod(year_to_plot = 1995,
                 error_bar_width = 0,
                 y_labels = c(0.001,0.1,10,1000),
                 dodge_width = 0.05)
-Fig_4a + theme_plant_small(legend = TRUE)  +guide
+Fig_4a + theme_plant_small(legend = TRUE)  +guide + 
+  theme(axis.text.x = element_text(color = "black", size = 15),  
+        axis.ticks.x = element_line(color = "black")) + 
+  scale_fill_manual(values = guild_fills, labels = guild_labels) 
 
 #---- Fig 4b
-obs_dens <- obs_dens %>%
-  filter(bin_count >= 20)
+#obs_dens$fg <- factor(obs_dens$fg, levels = c('all', 'fg5','fg4','fg2', 'fg3', 'fg1'))
+#obs_dens$fg <- factor(obs_dens$fg , labels = c('all' = "All", 'fg5' = "Medium", 'fg4' = "Short", "fg2" = "Tall", "fg3" = "Slow", "fg1" = "Fast"))
+#obs_dens <- obs_dens %>%
+  #filter(bin_count >= 20)
+
 Fig_4b <- plot_dens(year_to_plot = 1995,
-                fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
+                fg_names = fg_labels2,
                 model_fit = DENS,
+                preddat = pred_dens, 
                 x_limits = c(.8, 230),
                 y_limits = c(0.01, 20000),
                 x_breaks = c(1, 10, 100),
                 y_labels = c(0.001, 0.1, 10,1000),
                 y_breaks = c(0.001, 0.1,  10, 1000))
-Fig_4b +theme_plant_small(legend = TRUE)  +guide
+Fig_4b +theme_plant_small(legend = TRUE)  + guide +
+  scale_fill_manual(values = guild_fills2, labels = guild_labels2) 
 
 
 #---- Fig 4c
 obs_totalprod <- obs_totalprod %>%
   filter(bin_count >= 20)
 Fig_4c <- plot_totalprod(year_to_plot = 1995,
-                     fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
+                     fg_names = fg_labels2,
                      model_fit_density = DENS, 
                      model_fit_production = PROD,
                      x_limits = c(0.7,230),
                      y_limits = c(0.5, 200),
                      y_breaks = c(0.1, 1, 10, 100),
                      y_labels = c(0.1, 1, 10, 100),
-                     dodge_width = 0.0,
                      preddat = fitted_totalprod)
-Fig_4c  <- Fig_4c  + scale_x_log10(name = 'Diameter (cm)',
+Fig_4c  + scale_x_log10(name = 'Diameter (cm)',
                         breaks = c(1,10,100), limits = c(0.8, 230),
                         sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
-                                            name = "Height (m)", breaks = c(3, 10, 30))) #+
+                                            name = "Height (m)", breaks = c(3, 10, 30))) +
+  theme_plant_small(legend = TRUE)  + guide +
+  scale_fill_manual(values = guild_fills2, labels = guild_labels2) 
 
-
+Fig_4c
 ########################################################################################
 # ------------------------------- Fig 5 Symmetry Plots ------------------------------------
 ########################################################################################
@@ -276,12 +291,13 @@ Fig_5a <- plot_totalprod(year_to_plot = 1995,
                             y_limits = c(100, 200000),
                             geom_size = 4,
                             y_breaks = c(100, 1000, 10000, 100000),
-                            y_labels = c("0.1", "1", "10", "100"),
+                            y_labels = c("0.1", "1", "10", "100"), #convert from watts to kilowatts
                             y_name = expression(atop('Total Light Intercepted' , paste('(kW cm'^-1,' ha'^-1,')'))),
                             preddat = fitted_totallight,
                             obsdat = totallightbins_fg,
                             plot_abline = FALSE)
-Fig_5a + theme_plant_small(legend = TRUE)  + guide
+Fig_5a + theme_plant_small(legend = TRUE)  + guide +
+  scale_fill_manual(values = guild_fills2, labels = guild_labels2) 
 
 # Fig 5b
 
@@ -309,13 +325,11 @@ light_slopes_atmiddle <- light_slopes %>%
   group_by(fg) %>%
   filter(diff == min(diff))
 
-fg_full_names <- c('Fast', 'Tall', 'Slow', 'Short', 'Medium', 'All Trees', 'Unclassified')
-fgs <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified')
-
 allslopes <- rbind(growth_slopes_atmiddle, light_slopes_atmiddle) %>%
   ungroup %>%
-  mutate(fg = factor(fg, levels = fgs, labels = fg_full_names))
-grob0 <- grobTree(textGrob("b", x = 0.04, y = 0.9,  hjust = 0,
+  mutate(fg = factor(fg, levels = fg_labels3, labels = guild_labels3))
+
+grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.9,  hjust = 0,
                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 grob1 <- grobTree(textGrob("Light Capture", x = 0.75, y = 0.94, hjust = 0,
                            gp = gpar(col = "gold3", fontsize = 18))) 
@@ -333,8 +347,8 @@ Fig_5b <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), aes(x = fg, y = 
   scale_y_continuous(limits = c(-1.05, 1.3)) +
   scale_fill_manual(values = c('gold1', 'darkolivegreen3')) +
   scale_color_manual(values = c('gold3', 'darkgreen')) +
-  theme_plant() + theme(axis.text.x = element_text(angle = 25, hjust = 1, face = "italic", size = 18)) +
-  annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3) +annotation_custom(grob0)
+  theme_plant() + theme(axis.text.x = element_text(angle = 25, vjust = 0.7, face = "italic", size = 18)) +
+  annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3)
 Fig_5b
 
 
@@ -379,8 +393,6 @@ ratio_fitted_diam_density <- ratio_fitted_diam %>%
 
 # ---------------------------------   Fig 6a  Production by light ------------------------------------
 
-
-
 prod_ratio <- prod_ratio_light   %>%
   filter(n_individuals >= 20) %>%
   ggplot() + 
@@ -423,18 +435,30 @@ dens_ratio
 ########################################################################################
 # ------------------------------- Supplementals ------------------------------------
 ########################################################################################
-grob_fast <- grobTree(textGrob("Fast", x = 0.04, y = 0.95,  hjust = 0,
-                               gp = gpar(col = "#BFE046", fontsize = 15, fontface = "italic"))) 
-grob_tall <- grobTree(textGrob("Tall", x = 0.04, y = 0.88,  hjust = 0,
-                               gp = gpar(col = "#267038", fontsize = 15, fontface = "italic"))) 
-grob_medium <- grobTree(textGrob("Medium", x = 0.04, y = 0.81,  hjust = 0,
-                                 gp = gpar(col = "gray70", fontsize = 15, fontface = "italic"))) 
-grob_slow <- grobTree(textGrob("Slow", x = 0.04, y = 0.74,  hjust = 0,
-                               gp = gpar(col = "#27408b", fontsize = 15, fontface = "italic"))) 
-grob_short <- grobTree(textGrob("Short", x = 0.04, y = 0.67,  hjust = 0,
-                                gp = gpar(col = "#87Cefa", fontsize = 15, fontface = "italic"))) 
-grob_all <- grobTree(textGrob("All", x = 0.04, y = 0.60,  hjust = 0,
-                              gp = gpar(col = "black", fontsize = 15, fontface = "italic"))) 
+
+#---------------- LAI and Transmittance  ----------------
+lai_0 <- read_csv('/Users/jgradym/Google_Drive/ForestLight/data/data_forplotting/LAI_Depth.csv')
+pfd_0 <- read_csv('/Users/jgradym/Google_Drive/ForestLight/data/data_forplotting/PFD_LAI.csv')
+lai <- lai_0 %>% filter(Species != "Cecropia") 
+pfd <- pfd_0 %>% filter(Species != "Cecropia")
+
+fill_sp <- c("darkolivegreen4", "cadetblue2",  "brown3", "gray22") 
+color_sp <- c("darkolivegreen", "cadetblue3",  "brown4", "black") 
+
+# LAI vs Crown Depth
+depth <- ggplot(data = lai, 
+                aes(x = Depth, y = LAI, fill = Species, fill = Species, color = Species )) +
+  geom_smooth(method = "lm", alpha = 0.2, 
+              aes(fill = Species, color = Species),
+              show.legend = FALSE) +
+  geom_point(aes(fill = Species), size = 4, shape = 21, color = "black") + 
+  theme_plant_small(legend = TRUE)  +
+  scale_y_log10(limits = c(0.6, 10),labels = signif, breaks = c(1, 3, 10)) +
+  scale_x_log10(limits = c(0.2, 15), breaks = c( 0.3, 1, 3, 10), 
+                labels = signif, name = "Crown Depth (m)") +
+  scale_color_manual(values = color_sp) +
+  scale_fill_manual(values = fill_sp) + guide 
+depth
 
 
 
@@ -457,9 +481,11 @@ p <- plot_prod(year_to_plot = 1995,
                plot_abline = FALSE,
                x_name = 'Diameter (cm)',
                y_name = expression(paste('Diameter growth (cm yr'^-1,')')))
-p + 
-  annotation_custom(grob_fast) + annotation_custom(grob_tall) + annotation_custom(grob_medium) + 
-  annotation_custom(grob_slow) + annotation_custom(grob_short) 
+p + theme_plant_small(legend = TRUE)  +guide + 
+  theme(axis.text.x = element_text(color = "black", size = 15),  
+        axis.ticks.x = element_line(color = "black")) + 
+  scale_fill_manual(values = guild_fills, labels = guild_labels) 
+ 
 
 # ------------------------ Growth per Crown Area ~ Light per Crown Area -------------------------
 # Axis titles
@@ -482,9 +508,9 @@ hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RCol
                                              labels = c(1,10,100,1000), limits=c(1,5000))
 
 
-p_hex_panels <- ggplot(obs_light_raw %>% 
+growth_light_hex <- ggplot(obs_light_raw %>% 
                          filter(year == year_to_plot, fg %nin% c('alltree','unclassified'))) +
-  facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
+  facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) + 
   geom_hex(aes(x = light_area, y = production_area)) +
   geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
             aes(x = light_area, y = q50), size = 1, color = 'black') +
@@ -499,12 +525,12 @@ p_hex_panels <- ggplot(obs_light_raw %>%
         legend.position = c(0.7, 0.15),
         legend.text = element_text(size = 12),
         legend.title=element_text(size=15))
-p_hex_panels
+growth_light_hex
 
 #---------------------------- Mean Growth ~ Light --------------------------------
 
 
-p_mean_panels <- ggplot(obs_light_binned %>% 
+growth_light_mean <- ggplot(obs_light_binned %>% 
                           filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified'))) +
   facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
   geom_ribbon(data = pred_light_5groups %>% 
@@ -524,22 +550,24 @@ p_mean_panels <- ggplot(obs_light_binned %>%
   scale_fill_manual(values = guild_colors) +
   scale_x_log10(name = title_x, breaks = c(1,10,100)) + 
   scale_y_log10(name = title_y, labels = signif, breaks = c(0.01,0.1,1,10)) +
-  theme_plant_small() + 
-  theme_facet2()
+  theme_plant_small() +
+  theme(strip.text = element_text(size=14))+
+  theme(panel.border = element_rect(fill=NA),
+        strip.background = element_rect(fill=NA))
+    
+growth_light_mean 
 
-p_mean_panels
-
-#---------------------------- Max Growth Rate with light -----------------------------------
+#---------------------------- Growth Responsiveness to light -----------------------------------
 
 param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg3", "fg4"))
-fg_labels2 <- c("Fast", "Tall", "Medium", "Slow", "Short")
+guild_labels2_ <- c("Fast", "Tall", "Medium", "Slow", "Short")
 
 ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
             aes(x = fg, y = q50, ymin = q025, ymax = q975)) + 
   geom_errorbar(width = 0.4) + geom_point(size = 4) +
   theme(axis.text.x = element_text(angle = 25,  vjust = 0.7))+
-  scale_x_discrete(name = 'Life History Guild', labels = fg_labels2) +
-  scale_y_continuous(expression(paste('Max. Growth Rate (kg yr'^-1, ' m'^-2,')')), 
+  scale_x_discrete(name = 'Life History Guild', labels = guild_labels2_) +
+  scale_y_continuous(expression(atop('Max. Growth Responsiveness',paste('to Light (kg yr'^-1, ' m'^-2,')'))), 
                      limits = c(0.6, 1.1),
                      breaks = seq(0, 1, 0.2), labels = seq(0, 1, 0.2)) +
   theme_plant() + theme(aspect.ratio = 0.75)
@@ -568,6 +596,7 @@ p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) | (is.na(den
   geom_ribbon(alpha = 0.3, size = 0.2) +
   geom_line(size = 1.25) +
   scale_x_log10(name = 'Diameter (cm)', expand = c(0,0)) +
+  scale_y_continuous(breaks = c(-15, -8, -5, -3, -2, 0, 2)) +
   theme_bw() + 
   theme(strip.background = element_blank(), panel.grid = element_blank(), strip.text = element_text(size = 12),
         legend.position = 'bottom', legend.spacing.x = unit(.2, "cm"), legend.title = element_blank(),
@@ -575,9 +604,8 @@ p <- ggplot(slopes %>% filter((dens_model == 3 & is.na(prod_model)) | (is.na(den
         axis.text = element_text(color = "black", size = 11)) +
   labs(y = 'Slope') +
   ggtitle('Fitted Slopes: \n 3 Segment Density & 1 Segment Growth Models')+
-  theme(plot.title = element_text(hjust=0.5)) 
+  theme(plot.title = element_text(hjust = 0.5)) 
 p 
-
 
 #-------------------------- Heat Map of Growth Scaling -----------------------
 #--------------------- Growth by LH Hex ----------------------------
@@ -597,19 +625,19 @@ hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RCol
 p0 <- plot_prod_withrawdata(year_to_plot = 1995,
                             fg_names = c('fg1','fg2','fg3','fg4','fg5','unclassified'),
                             full_names = c('Fast', 'Tall', 'Slow', 'Short', 'Medium', 'Unclassified'),
-                            x_limits = c(1, 316),
-                            x_breaks = c(1,10, 100),
-                            y_limits = c(0.001, 1000),
+                            x_limits = c(0.7, 316),
+                            x_breaks = c(1, 10, 100),
+                            y_limits = c(0.0007, 1000),
                             y_breaks = c(.001, .1, 10, 1000),
                             line_types = c('solid', 'dashed'),
                             hex_scale = hex_scale_log_colors,
                             plot_abline = FALSE,
                             plot_fits = PROD)
 
-p <- p0 + theme(legend.position = 'right', legend.text=element_text(size = 13), 
-                legend.title=element_text(size = 15)) + 
-  scale_y_log10(labels = c(0.01, 1, 100), 
-                breaks = c(0.01, 1, 100), name = expression(paste('Growth (kg yr'^-1,')'))) +
+p <- p0 +  theme_plant_small() + theme(legend.position = 'right', legend.text=element_text(size = 13), 
+                legend.title=element_text(size = 15)) +
+  scale_y_log10(labels = c(0.001, 0.1, 10, 1000), limits = c(0.0007, 1000),
+                breaks = c(0.001, 0.1, 10, 1000), name = expression(paste('Growth (kg yr'^-1,')'))) +
   guides(linetype = FALSE)
 p
 
@@ -638,7 +666,7 @@ l_growth <- ggplot() +
   scale_y_log10(labels = signif, limits = c(0.01, 100), name = parse(text = 'Growth~(kg~y^-1)')) +
   fill_scale +
   color_scale +
-  theme_plant
+  theme_plant_small(legend = T)
 l_growth
 
 #------ abundance with light
@@ -653,7 +681,7 @@ l_abun <- ggplot() +
              shape = 21, color = 'black', size = 4) +
   scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)')) +
   scale_y_log10(labels = signif, limits = c(0.01, 200), name = parse(text = 'Abundance~(ha^-1~cm^-1)')) +
-  theme_plant  + 
+  theme_plant_small(legend = T) +
   fill_scale +
   color_scale
 l_abun 
@@ -669,16 +697,17 @@ l_prod <- ggplot() +
   scale_x_log10(name = parse(text = 'Light~per~crown~area~(W~m^-2)')) +
   scale_y_log10(labels = signif, limits = c(0.01, 10), 
                 name  = expression(atop('Production', paste('(kg yr'^-1,' cm'^-1,' ha'^-1,')')))) +
-  theme_plant +
+  theme_plant_small(legend = T) +
   fill_scale + 
   color_scale
 
 l_prod 
 
-# ------------------------   WAIC of Piecewise Models  -----------------------------------
+# ------------------------   WAIC of Piecewise Scaling  -----------------------------------
 
 
-# Density model
+# Population Density ~ Stem Diameter 
+
 base_size <- 11
 ggplot(ics %>% filter(criterion == 'WAIC', 
                            variable == 'density', !fg %in% 'Unclassified'), 
@@ -693,7 +722,7 @@ ggplot(ics %>% filter(criterion == 'WAIC',
 
 
 
-# Growth model
+# Growth ~ Stem Diameter, 1 vs 2 piecewise fit
 
 ggplot(ics %>% filter(criterion == 'WAIC', 
                            variable == 'production', !fg %in% 'Unclassified'), 
@@ -713,7 +742,8 @@ minmax_prod_bycensus <- obs_totalprod %>%
   group_by(fg, bin_midpoint) %>%
   summarize(range_min = min(bin_value), range_max = max(bin_value))
 
-p <- ggplot(minmax_prod_bycensus, aes(x = bin_midpoint, ymin = range_min, ymax = range_max, color = fg)) +
+p <- ggplot(minmax_prod_bycensus, 
+            aes(x = bin_midpoint, ymin = range_min, ymax = range_max, color = fg)) +
   geom_errorbar(size = 1) +
   scale_x_log10(name = 'Diameter (cm)', breaks = c(1,3,10,30,100,300)) + 
   scale_y_log10(expression(paste('Production (kg ha'^-1,' cm'^-1,' yr'^-1,')')),
@@ -756,7 +786,7 @@ p <- plot_totalprod(year_to_plot = 1995,
                      model_fit_density = DENS, 
                      model_fit_production = PROD,
                      x_limits = c(0.9, 150),
-                     y_limits = c(5, 5500),
+                     y_limits = c(8, 5500),
                      y_breaks = c(1, 10, 100, 1000),
                      y_labels = c(1, 10, 100, 1000),
                      y_name = expression(atop('Total Crown Volume',paste('(m'^3, ' cm'^-1,' ha'^-1,')'))), 
@@ -764,7 +794,8 @@ p <- plot_totalprod(year_to_plot = 1995,
                      obsdat = totalvolbins_fg, 
                      plot_abline = FALSE,
                      geom_size = 4)
-p + theme_plant
+p +theme_plant_small(legend = TRUE)  + guide +
+  scale_fill_manual(values = guild_fills2, labels = guild_labels2) 
 
 # -------------------- ------   PCA scores   -----------------------------
 ## by Light
@@ -784,18 +815,19 @@ error_bar_width <- .15
 PCA_light <- PCA_score_by_light %>%
   filter(year == 1995, n_individuals >= 20) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
-  geom_errorbar(width = error_bar_width) +theme_plant() +
-  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
-  scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey"))+
-  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+ annotation_custom(grob_a) +
-  annotation_custom(grob_p) + annotation_custom(grob_f) +
+  geom_errorbar(width = error_bar_width) +
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black") +
+  scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey")) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed") + 
+ # annotation_custom(grob_p) +
   scale_x_log10(limits=c(1.8,450), breaks = c(3, 30, 300),
                 name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
-  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score') 
+  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score')  +
+  theme_plant_small(legend = T) + guide
 PCA_light
 
 
-# PCA by Diameter
+#---- PCA by Diameter
 
 fastslowscore_bin_bydiam <- fastslowscore_bin_bydiam_byyear %>%
   left_join(fastslow_stats_bydiam_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
@@ -808,21 +840,15 @@ breederscore_bin_bydiam <- breederscore_bin_bydiam_byyear %>%
 score_bin_bydiam <- rbind(fastslowscore_bin_bydiam, breederscore_bin_bydiam)
 
 
-grob_a <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
-                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
-grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
-                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
-
 PCA_diam <- score_bin_bydiam %>%
   filter(year == 1995, n_individuals >= 20) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  geom_errorbar(width = error_bar_width) +theme_plant() +
+  geom_errorbar(width = error_bar_width)  +
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
   scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey"))+
   scale_x_log10(name = 'Diameter (cm)', limits = c(.8,100)) + 
-  annotation_custom(grob_b) +
-  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = "PCA Score") #+
-
+  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = "PCA Score") +
+  theme_plant_small(legend = T) + guide
 PCA_diam
 
