@@ -834,7 +834,6 @@ PCA_light <- PCA_score_by_light %>%
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black") +
   scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey")) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed") + 
- # annotation_custom(grob_p) +
   scale_x_log10(limits=c(1.8,450), breaks = c(3, 30, 300),
                 name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
   scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score')  +
