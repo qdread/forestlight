@@ -29,6 +29,7 @@ library(Hmisc, pos = 100)
 library(rstan)
 library(lme4)
 library(sjstats)
+library(rstanarm)
 # Define color schemes and labels
 guild_fills <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
 guild_fills2 <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
@@ -466,8 +467,7 @@ plot_prod2 <-
             preddat = fitted_indivprod, 
             plot_abline = TRUE, 
             abline_slope = 2, 
-            abline_intercept = -1.3) 
-  {
+            abline_intercept = -1.3) {
     pos <- if (dodge_errorbar) 
       ggplot2::position_dodge(width = dodge_width)
     else "identity"
@@ -633,7 +633,7 @@ plot_dens2 <- function (year_to_plot = 1995,
     ggplot2::scale_color_manual(values = color_names) + 
     ggplot2::scale_fill_manual(values = fill_names) + 
     theme_plant()
-}
+  }
 p <- plot_dens2(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
           model_fit = DENS,
@@ -1079,7 +1079,6 @@ pfd_0 <- read_csv('/Users/jgradym/Google_Drive/ForestLight/data/data_forplotting
 lai <- lai_0 %>% filter(Species != "Cecropia")
 pfd <- pfd_0 %>% filter(Species != "Cecropia")
 
-
 fill_sp <- c("darkolivegreen4", "cadetblue2",  "brown3", "gray22") 
 color_sp <- c("darkolivegreen", "cadetblue3",  "brown4", "black") 
 
@@ -1116,9 +1115,33 @@ system2(command = "pdfcrop",
 )
 
 # Mixed model slopes
-lm1 <- lmer(log(LAI) ~ log(Depth)+ (log(Depth) |Species), data = lai)
-summary(lm1) # 0.33
-r2(lm1) #0.99
+lmer1 <- lmer(log(LAI) ~ log(Depth)+ (log(Depth) |Species), data = lai)
+summary(lmer1) # 0.33
+r2(lmer1) #0.99
+performance::r2(lmer1)
+
+#try to run bayesian style
+
+b_lmer <- stan_lmer(log(LAI) ~ log(Depth) + (log(Depth) |Species), 
+                    data = lai, seed = 1000)
+
+b_lmer <- stan_lmer(formula = log(LAI) ~ log(Depth) , 
+                    data = lai, seed = 100)
+library(mlmRev)
+library(lme4)
+b_lmer <- stan_lmer(formula = LAI ~ Depth + (Depth |Species), 
+                    data = lai, seed = 100)
+
+data(Gcsemv, package = "mlmRev")
+GCSE <- subset(x = Gcsemv, 
+               select = c(school, student, gender, course))
+
+M1_stanlmer <- stan_lmer(formula = course ~ 1 + (1 | school), 
+                         data = GCSE,
+                         seed = 1000)
+
+model_code <- 'parameters {real y;} model {y ~ normal(0,1);}'
+fit <- stan(model_code=model_code)  # this will take a minute
 
 # calculated separately
 lm2 <- lm(log(LAI) ~ log(Depth), data = lai)
