@@ -561,7 +561,7 @@ growth_light_mean <- ggplot(obs_light_binned %>%
     
 growth_light_mean 
 
-#-------------------------- Fig S6: Growth Responsiveness to light --------------------------
+#-------------------------- Fig S6a: Growth Responsiveness to light --------------------------
 
 param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg3", "fg4"))
 guild_labels2_ <- c("Fast", "Tall", "Medium", "Slow", "Short")
@@ -575,6 +575,24 @@ ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log
                      limits = c(0.6, 1.1),
                      breaks = seq(0, 1, 0.2), labels = seq(0, 1, 0.2)) +
   theme_plant() + theme(aspect.ratio = 0.75)
+
+
+#-------------------------- Fig S6b: Mortality Responsiveness to light ----------------------
+mortal <- read_csv(file.path(gdrive_path, 'data/clean_summary_tables/clean_parameters_mortality.csv'))
+mortal <- mortal %>% filter(fg != "--")
+
+mortal$fg <- factor(mortal$fg ,levels = c("fast", "large pioneer", "medium", "slow", "small breeder"))
+guild_labels2_ <- c("Fast", "Tall", "Medium", "Slow", "Short")
+mort_slope <- ggplot(mortal %>% filter(parameter %in% 'slope'),
+                     aes(x = fg, y = mean, ymin = q025, ymax = q975)) + 
+  geom_errorbar(width = 0.4) + geom_point(size = 3) +
+  theme(axis.text.x = element_text(angle = 25,  vjust = 0.7))+
+  scale_x_discrete(name = 'Life History Guild', labels = guild_labels2_) +
+  scale_y_continuous(limits = c(-1.3, -0.2), breaks = c(-1.25, -0.75, -0.25), 
+                     expression(atop('Mortality Responsiveness to Light', paste('(yr'^-1,' W'^-1,' m'^-2,')')))) +
+  theme_plant() + theme(aspect.ratio = 0.75) 
+mort_slope
+
 
 #------------------------ Fig S7: Piecewise Scaling Slopes, corresponds to Fig 4 --------------------------------
 
@@ -746,11 +764,11 @@ p +theme_plant_small(legend = TRUE)  + guide +
 
 fastslowscore_bin_bylight <- fastslowscore_bin_bylight_byyear %>%
   left_join(fastslow_stats_bylight_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
-  mutate(ID = "Fast-Slow")
+  mutate(ID = "Survivorship-Growth")
 
 breederscore_bin_bylight <- breederscore_bin_bylight_byyear  %>%
   left_join(breeder_stats_bylight_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
-  mutate(ID = "Short-Tall")
+  mutate(ID = "Recruitment-Stature")
 
 PCA_score_by_light <- rbind(fastslowscore_bin_bylight,breederscore_bin_bylight)
 
