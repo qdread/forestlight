@@ -30,6 +30,8 @@ library(rstan)
 library(lme4)
 library(sjstats)
 library(rstanarm)
+#install_github('qdread/forestscaling')
+
 # Define color schemes and labels
 guild_fills <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
 guild_fills2 <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
@@ -1117,16 +1119,14 @@ system2(command = "pdfcrop",
 # Mixed model slopes
 lmer1 <- lmer(log(LAI) ~ log(Depth)+ (log(Depth) |Species), data = lai)
 summary(lmer1) # 0.33
-r2(lmer1) #0.99
 performance::r2(lmer1)
 
 #try to run bayesian style
-
+# weird error
 b_lmer <- stan_lmer(log(LAI) ~ log(Depth) + (log(Depth) |Species), 
                     data = lai, seed = 1000)
 
-b_lmer <- stan_lmer(formula = log(LAI) ~ log(Depth) , 
-                    data = lai, seed = 100)
+blm <- stan_glm(log(LAI) ~ log(Depth) + Species, data = lai)
 library(mlmRev)
 library(lme4)
 b_lmer <- stan_lmer(formula = LAI ~ Depth + (Depth |Species), 
@@ -1400,16 +1400,16 @@ system2(command = "pdfcrop",
 # Remove all tree and unclassified groups
 param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg3", "fg4"))
 guild_labels2_ <- c("Fast", "Tall", "Medium", "Slow", "Short")
-p <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
-       aes(x = fg, y = q50, ymin = q025, ymax = q975)) + 
-  geom_errorbar(width = 0.4) + geom_point(size = 4) +
+growth_slope <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
+       aes(x = fg, y = mean, ymin = q025, ymax = q975)) + 
+  geom_errorbar(width = 0.4) + geom_point(size = 3) +
   theme(axis.text.x = element_text(angle = 25,  vjust = 0.7))+
   scale_x_discrete(name = 'Life History Guild', labels = guild_labels2_) +
-  scale_y_continuous(expression(atop('Max. Growth Responsiveness',paste('to Light (kg yr'^-1, ' m'^-2,')'))), 
+  scale_y_continuous(expression(atop('Max. Growth Responsiveness',paste('to Light (kg yr'^-1, ' W'^-1,')'))), 
                      limits = c(0.6, 1.1),
                      breaks = seq(0, 1, 0.2), labels = seq(0, 1, 0.2)) +
-  theme_plant() + theme(aspect.ratio = 0.75)
-p
+  theme_plant_small() + theme(aspect.ratio = 0.75) + annotation_custom(grob_b)
+growth_slope 
 pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/max_g_light_slope.pdf"))
 p
 dev.off()
@@ -1418,6 +1418,42 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path,'Figures/Supplementals/Growth_light/max_g_light_slope.pdf')) 
 )
 
+
+#-------------------------------------------------------------------------
+#---------------------- Fig S6b Mortality Slope with Light ------
+#-------------------------------------------------------------------------
+mortal <- read_csv(file.path(gdrive_path, 'data/clean_summary_tables/clean_parameters_mortality.csv'))
+mortal <- mortal %>% filter(fg != "--")
+# 1. Plot of maximum slope by functional group
+
+# Remove all tree and unclassified groups
+mortal$fg <- factor(mortal$fg ,levels = c("fast", "large pioneer", "medium", "slow", "small breeder"))
+guild_labels2_ <- c("Fast", "Tall", "Medium", "Slow", "Short")
+mort_slope <- ggplot(mortal %>% filter(parameter %in% 'slope'),
+            aes(x = fg, y = mean, ymin = q025, ymax = q975)) + 
+  geom_errorbar(width = 0.4) + geom_point(size = 3) +
+  theme(axis.text.x = element_text(angle = 25,  vjust = 0.7))+
+  scale_x_discrete(name = 'Life History Guild', labels = guild_labels2_) +
+  scale_y_continuous(limits = c(-1.3, -0.2), breaks = c(-1.25, -0.75, -0.25), 
+                     expression(atop('Mortality Responsiveness to Light', paste('(yr'^-1,' W'^-1,' m'^-2,')')))) +
+  theme_plant_small() + theme(aspect.ratio = 0.75) + theme_no_x() + annotation_custom(grob_a)
+mort_slope
+
+
+#combine
+g_growth<- ggplotGrob(growth_slope)
+g_mort <- ggplotGrob(mort_slope)
+
+combo <- rbind(g_mort, g_growth, size = "first")
+combo$widths <- unit.pmax(g_mort$widths, g_growth$widths)
+grid.newpage()
+grid.draw(combo)
+ggsave(combo, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Supplementals/Max_growth_mort_light/box_growth_mort_light.pdf'))
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Max_growth_mort_light/box_growth_mort_light.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Max_growth_mort_light/box_growth_mort_light.pdf')) 
+)
 
 #-------------------------------------------------------------------------
 #-------------------   Fig S7 Piecewise Scaling Slopes  -------------------
@@ -1755,11 +1791,11 @@ system2(command = "pdfcrop",
 
 ## -------------------- ------Fig S14: PCA score   -----------------------------
 
-grob_p <- grobTree(textGrob("Short:Tall", x = 0.13, y = 0.93,  hjust = 0,
-                            gp = gpar(col = "black", fontface = "italic", fontface = "bold", fontsize = 20))) 
+grob_p <- grobTree(textGrob("Short-Tall Continuum", x = 0.13, y = 0.93,  hjust = 0,
+                            gp = gpar(col = "black", fontface = "italic", fontface = "bold", fontsize = 15))) 
 
-grob_f <- grobTree(textGrob("Fast:Slow", x = 0.13, y = 0.83,  hjust = 0,
-                            gp = gpar(col = "gray43",  fontface = "italic",fontsize = 20))) 
+grob_f <- grobTree(textGrob("Slow-Fast Continuum", x = 0.13, y = 0.83,  hjust = 0,
+                            gp = gpar(col = "gray43",  fontface = "italic",fontsize =15))) 
 
 
 fastslowscore_bin_bylight <- fastslowscore_bin_bylight_byyear %>%
@@ -1784,7 +1820,7 @@ PCA_light <- PCA_score_by_light %>%
   annotation_custom(grob_p) + annotation_custom(grob_f) +
   scale_x_log10(limits=c(1.8,450), breaks = c(3, 30, 300),
                 name = expression(paste('Light per Crown Area (W m'^-2,')'))) + 
-  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score') + theme_plant()
+  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score') + theme_plant_small()
 PCA_light
 
 
@@ -1810,7 +1846,7 @@ PCA_diam <- score_bin_bydiam %>%
   filter(year == 1995, n_individuals >= 20) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
-  geom_errorbar(width = error_bar_width) +theme_plant() +
+  geom_errorbar(width = error_bar_width) +theme_plant_small() +
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
   scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey"))+
   scale_x_log10(name = 'Diameter (cm)', limits = c(.8,100)) + 
