@@ -65,7 +65,7 @@ grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
 #guide <- guides(color = guide_legend(title=NULL), fill = guide_legend(title=NULL)) #, color = F, override.aes=list(fill=NA))
 
 # To add back the legend
-theme_plant2<- theme_plant() + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+theme_plant2 <- theme_plant() + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
 theme_plant <- theme_plant() + 
   theme(plot.margin=grid::unit(c(0,0,0,0), "mm"), legend.position = "right", legend.text = element_text(size = 14 ), 
         legend.key = element_blank())
@@ -196,7 +196,6 @@ vol <- ggplot() +
 vol
 p1 <- set_panel_size(vol, width=unit(10.25,"cm"), height=unit(7,"cm"))
 
-
 grid.newpage()
 grid.draw(p1)
 pdf(file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf'))
@@ -210,6 +209,12 @@ system2(command = "pdfcrop",
 lm1 <- lm(log(light_received_byvolume) ~ log(dbh_corr), data = alltree_light_95)
 summary(lm1)
 confint(lm1)
+lm2 <- lm(log(light_received_byvolume) ~ log(dbh_corr), data = alltree_light_95)
+summary(lm2)
+confint(lm2)
+lm3 <- lm(log(light_received_byvolume) ~ log(dbh_corr), data = alltree_light_95)
+summary(lm3)
+confint(lm3)
 exp(0.448*log(100)) #7.9
 # or nonlinear
 nlm1 <- nls(log(light_received_byvolume) ~ a * exp(b*log(dbh_corr)), 
@@ -1398,16 +1403,16 @@ system2(command = "pdfcrop",
 # 1. Plot of maximum slope by functional group
 
 # Remove all tree and unclassified groups
-param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg3", "fg4"))
-guild_labels2_ <- c("Fast", "Tall", "Medium", "Slow", "Short")
+param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg4", "fg3"))
+guild_labels2_ <- c("Fast", "Tall", "Medium", "Short", "Slow")
 growth_slope <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
        aes(x = fg, y = mean, ymin = q025, ymax = q975)) + 
-  geom_errorbar(width = 0.4) + geom_point(size = 3) +
+  geom_errorbar(width = 0) + geom_point(size = 4) +
   theme(axis.text.x = element_text(angle = 25,  vjust = 0.7))+
   scale_x_discrete(name = 'Life History Guild', labels = guild_labels2_) +
   scale_y_continuous(expression(atop('Max. Growth Responsiveness',paste('to Light (kg yr'^-1, ' W'^-1,')'))), 
-                     limits = c(0.6, 1.1),
-                     breaks = seq(0, 1, 0.2), labels = seq(0, 1, 0.2)) +
+                     limits = c(0.65, 1.1),
+                     breaks = seq(0, 1.1, 0.1), labels = seq(0, 1.1, 0.1)) +
   theme_plant_small() + theme(aspect.ratio = 0.75) + annotation_custom(grob_b)
 growth_slope 
 pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/max_g_light_slope.pdf"))
@@ -1427,15 +1432,15 @@ mortal <- mortal %>% filter(fg != "--")
 # 1. Plot of maximum slope by functional group
 
 # Remove all tree and unclassified groups
-mortal$fg <- factor(mortal$fg ,levels = c("fast", "large pioneer", "medium", "slow", "small breeder"))
-guild_labels2_ <- c("Fast", "Tall", "Medium", "Slow", "Short")
+mortal$fg <- factor(mortal$fg ,levels = c("fast", "large pioneer", "medium", "small breeder", "slow"))
+guild_labels2_ <- c("Fast", "Tall", "Medium", "Short", "Slow")
 mort_slope <- ggplot(mortal %>% filter(parameter %in% 'slope'),
             aes(x = fg, y = mean, ymin = q025, ymax = q975)) + 
-  geom_errorbar(width = 0.4) + geom_point(size = 3) +
+  geom_errorbar(width = 0) + geom_point(size = 4) +
   theme(axis.text.x = element_text(angle = 25,  vjust = 0.7))+
   scale_x_discrete(name = 'Life History Guild', labels = guild_labels2_) +
-  scale_y_continuous(limits = c(-1.3, -0.2), breaks = c(-1.25, -0.75, -0.25), 
-                     expression(atop('Mortality Responsiveness to Light', paste('(yr'^-1,' W'^-1,' m'^-2,')')))) +
+  scale_y_continuous(limits = c(-1.3, -0.25), breaks = c(-1.2, -0.9, -0.6, -0.3), 
+                     expression(atop('Mortality Responsiveness', paste('to Light (yr'^-1,' W'^-1,' m'^-2,')')))) +
   theme_plant_small() + theme(aspect.ratio = 0.75) + theme_no_x() + annotation_custom(grob_a)
 mort_slope
 
