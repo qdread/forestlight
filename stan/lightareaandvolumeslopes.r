@@ -61,7 +61,7 @@ coef_table <-rbind(
   bind_rows(data.frame(regression = 'light per unit crown volume versus dbh', parameter = c('intercept', 'slope'), fixef(reg_volume)),
             data.frame(regression = 'light per unit crown volume versus dbh', parameter = c('r-squared'), Estimate = volume_rsq)))
 
-write_csv(coef_table, file.path(gdrive_path, 'data/clean_summary_tables/fig1_light_by_size_parameters.csv'))
+write_csv(coef_table, file.path(gdrive_path, 'data/clean_summary_tables/clean_parameters_lightperareaandvolumebydiameter.csv'))
 
 ###############################################
 

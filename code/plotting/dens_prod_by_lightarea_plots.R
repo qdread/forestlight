@@ -282,4 +282,4 @@ totalprod_table <- totalprod_slopes %>%
 final_table <- bind_rows(dens_table, prod_table, totalprod_table) %>%
   select(-q25, -q75, -n_eff, -Rhat, -sd)
 
-write_csv(final_table, file.path(gdrive_path, 'data/clean_summary_tables/slopes_lightperarea.csv'))
+write_csv(final_table, file.path(gdrive_path, 'data/clean_summary_tables/clean_parameters_densityandgrowthbylightperarea.csv'))
