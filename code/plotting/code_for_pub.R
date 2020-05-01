@@ -545,10 +545,6 @@ growth_light_mean <- ggplot(obs_light_binned %>%
               filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
             aes(x = light_area, y = q50, group = fg, color = fg), size = 0.5) +
   geom_segment(aes(x = bin_midpoint, xend = bin_midpoint, y = q25, yend = q75), size = 0.3) +
-  geom_segment(data = cast_pars %>% 
-                 filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')), 
-               aes(x = x_max_q50 * 0.5, xend = x_max_q50 * 2, y = y_max_q50 * 0.5, yend = y_max_q50 * 2), 
-               color = 'brown1', size = .5) +
   geom_point(shape=21, aes(x = bin_midpoint, y = mean)) +
   scale_color_manual(values = guild_fills ) +
   scale_fill_manual(values = guild_colors) +
