@@ -875,7 +875,7 @@ grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.28, y = 0.51, hjust = 0,
 
 
 # Plot
-grob_text <- grobTree(textGrob("Solar Equivalence", x = 0.28, y = 0.80, hjust = 0,
+grob_text <- grobTree(textGrob("Solar Equivalence", x = 0.28, y = 0.87, hjust = 0,
                                gp = gpar(col = "gold3", fontsize = 18))) 
 
 grob_text2 <- grobTree(textGrob("a", x = 0.06, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
@@ -900,7 +900,7 @@ tot_light2 <- tot_light  +
   scale_y_continuous(position = "left", trans = "log10", 
                      breaks = c(100, 1000, 10000, 100000),
                      labels = c("0.1", "1", "10", "100"), 
-                     limits = c(100, 450000),
+                     limits = c(200, 200000),
                      name = expression(atop('Total Light Intercepted',paste('(kW cm'^-1,' ha'^-1,')'))))  +
   theme(aspect.ratio = 0.75) + 
   geom_abline(intercept = log10(70000), slope = 0, color ="#C9B074",
@@ -919,7 +919,7 @@ slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'),
   geom_hline(yintercept = 0, linetype = 'dashed', size = .75) +
   geom_errorbar(position = position_dodge(width = 0.6), size = 0.75, width = 0) +
   geom_point( position = position_dodge(width = 0.6), shape = 21, size = 3.5, color = "black", stroke = 0.5) +
-  geom_errorbar(data = allslopes %>% filter(fg %in% c('Slow', 'All')), 
+  geom_errorbar(data = allslopes %>% filter(fg %in% c('Tall', 'Slow', 'All')), 
                 position = position_dodge(width = 0.6), size = 0.75, width = 0) +
   labs( x = NULL, y = 'Scaling Slope') +
   scale_y_continuous(limits = c(-1.05, 1.3)) +
@@ -1629,7 +1629,7 @@ dev.off()
 
 
 #-------------------------------------------------------------------------------
-# ------------------------   Fig S9: Growth WAIC of Piecewise Models  -----------------------------------
+# ------------------------   Fig S9: Growth WAIC of Piecewise Models  -----------
 #-------------------------------------------------------------------------------
 
 # This section was edited by QDR, 20 Jun 2019, for the updated model fits.
