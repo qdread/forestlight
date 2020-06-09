@@ -12,7 +12,7 @@ PROD = 1
 # Set path to data on google drive
 #devtools::install_github('qdread/forestscaling')
 
-gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google_Drive/ForestLight'))
+gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google Drive/ForestLight'))
 github_path <- ifelse(Sys.info()['user'] == 'qread', '~/documents/github/', file.path('/Users/jgradym/Documents/Github'))
 
 library(broom)
