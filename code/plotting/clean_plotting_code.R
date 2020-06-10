@@ -1188,6 +1188,40 @@ richness_wide_light$ID[1:20] <- "fast_slow"
 richness_wide_light$ID[21:40] <- "tall_short"
 #### ---------------------
 
+# -------Plot Richnes by Diameter
+
+
+(p_rich_d <- ggplot(bin_x_fg %>% arrange(desc(fg)) %>%
+                          filter(!fg %in% 'unclassified' & richness > 0), 
+                        aes(x = bin_midpoint, y = richness, fill = fg)) + 
+   scale_x_log10(name = 'Diameter (cm)',
+                 #limit = c(0.8, 300)
+                 ) + 
+   theme_plant() +
+  # theme_no_x +
+   #geom_smooth(method = "gam", formula = y ~ s(x), aes(x = bin_midpoint, y = richness, color = fg, fill = fg), alpha = 0.25) +
+   geom_smooth(method = "loess", aes(x = bin_midpoint, y = richness, color = fg, fill = fg), alpha = 0.25) +
+   #geom_smooth(method = "loess", span = 10, aes(x = bin_midpoint, y = richness, color = fg, fill = fg), alpha = 0.25) +
+   #geom_smooth(method = "lm", aes(x = bin_midpoint, y = richness, color = fg, fill = fg),
+   #formula = y ~ I(x^2), alpha = 0.25) +
+   scale_fill_manual(values = guild_fills) +
+   scale_color_manual(values = guild_colors) +
+   #annotation_custom(grob_a) +
+   annotation_custom(grob_short) +
+   annotation_custom(grob_tall) +
+   annotation_custom(grob_fast) +
+   annotation_custom(grob_medium) +
+   annotation_custom(grob_slow) +
+   geom_point(shape = 21, size = 4, color = "black") +
+   scale_y_log10(limits = c(0.6, 100), name = "Richness") +
+   theme(legend.position = 'none')) +
+  theme(axis.text.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = -20)))
+
+p1 <- set_panel_size(p_rich_d , width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
 
 #------------- Richness ratio per Diameter
 (p_ratio_diam <- ggplot(richness_wide %>%
@@ -1227,6 +1261,38 @@ system2(command = "pdfcrop",
 
 # Richness per light
 
+
+(p_rich_l <- ggplot(bin_x_fg_light %>% arrange(desc(fg)) %>%
+                      filter(!fg %in% 'unclassified' & richness > 0), 
+                    aes(x = bin_midpoint, y = richness, fill = fg)) + 
+    scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), 
+                  limits = c(2,300), 
+                  breaks = c(3, 30, 300)
+    ) +
+    theme_plant() +
+    # theme_no_x +
+    #geom_smooth(method = "gam", formula = y ~ s(x), aes(x = bin_midpoint, y = richness, color = fg, fill = fg), alpha = 0.25) +
+    geom_smooth(method = "loess", aes(x = bin_midpoint, y = richness, color = fg, fill = fg), alpha = 0.25) +
+    #geom_smooth(method = "loess", span = 10, aes(x = bin_midpoint, y = richness, color = fg, fill = fg), alpha = 0.25) +
+    #geom_smooth(method = "lm", aes(x = bin_midpoint, y = richness, color = fg, fill = fg),
+    #formula = y ~ I(x^2), alpha = 0.25) +
+    scale_fill_manual(values = guild_fills) +
+    scale_color_manual(values = guild_colors) +
+    #annotation_custom(grob_a) +
+    annotation_custom(grob_short) +
+    annotation_custom(grob_tall) +
+    annotation_custom(grob_fast) +
+    annotation_custom(grob_medium) +
+    annotation_custom(grob_slow) +
+    geom_point(shape = 21, size = 4, color = "black") +
+    scale_y_log10(limits = c(0.6, 100), name = "Richness") +
+    theme(legend.position = 'none')) +
+  theme(axis.text.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = -20)))
+
+p1 <- set_panel_size(p_rich_l , width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
 #-------------- Richness ratio per Light
 (p_ratio <- ggplot(richness_wide_light %>%
                      filter(n_individuals >= 20), 
@@ -1250,6 +1316,7 @@ system2(command = "pdfcrop",
                   labels = c("0.5", "1", "2", "4", "8")
                   ) + 
     theme_plant())
+
 
 
 p1 <- set_panel_size(p_ratio, width=unit(10.25,"cm"), height=unit(7,"cm"))
@@ -1281,60 +1348,6 @@ grid.newpage()
 grid.draw(p1)
 ## ratios of richness
 
-#--------------- Total Richness by light-------
-
-(p_rich_light <- ggplot(bin_x_fg_light %>% arrange(desc(fg)) %>%
-                          filter(!fg %in% 'unclassified' & richness > 0), 
-                        aes(x = bin_midpoint, y = richness, fill = fg)) + 
-  scale_x_log10(name = 'Light per Crown Area', limit = c(0.8, 300)) + 
-  theme_plant() +
-   theme_no_x +
-   #geom_smooth(method = "gam", formula = y ~ s(x), aes(x = bin_midpoint, y = richness, color = fg, fill = fg), alpha = 0.25) +
-    geom_smooth(method = "loess", aes(x = bin_midpoint, y = richness, color = fg, fill = fg), alpha = 0.25) +
-    #geom_smooth(method = "loess", span = 10, aes(x = bin_midpoint, y = richness, color = fg, fill = fg), alpha = 0.25) +
-    #geom_smooth(method = "lm", aes(x = bin_midpoint, y = richness, color = fg, fill = fg),
-   #formula = y ~ I(x^2), alpha = 0.25) +
-    scale_fill_manual(values = guild_fills) +
-   scale_color_manual(values = guild_colors) +
-    #annotation_custom(grob_a) +
-    annotation_custom(grob_short) +
-    annotation_custom(grob_tall) +
-    annotation_custom(grob_fast) +
-    annotation_custom(grob_medium) +
-    annotation_custom(grob_slow) +
-   geom_point(shape = 21, size = 4, color = "black") +
-   scale_y_log10(limits = c(0.6, 100), name = "Richness") +
-   theme(legend.position = 'none')) +
-  theme(axis.text.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = -20)))
-
-p1 <- set_panel_size(p_rich_light , width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p1)
-
-
-# Richness Ratio per Light
-
-(p_ratio_light <- ggplot(richness_wide_light %>%
-                     filter(n_individuals >= 20), #but this value may be off
-                   aes(x = bin_midpoint, y = richness_ratio, color = ID, fill = ID)) + # exclude largest short:tall ratio
-    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
-    geom_point(shape = 21, stroke = 0.5, size = 4, fill = 'gray', color = "gray50") +
-    scale_fill_manual(values = c("fast_slow" = "gray", "tall_short" = "black")) +
-    scale_color_manual(values = c("fast_slow" = "gray40", "tall_short" = "black")) +
-    geom_point(aes(fill = ID), stroke = 0.5, shape = 21, size = 4,  stroke = .5,  color = "black") +
-    geom_smooth(method = "lm",
-                aes(color = ID), alpha = 0.25) +
-    annotate(geom = 'text', x = 1, y = 30, label = 'Fast: Slow', face = "bold.italic", size = 6, color = 'gray', hjust = 0) +
-    annotate(geom = 'text', x = 1, y = 25, label = 'Tall: Short', face = "bold.italic", size = 6, color = 'black', hjust = 0) +
-    scale_x_log10(limits = c(2,300), breaks = c(3,30, 300), 
-                  name = expression(paste('Diameter (cm)'))) + 
-    scale_y_log10(name = 'Richness Ratio', 
-                  limit = c(0.5, 100)) + 
-    theme_plant())
-
-p1 <- set_panel_size(p_ratio_light , width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p1)
 
 
 #------ Combine ratio plots
