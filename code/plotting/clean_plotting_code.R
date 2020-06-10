@@ -15,6 +15,9 @@ PROD = 1
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google Drive/ForestLight'))
 github_path <- ifelse(Sys.info()['user'] == 'qread', '~/documents/github/', file.path('/Users/jgradym/Documents/Github'))
 
+
+gdrive_path2 <-  file.path('/Users/jgradym/Google\\ Drive/ForestLight')
+
 library(broom)
 library(forestscaling) # Packaged all the functions and ggplot2 themes here!
 library(tidyverse)
@@ -814,6 +817,7 @@ fitted_totallight <- read.csv(file.path(fp, 'fitted_totallight.csv'), stringsAsF
 indivlightbins_fg <- read.csv(file.path(fp, 'obs_indivlight.csv'), stringsAsFactors = FALSE)
 totallightbins_fg <- read.csv(file.path(fp, 'obs_totallight.csv'), stringsAsFactors = FALSE)
 
+str
 # Fig 5a      
 totallightbins_fg <- totallightbins_fg %>%
   filter(bin_count >= 20)
@@ -1022,8 +1026,8 @@ system2(command = "pdfcrop",
 #----------------------------- Fig 6B Abundance by Diameter ----------------------------
 dens_ratio <- prod_ratio_diam %>% 
   filter(density_ratio > 0) %>%
-  filter(n_individuals >= 20) %>%
-  ggplot() +
+  filter(n_individuals >= 20) 
+ggplot(dens_ratio) +
   geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = ratio, fill = ratio), 
               alpha = 0.4, data = ratio_fitted_diam_density) +
   geom_line(aes(x = dbh, y = q50, group = ratio, color = ratio), 
@@ -1073,6 +1077,307 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf')) 
 )
 
+
+# Fig 7
+## richness  per Diameter  for each group ---------------
+# Create binned richness data ---------------------------------------------
+# Load 1995 bin data (to make sure we're using the same bin breaks as other figs)
+load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
+
+# Use existing bin bounds
+bin_bounds <- fastslow_stats_bydiam_byyear[1:20, c('bin_midpoint', 'bin_min', 'bin_max')]
+bin_bounds_light <- fastslow_stats_bylight_byyear[1:20, c('bin_midpoint', 'bin_min', 'bin_max')]
+bin_bounds_light
+# Get richness of each FG by each bin
+
+bin_x_fg <- expand_grid(fg = c(paste0('fg', 1:5), 'unclassified'), bin = 1:20) %>%
+  left_join(bin_bounds %>% mutate(bin = 1:20))
+
+bin_x_fg_light <- expand_grid(fg = c(paste0('fg', 1:5), 'unclassified'), bin = 1:20) %>%
+  left_join(bin_bounds_light %>% mutate(bin = 1:20))
+
+# 1995 data (132,982 trees)
+dat <- alltreedat[[3]] %>%
+  mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg)))
+
+bin_x_fg <- bin_x_fg %>%
+  cbind(pmap_dfr(bin_x_fg, function(fg, bin_min, bin_max, ...) {
+    data.frame(richness = length(unique(dat$sp[dat$fg %in% fg & dat$dbh_corr >= bin_min & dat$dbh_corr < bin_max])))
+  }))
+
+bin_x_fg_light <- bin_x_fg_light %>%
+  cbind(pmap_dfr(bin_x_fg_light, function(fg, bin_min, bin_max, ...) {
+    data.frame(richness = length(unique(dat$sp[dat$fg %in% fg & dat$dbh_corr >= bin_min & dat$dbh_corr < bin_max])))
+  }))
+
+
+# Reformat to add spread and at individual count
+
+richness_wide0 <- bin_x_fg %>%
+  pivot_wider(id_cols = c(bin, bin_midpoint, bin_min, bin_max), names_from = fg, values_from = richness) %>%
+  mutate(richness_ratio_fastslow = fg1/fg3,
+         richness_ratio_pioneerbreeder = fg2/fg4) %>%
+  mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
+
+richness_wide0$n_indiv_fast_slow <- prod_ratio_light$n_individuals[21:40]
+richness_wide0$n_indiv_tall_short<- prod_ratio_light$n_individuals[1:20]
+
+richness_wide0[, c(1:8, 10) ]
+richness_wide0[, c(1:11, 13) ]
+col_names <- c(colnames(richness_wide0[1:10]), "richness_ratio", "n_individuals")
+richness_wide1 <- richness_wide0
+names(richness_wide1) <- NULL
+richness_wide <- data.frame(rbind(richness_wide1[, c(1:11, 13) ], richness_wide1[, c(1:10, 12, 14) ]))
+
+colnames(richness_wide) <- col_names
+richness_wide <- as_tibble(richness_wide)
+paste("dog", 1:10)
+richness_wide$ID[1:20] <- "fast_slow"
+richness_wide$ID[21:40] <- "tall_short"
+
+# richness with light
+richness_wide_light0 <- bin_x_fg_light %>%
+  pivot_wider(id_cols = c(bin, bin_midpoint, bin_min, bin_max), names_from = fg, values_from = richness) %>%
+  mutate(richness_ratio_fastslow = fg1/fg3,
+         richness_ratio_pioneerbreeder = fg2/fg4) %>%
+  mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
+
+richness_wide_light0$n_indiv_fast_slow <- prod_ratio_light$n_individuals[21:40]
+richness_wide_light0$n_indiv_tall_short<- prod_ratio_light$n_individuals[1:20]
+
+
+col_names2 <- c(colnames(richness_wide_light0[1:10]), "richness_ratio", "n_individuals")
+richness_wide_light1 <- richness_wide_light0
+names(richness_wide_light1) <- NULL
+richness_wide_light <- data.frame(rbind(richness_wide_light1[, c(1:11, 13) ], richness_wide_light1[, c(1:10, 12, 14) ]))
+
+colnames(richness_wide_light) <- col_names2
+richness_wide_light <- as_tibble(richness_wide_light)
+richness_wide_light$ID <- NA
+richness_wide_light$ID[1:20] <- "fast_slow"
+richness_wide_light$ID[21:40] <- "tall_short"
+#### ---------------------
+
+
+grob_fast <- grobTree(textGrob("Fast", x = 0.04, y = 0.95,  hjust = 0,
+                               gp = gpar(col = "#BFE046", fontsize = 15, fontface = "italic"))) 
+grob_tall <- grobTree(textGrob("Tall", x = 0.04, y = 0.88,  hjust = 0,
+                               gp = gpar(col = "#267038", fontsize = 15, fontface = "italic"))) 
+grob_medium <- grobTree(textGrob("Medium", x = 0.04, y = 0.81,  hjust = 0,
+                                 gp = gpar(col = "gray70", fontsize = 15, fontface = "italic"))) 
+grob_slow <- grobTree(textGrob("Slow", x = 0.04, y = 0.74,  hjust = 0,
+                               gp = gpar(col = "#27408b", fontsize = 15, fontface = "italic"))) 
+grob_short <- grobTree(textGrob("Short", x = 0.04, y = 0.67,  hjust = 0,
+                                gp = gpar(col = "#87Cefa", fontsize = 15, fontface = "italic"))) 
+
+# Arith y scale
+(p_rich <- ggplot(bin_x_fg %>% arrange(desc(fg)) %>%
+                    filter(!fg %in% 'unclassified' & richness > 0), 
+                  aes(x = bin_midpoint, y = richness, fill = fg)) + 
+   geom_point(shape = 21, size = 4, color = "black") +
+  scale_fill_manual(values = guild_fills) + 
+    scale_x_log10(name = 'Diameter (cm)') + 
+    theme_plant() +
+    guides() +
+    
+    scale_y_continuous(name = "Richness", limit = c(-5, 70)) +
+   theme(legend.position = 'right')) 
+
+
+# Log y scale
+(p_rich_log <- p_rich + scale_y_log10(limits = c(0.6, 140), name = "Richness"))
+
+p1 <- set_panel_size(p_rich_log, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+## ratios of richness
+
+# Richness ratio per Diameter
+(p_ratio <- ggplot(richness_wide %>%
+                     filter(n_individuals >= 20), 
+                   aes(x = bin_midpoint, y = richness_ratio, color = ID, fill = ID)) + # exclude largest short:tall ratio
+    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    geom_point(shape = 21, stroke = 0.5, size = 4, fill = 'gray', color = "gray50") +
+    scale_fill_manual(values = c("fast_slow" = "gray", "tall_short" = "black")) +
+    scale_color_manual(values = c("fast_slow" = "gray40", "tall_short" = "black")) +
+    geom_point(aes(fill = ID), stroke = 0.5, shape = 21, size = 4,  stroke = .5,  color = "black") +
+    geom_smooth(method = "lm",
+                aes(color = ID), alpha = 0.25) +
+    annotate(geom = 'text', x = 1, y = 30, label = 'Fast: Slow', face = "bold.italic", size = 6, color = 'gray', hjust = 0) +
+    annotate(geom = 'text', x = 1, y = 25, label = 'Tall: Short', face = "bold.italic", size = 6, color = 'black', hjust = 0) +
+    scale_x_log10(limits = c(1,100), breaks = c(1,10, 100), 
+                  name = expression(paste('Diameter (cm)'))) + 
+    scale_y_log10(name = 'Richness Ratio', 
+                  limit = c(0.5, 10)) + 
+    theme_plant())
+p1 <- set_panel_size(p_ratio, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+(p_ratio <- ggplot(richness_wide, aes(x = bin_midpoint)) +
+    geom_point(size = 4, color = 'gray', aes(y = richness_ratio_fastslow)) +
+    geom_point(size = 4, color = 'black', aes(y = richness_ratio_pioneerbreeder)) +
+    annotate(geom = 'text', x = 1, y = 30, label = 'fast:slow', size = 6, color = 'gray', hjust = 0) +
+    annotate(geom = 'text', x = 1, y = 25, label = 'pioneer:breeder', size = 6, color = 'black', hjust = 0) +
+    scale_x_log10(name = 'diameter') + scale_y_log10(name = 'richness ratio', limit = c(0.5, 2)) + theme_plant())
+
+#----- by light------------------------
+library(mgcv)
+
+grob_fast <- grobTree(textGrob("Fast", x = 0.045, y = 0.60,  hjust = 0,
+                               gp = gpar(col = "#BFE046", fontsize = 17, fontface = "bold.italic"))) 
+grob_tall <- grobTree(textGrob("Tall", x = 0.045, y = 0.52,  hjust = 0,
+                               gp = gpar(col = "#267038", fontsize = 17, fontface = "bold.italic"))) 
+grob_medium <- grobTree(textGrob("Medium", x = 0.045, y = 0.44,  hjust = 0,
+                                 gp = gpar(col = "gray70", fontsize = 17, fontface = "bold.italic"))) 
+grob_slow <- grobTree(textGrob("Slow", x = 0.045, y = 0.36,  hjust = 0,
+                               gp = gpar(col = "#27408b", fontsize = 17, fontface = "bold.italic"))) 
+grob_short <- grobTree(textGrob("Short", x = 0.045, y = 0.28,  hjust = 0,
+                                gp = gpar(col = "#87Cefa", fontsize = 17, fontface = "bold.italic", family = "Helvetic Neue" ))) 
+grob_short2 <- grobTree(textGrob("Short", x = 0.045, y = 0.21,  hjust = 0,
+                                gp = gpar(col = "#87Cefa", fontsize = 17, fontface = "bold.italic"))) 
+
+grob_a <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
+                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
+grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
+                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
+
+# Richness per light
+
+# Richness ratio per Light
+(p_ratio <- ggplot(richness_wide_light %>%
+                     filter(n_individuals >= 20), 
+                   aes(x = bin_midpoint, y = richness_ratio, color = ID, fill = ID)) + # exclude largest short:tall ratio
+    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    geom_point(shape = 21, stroke = 0.5, size = 4, fill = 'gray', color = "gray50") +
+    scale_fill_manual(values = c("fast_slow" = "gray", "tall_short" = "black")) +
+    scale_color_manual(values = c("fast_slow" = "gray40", "tall_short" = "black")) +
+    geom_point(aes(fill = ID), stroke = 0.5, shape = 21, size = 4,  stroke = .5,  color = "black") +
+    geom_smooth(method = "lm",
+                aes(color = ID), alpha = 0.25) +
+    annotate(geom = 'text', x = 1, y = 30, label = 'Fast: Slow', face = "bold.italic", size = 6, color = 'gray', hjust = 0) +
+    annotate(geom = 'text', x = 1, y = 25, label = 'Tall: Short', face = "bold.italic", size = 6, color = 'black', hjust = 0) +
+    scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), 
+                 limits = c(2,300), breaks = c(3, 30, 300)) +
+    scale_y_log10(name = 'Richness Ratio', 
+                  limit = c(0.5, 10)) + 
+    theme_plant())
+p1 <- set_panel_size(p_ratio, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+(p_rich_light <- ggplot(bin_x_fg_light %>% arrange(desc(fg)) %>%
+                          filter(!fg %in% 'unclassified' & richness > 0), 
+                        aes(x = bin_midpoint, y = richness, fill = fg)) + 
+  scale_x_log10(name = 'Light per Crown Area', limit = c(0.8, 300)) + 
+  theme_plant() +
+   theme_no_x +
+   #geom_smooth(method = "gam", formula = y ~ s(x), aes(x = bin_midpoint, y = richness, color = fg, fill = fg), alpha = 0.25) +
+    geom_smooth(method = "loess", aes(x = bin_midpoint, y = richness, color = fg, fill = fg), alpha = 0.25) +
+    #geom_smooth(method = "loess", span = 10, aes(x = bin_midpoint, y = richness, color = fg, fill = fg), alpha = 0.25) +
+    #geom_smooth(method = "lm", aes(x = bin_midpoint, y = richness, color = fg, fill = fg),
+   #formula = y ~ I(x^2), alpha = 0.25) +
+    scale_fill_manual(values = guild_fills) +
+   scale_color_manual(values = guild_colors) +
+    annotation_custom(grob_a) +
+    annotation_custom(grob_short) +
+    annotation_custom(grob_tall) +
+    annotation_custom(grob_fast) +
+    annotation_custom(grob_medium) +
+    annotation_custom(grob_slow) +
+    annotation_custom(grob_short2) +
+   geom_point(shape = 21, size = 4, color = "black") +
+   scale_y_log10(limits = c(0.6, 100), name = "Richness") +
+   theme(legend.position = 'none')) +
+  theme(axis.text.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = -20)))
+#, formula = y ~ I(x^2), alpha = 0.25
+p1 <- set_panel_size(p_rich_light , width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+richness_wide_light <- bin_x_fg_light %>%
+  pivot_wider(id_cols = c(bin, bin_midpoint, bin_min, bin_max), names_from = fg, values_from = richness) %>%
+  mutate(richness_ratio_fastslow = fg1/fg3,
+         richness_ratio_pioneerbreeder = fg2/fg4) %>%
+  mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
+
+# Richness Ratio per Light
+
+(p_ratio_light <- ggplot(richness_wide_light %>%
+                     filter(n_individuals >= 20), 
+                   aes(x = bin_midpoint, y = richness_ratio, color = ID, fill = ID)) + # exclude largest short:tall ratio
+    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    geom_point(shape = 21, stroke = 0.5, size = 4, fill = 'gray', color = "gray50") +
+    scale_fill_manual(values = c("fast_slow" = "gray", "tall_short" = "black")) +
+    scale_color_manual(values = c("fast_slow" = "gray40", "tall_short" = "black")) +
+    geom_point(aes(fill = ID), stroke = 0.5, shape = 21, size = 4,  stroke = .5,  color = "black") +
+    geom_smooth(method = "lm",
+                aes(color = ID), alpha = 0.25) +
+    annotate(geom = 'text', x = 1, y = 30, label = 'Fast: Slow', face = "bold.italic", size = 6, color = 'gray', hjust = 0) +
+    annotate(geom = 'text', x = 1, y = 25, label = 'Tall: Short', face = "bold.italic", size = 6, color = 'black', hjust = 0) +
+    scale_x_log10(limits = c(2,300), breaks = c(3,30, 300), 
+                  name = expression(paste('Diameter (cm)'))) + 
+    scale_y_log10(name = 'Richness Ratio', 
+                  limit = c(0.5, 100)) + 
+    theme_plant())
+
+p1 <- set_panel_size(p_ratio_light , width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+(p_ratio_light <- ggplot(richness_wide_light, aes(x = bin_midpoint)) +
+    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    geom_smooth(method = "lm",
+                aes(x = bin_midpoint, y = richness_ratio_fastslow), color = "gray40", 
+                alpha = 0.25) +
+    geom_smooth(method = "lm",
+                aes(x = bin_midpoint, y = richness_ratio_pioneerbreeder), color = "black", 
+                alpha = 0.25) +
+    geom_point(shape = 21, size = 4,  stroke = 0.5, fill = 'gray', color = "gray40", aes(y = richness_ratio_fastslow)) +
+    geom_point(shape = 21, size = 4,  stroke = 0.5, fill = "black", color = 'black', aes(y = richness_ratio_pioneerbreeder)) +
+    annotate(geom = 'text', x = .8, y = 9, label = 'Fast: Slow',  label = 'fast:slow', 
+             fontface = "bold.italic", size = 6, color = 'gray50', hjust = 0) +
+    annotate(geom = 'text', x = .8, y = 13, label = 'Tall: Short',  label = 'Fast: Slow', 
+             fontface = "bold.italic", size = 6, color = 'black', hjust = 0) +
+    annotation_custom(grob_b) +
+    scale_x_log10(limit = c(0.8, 300), name = expression(paste('Light per Crown Area (W m'^-2,')'))) +
+    #scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), 
+     #             limits = c(2,300), breaks = c(3, 30, 300)) +
+    scale_y_log10(name = 'Richness Ratio', limit = c(0.4, 15)) +
+    theme_plant() )
+
+p1 <- set_panel_size(p_ratio_light , width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
+
+library(extrafont)
+font_import()
+loadfonts()
+fonttable()
+?quartzFonts
+quartzFonts("sans")
+# Combine 
+quartzFonts(Helvetica_Neue = c("Helvetica Neue Regular", "Helvetica Neue Light",  "Helvetica Neue Light", "Helvetica Neue Medium",
+                               "Helvetica Neue Thin", "Helvetica Neue UltraLight", "Helvetica Neue Italic",
+                               "Helvetica Neue Light Italic", "Helvetica Medium Italic", "Helvetica Thin Italic",
+                               "Helvetica Neue UltraLight Italic", "Helvetica Bold", "Helvetica Bold Italic",
+                               "Helvetica Condensed Black", "Helvetica Condensed Bold"))
+
+g_rich  <- ggplotGrob(p_rich_light)
+g_ratio <- ggplotGrob(p_ratio_light)
+g1 <- rbind(g_rich , g_ratio , size = "first")
+g1$widths <- unit.pmax(g_rich$widths, g_ratio$widths)
+grid.newpage()
+grid.draw(g1)
+
+
+ggsave(g1, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Richness/richness_combo.pdf'))
+
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/Richness/richness_combo.pdf'), 
+                  file.path(gdrive_path2,'Figures/Richness/richness_combo.pdf')) 
+)
 
 
 #---------------------------------------------------------------------------------------------
