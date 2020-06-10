@@ -1238,11 +1238,13 @@ grid.draw(p1)
     annotate(geom = 'text', x = 1, y = 25, label = 'Tall: Short', face = "bold.italic", size = 6, color = 'black', hjust = 0) +
     scale_x_log10(limits = c(1,100), breaks = c(1,10, 100), 
                   name = expression(paste('Diameter (cm)'))) + 
-    scale_y_log10(name = 'Richness Ratio', 
+    scale_y_log10(#name = 'Richness Ratio', 
+                  name = NULL,
                   breaks = c(0.5, 1, 2, 4, 8),
                   labels = c("0.5", "1", "2", "4", "8"),
                  limit = c(0.5, 9)
                   ) + 
+    theme_no_y() + 
     theme_plant())
 p1 <- set_panel_size(p_ratio_diam, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
@@ -1295,7 +1297,7 @@ grid.draw(p1)
 
 #-------------- Richness ratio per Light
 
-(p_ratio <- ggplot(richness_wide_light %>%
+(p_ratio_light <- ggplot(richness_wide_light %>%
                      filter(n_individuals >= 20), 
                    aes(x = bin_midpoint, y = richness_ratio, color = ID, fill = ID)) + # exclude largest short:tall ratio
     geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
