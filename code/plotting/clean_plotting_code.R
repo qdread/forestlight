@@ -1294,6 +1294,7 @@ grid.newpage()
 grid.draw(p1)
 
 #-------------- Richness ratio per Light
+
 (p_ratio <- ggplot(richness_wide_light %>%
                      filter(n_individuals >= 20), 
                    aes(x = bin_midpoint, y = richness_ratio, color = ID, fill = ID)) + # exclude largest short:tall ratio
@@ -1372,13 +1373,6 @@ system2(command = "pdfcrop",
 
 
 
-# Combine 
-#quartzFonts(Helvetica_Neue = c("Helvetica Neue Regular", "Helvetica Neue Light",  "Helvetica Neue Light", "Helvetica Neue Medium",
- #                              "Helvetica Neue Thin", "Helvetica Neue UltraLight", "Helvetica Neue Italic",
-  #                             "Helvetica Neue Light Italic", "Helvetica Medium Italic", "Helvetica Thin Italic",
-   #                            "Helvetica Neue UltraLight Italic", "Helvetica Bold", "Helvetica Bold Italic",
-    #                           "Helvetica Condensed Black", "Helvetica Condensed Bold"))
-
 #---- Combine absolute and relative richness
 g_rich  <- ggplotGrob(p_rich_light)
 g_ratio <- ggplotGrob(p_ratio_light)
@@ -1394,6 +1388,17 @@ system2(command = "pdfcrop",
         args  = c(file.path(gdrive_path2,'Figures/Richness/richness_combo.pdf'), 
                   file.path(gdrive_path2,'Figures/Richness/richness_combo.pdf')) 
 )
+
+
+
+
+
+# Combine 
+#quartzFonts(Helvetica_Neue = c("Helvetica Neue Regular", "Helvetica Neue Light",  "Helvetica Neue Light", "Helvetica Neue Medium",
+#                              "Helvetica Neue Thin", "Helvetica Neue UltraLight", "Helvetica Neue Italic",
+#                             "Helvetica Neue Light Italic", "Helvetica Medium Italic", "Helvetica Thin Italic",
+#                            "Helvetica Neue UltraLight Italic", "Helvetica Bold", "Helvetica Bold Italic",
+#                           "Helvetica Condensed Black", "Helvetica Condensed Bold"))
 
 
 #---------------------------------------------------------------------------------------------
