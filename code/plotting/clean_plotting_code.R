@@ -1119,8 +1119,8 @@ richness_wide0 <- bin_x_fg %>%
          richness_ratio_pioneerbreeder = fg2/fg4) %>%
   mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
 
-richness_wide0$n_indiv_fast_slow <- prod_ratio_light$n_individuals[21:40]
-richness_wide0$n_indiv_tall_short<- prod_ratio_light$n_individuals[1:20]
+richness_wide0$n_indiv_fast_slow <- prod_ratio_diam$n_individuals[21:40]
+richness_wide0$n_indiv_tall_short<- prod_ratio_diam$n_individuals[1:20]
 
 richness_wide0[, c(1:8, 10) ]
 richness_wide0[, c(1:11, 13) ]
@@ -1131,7 +1131,7 @@ richness_wide <- data.frame(rbind(richness_wide1[, c(1:11, 13) ], richness_wide1
 
 colnames(richness_wide) <- col_names
 richness_wide <- as_tibble(richness_wide)
-paste("dog", 1:10)
+richness_wide$ID <- NA
 richness_wide$ID[1:20] <- "fast_slow"
 richness_wide$ID[21:40] <- "tall_short"
 
@@ -1208,7 +1208,10 @@ grid.draw(p1)
     scale_x_log10(limits = c(1,100), breaks = c(1,10, 100), 
                   name = expression(paste('Diameter (cm)'))) + 
     scale_y_log10(name = 'Richness Ratio', 
-                  limit = c(0.5, 10)) + 
+                  breaks = c(0.5, 1, 2, 4, 8),
+                  labels = c("0.5", "1", "2", "4", "8"),
+                 limit = c(0.5, 9)
+                  ) + 
     theme_plant())
 p1 <- set_panel_size(p_ratio, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
@@ -1258,9 +1261,14 @@ grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
     annotate(geom = 'text', x = 1, y = 30, label = 'Fast: Slow', face = "bold.italic", size = 6, color = 'gray', hjust = 0) +
     annotate(geom = 'text', x = 1, y = 25, label = 'Tall: Short', face = "bold.italic", size = 6, color = 'black', hjust = 0) +
     scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), 
-                 limits = c(2,300), breaks = c(3, 30, 300)) +
+                 limits = c(2,300), 
+                 breaks = c(3, 30, 300)
+                 ) +
     scale_y_log10(name = 'Richness Ratio', 
-                  limit = c(0.5, 10)) + 
+                  limit = c(0.5, 9),
+                  breaks = c(0.5, 1, 2, 4, 8),
+                  labels = c("0.5", "1", "2", "4", "8")
+                  ) + 
     theme_plant())
 p1 <- set_panel_size(p_ratio, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
