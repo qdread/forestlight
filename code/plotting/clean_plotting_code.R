@@ -1085,18 +1085,16 @@ system2(command = "pdfcrop",
 #-----  labels ------------------------
 library(mgcv)
 
-grob_fast <- grobTree(textGrob("Fast", x = 0.045, y = 0.60,  hjust = 0,
+grob_fast <- grobTree(textGrob("Fast", x = 0.045, y = 0.44,  hjust = 0,
                                gp = gpar(col = "#BFE046", fontsize = 17, fontface = "bold.italic"))) 
-grob_tall <- grobTree(textGrob("Tall", x = 0.045, y = 0.52,  hjust = 0,
+grob_tall <- grobTree(textGrob("Tall", x = 0.045, y = 0.36,  hjust = 0,
                                gp = gpar(col = "#267038", fontsize = 17, fontface = "bold.italic"))) 
-grob_medium <- grobTree(textGrob("Medium", x = 0.045, y = 0.44,  hjust = 0,
+grob_medium <- grobTree(textGrob("Medium", x = 0.045, y = 0.28,  hjust = 0,
                                  gp = gpar(col = "gray70", fontsize = 17, fontface = "bold.italic"))) 
-grob_slow <- grobTree(textGrob("Slow", x = 0.045, y = 0.36,  hjust = 0,
+grob_slow <- grobTree(textGrob("Slow", x = 0.045, y = 0.21,  hjust = 0,
                                gp = gpar(col = "#27408b", fontsize = 17, fontface = "bold.italic"))) 
-grob_short <- grobTree(textGrob("Short", x = 0.045, y = 0.28,  hjust = 0,
+grob_short <- grobTree(textGrob("Short", x = 0.045, y = 0.14,  hjust = 0,
                                 gp = gpar(col = "#87Cefa", fontsize = 17, fontface = "bold.italic", family = "Helvetic Neue" ))) 
-grob_short2 <- grobTree(textGrob("Short", x = 0.045, y = 0.21,  hjust = 0,
-                                 gp = gpar(col = "#87Cefa", fontsize = 17, fontface = "bold.italic"))) 
 
 grob_a <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
                             gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
@@ -1133,9 +1131,8 @@ bin_x_fg_light <- expand_grid(fg = c(paste0('fg', 1:5), 'unclassified'), bin = 1
 
 bin_x_fg_light <- bin_x_fg_light %>%
   cbind(pmap_dfr(bin_x_fg_light, function(fg, bin_min, bin_max, ...) {
-    data.frame(richness = length(unique(dat$sp[dat$fg %in% fg & dat$dbh_corr >= bin_min & dat$dbh_corr < bin_max])))
+    data.frame(richness = length(unique(dat$sp[dat$fg %in% fg & dat$light_received_byarea >= bin_min & dat$light_received_byarea < bin_max])))
   }))
-
 
 
 # Reformat to spread and at individual counts
@@ -1363,15 +1360,17 @@ system2(command = "pdfcrop",
                 aes(color = ID), alpha = 0.25) +
     annotate(geom = 'text', x = 1, y = 30, label = 'Fast: Slow', face = "bold.italic", size = 6, color = 'gray', hjust = 0) +
     annotate(geom = 'text', x = 1, y = 25, label = 'Tall: Short', face = "bold.italic", size = 6, color = 'black', hjust = 0) +
-    scale_x_log10(limits = c(1,100), breaks = c(1,10, 100), 
+    scale_x_log10(
+      limits = c(1,100), 
+      breaks = c(1,10, 100), 
                   name = expression(paste('Diameter (cm)'))) + 
     scale_y_log10(#name = 'Richness Ratio', 
                   name = NULL,
                   breaks = c(0.5, 1, 2, 4, 8),
                   labels = c("0.5", "1", "2", "4", "8"),
-                 limit = c(0.5, 9)
+                 limit = c(0.4, 9)
                   ) + 
-    theme_no_y() + 
+    #theme_no_y() + 
     theme_plant())
 
 
@@ -1409,14 +1408,10 @@ system2(command = "pdfcrop",
     #formula = y ~ I(x^2), alpha = 0.25) +
     scale_fill_manual(values = guild_fills) +
     scale_color_manual(values = guild_colors) +
-    #annotation_custom(grob_a) +
-    annotation_custom(grob_short) +
-    annotation_custom(grob_tall) +
-    annotation_custom(grob_fast) +
-    annotation_custom(grob_medium) +
-    annotation_custom(grob_slow) +
     geom_point(shape = 21, size = 4, color = "black") +
-    scale_y_log10(limits = c(0.6, 100), name = "Richness") +
+    scale_y_log10(
+      limits = c(5, 100), 
+      name = "Richness") +
     theme(legend.position = 'none')) +
   theme(axis.text.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = -20)))
 
@@ -1452,9 +1447,9 @@ system2(command = "pdfcrop",
                  breaks = c(3, 30, 300)
                  ) +
     scale_y_log10(name = 'Ratio', 
-                  limit = c(0.5, 9),
+                  limit = c(0.4, 9),
                   breaks = c(0.5, 1, 2, 4, 8),
-                  labels = c("0.5", "1", "2", "4", "8")
+                 labels = c("0.5", "1", "2", "4", "8")
                   ) + 
     theme_plant() )
 
@@ -1478,7 +1473,7 @@ system2(command = "pdfcrop",
       name = NULL,
       breaks = c(0.5, 1, 2, 4, 8),
       labels = c("0.5", "1", "2", "4", "8"),
-      limit = c(0.5, 9)
+      limit = c(0.4, 9)
     ) + 
     theme_no_y() + theme_no_x() +
     theme_plant())
