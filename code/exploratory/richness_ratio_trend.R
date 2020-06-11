@@ -29,14 +29,22 @@ bin_x_fg_light <- expand_grid(fg = c(paste0('fg', 1:5), 'unclassified'), bin = 1
 dat <- alltreedat[[3]] %>%
   mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg)))
 
+# 1995 data with light values (113,651 trees)
+dat_light <- dat %>%
+  filter(!is.na(light_received_byarea))
+
 bin_x_fg <- bin_x_fg %>%
   cbind(pmap_dfr(bin_x_fg, function(fg, bin_min, bin_max, ...) {
-    data.frame(richness = length(unique(dat$sp[dat$fg %in% fg & dat$dbh_corr >= bin_min & dat$dbh_corr < bin_max])))
+    sp_ids <- as.character(dat$sp[dat$fg %in% fg & dat$dbh_corr >= bin_min & dat$dbh_corr < bin_max])
+    data.frame(richness = length(unique(sp_ids)),
+               n_individuals = length(sp_ids))
   }))
 
 bin_x_fg_light <- bin_x_fg_light %>%
   cbind(pmap_dfr(bin_x_fg_light, function(fg, bin_min, bin_max, ...) {
-    data.frame(richness = length(unique(dat$sp[dat$fg %in% fg & dat$light_received_byarea >= bin_min & dat$light_received_byarea < bin_max])))
+    sp_ids <- as.character(dat_light$sp[dat_light$fg %in% fg & dat_light$light_received_byarea >= bin_min & dat_light$light_received_byarea < bin_max])
+    data.frame(richness = length(unique(sp_ids)),
+               n_individuals = length(sp_ids))
   }))
 
 str(bin_x_fg)
@@ -58,9 +66,11 @@ guild_colors <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 ## ratios of richness
 
 richness_wide <- bin_x_fg %>%
-  pivot_wider(id_cols = c(bin, bin_midpoint, bin_min, bin_max), names_from = fg, values_from = richness) %>%
-  mutate(richness_ratio_fastslow = fg1/fg3,
-         richness_ratio_pioneerbreeder = fg2/fg4) %>%
+  pivot_wider(id_cols = c(bin, bin_midpoint, bin_min, bin_max), names_from = fg, values_from = c(richness, n_individuals)) %>%
+  mutate(richness_ratio_fastslow = richness_fg1/richness_fg3,
+         richness_ratio_pioneerbreeder = richness_fg2/richness_fg4,
+         lowest_n_fastslow = pmin(n_individuals_fg1, n_individuals_fg3),
+         lowest_n_pioneerbreeder = pmin(n_individuals_fg2, n_individuals_fg4)) %>%
   mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
 
 # Richness ratio 
@@ -89,9 +99,11 @@ richness_wide <- bin_x_fg %>%
 
 
 richness_wide_light <- bin_x_fg_light %>%
-  pivot_wider(id_cols = c(bin, bin_midpoint, bin_min, bin_max), names_from = fg, values_from = richness) %>%
-  mutate(richness_ratio_fastslow = fg1/fg3,
-         richness_ratio_pioneerbreeder = fg2/fg4) %>%
+  pivot_wider(id_cols = c(bin, bin_midpoint, bin_min, bin_max), names_from = fg, values_from = c(richness, n_individuals)) %>%
+  mutate(richness_ratio_fastslow = richness_fg1/richness_fg3,
+         richness_ratio_pioneerbreeder = richness_fg2/richness_fg4,
+         lowest_n_fastslow = pmin(n_individuals_fg1, n_individuals_fg3),
+         lowest_n_pioneerbreeder = pmin(n_individuals_fg2, n_individuals_fg4)) %>%
   mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
 
 
