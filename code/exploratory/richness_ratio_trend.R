@@ -36,7 +36,7 @@ bin_x_fg <- bin_x_fg %>%
 
 bin_x_fg_light <- bin_x_fg_light %>%
   cbind(pmap_dfr(bin_x_fg_light, function(fg, bin_min, bin_max, ...) {
-    data.frame(richness = length(unique(dat$sp[dat$fg %in% fg & dat$dbh_corr >= bin_min & dat$dbh_corr < bin_max])))
+    data.frame(richness = length(unique(dat$sp[dat$fg %in% fg & dat$light_received_byarea >= bin_min & dat$light_received_byarea < bin_max])))
   }))
 
 str(bin_x_fg)
@@ -82,7 +82,7 @@ richness_wide <- bin_x_fg %>%
 
 (p_rich_light <- ggplot(bin_x_fg_light %>% filter(!fg %in% 'unclassified' & richness > 0), 
                         aes(x = bin_midpoint, y = richness, color = fg)) + 
-   geom_point(size = 4) + scale_x_log10(name = 'diameter') + theme_plant() +
+   geom_point(size = 4) + scale_x_log10(name = 'light per unit crown area') + theme_plant() +
    scale_color_manual(values = guild_colors) +
    scale_y_log10() + #limits = c(0.6, 140)
    theme(legend.position = 'right'))
