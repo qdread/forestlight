@@ -1045,6 +1045,47 @@ dens_ratio <- ggplot(dens_ratio2) +
   theme_plant() +theme_no_y()
 dens_ratio 
 
+
+
+
+dens_ratio1.1  <- ggplot( data = richness_wide %>%
+                             filter(n_individuals >= 20, ID == "tall_short"),
+                           aes(x = bin_midpoint, y = richness_ratio, 
+                               fill = richness_ratio, color = richness_ratio)) + # exclude largest short:tall ratio
+    
+    geom_smooth( method = "lm", color = "black", alpha= 0.3, size = 0.5) +
+    geom_point(aes(fill = richness_ratio), 
+               #fill = scale_tall_short,
+               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
+    scale_tall_short +
+    scale_col_tall_short +
+    scale_x_log10(limits = c(1,100), breaks = c(1,10, 100), 
+                  name = NULL
+                  # name = expression(paste('Diameter (cm)'))
+    ) + 
+    scale_y_log10(#name = 'Richness Ratio', 
+      name = NULL,
+      breaks = c(0.5, 1, 2, 4, 8),
+      labels = c("0.5", "1", "2", "4", "8"),
+      limit = c(0.3, 9)
+    ) + 
+    theme_no_y() + theme_no_x() +
+    theme_plant())
+grid.draw(p_ratio_diam_2)
+p1 <- set_panel_size(p_ratio_diam_2, width=unit(10.25,"cm"), height=unit(5,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
+pdf(file.path(gdrive_path,'Figures/Richness/rich_diam_ratio2.1.pdf'))
+grid.draw(p1)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_diam_ratio2.1.pdf'), 
+                    file.path(gdrive_path2,'Figures/Richness/rich_diam_ratio2.1.pdf')) 
+)
+
+
 # ---------- combine
 
 g_dens  <- ggplotGrob(dens_ratio )
@@ -1286,7 +1327,7 @@ aes(x = bin_midpoint, y = richness_ratio)
       name = NULL,
       breaks = c(0.5, 1, 2, 4, 8),
       labels = c("0.5", "1", "2", "4", "8"),
-      limit = c(0.5, 9)
+      limit = c(0.3, 9)
     ) + 
     theme_no_y() + theme_no_x() +
     theme_plant() 
@@ -1327,7 +1368,7 @@ system2(command = "pdfcrop",
     name = NULL,
     breaks = c(0.5, 1, 2, 4, 8),
     labels = c("0.5", "1", "2", "4", "8"),
-    limit = c(0.5, 9)
+    limit = c(0.3, 9)
   ) + 
   theme_no_y() + theme_no_x() +
   theme_plant())
@@ -1368,7 +1409,7 @@ system2(command = "pdfcrop",
                   name = NULL,
                   breaks = c(0.5, 1, 2, 4, 8),
                   labels = c("0.5", "1", "2", "4", "8"),
-                 limit = c(0.4, 9)
+                 limit = c(0.3, 9)
                   ) + 
     #theme_no_y() + 
     theme_plant())
@@ -1473,7 +1514,7 @@ system2(command = "pdfcrop",
       name = NULL,
       breaks = c(0.5, 1, 2, 4, 8),
       labels = c("0.5", "1", "2", "4", "8"),
-      limit = c(0.4, 9)
+      limit = c(0.3, 9)
     ) + 
     theme_no_y() + theme_no_x() +
     theme_plant())
@@ -1516,13 +1557,13 @@ system2(command = "pdfcrop",
       name = NULL,
       breaks = c(0.5, 1, 2, 4, 8),
       labels = c("0.5", "1", "2", "4", "8"),
-      limit = c(0.5, 9)
+      limit = c(0.3, 9)
     ) + 
     theme_no_y() + theme_no_x() +
     theme_plant())
 grid.draw(p_ratio_light2.1)
 
-p1 <- set_panel_size(p_ratio_light1.1, width=unit(10.25,"cm"), height=unit(5,"cm"))
+p1 <- set_panel_size(p_ratio_light2.1, width=unit(10.25,"cm"), height=unit(5,"cm"))
 grid.newpage()
 grid.draw(p1)
 
