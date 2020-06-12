@@ -55,13 +55,15 @@ guild_colors <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 ## richness for each group
 
 # Arith y scale
-(p_rich <- ggplot(bin_x_fg %>% filter(!fg %in% 'unclassified' & richness > 0), aes(x = bin_midpoint, y = richness, color = fg)) + 
+(p_rich <- ggplot(bin_x_fg %>% 
+                   # arrange(desc(fg)) %>% # what !
+                    filter(!fg %in% 'unclassified' & richness > 0), aes(x = bin_midpoint, y = richness, color = fg)) + 
   geom_point(size = 4) + scale_x_log10(name = 'diameter') + theme_plant() +
   scale_color_manual(values = guild_colors) +
   theme(legend.position = 'right'))
 
 # Log y scale
-(p_rich_log <- p_rich + scale_y_log10(limits = c(0.6, 140)))
+(p_rich_log <- p_rich + scale_y_log10()) #limits = c(0.6, 140)))
 
 ## ratios of richness
 
@@ -70,7 +72,9 @@ richness_wide <- bin_x_fg %>%
   mutate(richness_ratio_fastslow = richness_fg1/richness_fg3,
          richness_ratio_pioneerbreeder = richness_fg2/richness_fg4,
          lowest_n_fastslow = pmin(n_individuals_fg1, n_individuals_fg3),
-         lowest_n_pioneerbreeder = pmin(n_individuals_fg2, n_individuals_fg4)) %>%
+         lowest_rich_fastslow  = pmin(richness_fg1, richness_fg3),
+         lowest_n_pioneerbreeder = pmin(n_individuals_fg2, n_individuals_fg4),
+         lowest_rich_pioneerbreeder = pmin(richness_fg2, richness_fg4)) %>%
   mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
 
 # Richness ratio 
@@ -90,7 +94,9 @@ richness_wide <- bin_x_fg %>%
 
 #----- by light------------------------
 
-(p_rich_light <- ggplot(bin_x_fg_light %>% filter(!fg %in% 'unclassified' & richness > 0), 
+(p_rich_light <- ggplot(bin_x_fg_light %>% 
+                          arrange(desc(fg)) %>% # ok
+                          filter(!fg %in% 'unclassified' & richness > 0), 
                         aes(x = bin_midpoint, y = richness, color = fg)) + 
    geom_point(size = 4) + scale_x_log10(name = 'light per unit crown area') + theme_plant() +
    scale_color_manual(values = guild_colors) +
@@ -103,7 +109,9 @@ richness_wide_light <- bin_x_fg_light %>%
   mutate(richness_ratio_fastslow = richness_fg1/richness_fg3,
          richness_ratio_pioneerbreeder = richness_fg2/richness_fg4,
          lowest_n_fastslow = pmin(n_individuals_fg1, n_individuals_fg3),
-         lowest_n_pioneerbreeder = pmin(n_individuals_fg2, n_individuals_fg4)) %>%
+         lowest_rich_fastslow  = pmin(richness_fg1, richness_fg3),
+         lowest_n_pioneerbreeder = pmin(n_individuals_fg2, n_individuals_fg4),
+         lowest_rich_pioneerbreeder = pmin(richness_fg2, richness_fg4)) %>%
   mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
 
 
