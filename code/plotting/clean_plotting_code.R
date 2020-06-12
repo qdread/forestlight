@@ -765,7 +765,7 @@ p0 <- p + scale_x_log10(#name = 'Diameter (cm)',
                         sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
                                             name = "Height (m)", 
                                             breaks = c(3, 10, 30))) +
-  scale_y_log10(position = "right", limits = c(0.3, 200), 
+  scale_y_log10(position = "right", limits = c(0.3, 300), 
                 breaks = c(0.1, 1, 10, 100),
                 labels = c(0.1, 1, 10, 100), 
                 name = expression(paste("Production (kg cm"^-1, " ha"^-1, "  yr"^-1, ")")))# +
@@ -1352,10 +1352,13 @@ richness_wide_light <- bin_x_fg_light %>%
 p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
 
 (rich_d <- ggplot(bin_x_fg %>% arrange(desc(fg)) %>%
-                          filter(!fg %in% 'unclassified' & richness > 0), 
+                          filter(!fg %in% 'unclassified' & richness > 0,
+                                 n_individuals >= 20), 
+                  
                         aes(x = bin_midpoint, y = richness, fill = fg)) + 
    scale_x_log10(name = 'Diameter (cm)',
-                 limit = c(0.9, 300)
+                 #limit = c(0.9, 300)
+                 limit = c(0.9, 230)
                  ) + 
    theme_plant() +
   # theme_no_x +
@@ -1374,7 +1377,7 @@ p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
    #annotation_custom(grob_slow) +
    geom_jitter(width = 0.03, shape = 21, size = 4, color = "black") +
    scale_y_log10(
-     limits = c(0.6, 100), 
+     limits = c(5, 100), 
      name = "Richness", position = "right") +
    theme(legend.position = 'none')) +
   theme(axis.text.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = -5)))
@@ -1383,13 +1386,13 @@ p1 <- set_panel_size(rich_d , width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Richness/rich_diam.pdf'))
+pdf(file.path(gdrive_path,'Figures/Richness/rich_diam2.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_diam.pdf'), 
-                    file.path(gdrive_path2,'Figures/Richness/rich_diam.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_diam2.pdf'), 
+                    file.path(gdrive_path2,'Figures/Richness/rich_diam2.pdf')) 
 )
 
 
