@@ -86,7 +86,7 @@ richness_wide <- bin_x_fg %>%
   scale_x_log10(name = 'diameter') + scale_y_log10(name = 'richness ratio', limit = c(0.5, 10)) + theme_plant())
 
 dfs <- richness_wide %>% filter(lowest_n_fastslow >= 20)
-lm1 <- lm(log(richness_ratio_fastslow) ~ log(bin_midpoint), data=dfs)
+lm1 <- lm(log(richness_ratio_fastslow) ~ log(bin_midpoint), data= dfs)
 summary(lm1) # 0.23 (0.18, 0.28), r2 = 0.88
 confint(lm1) 
 dst <- richness_wide %>% filter(lowest_n_pioneerbreeder >= 20)
@@ -127,7 +127,7 @@ lfs <- richness_wide_light %>% filter(lowest_n_fastslow >= 20)
 lm3 <- lm(log(richness_ratio_fastslow) ~ log(bin_midpoint), data= lfs)
 summary(lm3) # 0.25 (0.17 - 0.32) r2 = 0.96
 confint(lm3)
-lst <- richness_wide %>% filter(lowest_n_pioneerbreeder >= 20)
+lst <- richness_wide_light %>% filter(lowest_n_pioneerbreeder >= 20)
 lm4 <- lm(log(richness_ratio_pioneerbreeder) ~ log(bin_midpoint), data=lst)
 summary(lm4) #0.80, r2 = 0.96
 confint(lm4) #0.69, 0.91
