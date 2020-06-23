@@ -138,7 +138,7 @@ source(file.path(github_path, 'forestlight/stan/get_ratio_slopes_fromfit.R'))
 lightperareacloudbin_fg <- read.csv(file.path(fp, 'lightperareacloudbin_fg.csv'), stringsAsFactors = FALSE)
 lightpervolcloudbin_fg <- read.csv(file.path(fp, 'lightpervolcloudbin_fg.csv'), stringsAsFactors = FALSE)
 unscaledlightbydbhcloudbin_fg <- read.csv(file.path(fp, 'unscaledlightbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
-
+fitted_lightcloudbin_fg <-read.csv(file.path(fp, 'fitted_lightbysizealltrees_fig1.csv'), stringsAsFactors = FALSE)
 
 exl <- expression(atop('Light per Crown Area', paste('(W m'^-2, ')')))
 exv <- expression(atop('Light per Crown Volume', paste('(W m'^-3, ')')))
@@ -147,13 +147,19 @@ exd <- 'Diameter (cm)'
 
 #----------------------   Fig 1a: Light per crown area by diameter -----------------------------
 
-p <- ggplot() + geom_point(alpha = 0.01, data = alltree_light_95, 
-                           aes(x = dbh_corr, y = light_received_byarea), color = 'chartreuse3') +
+p <- ggplot() +
+  #geom_point(alpha = 0.01, data = alltree_light_95, 
+   #                        aes(x = dbh_corr, y = light_received_byarea), color = 'chartreuse3') +
   geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), 
                   aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
+  geom_ribbon(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area'), 
+              aes(x = dbh, ymin = q025, ymax = q975), alpha = 0.4) +
+  #geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area'),
+   #         aes(x = dbh, y = q50)) +
   scale_x_log10(limits = c(0.8, 300), name = exd) +
   scale_y_log10(name = exl, limits = c(0.8, 1000)) +
   theme_plant_small() 
+
 
 
 # --- to add secondary height axis, first mask theme_no_x() above
@@ -166,14 +172,14 @@ area
 p1 <- set_panel_size(area, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
-pdf(file.path(gdrive_path,'Figures/Light_Individual/light_area.pdf'))
+pdf(file.path(gdrive_path,'Figures/Light_Individual/light_area2.pdf'))
 grid.draw(p1)
 dev.off()
 
 #code to crop out white space - may only work on unix/macs
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path,'Figures/Light_Individual/light_area.pdf'), 
-                  file.path(gdrive_path,'Figures/Light_Individual/light_area.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/Light_Individual/light_area2.pdf'), 
+                  file.path(gdrive_path2,'Figures/Light_Individual/light_area2.pdf')) 
 )
 lm1 <- lm(log(light_received_byarea) ~ log(dbh_corr), data = alltree_light_95)
 summary(lm1)
@@ -182,6 +188,12 @@ confint(lm1)
 # using linear fit to estimate increase up to 100 cm dbh
 exp(0.987*log(100)) #94.2
 #using ratio of smallest and largest bin
+lightperareacloudbin_fg$q50[lightperareacloudbin_fg$fg == "all"][20]/
+  lightperareacloudbin_fg$q50[lightperareacloudbin_fg$fg == "all"][1] #44.4
+
+lightpervolcloudbin_fg$q50[lightpervolcloudbin_fg$fg == "all"][20]/
+  lightpervolcloudbin_fg$q50[lightpervolcloudbin_fg$fg == "all"][1] #4.49
+
 412.197295/9.477105 #43
 #----------------------   Fig 1b: Light per crown volume by diameter -----------------------------
 
@@ -191,6 +203,10 @@ vol <- ggplot() +
   geom_pointrange(data = lightpervolcloudbin_fg %>% filter(fg %in% 'all'), 
                   aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
   scale_x_log10(limits = c(0.8, 300), name = exd) +
+  geom_ribbon(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per volume'), 
+              aes(x = dbh, ymin = q025, ymax = q975), alpha = 0.4) +
+  geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per volume'),
+            aes(x = dbh, y = q50)) +
   #stat_smooth(method = "lm", color = "black", 
    #           data = alltree_light_95, aes(x = dbh_corr, y = light_received_byvolume)) +
   scale_y_log10(name = exv, breaks = c(1, 10, 100), limits = c(0.8, 200)) +
@@ -201,12 +217,12 @@ p1 <- set_panel_size(vol, width=unit(10.25,"cm"), height=unit(7,"cm"))
 
 grid.newpage()
 grid.draw(p1)
-pdf(file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf'))
+pdf(file.path(gdrive_path,'Figures/Light_Individual/light_volume2.pdf'))
 grid.draw(p1)
 dev.off()
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf'), 
-                  file.path(gdrive_path,'Figures/Light_Individual/light_volume.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/Light_Individual/light_volume2.pdf'), 
+                  file.path(gdrive_path2,'Figures/Light_Individual/light_volume2.pdf')) 
 )
 
 lm1 <- lm(log(light_received_byvolume) ~ log(dbh_corr), data = alltree_light_95)
@@ -234,11 +250,11 @@ g1 <- rbind(g_area , g_vol , size = "first")
 g1$widths <- unit.pmax(g_area$widths, g_vol$widths)
 grid.newpage()
 grid.draw(g1)
-ggsave(g1, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Light_Individual/light_combo.pdf'))
+ggsave(g1, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Light_Individual/light_combo2.pdf'))
 
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path,'Figures/Light_Individual/light_combo.pdf'), 
-                  file.path(gdrive_path,'Figures/Light_Individual/light_combo.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/Light_Individual/light_combo2.pdf'), 
+                  file.path(gdrive_path2,'Figures/Light_Individual/light_combo2.pdf')) 
 )
 
 
@@ -1018,7 +1034,10 @@ prod_ratio <- prod_ratio_light   %>%
                 limits = c(0.01, 400), position = "left",
                 name = "Ratio") 
 prod_ratio
-
+p <- prod_ratio_light   %>%
+  filter(n_individuals >= 20, bin_midpoint > 4, ID == "Short-Tall" )
+lm1 <- lm(log(p$production_ratio) ~ log(p$bin_midpoint))
+confint(lm1)
 prod_ratio2 <- set_panel_size(prod_ratio, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(prod_ratio2)
@@ -1034,6 +1053,18 @@ system2(command = "pdfcrop",
 
 # --------- Color coded by group
 
+guild_colors <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
+fast_slow_fill <- c("#27408b", "#BFE046" )
+tall_short_fill <- c("#87Cefa", "#267038")
+scale_fast_slow <- scale_fill_gradientn(colours = fast_slow_fill,
+                                        trans = 'log')#,# name = 
+scale_col_fast_slow <- scale_color_gradientn(colours = fast_slow_fill,
+                                             trans = 'log')#,# name = 
+scale_tall_short <- scale_fill_gradientn(colours = tall_short_fill,
+                                         trans = 'log')#,# name = 
+scale_col_tall_short<- scale_color_gradientn(colours = tall_short_fill,
+                                             trans = 'log')#,# name = 
+
 # Production fast slow Light
 (prod_ratio_fs  <- ggplot() + # exclude largest short:tall ratio
     geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975),
@@ -1045,17 +1076,24 @@ system2(command = "pdfcrop",
                  filter(n_individuals >= 20, density_ratio > 0, ID == "Fast-Slow"),
                aes(x = bin_midpoint, y =production_ratio, 
                    fill = production_ratio),
-               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
+               shape = 21, stroke = 0.5, 
+               #size = 4.5, 
+               size = 4, 
+               color = "black") +
     scale_fast_slow +
     scale_x_log10(limits = c(2, 300), breaks = c(3, 30, 300), 
-                  position = "top", 
+                  position = "bottom", 
+                 # position = "top", 
                   expression(paste('Light per Crown Area (W m'^-2,')'))) + 
     scale_y_log10(labels = signif, breaks = c( 0.1, 1, 10, 100, 1000), 
                   limits=c(0.02, 200),
+                  position = "right",
                   name = expression("Production Ratio")) + 
     #theme_no_y() + 
     #theme_no_x() +
-    theme_plant() 
+    theme_plant_small() 
+    #theme_plant()
+
 )
 
 
@@ -1072,7 +1110,19 @@ system2(command = "pdfcrop",
         args    = c(file.path(gdrive_path2,'Figures/Ratios/prod_ratio_fs.pdf'), 
                     file.path(gdrive_path2,'Figures/Ratios/prod_ratio_fs.pdf')) 
 )
+p1 <- set_panel_size(prod_ratio_fs, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
 
+
+pdf(file.path(gdrive_path,'Figures/Ratios/prod_ratio_fs_v2.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Ratios/prod_ratio_fs_v2.pdf'), 
+                    file.path(gdrive_path2,'Figures/Ratios/prod_ratio_fs_v2.pdf')) 
+)
 # Production short tall
 (prod_ratio_st  <- ggplot() + # exclude largest short:tall ratio
     geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975),
@@ -1083,7 +1133,10 @@ system2(command = "pdfcrop",
                  filter(n_individuals >= 20, density_ratio > 0, ID == "Short-Tall"),
                aes(x = bin_midpoint, y =production_ratio, 
                    fill = production_ratio),
-               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
+               shape = 21, stroke = 0.5, 
+               size = 4, 
+               #size = 4.5, 
+               color = "black") +
     scale_tall_short +
     scale_x_log10(limits = c(2, 300), breaks = c(3, 30, 300), 
                   position = "top", 
@@ -1091,8 +1144,9 @@ system2(command = "pdfcrop",
     scale_y_log10(labels = signif, breaks = c(0.1, 1, 10, 100, 1000), 
                   limits=c(0.02, 200),
                   name = expression("Production Ratio")) + 
-    #theme_no_y() + theme_no_x() +
-    theme_plant() 
+    theme_no_y() + theme_no_x() +
+    theme_plant_small() 
+    #theme_plant()
 )
 
 
@@ -1100,14 +1154,18 @@ p1 <- set_panel_size(prod_ratio_st, width=unit(10.25,"cm"), height=unit(5,"cm"))
 grid.newpage()
 grid.draw(p1)
 
+p1 <- set_panel_size(prod_ratio_st, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Ratios/prod_ratio_st.pdf'))
+
+pdf(file.path(gdrive_path,'Figures/Ratios/prod_ratio_st_v2.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Ratios/prod_ratio_st.pdf'), 
-                    file.path(gdrive_path2,'Figures/Ratios/prod_ratio_st.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Ratios/prod_ratio_st_v2.pdf'), 
+                    file.path(gdrive_path2,'Figures/Ratios/prod_ratio_st_v2.pdf')) 
 )
 #----------------------------- Fig 6B Abundance by Diameter ----------------------------
 dens_ratio2 <- prod_ratio_diam %>% 
