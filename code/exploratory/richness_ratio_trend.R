@@ -85,6 +85,15 @@ richness_wide <- bin_x_fg %>%
   annotate(geom = 'text', x = 1, y = 25, label = 'pioneer:breeder', size = 6, color = 'black', hjust = 0) +
   scale_x_log10(name = 'diameter') + scale_y_log10(name = 'richness ratio', limit = c(0.5, 10)) + theme_plant())
 
+dfs <- richness_wide %>% filter(lowest_n_fastslow >= 20)
+lm1 <- lm(log(richness_ratio_fastslow) ~ log(bin_midpoint), data=dfs)
+summary(lm1) # 0.23 (0.18, 0.28), r2 = 0.88
+confint(lm1) 
+dst <- richness_wide %>% filter(lowest_n_pioneerbreeder >= 20)
+lm2 <- lm(log(richness_ratio_pioneerbreeder) ~ log(bin_midpoint), data=dst)
+summary(lm2) #0.80 (0.68, 0.91), r2 = 0.97
+confint(lm2)
+
 (p_ratio <- ggplot(richness_wide, aes(x = bin_midpoint)) +
     geom_point(size = 4, color = 'gray', aes(y = richness_ratio_fastslow)) +
     geom_point(size = 4, color = 'black', aes(y = richness_ratio_pioneerbreeder)) +
@@ -113,6 +122,15 @@ richness_wide_light <- bin_x_fg_light %>%
          lowest_n_pioneerbreeder = pmin(n_individuals_fg2, n_individuals_fg4),
          lowest_rich_pioneerbreeder = pmin(richness_fg2, richness_fg4)) %>%
   mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
+
+lfs <- richness_wide_light %>% filter(lowest_n_fastslow >= 20)
+lm3 <- lm(log(richness_ratio_fastslow) ~ log(bin_midpoint), data= lfs)
+summary(lm3) # 0.25 (0.17 - 0.32) r2 = 0.96
+confint(lm3)
+lst <- richness_wide %>% filter(lowest_n_pioneerbreeder >= 20)
+lm4 <- lm(log(richness_ratio_pioneerbreeder) ~ log(bin_midpoint), data=lst)
+summary(lm4) #0.80, r2 = 0.96
+confint(lm4) #0.69, 0.91
 
 
 (p_ratio_light <- ggplot(richness_wide_light, aes(x = bin_midpoint)) +
