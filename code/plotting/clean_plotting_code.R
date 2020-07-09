@@ -1336,6 +1336,24 @@ grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
    # Load 1995 bin data (to make sure we're using the same bin breaks as other figs)
 load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
 
+# Create binned richness data ---------------------------------------------
+
+# Use existing bin bounds
+bin_bounds <- fastslow_stats_bydiam_byyear[1:20, c('bin_midpoint', 'bin_min', 'bin_max')]
+bin_bounds_light <- fastslow_stats_bylight_byyear[1:20, c('bin_midpoint', 'bin_min', 'bin_max')]
+# Get richness of each FG by each bin
+
+bin_x_fg <- expand_grid(fg = c(paste0('fg', 1:5), 'unclassified'), bin = 1:20) %>%
+  left_join(bin_bounds %>% mutate(bin = 1:20))
+
+bin_x_fg_light <- expand_grid(fg = c(paste0('fg', 1:5), 'unclassified'), bin = 1:20) %>%
+  left_join(bin_bounds_light %>% mutate(bin = 1:20))
+
+# 1995 data (132,982 trees)
+dat <- alltreedat[[3]] %>%
+  mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg)))
+
+# 1995 data with light values (113,651 trees)
 dat_light <- dat %>%
   filter(!is.na(light_received_byarea))
 
@@ -1345,6 +1363,11 @@ bin_x_fg <- bin_x_fg %>%
     data.frame(richness = length(unique(sp_ids)),
                n_individuals = length(sp_ids))
   }))
+bin_x_fg <- bin_x_fg %>%
+  mutate(richness_cm = richness/(bin_max - bin_min)) 
+rich_all <- read_csv(file.path(gdrive_path, 'data/rich_all.csv'))
+bin_x_fg <- as_tibble(rbind(bin_x_fg,rich_all ))
+str(bin_x_fg)
 
 bin_x_fg_light <- bin_x_fg_light %>%
   cbind(pmap_dfr(bin_x_fg_light, function(fg, bin_min, bin_max, ...) {
@@ -1353,6 +1376,8 @@ bin_x_fg_light <- bin_x_fg_light %>%
                n_individuals = length(sp_ids))
   }))
 
+bin_x_fg_light <- bin_x_fg_light %>%
+  mutate(richness_cm = richness/(bin_max - bin_min))
 #
 
 richness_wide <- bin_x_fg %>%
@@ -1407,7 +1432,46 @@ richness_wide_light <- bin_x_fg_light %>%
     theme_plant() +
     theme(legend.position = 'right'))
 
-p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
+(p_rich_cm <- ggplot(bin_x_fg %>% 
+                    arrange(desc(fg)) %>%
+                    filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20) %>%
+                    #filter(!fg %in% 'all') %>%
+                    arrange(desc(fg)), 
+                  aes(x = bin_midpoint, y = richness_cm, fill = fg, color = fg)) + 
+    geom_smooth(method = "lm", alpha = 0.2, size = 0.5) +
+    geom_point(shape = 21, size = 4, color = "black") +
+    geom_abline(intercept = log10(24000), slope = -2, linetype = "dashed", color = "gray40") +
+   
+    scale_x_log10(name = 'Diameter (cm)',
+                  limit = c(1, 300)) + 
+    scale_y_log10(labels = signif,
+      limit = c(0.3, 2000), 
+      name = expression(paste("Richness (cm "^-1,")"))) +
+    #scale_fill_manual(values = guild_fills) +
+    #scale_color_manual(values = guild_colors) +
+    scale_fill_manual(values = guild_fills2) +
+    scale_color_manual(values = guild_colors2) +
+    theme_plant()) #+
+   # theme(legend.position = 'right'))
+p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+# All slopes, calculated separately
+library(broom)
+rich_lms <- bin_x_fg %>%
+  filter(richness_cm > 0) %>%
+  nest(-fg) %>% 
+  mutate(
+    fit = map(data, ~ lm(log(richness_cm) ~ log(bin_midpoint), data = .x)),
+    tidied = map(fit, tidy, conf.int = T)
+  ) %>% 
+  unnest(tidied) 
+filter(rich_lms, term != '(Intercept)') # note: 'estimate' = slope
+tidy(rich_lms)
+
+guild_lookup
+
 
 (rich_d <- ggplot(bin_x_fg %>% arrange(desc(fg)) %>%
                           filter(!fg %in% 'unclassified' & richness > 0,
