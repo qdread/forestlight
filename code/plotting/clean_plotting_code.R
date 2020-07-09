@@ -1364,9 +1364,10 @@ bin_x_fg <- bin_x_fg %>%
                n_individuals = length(sp_ids))
   }))
 bin_x_fg <- bin_x_fg %>%
-  mutate(richness_cm = richness/(bin_max - bin_min)) 
+  mutate(richness_cm_ha = richness/(bin_max - bin_min))
 rich_all <- read_csv(file.path(gdrive_path, 'data/rich_all.csv'))
 bin_x_fg <- as_tibble(rbind(bin_x_fg,rich_all ))
+bin_x_fg$richness_cm <-  bin_x_fg$richness_cm/42.84
 str(bin_x_fg)
 
 bin_x_fg_light <- bin_x_fg_light %>%
@@ -1378,6 +1379,7 @@ bin_x_fg_light <- bin_x_fg_light %>%
 
 bin_x_fg_light <- bin_x_fg_light %>%
   mutate(richness_cm = richness/(bin_max - bin_min))
+bin_x_fg_light$richness_cm <-  bin_x_fg_light$richness_cm/42.84
 #
 
 richness_wide <- bin_x_fg %>%
@@ -1425,7 +1427,7 @@ richness_wide_light <- bin_x_fg_light %>%
     scale_x_log10(name = 'Diameter (cm)',
                   limit = c(1, 500)) + 
     scale_y_log10(
-      limits = c(0.6, 100), 
+     # limits = c(0.6, 100), 
       name = "Richness") +
     scale_fill_manual(values = guild_fills) +
     scale_color_manual(values = guild_colors) +
@@ -1439,14 +1441,14 @@ richness_wide_light <- bin_x_fg_light %>%
                     arrange(desc(fg)), 
                   aes(x = bin_midpoint, y = richness_cm, fill = fg, color = fg)) + 
     geom_smooth(method = "lm", alpha = 0.2, size = 0.5) +
-    geom_point(shape = 21, size = 4, color = "black") +
-    geom_abline(intercept = log10(24000), slope = -2, linetype = "dashed", color = "gray40") +
+    geom_jitter(shape = 21, size = 4, color = "black", width = 0.02) +
+    geom_abline(intercept = log10(1000), slope = -2, linetype = "dashed", color = "gray40") +
    
     scale_x_log10(name = 'Diameter (cm)',
                   limit = c(1, 300)) + 
     scale_y_log10(labels = signif,
-      limit = c(0.3, 2000), 
-      name = expression(paste("Richness (cm "^-1,")"))) +
+      limit = c(0.003, 200), 
+      name = expression(paste("Richness (ha"^-1," cm"^-1,")"))) +
     #scale_fill_manual(values = guild_fills) +
     #scale_color_manual(values = guild_colors) +
     scale_fill_manual(values = guild_fills2) +
