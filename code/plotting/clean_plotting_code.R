@@ -1548,20 +1548,20 @@ bin_x_fg2 <- bin_x_fg2 %>%
                        filter(!fg %in% 'unclassified' & richness > 0) %>% #  & n_individuals >= 20
                        # filter(!fg %in% 'all') %>%
                        arrange(desc(fg)), 
-                     aes(x = abun_cm*42.84, y = richness_cm*42.84, fill = fg, color = fg)) + 
+                     aes(x = abun_cm, y = richness_cm, fill = fg, color = fg)) + #*42.84
     geom_smooth(method = "lm", alpha = 0.2, size = 0.5) +
     geom_jitter(shape = 21, size = 4, color = "black", width = 0.0) +
-    geom_abline(intercept = log10(1), slope = 1, linetype = "dashed", color = "gray40") +
-    scale_x_log10(name = expression(paste("Abundance (cm"^-1,")")),
-                  breaks = c(0.1,  10,  1000, 100000),
-                  labels = c("0.1", "10", "1000", "10,000"),
+    #geom_abline(intercept = log10(1), slope = 1, linetype = "dashed", color = "gray40") +
+    scale_x_log10(name = expression(paste("Abundance (ha"^-1," cm"^-1,")")),
+                  breaks = c(0.001, 0.1,  10,  1000, 100000),
+                  labels = c("0.001", "0.1", "10", "1,000", "10,000"),
                   #labels = signif,
-                   limit = c(0.02, 150000)
+                  # limit = c(0.02, 150000)
     ) + 
     scale_y_log10(labels = signif,
-                   limit = c(0.02, 1500), 
-                  #position = "right",
-                  name = expression(paste("Richness (cm"^-1,")"))) +
+                  # limit = c(0.02, 1500), 
+                  position = "right",
+                  name = expression(paste("Richness (ha"^-1," cm"^-1,")"))) +
     #scale_fill_manual(values = guild_fills) +
     #scale_color_manual(values = guild_colors) +
     scale_fill_manual(values = guild_fills2) +
@@ -1569,22 +1569,22 @@ bin_x_fg2 <- bin_x_fg2 %>%
     theme_plant()) #+
 p1 <- set_panel_size(rich_abun, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
 
-p1 <- set_panel_size(rich_abun , width=unit(10.25,"cm"), height=unit(7,"cm"))
+p1 <- set_panel_size(rich_abun , width=unit(10.25,"cm"), height=unit(7.5,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Richness/rich_abun.pdf'))
+pdf(file.path(gdrive_path,'Figures/Richness/rich_abun2.pdf'))
 grid.draw(p1 )
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_abun.pdf'), 
-                    file.path(gdrive_path2,'Figures/Richness/rich_abun.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_abun2.pdf'), 
+                    file.path(gdrive_path2,'Figures/Richness/rich_abun2.pdf')) 
 )
 
 
 bin_x_fg3 <- bin_x_fg2 %>% filter(n_individuals > 0)
-lm1 <- lm(log(richness_cm) ~ log(abun_cm), data = bin_x_fg3)
+lm1 <- lm(log(richness_cm) ~ log(abun_cm) + fg, data = bin_x_fg3)
 summary(lm1)
 
 (rich_abun2 <- ggplot(bin_x_fg2 %>% 
@@ -1594,11 +1594,11 @@ summary(lm1)
                        # filter(!fg %in% 'all') %>%
                        arrange(desc(fg)), 
                      aes(x = n_individuals, y = richness, fill = fg, color = fg)) + 
-    geom_smooth(method = "lm", alpha = 0.2, size = 0.5) +
+    geom_smooth(method = "loess", alpha = 0.2, size = 0.5) +
     geom_jitter(shape = 21, size = 4, color = "black", width = 0.0) +
     geom_abline(intercept = log10(1), slope = 1, linetype = "dashed", color = "gray40") +
-    scale_x_log10(name = expression(paste("Abundance (ha"^-1," cm"^-1,")")),
-                  breaks = c(0.001, 0.01, 0.1, 1, 10, 100, 1000),
+    scale_x_log10(name = expression(paste("Abundance")),
+                  breaks = c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000),
                   #labels = c("0.01", "1", "100", "10,000")
                   labels = signif,
                   # limit = c(1, 300)
@@ -1606,12 +1606,17 @@ summary(lm1)
     scale_y_log10(labels = signif,
                   # limit = c(0.003, 200), 
                   #position = "right",
-                  name = expression(paste("Richness (ha"^-1," cm"^-1,")"))) +
+                  name = expression(paste("Richness"))) +
     #scale_fill_manual(values = guild_fills) +
     #scale_color_manual(values = guild_colors) +
     scale_fill_manual(values = guild_fills2) +
     scale_color_manual(values = guild_colors2) +
     theme_plant()) #+
+
+bin_x_fg3 <- bin_x_fg2 %>% filter(n_individuals > 0)
+lm1 <- lm(log(richness) ~ log(n_individuals) + fg, data = bin_x_fg3)
+summary(lm1)
+
 #------------- Richness ratio per Diameter
 
 scale_alpha(range = c(0, 1), limits = c(0, 1))
