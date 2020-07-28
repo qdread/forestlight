@@ -5,7 +5,7 @@ library(tidyverse)
 library(forestscaling)
 
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google Drive/ForestLight'))
-github_path <- ifelse(Sys.info()['user'] == 'qread', '~/documents/github/', file.path('/Users/jgradym/Documents/Github'))
+github_path <- ifelse(Sys.info()['user'] == 'qread', '~/documents/github/MSU_repos', file.path('/Users/jgradym/Documents/Github'))
 
 load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
 
@@ -38,16 +38,17 @@ bin_x_fg <- bin_x_fg %>%
     sp_ids <- as.character(dat$sp[dat$fg %in% fg & dat$dbh_corr >= bin_min & dat$dbh_corr < bin_max])
     data.frame(richness = length(unique(sp_ids)),
                n_individuals = length(sp_ids))
-  }))
+  })) %>%
+  mutate(richness_by_bin_width = richness / (bin_max - bin_min))
 
 bin_x_fg_light <- bin_x_fg_light %>%
   cbind(pmap_dfr(bin_x_fg_light, function(fg, bin_min, bin_max, ...) {
     sp_ids <- as.character(dat_light$sp[dat_light$fg %in% fg & dat_light$light_received_byarea >= bin_min & dat_light$light_received_byarea < bin_max])
     data.frame(richness = length(unique(sp_ids)),
                n_individuals = length(sp_ids))
-  }))
+  })) %>%
+  mutate(richness_by_bin_width = richness / (bin_max - bin_min))
 
-str(bin_x_fg)
 # Quick ggplot ------------------------------------------------------------
 
 guild_colors <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
@@ -57,7 +58,7 @@ guild_colors <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 # Arith y scale
 (p_rich <- ggplot(bin_x_fg %>% 
                    # arrange(desc(fg)) %>% # what !
-                    filter(!fg %in% 'unclassified' & richness > 0), aes(x = bin_midpoint, y = richness, color = fg)) + 
+                    filter(!fg %in% 'unclassified' & richness > 0), aes(x = bin_midpoint, y = richness_by_bin_width, color = fg)) + 
   geom_point(size = 4) + scale_x_log10(name = 'diameter') + theme_plant() +
   scale_color_manual(values = guild_colors) +
   theme(legend.position = 'right'))
