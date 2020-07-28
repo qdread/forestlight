@@ -44,7 +44,7 @@ dat_all_light <- with(bin_all_light %>% filter(richness > 0), list(x = bin_midpo
 
 bin_x_fg_use <- bin_x_fg %>% filter(richness > 0, !fg %in% 'unclassified')
 dat_fg <- with(bin_x_fg_use, list(x = bin_midpoint, y = richness_by_bin_width, fg = as.numeric(factor(fg)), N = nrow(bin_x_fg_use), M = 5))
-bin_x_fg_light_use <- bin_x_fg %>% filter(richness > 0, !fg %in% 'unclassified')
+bin_x_fg_light_use <- bin_x_fg_light %>% filter(richness > 0, !fg %in% 'unclassified')
 dat_fg_light <- with(bin_x_fg_light_use, list(x = bin_midpoint, y = richness_by_bin_width, fg = as.numeric(factor(fg)), N = nrow(bin_x_fg_light_use), M = 5))
 
 # Fit models --------------------------------------------------------------
@@ -65,8 +65,8 @@ mod_2seg_mixed <- stan_model(file.path(github_path, 'forestlight/stan/richness_2
 mod_3seg_mixed <- stan_model(file.path(github_path, 'forestlight/stan/richness_3segment_mixedmodel.stan'))
 
 fit_2seg_mixed_all <- sampling(mod_2seg_mixed, data = dat_fg, chains = 3, iter = 5000, warmup = 4000, seed = 333)
-# More iterations needed to converge 3 segment mixed model.
-fit_3seg_mixed_all <- sampling(mod_3seg_mixed, data = dat_fg, chains = 3, iter = 5000, warmup = 4000, seed = 444)
+# More iterations needed to converge 3 segment mixed model, and increased treedepth. Works OK.
+fit_3seg_mixed_all <- sampling(mod_3seg_mixed, data = dat_fg, chains = 3, iter = 10000, warmup = 9000, seed = 4444, control = list(max_treedepth = 20))
 
 fit_2seg_mixed_all_light <- sampling(mod_2seg_mixed, data = dat_fg_light, chains = 3, iter = 5000, warmup = 4000, seed = 555)
-fit_3seg_mixed_all_light <- sampling(mod_3seg_mixed, data = dat_fg_light, chains = 3, iter = 5000, warmup = 4000, seed = 666)
+fit_3seg_mixed_all_light <- sampling(mod_3seg_mixed, data = dat_fg_light, chains = 3, iter = 10000, warmup = 9000, seed = 666, control = list(max_treedepth = 20))

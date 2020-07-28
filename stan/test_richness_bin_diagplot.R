@@ -32,6 +32,11 @@ plot(dat_all_light$x, dat_all_light$y, log = 'xy', ylim = c(1, 150))
 points(xpredlight, ypred2seglight, type = 'l', col = 'blue')
 points(xpredlight, ypred3seglight, type = 'l', col = 'red')
 
+
+# Mixed model diameter ----------------------------------------------------
+
+
+
 # Mixed model: diam. Extract coefficients
 coef_2segmixed <- summary(fit_2seg_mixed_all)[[1]][,'mean']
 # Reshape coefs.
@@ -48,7 +53,7 @@ ypred2segmixed <- coef_2segmixed_df %>%
 
 ggplot() +
   geom_point(aes(x = bin_midpoint, y = richness_by_bin_width, color = fg), data = bin_x_fg_use) +
-  geom_line(aes(x = x, y = ypred, color = fg), data = ypred2segmixed %>% ungroup %>% mutate(fg = paste0('fg',fg))) +
+  geom_line(aes(x = x, y = ypred, color = fg), data = ypred2segmixed %>% ungroup %>% mutate(fg = paste0('fg',fg)) %>% filter(ypred > 1e-2)) +
   theme_bw() +
   scale_x_log10(name = 'Diameter') + scale_y_log10('Richness per bin')
 
@@ -73,3 +78,66 @@ ggplot() +
   geom_line(aes(x = x, y = ypred, color = fg), data = ypred3segmixed %>% ungroup %>% mutate(fg = paste0('fg',fg)) %>% filter(ypred > 1e-2)) +
   theme_bw() +
   scale_x_log10(name = 'Diameter') + scale_y_log10('Richness per bin')
+
+
+
+# Mixed model light -------------------------------------------------------
+
+
+# Mixed model: diam. Extract coefficients
+coef_2segmixed_light <- summary(fit_2seg_mixed_all_light)[[1]][,'mean']
+# Reshape coefs.
+coef_2segmixed_df_light <- data.frame(fg = 1:5, 
+                                alpha = coef_2segmixed_light[grep('coef_alpha', names(coef_2segmixed_light))],
+                                beta_low = coef_2segmixed_light[grep('coef_beta_low', names(coef_2segmixed_light))],
+                                beta_high = coef_2segmixed_light[grep('coef_beta_high', names(coef_2segmixed_light))],
+                                tau = coef_2segmixed_light[grep('coef_tau', names(coef_2segmixed_light))]
+)
+
+ypred2segmixedlight <- coef_2segmixed_df_light %>%
+  group_by(fg) %>%
+  group_modify(~ data.frame(x = xpredlight, ypred = twoseg_log(x = xpredlight, alpha = .$alpha, beta = c(.$beta_low, .$beta_high), tau = .$tau)))
+
+ggplot() +
+  geom_point(aes(x = bin_midpoint, y = richness_by_bin_width, color = fg), data = bin_x_fg_light_use) +
+  geom_line(aes(x = x, y = ypred, color = fg), data = ypred2segmixedlight %>% ungroup %>% mutate(fg = paste0('fg',fg)) ) +
+  theme_bw() +
+  scale_x_log10(name = 'Light per crown area') + scale_y_log10('Richness per bin')
+
+# Mixed model 3 segment: diam. Extract coefficients
+coef_3segmixed_light <- summary(fit_3seg_mixed_all_light)[[1]][,'mean']
+# Reshape coefs.
+coef_3segmixed_df_light <- data.frame(fg = 1:5, 
+                                alpha = coef_3segmixed_light[grep('coef_alpha', names(coef_3segmixed_light))],
+                                beta_low = coef_3segmixed_light[grep('coef_beta_low', names(coef_3segmixed_light))],
+                                beta_mid = coef_3segmixed_light[grep('coef_beta_mid', names(coef_3segmixed_light))],
+                                beta_high = coef_3segmixed_light[grep('coef_beta_high', names(coef_3segmixed_light))],
+                                tau_low = coef_3segmixed_light[grep('coef_tau_low', names(coef_3segmixed_light))],
+                                tau_high = coef_3segmixed_light[grep('coef_tau_high', names(coef_3segmixed_light))]
+)
+
+ypred3segmixedlight <- coef_3segmixed_df_light %>%
+  group_by(fg) %>%
+  group_modify(~ data.frame(x = xpredlight, ypred = threeseg_log(x = xpredlight, alpha = .$alpha, beta = c(.$beta_low, .$beta_mid, .$beta_high), tau_low = .$tau_low, tau_high = .$tau_high)))
+
+ggplot() +
+  geom_point(aes(x = bin_midpoint, y = richness_by_bin_width, color = fg), data = bin_x_fg_light_use) +
+  geom_line(aes(x = x, y = ypred, color = fg), data = ypred3segmixedlight %>% ungroup %>% mutate(fg = paste0('fg',fg))) +
+  theme_bw() +
+  scale_x_log10(name = 'Light per crown area') + scale_y_log10('Richness per bin')
+
+
+# Get credible intervals of breakpoints -----------------------------------
+
+summ_3seg <- summary(fit_3seg_mixed_all)[[1]]
+coefs3seg <- data.frame(coef = row.names(summ_3seg), summ_3seg) %>%
+  filter(grepl('coef', coef))
+
+data.frame(fg = 1:5, coefs3seg) %>%
+  filter(grepl('tau', coef)) %>%
+  select(coef, fg, X50., X2.5., X97.5.) %>%
+  mutate_at(vars(starts_with('X')), ~ 10^.) %>%
+  arrange(fg, rev(coef)) %>%
+  mutate(coef = rep(c('cutoff low', 'cutoff high'), 5))
+
+  
