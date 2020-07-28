@@ -31,7 +31,7 @@ parameters {
 	vector[M] beta_mid_fg;
 	vector[M] beta_high_fg;
 	vector[M] tau_low_fg;				// Each FG has a deviation from the cutpoint
-	vector[M] tau_distance_fg;
+	vector<lower=-1*tau_distance>[M] tau_distance_fg;
 	// Variance parameters
 	real<lower=0> sigma;
 	real<lower=0,upper=10> sigma_alpha;
