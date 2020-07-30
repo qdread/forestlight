@@ -134,7 +134,7 @@ source(file.path(github_path, 'forestlight/stan/get_ratio_slopes_fromfit.R'))
 ################################################################################################
 # ------------------------------ Fig 1: Light Interception ---------------------------------
 ################################################################################################
-theme_plant()
+
 lightperareacloudbin_fg <- read.csv(file.path(fp, 'lightperareacloudbin_fg.csv'), stringsAsFactors = FALSE)
 lightpervolcloudbin_fg <- read.csv(file.path(fp, 'lightpervolcloudbin_fg.csv'), stringsAsFactors = FALSE)
 unscaledlightbydbhcloudbin_fg <- read.csv(file.path(fp, 'unscaledlightbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
@@ -142,7 +142,7 @@ fitted_lightcloudbin_fg <-read.csv(file.path(fp, 'fitted_lightbysizealltrees_fig
 
 exl <- expression(atop('Light per Crown Area', paste('(W m'^-2, ')')))
 exv <- expression(atop('Light per Crown Volume', paste('(W m'^-3, ')')))
-exd <- 'Diameter (cm)'
+exd <- 'Stem Diameter (cm)'
 
 
 #----------------------   Fig 1a: Light per crown area by diameter -----------------------------
@@ -574,7 +574,7 @@ plot_prod2 <-
       ggplot2::theme(rect = ggplot2::element_rect(fill = "transparent")) + 
       ggplot2::scale_color_manual(values = color_names) + 
       ggplot2::scale_fill_manual(values = fill_names) + 
-      theme_plant()
+      theme_plant() + theme_no_x()
     if (plot_abline) {
       p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
                                     slope = abline_slope, color = "gray72", linetype = "dashed", 
@@ -608,7 +608,10 @@ grid.draw(p1)
 pdf(file.path(gdrive_path,'Figures/Main_Scaling/Growth_1.pdf'))
 grid.draw(p1)
 dev.off()
-
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/Main_Scaling/Growth_1.pdf'), 
+                  file.path(gdrive_path2,'Figures/Main_Scaling/Growth_1.pdf')) 
+)
 # --- to add secondary height axis, first mask theme_no_x() above
 p0 <- p + scale_x_log10(name = 'Diameter (cm)',
                         breaks = c(1,10,100), limits = c(0.8, 230),
@@ -643,7 +646,7 @@ plot_dens2 <- function (year_to_plot = 1995,
                         y_labels, 
                         fill_names = guild_fills2, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
                         color_names = guild_colors2, #c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),  
-                        x_name = "Diameter (cm)",
+                        x_name = "Stem Diameter (cm)",
                         y_name = expression(paste("Density (n ha"^-1, "cm"^-1, ")")), 
                         geom_size = 4, 
                         obsdat = obs_dens, 
@@ -693,7 +696,7 @@ p <- plot_dens2(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
           model_fit = DENS,
           dodge_width = 0.0,
-          x_limits = c(.8, 230),
+          x_limits = c(.8, 200),
           y_limits = c(0.007, 20000),
           x_breaks = c(1, 10, 100),
           y_labels = c(0.001, 0.1, 10,1000),
@@ -708,8 +711,8 @@ grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path,'Figures/Main_Scaling/Density.pdf'), 
-                    file.path(gdrive_path,'Figures/Main_Scaling/Density.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Main_Scaling/Density.pdf'), 
+                    file.path(gdrive_path2,'Figures/Main_Scaling/Density.pdf')) 
 )
 
 #------------------- Fig 4C: Total Production ~ Diameter --------------------------
@@ -796,8 +799,8 @@ p1s <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1s)
 
-pdf(file.path(gdrive_path,'Figures/Main_Scaling/Total_Production.pdf'))
-grid.draw(p1)
+pdf(file.path(gdrive_path,'Figures/Main_Scaling/Total_Production_1.pdf'))
+grid.draw(p1s)
 dev.off()
 
 # ---------------- Add height sec axis
