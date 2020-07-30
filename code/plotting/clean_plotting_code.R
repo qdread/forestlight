@@ -522,7 +522,7 @@ plot_prod2 <-
             preddat = fitted_indivprod, 
             plot_abline = TRUE, 
             abline_slope = 2, 
-            abline_intercept = -1.3) {
+            abline_intercept = -1.25) {
     pos <- if (dodge_errorbar) 
       ggplot2::position_dodge(width = dodge_width)
     else "identity"
@@ -589,28 +589,31 @@ obs_indivprod <- obs_indivprod %>%
 p <- plot_prod2(year_to_plot = 1995,
                 fg_names = c('fg1','fg2','fg3','fg4','fg5'),
                 model_fit = PROD,
-                x_limits = c(0.8, 200),
-                y_limits = c(0.001, 2000),
-                y_breaks = c(0.001,0.1, 10, 1000),
+                x_limits = c(0.9, 200),
+                y_limits = c(0.003, 160),
+                y_breaks = c(0.01, 0.1, 1, 10, 100),
                 plot_errorbar = F,
                 error_min = 'q25',
                 error_max = 'q75',
                 error_bar_width = 0,
-                y_labels = c(0.001,0.1,10,1000),
+                y_labels = c( 0.01, 0.1, 1, 10, 100),
+                abline_slope = 2, 
+                abline_intercept = -1.4,
                 dodge_width = 0.07)
-p
+
 
 p0 <- p #+ annotation_custom(grob_text_a) 
 p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
 
 grid.newpage()
 grid.draw(p1)
-pdf(file.path(gdrive_path,'Figures/Main_Scaling/Growth_1.pdf'))
+
+pdf(file.path(gdrive_path,'Figures/Main_Scaling/Growth.pdf'))
 grid.draw(p1)
 dev.off()
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/Main_Scaling/Growth_1.pdf'), 
-                  file.path(gdrive_path2,'Figures/Main_Scaling/Growth_1.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/Main_Scaling/Growth.pdf'), 
+                  file.path(gdrive_path2,'Figures/Main_Scaling/Growth.pdf')) 
 )
 # --- to add secondary height axis, first mask theme_no_x() above
 p0 <- p + scale_x_log10(name = 'Diameter (cm)',
@@ -696,7 +699,7 @@ p <- plot_dens2(year_to_plot = 1995,
           fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
           model_fit = DENS,
           dodge_width = 0.0,
-          x_limits = c(.8, 200),
+          x_limits = c(.9, 200),
           y_limits = c(0.007, 4000),
           x_breaks = c(1, 10, 100),
           y_labels = c(0.001, 0.1, 10,1000),
@@ -786,25 +789,25 @@ p <- plot_totalprod2(year_to_plot = 1995,
                fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                model_fit_density = DENS, 
                model_fit_production = PROD,
-               x_limits = c(0.7,200),
-               y_limits = c(0.5, 200),
+               x_limits = c(0.9,200),
+               y_limits = c(0.3, 200),
                y_breaks = c(0.1, 1, 10, 100),
                y_labels = c(0.1, 1, 10, 100),
                #dodge_width = 0.0,
                preddat = fitted_totalprod)
-p
 
-p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
-p1s <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+
+#p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
-grid.draw(p1s)
+grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Main_Scaling/Total_Production_1.pdf'))
-grid.draw(p1s)
+pdf(file.path(gdrive_path,'Figures/Main_Scaling/Total_Production.pdf'))
+grid.draw(p1)
 dev.off()
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Main_Scaling/Total_Production_1.pdf'), 
-                    file.path(gdrive_path2,'Figures/Main_Scaling/Total_Production_1.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Main_Scaling/Total_Production.pdf'), 
+                    file.path(gdrive_path2,'Figures/Main_Scaling/Total_Production.pdf')) 
 )
 # ---------------- Add height sec axis
 
@@ -1471,52 +1474,76 @@ richness_wide_light <- bin_x_fg_light %>%
     theme_plant() +
     theme(legend.position = 'right'))
 
+
+bin_x_fg3 <- bin_x_fg2 %>% 
+  arrange(desc(fg)) %>%
+  filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20)
+range()
+# truncate fitted lines by n >= 20 in bins
+
+fitted_richnessbydiameter2 <- fitted_richnessbydiameter %>%
+  group_by(fg) %>%
+  filter(fitted_bin <= bin_x_fg2$bin_midpoint %>% group_by(fg))
+
+max_dbh_fg <- bin_x_fg2 %>%
+  filter(n_individuals >= 20) %>%
+  group_by(fg) %>%
+  summarize(max_dbh = max(bin_midpoint))
+
+min_dbh_fg <- bin_x_fg2 %>%
+  filter(n_individuals >= 20) %>%
+  group_by(fg) %>%
+  summarize(min_dbh = min(bin_midpoint))
+
+fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
+  left_join(max_dbh_fg) %>%
+  left_join(min_dbh_fg) %>%
+  group_by(fg) %>%
+  filter(dbh <= max_dbh, dbh >= min_dbh)
+
+
+
 (p_rich_cm <- ggplot() + 
-   
+    geom_ribbon(data = fitted_richnessbydiameter_filtered  %>% 
+                  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
+                aes(x = dbh, ymin = q025/42.84, ymax = q975/42.84,
+                    group = fg, fill = fg), alpha = 0.4) +
+    geom_line(data = fitted_richnessbydiameter_filtered  %>% 
+                arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
+              aes(x = dbh, y = q50/42.84, group = fg, color = fg)) +
     geom_jitter(data = bin_x_fg2 %>% 
                   arrange(desc(fg)) %>%
                   filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20) %>%
                   arrange(desc(fg)), 
                 aes(x = bin_midpoint, y = richness_cm, fill = fg, color = fg),
-                shape = 21, size = 4, color = "black", width = 0.02) +
-    geom_abline(intercept = log10(1000), slope = -2, linetype = "dashed", color = "gray40") +
-   
+                shape = 21, size = 4, color = "black", width = 0.02) + #0.02
+    geom_abline(intercept = log10(1000), slope = -2, linetype = "dashed", color = "gray72", size = 0.75) +
     scale_x_log10(name = 'Diameter (cm)',
-                  limit = c(1, 230)) + 
+                  limit = c(.9, 200)) + 
     scale_y_log10(labels = signif,
-      limit = c(0.003, 200), 
-      #position = "right",
-      name = expression(paste("Richness (ha"^-1," cm"^-1,")"))) +
+      limit = c(0.002, 100), 
+      position = "right",
+      name = expression(paste("Richness (cm"^-1," ha"^-1,")"))) +
     #scale_fill_manual(values = guild_fills) +
     #scale_color_manual(values = guild_colors) +
     scale_fill_manual(values = guild_fills2) +
     scale_color_manual(values = guild_colors2) +
-    theme_plant() + 
-    geom_ribbon(data = fitted_richnessbydiameter %>% 
-                  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
-                aes(x = dbh, ymin = q025, ymax = q975,
-                             group = fg, fill = fg), alpha = 0.4) +
-    geom_line(data = fitted_richnessbydiameter %>% 
-                arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
-              aes(x = dbh, y = q50, group = fg, color = fg)) +
-    theme(legend.position = 'right') #+
+    theme_plant() #+
     #theme_no_x()
-)
+    )
     #
 
 p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Richness/rich_diam3.pdf'))
+pdf(file.path(gdrive_path,'Figures/Main_Scaling/Richness.pdf'))
 grid.draw(p1)
 dev.off()
-
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_diam3.pdf'), 
-                    file.path(gdrive_path2,'Figures/Richness/rich_diam3.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/Main_Scaling/Richness.pdf'), 
+                  file.path(gdrive_path2,'Figures/Main_Scaling/Richness.pdf')) 
 )
-
 
 # All slopes, calculated separately
 library(broom)
