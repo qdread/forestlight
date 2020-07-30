@@ -697,7 +697,7 @@ p <- plot_dens2(year_to_plot = 1995,
           model_fit = DENS,
           dodge_width = 0.0,
           x_limits = c(.8, 200),
-          y_limits = c(0.007, 20000),
+          y_limits = c(0.007, 4000),
           x_breaks = c(1, 10, 100),
           y_labels = c(0.001, 0.1, 10,1000),
           y_breaks = c(0.001, 0.1,  10, 1000))
@@ -774,7 +774,7 @@ plot_totalprod2 <-function(year_to_plot = 1995,
                            limits = y_limits, breaks = y_breaks, labels = y_labels,  position = "right") + 
     ggplot2::scale_color_manual(values = guild_colors2) + 
     ggplot2::scale_fill_manual(values = guild_fills2) + 
-    theme_plant() + 
+    theme_plant() + theme_no_x() +
     theme(aspect.ratio = 1)
   if (plot_abline) 
     p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
@@ -802,7 +802,10 @@ grid.draw(p1s)
 pdf(file.path(gdrive_path,'Figures/Main_Scaling/Total_Production_1.pdf'))
 grid.draw(p1s)
 dev.off()
-
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Main_Scaling/Total_Production_1.pdf'), 
+                    file.path(gdrive_path2,'Figures/Main_Scaling/Total_Production_1.pdf')) 
+)
 # ---------------- Add height sec axis
 
 #---------- Alternative to main plot
@@ -1468,14 +1471,14 @@ richness_wide_light <- bin_x_fg_light %>%
     theme_plant() +
     theme(legend.position = 'right'))
 
-(p_rich_cm <- ggplot(bin_x_fg2 %>% 
-                    arrange(desc(fg)) %>%
-                    filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20) %>%
-                   # filter(!fg %in% 'all') %>%
-                    arrange(desc(fg)), 
-                  aes(x = bin_midpoint, y = richness_cm, fill = fg, color = fg)) + 
-    geom_smooth(method = "lm", alpha = 0.2, size = 0.5) +
-    geom_jitter(shape = 21, size = 4, color = "black", width = 0.02) +
+(p_rich_cm <- ggplot() + 
+   
+    geom_jitter(data = bin_x_fg2 %>% 
+                  arrange(desc(fg)) %>%
+                  filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20) %>%
+                  arrange(desc(fg)), 
+                aes(x = bin_midpoint, y = richness_cm, fill = fg, color = fg),
+                shape = 21, size = 4, color = "black", width = 0.02) +
     geom_abline(intercept = log10(1000), slope = -2, linetype = "dashed", color = "gray40") +
    
     scale_x_log10(name = 'Diameter (cm)',
@@ -1488,9 +1491,18 @@ richness_wide_light <- bin_x_fg_light %>%
     #scale_color_manual(values = guild_colors) +
     scale_fill_manual(values = guild_fills2) +
     scale_color_manual(values = guild_colors2) +
-    theme_no_x() +
-    theme_plant()) #+
-   # theme(legend.position = 'right'))
+    theme_plant() + 
+    geom_ribbon(data = fitted_richnessbydiameter %>% 
+                  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
+                aes(x = dbh, ymin = q025, ymax = q975,
+                             group = fg, fill = fg), alpha = 0.4) +
+    geom_line(data = fitted_richnessbydiameter %>% 
+                arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
+              aes(x = dbh, y = q50, group = fg, color = fg)) +
+    theme(legend.position = 'right') #+
+    #theme_no_x()
+)
+    #
 
 p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
