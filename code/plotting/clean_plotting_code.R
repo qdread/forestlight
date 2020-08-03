@@ -1639,31 +1639,115 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path2,'Figures/Richness/rich_diam2.pdf')) 
 )
 
-#################3
-# richness vs abundance ---------
+#--------------------------------------------------------------
+# -------------------------richness vs abundance ---------
+#------------------------------------------------------------------
 bin_x_fg3 <- bin_x_fg2 %>%
   filter(n_individuals > 0) %>%
   #filter(n_individuals >= 20) %>%
-  mutate(abun_cm = (n_individuals/(bin_max - bin_min)/42.84))
+  mutate(abun_cm = (n_individuals/(bin_max - bin_min)))
 
-(rich_abun <- ggplot(bin_x_fg3 %>% 
-                       arrange(desc(fg)) %>%
+max_dbh_fg <- bin_x_fg2 %>%
+  filter(n_individuals >= 20) %>%
+  group_by(fg) %>%
+  summarize(max_dbh = max(bin_midpoint))
+
+min_dbh_fg <- bin_x_fg2 %>%
+  filter(n_individuals >= 20) %>%
+  group_by(fg) %>%
+  summarize(min_dbh = min(bin_midpoint))
+
+fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
+  left_join(max_dbh_fg) %>%
+  left_join(min_dbh_fg) %>%
+  group_by(fg) %>%
+  filter(dbh <= max_dbh, dbh >= min_dbh)
+
+
+
+
+
+max_size_fg <- obs_richnessbydiameter %>%
+  filter(n_individuals > 0) %>%
+  group_by(fg) %>%
+  summarize(max_size = max(abundance_by_bin_width)) 
+
+min_size_fg <- obs_richnessbydiameter %>%
+  filter(n_individuals > 0) %>%
+  group_by(fg) %>%
+  summarize(min_size = min(abundance_by_bin_width)) 
+
+fitted_richnessvsabundance_filt <- fitted_richnessvsabundance %>%
+  left_join(max_size_fg, by = "fg") %>%
+  left_join(min_size_fg, by = "fg") %>%
+  group_by(fg) %>% 
+  filter(abundance_by_bin_width >= min_size) %>%
+  filter(abundance_by_bin_width <= max_size)
+
+
+
+
+str(abundance_by_bin_width)
+(rich_abun <- ggplot(mapping = aes(x = abundance_by_bin_width, col = fg, fill = fg)) + 
+    scale_x_log10(name = expression(paste("Abundance (cm"^-1,")")),
+                  breaks = c(0.01, 0.03, 0.1, 1,  100,  10000),
+                  labels = c("0.01", "0.03","0.1", "1", "100", "10,000"),
+                  #labels = signif,
+                  limit = c(0.01, 70000)
+    ) + 
+    scale_y_log10(labels = signif,
+                #  limit = c(0.0003, 20), 
+                  position = "left",
+                  name = expression(paste("Richness (cm"^-1,")"))) +
+    theme_plant() +
+    geom_ribbon(data = fitted_richnessvsabundance_filt %>% 
+                  filter(!fg %in% 'unclassified') %>%
+                  arrange(desc(fg)),
+                aes(ymin = q025, ymax = q975), alpha = 0.2, col = NA) + 
+    geom_line(data = fitted_richnessvsabundance_filt %>% 
+                filter(!fg %in% 'unclassified') %>%
+                arrange(desc(fg)),
+                aes(y = q50), size = 0.5) +
+    geom_point(data = obs_richnessbydiameter %>% 
+                  filter(n_individuals > 0) %>%
+                  filter(!fg %in% 'unclassified' & richness > 0) %>% #  & n_individuals >= 20
+                  arrange(desc(fg)), 
+                aes(y = richness_by_bin_width, fill = fg, color = fg),
+                shape = 21, size = 4, color = "black") +
+    scale_fill_manual(values = guild_fills2) +
+    scale_color_manual(values = guild_colors2) +
+    theme_plant()
+  ) #+
+p1 <- set_panel_size(rich_abun, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Richness/rich_diam2.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_diam2.pdf'), 
+                    file.path(gdrive_path2,'Figures/Richness/rich_diam2.pdf')) 
+)
+# --------------- old way  using calculated per cm values
+(rich_abun <- ggplot(data = bin_x_fg3 %>% 
                        #filter(n_)
                        filter(!fg %in% 'unclassified' & richness > 0) %>% #  & n_individuals >= 20
-                       # filter(!fg %in% 'all') %>%
-                       arrange(desc(fg)), 
+                       filter(!fg %in% 'all') %>%
+                       arrange(desc(fg)),
                      aes(x = abun_cm, y = richness_cm, fill = fg, color = fg)) + #*42.84
     geom_smooth(method = "lm", alpha = 0.2, size = 0.5) +
     geom_jitter(shape = 21, size = 4, color = "black", width = 0.0) +
     #geom_abline(intercept = log10(1), slope = 1, linetype = "dashed", color = "gray40") +
-    scale_x_log10(name = expression(paste("Abundance (cm"^-1," ha"^-1," )")),
-                  breaks = c(0.001, 0.1,  10,  1000, 100000),
-                  labels = c("0.001", "0.1", "10", "1,000", "10,000"),
+    scale_x_log10(name = expression(paste("Abundance (cm"^-1,")")),
+                  breaks = c(0.01, 1,  100,  10000),
+                  labels = c("0.01", "1", "100", "10,000"),
                   #labels = signif,
-                   limit = c(0.0003, 3000)
+                  limit = c(0.01, 50000)
     ) + 
     scale_y_log10(labels = signif,
-                   limit = c(0.0003, 20), 
+                  limit = c(0.0003, 20), 
                   position = "left",
                   name = expression(paste("Richness (cm"^-1," ha"^-1," )"))) +
     #scale_fill_manual(values = guild_fills) +
@@ -1774,6 +1858,53 @@ aes(x = bin_midpoint, y = richness_ratio)
     theme_no_y() + theme_no_x() +
     theme_plant() 
   )
+
+#---with new fitted data
+
+max_ratio_fg
+
+fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
+  left_join(max_dbh_fg) %>%
+  left_join(min_dbh_fg) %>%
+  group_by(fg) %>%
+  filter(dbh <= max_dbh, dbh >= min_dbh)
+
+
+fitted_richnessbydiameter_ratio_filtered <- fitted_richnessbydiameter_ratio %>%
+  left_join(max_dbh_fg) %>%
+  left_join(min_dbh_fg) %>%
+  group_by(fg) %>%
+  filter(dbh <= max_dbh, dbh >= min_dbh)
+
+
+(ratio_diam_fs <- ggplot() + # exclude largest short:tall ratio
+    scale_x_log10(
+     # limits = c(1,100), 
+      breaks = c(1,10, 100), 
+      name = NULL
+      #name = expression(paste('Diameter (cm)'))
+    ) + 
+    scale_y_log10(#name = 'Richness Ratio', 
+      name = NULL,
+      breaks = c(0.5, 1, 2, 4, 8),
+      labels = c("0.5", "1", "2", "4", "8"),
+      limit = c(0.2, 10)
+    ) + 
+    geom_ribbon(data = fitted_richnessbydiameter_ratio %>% filter(ratio == "fast:slow"),
+                aes( x = dbh, ymin = q025, ymax = q975), alpha = 0.2, size = 0.5) +
+    geom_line(data = fitted_richnessbydiameter_ratio %>% filter(ratio == "fast:slow"), 
+              aes(x = dbh, y = q50)) +
+    theme_plant() +
+    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    geom_point(data =richness_wide %>% filter(lowest_n_fastslow >= 20),
+               aes(x = bin_midpoint, y = richness_ratio_fastslow,  fill = richness_ratio_fastslow),
+               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
+    
+    scale_fast_slow  +
+      theme_no_y() + theme_no_x() 
+    
+    
+)
 
 p1 <- set_panel_size(ratio_diam_fs, width=unit(10.25,"cm"), height=unit(5,"cm"))
 grid.newpage()
