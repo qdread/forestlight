@@ -338,6 +338,7 @@ fgbci[fgbci$genus == "Cecropia",]
 
 
 ####--------- Fig 3a, PCA
+geom_size = 4
 Fig_3a <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
   geom_point(shape = 21, size = geom_size, color = "black") + 
   labs(x = 'Survivorship–Growth Tradeoff', y = 'Stature—Recruitment Tradeoff') +
@@ -446,6 +447,42 @@ unique(fitted_mort_trunc$fg)
 
 #---  Plot mortality vs light
 p <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
+  #geom_ribbon(aes(x = light_per_area, ymin = q025/5, ymax = q975/5, group = fg, fill = fg), alpha = 0.4) +
+  geom_line(aes(x = light_per_area, y = q50/5, group = fg, color = fg)) +
+  #geom_point(data = bin_mort %>% 
+              # filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), 
+              #        (lived+died) >= 20)  %>% 
+              # mutate(fg = factor(fg, labels = fg_labels)),
+            # aes(x = bin_midpoint, y = mortality/5, fill = fg),
+             #shape = 21, size = geom_size) +
+  scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), 
+                breaks = c(3, 30, 300), 
+                limits = c(1.5, 412)
+                ) +
+  scale_y_continuous(trans = "logit", position = "right", 
+                     breaks = c(0.01, 0.03, 0.1), 
+                     labels = c(0.01, 0.03, 0.1), 
+                     limits = c(0.005, 0.15),
+                name = expression(paste("Mortality (yr"^-1,")"))) +
+  scale_color_manual(values = guild_colors) +
+  scale_fill_manual(values = guild_fills) +
+  theme_plant()
+
+
+p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p2)  #notice that LLP and Slow show steep slow of mortality with light!
+
+pdf(file.path(gdrive_path, "Figures/Life_History/LH_c.pdf"))
+grid.draw(p2)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/Life_History/LH_c.pdf'), 
+                  file.path(gdrive_path2,'Figures/Life_History/LH_c.pdf')) 
+)
+
+ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
   geom_point(data = bin_mort %>% 
@@ -454,24 +491,18 @@ p <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labe
                mutate(fg = factor(fg, labels = fg_labels)),
              aes(x = bin_midpoint, y = mortality, fill = fg),
              shape = 21, size = geom_size) +
-  scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), breaks = c(3, 30, 300), limits = c(1.5, 412)) +
-  scale_y_continuous(trans = "logit", position = "right", breaks = c(0.03, 0.1, 0.3, 0.6), 
-                     labels = c(0.03, 0.1, 0.3, 0.6), limits = c(0.02, 0.65),
-                name = expression(paste("Mortality (5 yr"^-1,")"))) +
+  scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), 
+                breaks = c(3, 30, 300), 
+                limits = c(1.5, 412)
+  ) +
+  scale_y_continuous(trans = "logit", position = "right", 
+                     breaks = c(0.01, 0.03, 0.1), 
+                     labels = c(0.01, 0.03, 0.1), 
+                     #limits = c(0.005, 0.15),
+                     name = expression(paste("Mortality (yr"^-1,")"))) +
   scale_color_manual(values = guild_colors) +
   scale_fill_manual(values = guild_fills) +
   theme_plant()
-p
-
-p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p2)  #notice that LLP and Slow show steep slow of mortality with light!
-
-pdf(file.path(gdrive_path, "Figures/Life History/LH_c.pdf"))
-grid.draw(p2)
-dev.off()
-
-
 ################################################################################################
 # ------------------------ Fig 4: Main Scaling Plots --------------------------------
 ################################################################################################
@@ -1610,10 +1641,12 @@ system2(command = "pdfcrop",
 
 #################3
 # richness vs abundance ---------
-bin_x_fg2 <- bin_x_fg2 %>%
+bin_x_fg3 <- bin_x_fg2 %>%
+  filter(n_individuals > 0) %>%
+  #filter(n_individuals >= 20) %>%
   mutate(abun_cm = (n_individuals/(bin_max - bin_min)/42.84))
 
-(rich_abun <- ggplot(bin_x_fg2 %>% 
+(rich_abun <- ggplot(bin_x_fg3 %>% 
                        arrange(desc(fg)) %>%
                        #filter(n_)
                        filter(!fg %in% 'unclassified' & richness > 0) %>% #  & n_individuals >= 20
@@ -1623,16 +1656,16 @@ bin_x_fg2 <- bin_x_fg2 %>%
     geom_smooth(method = "lm", alpha = 0.2, size = 0.5) +
     geom_jitter(shape = 21, size = 4, color = "black", width = 0.0) +
     #geom_abline(intercept = log10(1), slope = 1, linetype = "dashed", color = "gray40") +
-    scale_x_log10(name = expression(paste("Abundance (ha"^-1," cm"^-1,")")),
+    scale_x_log10(name = expression(paste("Abundance (cm"^-1," ha"^-1," )")),
                   breaks = c(0.001, 0.1,  10,  1000, 100000),
                   labels = c("0.001", "0.1", "10", "1,000", "10,000"),
                   #labels = signif,
-                  # limit = c(0.02, 150000)
+                   limit = c(0.0003, 3000)
     ) + 
     scale_y_log10(labels = signif,
-                  # limit = c(0.02, 1500), 
-                  position = "right",
-                  name = expression(paste("Richness (ha"^-1," cm"^-1,")"))) +
+                   limit = c(0.0003, 20), 
+                  position = "left",
+                  name = expression(paste("Richness (cm"^-1," ha"^-1," )"))) +
     #scale_fill_manual(values = guild_fills) +
     #scale_color_manual(values = guild_colors) +
     scale_fill_manual(values = guild_fills2) +
