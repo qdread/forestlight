@@ -125,6 +125,7 @@ for (i in dir(fp, pattern = 'pred_|fitted_')) {
 
 #### Extract model output to get the fitted values, slopes, etc.
 load(file.path(gdrive_path, 'data/data_piecewisefits/fits_bylight_forratio.RData'))
+load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
 
 # source the extra extraction functions that aren't in the package
 source(file.path(github_path, 'forestscalingworkflow/R_functions/model_output_extraction_functions.r'))
@@ -961,7 +962,7 @@ fgs <- c('fg1', 'fg2', 'fg3', 'fg4', 'fg5', 'alltree', 'unclassified')
 allslopes <- rbind(growth_slopes_atmiddle, light_slopes_atmiddle) %>%
   ungroup %>%
   mutate(fg = factor(fg, levels = fgs, labels = fg_full_names))
-grob0 <- grobTree(textGrob("b", x = 0.04, y = 0.9,  hjust = 0,
+grobb <- grobTree(textGrob("b", x = 0.04, y = 0.9,  hjust = 0,
                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 grob1 <- grobTree(textGrob("Solar", x = 0.68, y = 0.94, hjust = 0,
                            gp = gpar(col = "gold3", fontsize = 18))) 
@@ -975,7 +976,7 @@ grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.28, y = 0.51, hjust = 0,
 grob_text <- grobTree(textGrob("Solar Equivalence", x = 0.28, y = 0.87, hjust = 0,
                                gp = gpar(col = "gold3", fontsize = 18))) 
 
-grob_text2 <- grobTree(textGrob("a", x = 0.06, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
+grob_a <- grobTree(textGrob("a", x = 0.06, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 totallightbins_fg <- totallightbins_fg %>%
   filter(bin_count >= 20)
 tot_light <- plot_totalprod(year_to_plot = 1995,
@@ -1002,7 +1003,7 @@ tot_light2 <- tot_light  +
   theme(aspect.ratio = 0.75) + 
   geom_abline(intercept = log10(70000), slope = 0, color ="#C9B074",
               linetype="dashed", size=.75) +
-  annotation_custom(grob_text) + annotation_custom(grob_text2)
+  annotation_custom(grob_text) #+ annotation_custom(grob_a)
 plot(tot_light2)
 p_tot_light <- tot_light2
 
@@ -1022,8 +1023,9 @@ slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'),
   scale_y_continuous(limits = c(-1.05, 1.3)) +
   scale_fill_manual(values = c('gold1', 'darkolivegreen3')) +
   scale_color_manual(values = c('gold3', 'darkgreen')) +
-  theme_plant() + theme(axis.text.x = element_text(angle = 25,  vjust = .7, face = "italic", size = 18)) +
-  annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3) +annotation_custom(grob0)
+  theme_plant() + 
+  theme(axis.text.x = element_text(angle = 25,  vjust = .7, face = "italic", size = 18)) +
+  annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3) #+annotation_custom(grob0)
 slopes
 
 g_slopes <- ggplotGrob(slopes)
@@ -1032,11 +1034,92 @@ combo <- rbind(g_tot_light, g_slopes, size = "first")
 combo$widths <- unit.pmax(g_tot_light$widths,g_slopes$widths)
 grid.newpage()
 grid.draw(combo)
-ggsave(combo, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Symmetry/combo.pdf'))
+
+
+#------------- Richness vs abundance
+
+
+max_size_fg <- obs_richnessbydiameter %>%
+  filter(n_individuals > 0) %>%
+  group_by(fg) %>%
+  summarize(max_size = max(abundance_by_bin_width)) 
+
+min_size_fg <- obs_richnessbydiameter %>%
+  filter(n_individuals > 0) %>%
+  group_by(fg) %>%
+  summarize(min_size = min(abundance_by_bin_width)) 
+
+fitted_richnessvsabundance_filt <- fitted_richnessvsabundance %>%
+  left_join(max_size_fg, by = "fg") %>%
+  left_join(min_size_fg, by = "fg") %>%
+  group_by(fg) %>% 
+  filter(abundance_by_bin_width >= min_size) %>%
+  filter(abundance_by_bin_width <= max_size)
+
+
+
+
+str(abundance_by_bin_width)
+(rich_abun <- ggplot(mapping = aes(x = abundance_by_bin_width, col = fg, fill = fg)) + 
+    scale_x_log10(name = expression(paste("Abundance (cm"^-1,")")),
+                  #breaks = c(0.01, 0.1, 1, 10, 100, 1000, 10000),
+                  breaks = c(0.01,  1,  100,  10000),
+                  labels = c("0.01",  "1", "100", "10,000"),
+                 # labels = c("0.01","0.1", "1",  "10", "100","1000", "10,000"),
+                  #labels = signif,
+                  limit = c(0.01, 60000)
+    ) + 
+    scale_y_log10(labels = signif,
+                  limit = c(0.01, 2000), 
+                  breaks = c(0.01, 0.1, 1, 10, 100, 1000),
+                  position = "left",
+                  name = expression(paste("Richness (cm"^-1,")"))) +
+    theme_plant() +
+    geom_ribbon(data = fitted_richnessvsabundance_filt %>% 
+                  filter(!fg %in% 'unclassified') %>%
+                  arrange(desc(fg)),
+                aes(ymin = q025, ymax = q975), alpha = 0.2, col = NA) + 
+    geom_line(data = fitted_richnessvsabundance_filt %>% 
+                filter(!fg %in% 'unclassified') %>%
+                arrange(desc(fg)),
+              aes(y = q50), size = 0.5) +
+    geom_jitter(data = obs_richnessbydiameter %>% 
+                  filter(n_individuals > 0) %>%
+                  filter(!fg %in% 'unclassified' & richness > 0) %>% #  & n_individuals >= 20
+                  arrange(desc(fg)), 
+                aes(y = richness_by_bin_width, fill = fg, color = fg),
+                shape = 21, size = 3.5, color = "black", width = 0.1) +
+    scale_fill_manual(values = guild_fills2) +
+    scale_color_manual(values = guild_colors2) +
+    theme_plant()
+) #+
+
+
+p1 <- set_panel_size(rich_abun, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Richness/rich_diam2.pdf'))
+grid.draw(p1)
+dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path,'Figures/Symmetry/combo.pdf'), 
-                    file.path(gdrive_path,'Figures/Symmetry/combo.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_diam2.pdf'), 
+                    file.path(gdrive_path2,'Figures/Richness/rich_diam2.pdf')) 
+)
+#
+
+g_rich_abun <- ggplotGrob(rich_abun)
+combo <- rbind(g_rich_abun, g_slopes, size = "first")
+combo$widths <- unit.pmax(g_rich_abun$widths,g_slopes$widths)
+grid.newpage()
+grid.draw(combo)
+
+ggsave(combo, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Symmetry/combo2.pdf'))
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Symmetry/combo2.pdf'), 
+                    file.path(gdrive_path2,'Figures/Symmetry/combo2.pdf')) 
 )
 
 
@@ -1516,12 +1599,12 @@ fitted_richnessbydiameter2 <- fitted_richnessbydiameter %>%
   group_by(fg) %>%
   filter(fitted_bin <= bin_x_fg2$bin_midpoint %>% group_by(fg))
 
-max_dbh_fg <- bin_x_fg2 %>%
+max_dbh_fg <- obs_richnessbydiameter  %>%
   filter(n_individuals >= 20) %>%
   group_by(fg) %>%
   summarize(max_dbh = max(bin_midpoint))
 
-min_dbh_fg <- bin_x_fg2 %>%
+min_dbh_fg <-obs_richnessbydiameter  %>%
   filter(n_individuals >= 20) %>%
   group_by(fg) %>%
   summarize(min_dbh = min(bin_midpoint))
@@ -1537,32 +1620,30 @@ fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
 (p_rich_cm <- ggplot() + 
     geom_ribbon(data = fitted_richnessbydiameter_filtered  %>% 
                   arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
-                aes(x = dbh, ymin = q025/42.84, ymax = q975/42.84,
+                aes(x = dbh, ymin = q025, ymax = q975,
                     group = fg, fill = fg), alpha = 0.4) +
     geom_line(data = fitted_richnessbydiameter_filtered  %>% 
                 arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
-              aes(x = dbh, y = q50/42.84, group = fg, color = fg)) +
-    geom_jitter(data = bin_x_fg2 %>% 
+              aes(x = dbh, y = q50, group = fg, color = fg)) +
+    geom_jitter(data = obs_richnessbydiameter %>% 
                   arrange(desc(fg)) %>%
                   filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20) %>%
                   arrange(desc(fg)), 
-                aes(x = bin_midpoint, y = richness_cm, fill = fg, color = fg),
+                aes(x = bin_midpoint, y = richness_by_bin_width, fill = fg, color = fg),
                 shape = 21, size = 4, color = "black", width = 0.02) + #0.02
-    geom_abline(intercept = log10(1000), slope = -2, linetype = "dashed", color = "gray72", size = 0.75) +
+    geom_abline(intercept = log10(30000), slope = -2, linetype = "dashed", color = "gray72", size = 0.75) +
     scale_x_log10(name = 'Diameter (cm)',
                   limit = c(.9, 200)) + 
     scale_y_log10(labels = signif,
-      limit = c(0.002, 100), 
+      limit = c(0.1, 3000), 
       position = "right",
-      name = expression(paste("Richness (cm"^-1," ha"^-1,")"))) +
-    #scale_fill_manual(values = guild_fills) +
-    #scale_color_manual(values = guild_colors) +
+      name = expression(paste("Richness (cm"^-1,")"))) +
     scale_fill_manual(values = guild_fills2) +
     scale_color_manual(values = guild_colors2) +
     theme_plant() #+
-    #theme_no_x()
-    )
-    #
+
+  )
+    
 
 p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
@@ -1690,13 +1771,13 @@ fitted_richnessvsabundance_filt <- fitted_richnessvsabundance %>%
 str(abundance_by_bin_width)
 (rich_abun <- ggplot(mapping = aes(x = abundance_by_bin_width, col = fg, fill = fg)) + 
     scale_x_log10(name = expression(paste("Abundance (cm"^-1,")")),
-                  breaks = c(0.01, 0.03, 0.1, 1,  100,  10000),
-                  labels = c("0.01", "0.03","0.1", "1", "100", "10,000"),
+                  breaks = c(0.01,  1,  100,  10000),
+                  labels = c("0.01",  "1", "100", "10,000"),
                   #labels = signif,
                   limit = c(0.01, 70000)
     ) + 
     scale_y_log10(labels = signif,
-                #  limit = c(0.0003, 20), 
+                  limit = c(0.01, 2000), 
                   position = "left",
                   name = expression(paste("Richness (cm"^-1,")"))) +
     theme_plant() +
@@ -1708,16 +1789,18 @@ str(abundance_by_bin_width)
                 filter(!fg %in% 'unclassified') %>%
                 arrange(desc(fg)),
                 aes(y = q50), size = 0.5) +
-    geom_point(data = obs_richnessbydiameter %>% 
+    geom_jitter(data = obs_richnessbydiameter %>% 
                   filter(n_individuals > 0) %>%
                   filter(!fg %in% 'unclassified' & richness > 0) %>% #  & n_individuals >= 20
                   arrange(desc(fg)), 
                 aes(y = richness_by_bin_width, fill = fg, color = fg),
-                shape = 21, size = 4, color = "black") +
+                shape = 21, size = 3.5, color = "black", width = 0.1) +
     scale_fill_manual(values = guild_fills2) +
     scale_color_manual(values = guild_colors2) +
     theme_plant()
   ) #+
+
+
 p1 <- set_panel_size(rich_abun, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
@@ -1861,7 +1944,9 @@ aes(x = bin_midpoint, y = richness_ratio)
 
 #---with new fitted data
 
-max_ratio_fg
+max_ratio_fs <- richness_wide %>%
+  group_by(ratio) %>%
+  summmarize(min_n = max())
 
 fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
   left_join(max_dbh_fg) %>%
