@@ -1782,8 +1782,8 @@ str(abundance_by_bin_width)
                   name = expression(paste("Richness (cm"^-1,")"))) +
     theme_plant() +
     geom_ribbon(data = fitted_richnessvsabundance_filt %>% 
-                  filter(!fg %in% 'unclassified') %>%
-                  arrange(desc(fg)),
+                  filter(!fg %in% 'unclassified'),# %>%
+                #  arrange(desc(fg)),
                 aes(ymin = q025, ymax = q975), alpha = 0.2, col = NA) + 
     geom_line(data = fitted_richnessvsabundance_filt %>% 
                 filter(!fg %in% 'unclassified') %>%
@@ -1961,7 +1961,7 @@ fitted_richnessbydiameter_ratio_filtered <- fitted_richnessbydiameter_ratio %>%
   group_by(fg) %>%
   filter(dbh <= max_dbh, dbh >= min_dbh)
 
-
+#----------------------- with new prediction fits ----------
 (ratio_diam_fs <- ggplot() + # exclude largest short:tall ratio
     scale_x_log10(
      # limits = c(1,100), 
@@ -1975,13 +1975,16 @@ fitted_richnessbydiameter_ratio_filtered <- fitted_richnessbydiameter_ratio %>%
       labels = c("0.5", "1", "2", "4", "8"),
       limit = c(0.2, 10)
     ) + 
-    geom_ribbon(data = fitted_richnessbydiameter_ratio %>% filter(ratio == "fast:slow"),
+    geom_ribbon(data = fitted_richnessbydiameter_ratio %>% 
+                  filter(ratio == "fast:slow", dbh < 70,  dbh > 1.1),
                 aes( x = dbh, ymin = q025, ymax = q975), alpha = 0.2, size = 0.5) +
-    geom_line(data = fitted_richnessbydiameter_ratio %>% filter(ratio == "fast:slow"), 
+    geom_line(data = fitted_richnessbydiameter_ratio %>% 
+                filter(ratio == "fast:slow", dbh < 70, dbh > 1.1), 
               aes(x = dbh, y = q50)) +
     theme_plant() +
     geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
-    geom_point(data =richness_wide %>% filter(lowest_n_fastslow >= 20),
+    geom_point(data = obs_richnessbydiameter_ratio %>% 
+                 filter(lowest_n_fastslow >= 20 ),
                aes(x = bin_midpoint, y = richness_ratio_fastslow,  fill = richness_ratio_fastslow),
                shape = 21, stroke = 0.5, size = 4.5, color = "black") +
     
@@ -2004,7 +2007,51 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path2,'Figures/Richness/rich_diam_ratio_fs.pdf')) 
 )
 
+#----------------------- with new prediction fits ----------
+(ratio_diam_ts <- ggplot() + # exclude largest short:tall ratio
+   scale_x_log10(
+     # limits = c(1,100), 
+     breaks = c(1,10, 100), 
+     name = NULL
+     #name = expression(paste('Diameter (cm)'))
+   ) + 
+   scale_y_log10(#name = 'Richness Ratio', 
+     name = NULL,
+     breaks = c(0.5, 1, 2, 4, 8),
+     labels = c("0.5", "1", "2", "4", "8"),
+     limit = c(0.2, 10)
+   ) + 
+   geom_ribbon(data = fitted_richnessbydiameter_ratio %>% 
+                 filter(ratio == "pioneer:breeder", dbh < 70),
+               aes( x = dbh, ymin = q025, ymax = q975), alpha = 0.2, size = 0.5) +
+   geom_line(data = fitted_richnessbydiameter_ratio %>% 
+               filter(ratio == "pioneer:breeder", dbh < 70, dbh > ), 
+             aes(x = dbh, y = q50)) +
+   theme_plant() +
+   geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+   geom_point(data = obs_richnessbydiameter_ratio %>% 
+                filter(lowest_n_fastslow >= 20, ),
+              aes(x = bin_midpoint, y = richness_ratio_pioneerbreeder,  fill = richness_ratio_pioneerbreeder),
+              shape = 21, stroke = 0.5, size = 4.5, color = "black") +
+   
+   scale_fast_slow  +
+   theme_no_y() + theme_no_x() 
+)
 
+p1 <- set_panel_size(ratio_diam_ts, width=unit(10.25,"cm"), height=unit(5,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
+pdf(file.path(gdrive_path,'Figures/Richness/rich_diam_ratio_ts.pdf'))
+grid.draw(p1)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_diam_ratio_ts.pdf'), 
+                    file.path(gdrive_path2,'Figures/Richness/rich_diam_ratio_ts.pdf')) 
+)
+
+#----- old fits directly to bins
 (ratio_diam_ts <- ggplot(richness_wide %>%
                            filter(lowest_n_pioneerbreeder >= 20),
                          aes(x = bin_midpoint, y =  richness_ratio_pioneerbreeder,  fill = richness_ratio_pioneerbreeder)) + # exclude largest short:tall ratio
