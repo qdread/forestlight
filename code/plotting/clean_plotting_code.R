@@ -899,7 +899,80 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path,'Figures/Supplementals/Total_Production_Height/Total_prod_height.pdf')) 
 )
 
+#------------------- Fig 4d  Richness ---------
 
+# filter fitted sizes by binned sizes
+max_dbh_fg <- obs_richnessbydiameter  %>%
+  filter(n_individuals >= 20) %>%
+  group_by(fg) %>%
+  summarize(max_dbh = max(bin_midpoint) +2 )
+
+min_dbh_fg <-obs_richnessbydiameter  %>%
+  filter(n_individuals >= 20) %>%
+  group_by(fg) %>%
+  summarize(min_dbh = min(bin_midpoint) -0.1)
+
+fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
+  left_join(max_dbh_fg) %>%
+  left_join(min_dbh_fg) %>%
+  group_by(fg) %>%
+  filter(dbh <= max_dbh, dbh >= min_dbh)
+
+
+
+(p_rich_cm <- ggplot() + 
+   geom_ribbon(data = fitted_richnessbydiameter_filtered  %>% 
+                 arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
+               aes(x = dbh, ymin = q025, ymax = q975,
+                   group = fg, fill = fg), alpha = 0.4) +
+   geom_line(data = fitted_richnessbydiameter_filtered  %>% 
+               arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
+             aes(x = dbh, y = q50, group = fg, color = fg)) +
+   geom_jitter(data = obs_richnessbydiameter %>% 
+                 arrange(desc(fg)) %>%
+                 filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20) %>%
+                 arrange(desc(fg)), 
+               aes(x = bin_midpoint, y = richness_by_bin_width, fill = fg, color = fg),
+               shape = 21, size = 4, color = "black", width = 0.02) + #0.02
+   geom_abline(intercept = log10(30000), slope = -2, linetype = "dashed", color = "gray72", size = 0.75) +
+   scale_x_log10(name = 'Diameter (cm)',
+                 limit = c(.9, 200)) + 
+   scale_y_log10(labels = signif,
+                 limit = c(0.1, 3000), 
+                 position = "right",
+                 name = expression(paste("Richness (cm"^-1,")"))) +
+   scale_fill_manual(values = guild_fills2) +
+   scale_color_manual(values = guild_colors2) +
+   theme_plant() #+
+ 
+)
+
+
+p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Main_Scaling/Richness.pdf'))
+grid.draw(p1)
+dev.off()
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/Main_Scaling/Richness.pdf'), 
+                  file.path(gdrive_path2,'Figures/Main_Scaling/Richness.pdf')) 
+)
+# All slopes for bins, calculated separately
+
+
+library(broom)
+rich2_lms <- obs_richnessbydiameter %>%
+  filter(n_individuals > 0) %>%
+  nest(-fg) %>% 
+  mutate(
+    fit = map(data, ~ lm(log(richness_by_bin_width) ~ log(abundance_by_bin_width), data = .x)),
+    tidied = map(fit, tidy, conf.int = T)
+  ) %>% 
+  unnest(tidied) 
+filter(rich2_lms, term != '(Intercept)') # note: 'estimate' = slope
+tidy(rich2_lms)
 
 ########################################################################################
 # ------------------------------- Fig 5 Symmetry Plots ------------------------------------
@@ -1037,77 +1110,26 @@ grid.draw(combo)
 
 
 #------------- Richness vs abundance
-
-
-max_size_fg <- obs_richnessbydiameter %>%
-  filter(n_individuals > 0) %>%
+max_dbh_fg <- obs_richnessbydiameter  %>%
+  filter(n_individuals >= 20) %>%
   group_by(fg) %>%
-  summarize(max_size = max(abundance_by_bin_width)) 
+  summarize(max_dbh = max(bin_midpoint) +2 )
 
-min_size_fg <- obs_richnessbydiameter %>%
-  filter(n_individuals > 0) %>%
+min_dbh_fg <-obs_richnessbydiameter  %>%
+  filter(n_individuals >= 20) %>%
   group_by(fg) %>%
-  summarize(min_size = min(abundance_by_bin_width)) 
+  summarize(min_dbh = min(bin_midpoint) -0.1)
 
-fitted_richnessvsabundance_filt <- fitted_richnessvsabundance %>%
-  left_join(max_size_fg, by = "fg") %>%
-  left_join(min_size_fg, by = "fg") %>%
-  group_by(fg) %>% 
-  filter(abundance_by_bin_width >= min_size) %>%
-  filter(abundance_by_bin_width <= max_size)
-
+fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
+  left_join(max_dbh_fg) %>%
+  left_join(min_dbh_fg) %>%
+  group_by(fg) %>%
+  filter(dbh <= max_dbh, dbh >= min_dbh)
 
 
 
-str(abundance_by_bin_width)
-(rich_abun <- ggplot(mapping = aes(x = abundance_by_bin_width, col = fg, fill = fg)) + 
-    scale_x_log10(name = expression(paste("Abundance (cm"^-1,")")),
-                  #breaks = c(0.01, 0.1, 1, 10, 100, 1000, 10000),
-                  breaks = c(0.01,  1,  100,  10000),
-                  labels = c("0.01",  "1", "100", "10,000"),
-                 # labels = c("0.01","0.1", "1",  "10", "100","1000", "10,000"),
-                  #labels = signif,
-                  limit = c(0.01, 60000)
-    ) + 
-    scale_y_log10(labels = signif,
-                  limit = c(0.01, 2000), 
-                  breaks = c(0.01, 0.1, 1, 10, 100, 1000),
-                  position = "left",
-                  name = expression(paste("Richness (cm"^-1,")"))) +
-    theme_plant() +
-    geom_ribbon(data = fitted_richnessvsabundance_filt %>% 
-                  filter(!fg %in% 'unclassified') %>%
-                  arrange(desc(fg)),
-                aes(ymin = q025, ymax = q975), alpha = 0.2, col = NA) + 
-    geom_line(data = fitted_richnessvsabundance_filt %>% 
-                filter(!fg %in% 'unclassified') %>%
-                arrange(desc(fg)),
-              aes(y = q50), size = 0.5) +
-    geom_jitter(data = obs_richnessbydiameter %>% 
-                  filter(n_individuals > 0) %>%
-                  filter(!fg %in% 'unclassified' & richness > 0) %>% #  & n_individuals >= 20
-                  arrange(desc(fg)), 
-                aes(y = richness_by_bin_width, fill = fg, color = fg),
-                shape = 21, size = 3.5, color = "black", width = 0.1) +
-    scale_fill_manual(values = guild_fills2) +
-    scale_color_manual(values = guild_colors2) +
-    theme_plant()
-) #+
 
-
-p1 <- set_panel_size(rich_abun, width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p1)
-
-pdf(file.path(gdrive_path,'Figures/Richness/rich_diam2.pdf'))
-grid.draw(p1)
-dev.off()
-
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_diam2.pdf'), 
-                    file.path(gdrive_path2,'Figures/Richness/rich_diam2.pdf')) 
-)
-#
+#--------- combine plots
 
 g_rich_abun <- ggplotGrob(rich_abun)
 combo <- rbind(g_rich_abun, g_slopes, size = "first")
@@ -1459,7 +1481,7 @@ system2(command = "pdfcrop",
 )
 
 #----------------------------------------------
-#--------------- Fig 7 Richness --------------------
+#--------------- Fig 6c-d Richness --------------------
 #----------------------------------------------
 
 
@@ -1490,114 +1512,6 @@ load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
 
 # Create binned richness data ---------------------------------------------
 
-# Use existing bin bounds
-bin_bounds <- fastslow_stats_bydiam_byyear[1:20, c('bin_midpoint', 'bin_min', 'bin_max')]
-bin_bounds_light <- fastslow_stats_bylight_byyear[1:20, c('bin_midpoint', 'bin_min', 'bin_max')]
-# Get richness of each FG by each bin
-
-bin_x_fg <- expand_grid(fg = c(paste0('fg', 1:5), 'unclassified'), bin = 1:20) %>%
-  left_join(bin_bounds %>% mutate(bin = 1:20))
-
-bin_x_fg_light <- expand_grid(fg = c(paste0('fg', 1:5), 'unclassified'), bin = 1:20) %>%
-  left_join(bin_bounds_light %>% mutate(bin = 1:20))
-
-# 1995 data (132,982 trees)
-dat <- alltreedat[[3]] %>%
-  mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg)))
-
-# 1995 data with light values (113,651 trees)
-dat_light <- dat %>%
-  filter(!is.na(light_received_byarea))
-
-bin_x_fg <- bin_x_fg %>%
-  cbind(pmap_dfr(bin_x_fg, function(fg, bin_min, bin_max, ...) {
-    sp_ids <- as.character(dat$sp[dat$fg %in% fg & dat$dbh_corr >= bin_min & dat$dbh_corr < bin_max])
-    data.frame(richness = length(unique(sp_ids)),
-               n_individuals = length(sp_ids))
-  }))
-bin_x_fg <- bin_x_fg %>%
-  mutate(richness_cm = richness/(bin_max - bin_min))
-bin_x_fg$richness_cm <-  bin_x_fg$richness_cm/42.84
-rich_all <- as_tibble(read_csv(file.path(gdrive_path, 'data/rich_all.csv')))
-rich_all$richness_cm <- rich_all$richness_cm/42.84
-bin_x_fg2 <- as_tibble(rbind(bin_x_fg,rich_all ))
-
-str(bin_x_fg)
-str(rich_all)
-bin_x_fg_light <- bin_x_fg_light %>%
-  cbind(pmap_dfr(bin_x_fg_light, function(fg, bin_min, bin_max, ...) {
-    sp_ids <- as.character(dat_light$sp[dat_light$fg %in% fg & dat_light$light_received_byarea >= bin_min & dat_light$light_received_byarea < bin_max])
-    data.frame(richness = length(unique(sp_ids)),
-               n_individuals = length(sp_ids))
-  }))
-
-bin_x_fg_light <- bin_x_fg_light %>%
-  mutate(richness_cm = richness/(bin_max - bin_min))
-bin_x_fg_light$richness_cm <-  bin_x_fg_light$richness_cm/42.84
-#
-
-richness_wide <- bin_x_fg %>%
-  pivot_wider(id_cols = c(bin, bin_midpoint, bin_min, bin_max), names_from = fg, values_from = c(richness, n_individuals)) %>%
-  mutate(richness_ratio_fastslow = richness_fg1/richness_fg3,
-         richness_ratio_pioneerbreeder = richness_fg2/richness_fg4,
-         lowest_n_fastslow = pmin(n_individuals_fg1, n_individuals_fg3),
-         lowest_rich_fastslow  = pmin(richness_fg1, richness_fg3),
-         lowest_n_pioneerbreeder = pmin(n_individuals_fg2, n_individuals_fg4),
-         lowest_rich_pioneerbreeder = pmin(richness_fg2, richness_fg4)) %>%
-  mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
-
-
-richness_wide_light <- bin_x_fg_light %>%
-  pivot_wider(id_cols = c(bin, bin_midpoint, bin_min, bin_max), names_from = fg, values_from = c(richness, n_individuals)) %>%
-  mutate(richness_ratio_fastslow = richness_fg1/richness_fg3,
-         richness_ratio_pioneerbreeder = richness_fg2/richness_fg4,
-         lowest_n_fastslow = pmin(n_individuals_fg1, n_individuals_fg3),
-         lowest_rich_fastslow  = pmin(richness_fg1, richness_fg3),
-         lowest_n_pioneerbreeder = pmin(n_individuals_fg2, n_individuals_fg4),
-         lowest_rich_pioneerbreeder = pmin(richness_fg2, richness_fg4)) %>%
-  mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
-
-# Reformat to spread and at individual counts
-
-
-#### ---------------------
-
-# -------Plot Richness by Diameter
-(p_rich <- ggplot(bin_x_fg %>% filter(!fg %in% 'unclassified' & richness > 0), 
-                  aes(x = bin_midpoint, y = richness, color = fg)) + 
-   geom_jitter(width = 0.03, size = 4) + scale_x_log10(name = 'diameter') + theme_plant() +
-   scale_color_manual(values = guild_colors) +
-   theme(legend.position = 'right'))
-
-# Log y scale
-(p_rich_log <- p_rich + scale_y_log10()) #limits = c(0.6, 140)))
-
-(p_rich <- ggplot(bin_x_fg %>% 
-                    arrange(desc(fg)) %>%
-                    filter(!fg %in% 'unclassified' & !fg %in% 'all' &richness > 0) %>%
-                    arrange(desc(fg)), 
-                  aes(x = bin_midpoint, y = richness, fill = fg, color = fg)) + 
-    geom_point(shape = 21, size = 4, color = "black") +
-    scale_x_log10(name = 'Diameter (cm)',
-                  limit = c(1, 500)) + 
-    scale_y_log10(
-     # limits = c(0.6, 100), 
-      name = "Richness") +
-    scale_fill_manual(values = guild_fills) +
-    scale_color_manual(values = guild_colors) +
-    theme_plant() +
-    theme(legend.position = 'right'))
-
-
-bin_x_fg3 <- bin_x_fg2 %>% 
-  arrange(desc(fg)) %>%
-  filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20)
-range()
-# truncate fitted lines by n >= 20 in bins
-
-fitted_richnessbydiameter2 <- fitted_richnessbydiameter %>%
-  group_by(fg) %>%
-  filter(fitted_bin <= bin_x_fg2$bin_midpoint %>% group_by(fg))
 
 max_dbh_fg <- obs_richnessbydiameter  %>%
   filter(n_individuals >= 20) %>%
@@ -1657,21 +1571,7 @@ system2(command = "pdfcrop",
                   file.path(gdrive_path2,'Figures/Main_Scaling/Richness.pdf')) 
 )
 
-# All slopes, calculated separately
-library(broom)
-exop
 
-library(broom)
-rich2_lms <- bin_x_fg2 %>%
-  filter(richness_cm > 0) %>%
-  nest(-fg) %>% 
-  mutate(
-    fit = map(data, ~ lm(log(richness_cm) ~ log(abun_cm), data = .x)),
-    tidied = map(fit, tidy, conf.int = T)
-  ) %>% 
-  unnest(tidied) 
-filter(rich2_lms, term != '(Intercept)') # note: 'estimate' = slope
-tidy(rich2_lms)
 
 guild_lookup
 
@@ -1962,39 +1862,45 @@ fitted_richnessbydiameter_ratio_filtered <- fitted_richnessbydiameter_ratio %>%
   filter(dbh <= max_dbh, dbh >= min_dbh)
 
 #----------------------- with new prediction fits ----------
-(ratio_diam_fs <- ggplot() + # exclude largest short:tall ratio
+(ratio_rich_diam_fs <- ggplot() + # exclude largest short:tall ratio
     scale_x_log10(
-     # limits = c(1,100), 
+      limits = c(.9, 200), 
       breaks = c(1,10, 100), 
-      name = NULL
-      #name = expression(paste('Diameter (cm)'))
+      #name = NULL
+      name = expression(paste('Diameter (cm)'))
     ) + 
-    scale_y_log10(#name = 'Richness Ratio', 
-      name = NULL,
+    scale_y_log10(name = 'Richness Ratio', 
+      #name = NULL,
+      
       breaks = c(0.5, 1, 2, 4, 8),
       labels = c("0.5", "1", "2", "4", "8"),
       limit = c(0.2, 10)
     ) + 
+   #geom_smooth(data = obs_richnessbydiameter_ratio %>% 
+    #            filter(lowest_n_fastslow >= 20 ),
+     #        aes(x = bin_midpoint, y = richness_ratio_fastslow),
+      #      method = "lm",
+       #    color = "black", alpha = 0.3, size = 0.5) +
     geom_ribbon(data = fitted_richnessbydiameter_ratio %>% 
                   filter(ratio == "fast:slow", dbh < 70,  dbh > 1.1),
-                aes( x = dbh, ymin = q025, ymax = q975), alpha = 0.2, size = 0.5) +
+                aes( x = dbh, ymin = q025, ymax = q975), alpha = 0.15, size = 0.5) +
     geom_line(data = fitted_richnessbydiameter_ratio %>% 
                 filter(ratio == "fast:slow", dbh < 70, dbh > 1.1), 
               aes(x = dbh, y = q50)) +
     theme_plant() +
     geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
     geom_point(data = obs_richnessbydiameter_ratio %>% 
-                 filter(lowest_n_fastslow >= 20 ),
+                 filter(lowest_n_fastslow >= 20),
                aes(x = bin_midpoint, y = richness_ratio_fastslow,  fill = richness_ratio_fastslow),
                shape = 21, stroke = 0.5, size = 4.5, color = "black") +
     
-    scale_fast_slow  +
-      theme_no_y() + theme_no_x() 
+    scale_fast_slow # +
+      #theme_no_y() + theme_no_x() 
     
     
 )
 
-p1 <- set_panel_size(ratio_diam_fs, width=unit(10.25,"cm"), height=unit(5,"cm"))
+p1 <- set_panel_size(rratio_rich_diam_fs, width=unit(10.25,"cm"), height=unit(5,"cm"))
 grid.newpage()
 grid.draw(p1)
 
@@ -2008,9 +1914,9 @@ system2(command = "pdfcrop",
 )
 
 #----------------------- with new prediction fits ----------
-(ratio_diam_ts <- ggplot() + # exclude largest short:tall ratio
+(ratio_rich_diam_ts <- ggplot() + # exclude largest short:tall ratio
    scale_x_log10(
-     # limits = c(1,100), 
+      limits = c(.9, 200), 
      breaks = c(1,10, 100), 
      name = NULL
      #name = expression(paste('Diameter (cm)'))
@@ -2021,24 +1927,29 @@ system2(command = "pdfcrop",
      labels = c("0.5", "1", "2", "4", "8"),
      limit = c(0.2, 10)
    ) + 
+   #geom_smooth(data = obs_richnessbydiameter_ratio %>% 
+    #             filter(lowest_n_pioneerbreeder >= 20 ),
+     #          aes(x = bin_midpoint, y = richness_ratio_pioneerbreeder),
+      #         method = "lm",
+       #        color = "black", alpha = 0.3, size = 0.5) +
    geom_ribbon(data = fitted_richnessbydiameter_ratio %>% 
-                 filter(ratio == "pioneer:breeder", dbh < 70),
-               aes( x = dbh, ymin = q025, ymax = q975), alpha = 0.2, size = 0.5) +
+                 filter(ratio == "pioneer:breeder", dbh < 16, dbh > 1.1),
+               aes( x = dbh, ymin = q025, ymax = q975), alpha = 0.15, size = 0.5) +
    geom_line(data = fitted_richnessbydiameter_ratio %>% 
-               filter(ratio == "pioneer:breeder", dbh < 70, dbh > ), 
+               filter(ratio == "pioneer:breeder", dbh < 16, dbh > 1.1), 
              aes(x = dbh, y = q50)) +
    theme_plant() +
    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
    geom_point(data = obs_richnessbydiameter_ratio %>% 
-                filter(lowest_n_fastslow >= 20, ),
+                filter(lowest_n_pioneerbreeder >= 20 ),
               aes(x = bin_midpoint, y = richness_ratio_pioneerbreeder,  fill = richness_ratio_pioneerbreeder),
               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
    
-   scale_fast_slow  +
+   scale_tall_short  +
    theme_no_y() + theme_no_x() 
 )
 
-p1 <- set_panel_size(ratio_diam_ts, width=unit(10.25,"cm"), height=unit(5,"cm"))
+p1 <- set_panel_size(ratio_rich_diam_ts, width=unit(10.25,"cm"), height=unit(5,"cm"))
 grid.newpage()
 grid.draw(p1)
 
@@ -2051,18 +1962,74 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path2,'Figures/Richness/rich_diam_ratio_ts.pdf')) 
 )
 
-#----- old fits directly to bins
-(ratio_diam_ts <- ggplot(richness_wide %>%
-                           filter(lowest_n_pioneerbreeder >= 20),
-                         aes(x = bin_midpoint, y =  richness_ratio_pioneerbreeder,  fill = richness_ratio_pioneerbreeder)) + # exclude largest short:tall ratio
-    #geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
-    geom_smooth(method = "lm",
-                color = "black", alpha = 0.3, size = 0.5) +
-    scale_tall_short  +
-    geom_point(aes(fill =  richness_ratio_pioneerbreeder),
-               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
+
+#------ Combine ratio plots
+g_diam  <- ggplotGrob(p_ratio_diam  )
+g_light <- ggplotGrob(p_ratio_light)
+
+g6 <- cbind(g_light, g_diam , size = "first")
+g6$heights <- unit.pmax(g_light$heights, g_diam$heights)
+
+#g6 <- rbind(g_light, g_diam , size = "first")
+#g6$widths<- unit.pmax(g_light$widths, g_diam$widths)
+
+grid.newpage()
+grid.draw(g6)
+ggsave(g6, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Richness/richness_combo.pdf'))
+
+ggsave(g6, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf'))
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf')) 
+)
+
+
+# Richness per light
+
+#----------------------- with new prediction fits ----------
+(ratio_rich_light_ts <- ggplot() +
+   scale_x_log10(
+     limits = c(.9, 200), 
+     breaks = c(1,10, 100), 
+     name = NULL
+     #name = expression(paste('Diameter (cm)'))
+   ) + 
+   scale_y_log10(#name = 'Richness Ratio', 
+     name = NULL,
+     breaks = c(0.5, 1, 2, 4, 8),
+     labels = c("0.5", "1", "2", "4", "8"),
+     limit = c(0.2, 10)
+   ) + 
+   geom_smooth(data = obs_richnessbylightarea_ratio %>% 
+               filter(lowest_n_pioneerbreeder >= 20 ),
+           aes(x = bin_midpoint, y = richness_ratio_pioneerbreeder),
+         method = "lm",
+       color = "black", alpha = 0.3, size = 0.5) +
+   geom_ribbon(data = fitted_richnessbylightarea_ratio %>% 
+                 filter(ratio == "pioneer:breeder", light_area > 7),
+               aes( x = light_area, ymin = q025, ymax = q975), alpha = 0.15, size = 0.5) +
+   geom_line(data = fitted_richnessbylightarea_ratio %>% 
+               filter(ratio == "pioneer:breeder",  light_area > 7), 
+             aes(x = light_area, y = q50)) +
+   theme_plant() +
+   geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+   geom_point(data = obs_richnessbylightarea_ratio %>% 
+                filter(lowest_n_pioneerbreeder >= 20),
+              aes(x = bin_midpoint, y = richness_ratio_pioneerbreeder,  fill = richness_ratio_pioneerbreeder),
+              shape = 21, stroke = 0.5, size = 4.5, color = "black") +
+   
+   scale_tall_short  +
+   theme_no_y() + theme_no_x() 
+)
+
+p1 <- set_panel_size(ratio_rich_light_ts, width=unit(10.25,"cm"), height=unit(5,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+(ratio_rich_light_fs<- ggplot() + # exclude largest short:tall ratio
     scale_x_log10(
-      limits = c(1,100), 
+      limits = c(.9, 200), 
       breaks = c(1,10, 100), 
       name = NULL
       #name = expression(paste('Diameter (cm)'))
@@ -2073,27 +2040,38 @@ system2(command = "pdfcrop",
       labels = c("0.5", "1", "2", "4", "8"),
       limit = c(0.2, 10)
     ) + 
-    theme_no_y() + 
-    theme_no_x() +
-    theme_plant() 
+    geom_smooth(data = obs_richnessbylightarea_ratio %>% 
+                  filter(lowest_n_fastslow >= 20 ),
+                aes(x = bin_midpoint, y = richness_ratio_fastslow),
+                method = "lm",
+                color = "black", alpha = 0.3, size = 0.5) +
+    geom_ribbon(data = fitted_richnessbylightarea_ratio %>% 
+                  filter(ratio == "fast:slow", light_area > 7),
+                aes( x = light_area, ymin = q025, ymax = q975), alpha = 0.15, size = 0.5) +
+    geom_line(data = fitted_richnessbylightarea_ratio %>% 
+                filter(ratio == "fast:slow",  light_area > 7), 
+              aes(x = light_area, y = q50)) +
+    theme_plant() +
+    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    geom_point(data = obs_richnessbylightarea_ratio %>% 
+                 filter(lowest_n_fastslow >= 20),
+               aes(x = bin_midpoint, y = richness_ratio_fastslow,  fill = richness_ratio_fastslow),
+               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
+    
+    scale_fast_slow  +
+    theme_no_y() + theme_no_x() 
 )
 
-p1 <- set_panel_size(ratio_diam_ts, width=unit(10.25,"cm"), height=unit(5,"cm"))
+p1 <- set_panel_size(ratio_rich_light_fs, width=unit(10.25,"cm"), height=unit(5,"cm"))
 grid.newpage()
 grid.draw(p1)
-
-
-pdf(file.path(gdrive_path,'Figures/Richness/rich_diam_ratio_ts.pdf'))
-grid.draw(p1)
-dev.off()
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_diam_ratio_ts.pdf'), 
-                    file.path(gdrive_path2,'Figures/Richness/rich_diam_ratio_ts.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Richness/ratio_rich_light_fs.pdf'), 
+                    file.path(gdrive_path2,'Figures/Richness/ratio_rich_light_fs.pdf')) 
 )
 
 
-# Richness per light
-
+#------- old, fit to bins
 
 (p_rich_l <- ggplot(bin_x_fg_light %>% arrange(desc(fg)) %>%
                       filter(!fg %in% 'unclassified' & richness > 0,
@@ -2214,174 +2192,6 @@ dev.off()
 system2(command = "pdfcrop", 
         args    = c(file.path(gdrive_path2,'Figures/Richness/rich_ratio_light_fs.pdf'), 
                     file.path(gdrive_path2,'Figures/Richness/rich_ratio_light_fs.pdf')) 
-)
-(ratio_light <- ggplot(richness_wide_light %>%
-                     filter(n_individuals >= 20), 
-                   aes(x = bin_midpoint, y = richness_ratio, color = ID, fill = ID)) + # exclude largest short:tall ratio
-    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
-    geom_point(shape = 21, stroke = 0.5, size = 4, fill = 'gray', color = "gray50") +
-    scale_fill_manual(values = c("fast_slow" = "gray", "tall_short" = "black")) +
-    scale_color_manual(values = c("fast_slow" = "gray40", "tall_short" = "black")) +
-    geom_point(aes(fill = ID), stroke = 0.5, shape = 21, size = 4,  stroke = .5,  color = "black") +
-    geom_smooth(method = "lm",
-                aes(color = ID), alpha = 0.25) +
-    annotate(geom = 'text', x = 1, y = 30, label = 'Fast: Slow', face = "bold.italic", size = 6, color = 'gray', hjust = 0) +
-    annotate(geom = 'text', x = 1, y = 25, label = 'Tall: Short', face = "bold.italic", size = 6, color = 'black', hjust = 0) +
-    scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), 
-                 limits = c(2,300), 
-                 breaks = c(3, 30, 300)
-                 ) +
-    scale_y_log10(name = 'Ratio', 
-                  limit = c(0.4, 9),
-                  breaks = c(0.5, 1, 2, 4, 8),
-                 labels = c("0.5", "1", "2", "4", "8")
-                  ) + 
-    theme_plant() )
-
-
-(rich_ratio_light_short_tall <- ggplot( data = richness_wide_light %>%
-                             filter(n_individuals >= 20, ID == "tall_short"),
-                           aes(x = bin_midpoint, y = richness_ratio, 
-                               fill = richness_ratio, color = richness_ratio)) + # exclude largest short:tall ratio
-    
-    geom_smooth(method = "lm", color = "black", alpha= 0.3, size = 0.5) +
-    geom_point(aes(fill = richness_ratio), 
-               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
-    scale_tall_short +
-    scale_x_log10(name = NULL,
-                  #name = expression(paste('Light per Crown Area (W m'^-2,')')), 
-                  limits = c(2,300), 
-                  breaks = c(3, 30, 300)
-    ) +
-    scale_y_log10(#name = 'Richness Ratio', 
-      name = NULL,
-      breaks = c(0.5, 1, 2, 4, 8),
-      labels = c("0.5", "1", "2", "4", "8"),
-      limit = c(0.3, 9)
-    ) + 
-    theme_no_y() + 
-    theme_plant())
-
-grid.draw(rich_ratio_light_short_tall )
-
-p1 <- set_panel_size(rich_ratio_light_short_tall , width=unit(10.25,"cm"), height=unit(5,"cm"))
-grid.newpage()
-grid.draw(p1)
-
-
-pdf(file.path(gdrive_path,'Figures/Richness/rich_ratio_light_short_tall.pdf'))
-grid.draw(p1)
-dev.off()
-
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_ratio_light_short_tall.pdf'), 
-                    file.path(gdrive_path2,'Figures/Richness/rich_ratio_light_short_tall.pdf')) 
-)
-
-
-
-(rich_ratio_light_fast_slow <- ggplot( data = richness_wide_light %>%
-                               filter(n_individuals >= 20, ID == "fast_slow"),
-                             aes(x = bin_midpoint, y = richness_ratio, 
-                                 fill = richness_ratio, color = richness_ratio)) + # exclude largest short:tall ratio
-    
-    geom_smooth( method = "lm", color = "black", alpha= 0.3, size = 0.5) +
-    geom_point(aes(fill = richness_ratio), 
-               #fill = scale_tall_short,
-               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
-    scale_fast_slow +
-    scale_col_fast_slow +
-    scale_x_log10(name = NULL,
-                  #name = expression(paste('Light per Crown Area (W m'^-2,')')), 
-                  limits = c(2,300), 
-                  breaks = c(3, 30, 300)
-    ) +
-    scale_y_log10(#name = 'Richness Ratio', 
-      name = NULL,
-      #breaks = c(0.5, 1, 2, 4, 8),
-      #labels = c("0.5", "1", "2", "4", "8"),
-      #limit = c(0.3, 9)
-    ) + 
-    #theme_no_y() + #theme_no_x() +
-    theme_plant())
-
-grid.draw(p_ratio_light2.1)
-
-p1 <- set_panel_size(p_ratio_light2.1, width=unit(10.25,"cm"), height=unit(5,"cm"))
-grid.newpage()
-grid.draw(p1)
-
-
-pdf(file.path(gdrive_path,'Figures/Richness/p_ratio_light1.1.pdf'))
-grid.draw(p1)
-dev.off()
-
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Richness/p_ratio_light1.1.pdf'), 
-                    file.path(gdrive_path2,'Figures/Richness/p_ratio_light1.1.pdf')) 
-)
-
-
-p1 <- set_panel_size(p_ratio_light, width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p1)
-
-pdf(file.path(gdrive_path,'Figures/Richness/rich_light_ratio.pdf'))
-grid.draw(p1)
-dev.off()
-
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_light_ratio.pdf'), 
-                    file.path(gdrive_path2,'Figures/Richness/rich_light_ratio.pdf')) 
-)
-
-
-
-#----- previous code
-
-# Arith y scale
-(p_rich <- ggplot(bin_x_fg %>% arrange(desc(fg)) %>%
-                    filter(!fg %in% 'unclassified' & richness > 0), 
-                  aes(x = bin_midpoint, y = richness, fill = fg)) + 
-    geom_point(shape = 21, size = 4, color = "black") +
-    scale_fill_manual(values = guild_fills) + 
-    scale_x_log10(name = 'Diameter (cm)') + 
-    theme_plant() +
-    guides() +
-    
-    scale_y_continuous(name = "Richness", limit = c(-5, 70)) +
-    theme(legend.position = 'right')) 
-
-
-# Log y scale
-(p_rich_log <- p_rich + scale_y_log10(limits = c(0.6, 140), name = "Richness"))
-
-p1 <- set_panel_size(p_rich_log, width=unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p1)
-## ratios of richness
-
-
-
-#------ Combine ratio plots
-g_diam  <- ggplotGrob(p_ratio_diam  )
-g_light <- ggplotGrob(p_ratio_light)
-
-g6 <- cbind(g_light, g_diam , size = "first")
-g6$heights <- unit.pmax(g_light$heights, g_diam$heights)
-
-#g6 <- rbind(g_light, g_diam , size = "first")
-#g6$widths<- unit.pmax(g_light$widths, g_diam$widths)
-
-grid.newpage()
-grid.draw(g6)
-ggsave(g6, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Richness/richness_combo.pdf'))
-
-ggsave(g6, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf'))
-
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf'), 
-                    file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf')) 
 )
 
 
@@ -3568,4 +3378,325 @@ richness_wide_light <- as_tibble(richness_wide_light)
 richness_wide_light$ID <- NA
 richness_wide_light$ID[1:20] <- "fast_slow"
 richness_wide_light$ID[21:40] <- "tall_short"
+
+################## old richness code
+
+# Use existing bin bounds
+bin_bounds <- fastslow_stats_bydiam_byyear[1:20, c('bin_midpoint', 'bin_min', 'bin_max')]
+bin_bounds_light <- fastslow_stats_bylight_byyear[1:20, c('bin_midpoint', 'bin_min', 'bin_max')]
+# Get richness of each FG by each bin
+
+bin_x_fg <- expand_grid(fg = c(paste0('fg', 1:5), 'unclassified'), bin = 1:20) %>%
+  left_join(bin_bounds %>% mutate(bin = 1:20))
+
+bin_x_fg_light <- expand_grid(fg = c(paste0('fg', 1:5), 'unclassified'), bin = 1:20) %>%
+  left_join(bin_bounds_light %>% mutate(bin = 1:20))
+
+# 1995 data (132,982 trees)
+dat <- alltreedat[[3]] %>%
+  mutate(fg = if_else(is.na(fg), 'unclassified', paste0('fg', fg)))
+
+# 1995 data with light values (113,651 trees)
+dat_light <- dat %>%
+  filter(!is.na(light_received_byarea))
+
+bin_x_fg <- bin_x_fg %>%
+  cbind(pmap_dfr(bin_x_fg, function(fg, bin_min, bin_max, ...) {
+    sp_ids <- as.character(dat$sp[dat$fg %in% fg & dat$dbh_corr >= bin_min & dat$dbh_corr < bin_max])
+    data.frame(richness = length(unique(sp_ids)),
+               n_individuals = length(sp_ids))
+  }))
+bin_x_fg <- bin_x_fg %>%
+  mutate(richness_cm = richness/(bin_max - bin_min))
+bin_x_fg$richness_cm <-  bin_x_fg$richness_cm/42.84
+rich_all <- as_tibble(read_csv(file.path(gdrive_path, 'data/rich_all.csv')))
+rich_all$richness_cm <- rich_all$richness_cm/42.84
+bin_x_fg2 <- as_tibble(rbind(bin_x_fg,rich_all ))
+
+str(bin_x_fg)
+str(rich_all)
+bin_x_fg_light <- bin_x_fg_light %>%
+  cbind(pmap_dfr(bin_x_fg_light, function(fg, bin_min, bin_max, ...) {
+    sp_ids <- as.character(dat_light$sp[dat_light$fg %in% fg & dat_light$light_received_byarea >= bin_min & dat_light$light_received_byarea < bin_max])
+    data.frame(richness = length(unique(sp_ids)),
+               n_individuals = length(sp_ids))
+  }))
+
+bin_x_fg_light <- bin_x_fg_light %>%
+  mutate(richness_cm = richness/(bin_max - bin_min))
+bin_x_fg_light$richness_cm <-  bin_x_fg_light$richness_cm/42.84
+#
+
+richness_wide <- bin_x_fg %>%
+  pivot_wider(id_cols = c(bin, bin_midpoint, bin_min, bin_max), names_from = fg, values_from = c(richness, n_individuals)) %>%
+  mutate(richness_ratio_fastslow = richness_fg1/richness_fg3,
+         richness_ratio_pioneerbreeder = richness_fg2/richness_fg4,
+         lowest_n_fastslow = pmin(n_individuals_fg1, n_individuals_fg3),
+         lowest_rich_fastslow  = pmin(richness_fg1, richness_fg3),
+         lowest_n_pioneerbreeder = pmin(n_individuals_fg2, n_individuals_fg4),
+         lowest_rich_pioneerbreeder = pmin(richness_fg2, richness_fg4)) %>%
+  mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
+
+
+richness_wide_light <- bin_x_fg_light %>%
+  pivot_wider(id_cols = c(bin, bin_midpoint, bin_min, bin_max), names_from = fg, values_from = c(richness, n_individuals)) %>%
+  mutate(richness_ratio_fastslow = richness_fg1/richness_fg3,
+         richness_ratio_pioneerbreeder = richness_fg2/richness_fg4,
+         lowest_n_fastslow = pmin(n_individuals_fg1, n_individuals_fg3),
+         lowest_rich_fastslow  = pmin(richness_fg1, richness_fg3),
+         lowest_n_pioneerbreeder = pmin(n_individuals_fg2, n_individuals_fg4),
+         lowest_rich_pioneerbreeder = pmin(richness_fg2, richness_fg4)) %>%
+  mutate_if(is.double, ~ if_else(is.finite(.), ., as.numeric(NA)))
+
+# Reformat to spread and at individual counts
+
+
+#### ---------------------
+
+# -------Plot Richness by Diameter
+(p_rich <- ggplot(bin_x_fg %>% filter(!fg %in% 'unclassified' & richness > 0), 
+                  aes(x = bin_midpoint, y = richness, color = fg)) + 
+   geom_jitter(width = 0.03, size = 4) + scale_x_log10(name = 'diameter') + theme_plant() +
+   scale_color_manual(values = guild_colors) +
+   theme(legend.position = 'right'))
+
+# Log y scale
+(p_rich_log <- p_rich + scale_y_log10()) #limits = c(0.6, 140)))
+
+(p_rich <- ggplot(bin_x_fg %>% 
+                    arrange(desc(fg)) %>%
+                    filter(!fg %in% 'unclassified' & !fg %in% 'all' &richness > 0) %>%
+                    arrange(desc(fg)), 
+                  aes(x = bin_midpoint, y = richness, fill = fg, color = fg)) + 
+    geom_point(shape = 21, size = 4, color = "black") +
+    scale_x_log10(name = 'Diameter (cm)',
+                  limit = c(1, 500)) + 
+    scale_y_log10(
+      # limits = c(0.6, 100), 
+      name = "Richness") +
+    scale_fill_manual(values = guild_fills) +
+    scale_color_manual(values = guild_colors) +
+    theme_plant() +
+    theme(legend.position = 'right'))
+
+
+bin_x_fg3 <- bin_x_fg2 %>% 
+  arrange(desc(fg)) %>%
+  filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20)
+range()
+# truncate fitted lines by n >= 20 in bins
+
+fitted_richnessbydiameter2 <- fitted_richnessbydiameter %>%
+  group_by(fg) %>%
+  filter(fitted_bin <= bin_x_fg2$bin_midpoint %>% group_by(fg))
+
+(ratio_light <- ggplot(richness_wide_light %>%
+                         filter(n_individuals >= 20), 
+                       aes(x = bin_midpoint, y = richness_ratio, color = ID, fill = ID)) + # exclude largest short:tall ratio
+    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    geom_point(shape = 21, stroke = 0.5, size = 4, fill = 'gray', color = "gray50") +
+    scale_fill_manual(values = c("fast_slow" = "gray", "tall_short" = "black")) +
+    scale_color_manual(values = c("fast_slow" = "gray40", "tall_short" = "black")) +
+    geom_point(aes(fill = ID), stroke = 0.5, shape = 21, size = 4,  stroke = .5,  color = "black") +
+    geom_smooth(method = "lm",
+                aes(color = ID), alpha = 0.25) +
+    annotate(geom = 'text', x = 1, y = 30, label = 'Fast: Slow', face = "bold.italic", size = 6, color = 'gray', hjust = 0) +
+    annotate(geom = 'text', x = 1, y = 25, label = 'Tall: Short', face = "bold.italic", size = 6, color = 'black', hjust = 0) +
+    scale_x_log10(name = expression(paste('Light per Crown Area (W m'^-2,')')), 
+                  limits = c(2,300), 
+                  breaks = c(3, 30, 300)
+    ) +
+    scale_y_log10(name = 'Ratio', 
+                  limit = c(0.4, 9),
+                  breaks = c(0.5, 1, 2, 4, 8),
+                  labels = c("0.5", "1", "2", "4", "8")
+    ) + 
+    theme_plant() )
+
+
+(rich_ratio_light_short_tall <- ggplot( data = richness_wide_light %>%
+                                          filter(n_individuals >= 20, ID == "tall_short"),
+                                        aes(x = bin_midpoint, y = richness_ratio, 
+                                            fill = richness_ratio, color = richness_ratio)) + # exclude largest short:tall ratio
+    
+    geom_smooth(method = "lm", color = "black", alpha= 0.3, size = 0.5) +
+    geom_point(aes(fill = richness_ratio), 
+               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
+    scale_tall_short +
+    scale_x_log10(name = NULL,
+                  #name = expression(paste('Light per Crown Area (W m'^-2,')')), 
+                  limits = c(2,300), 
+                  breaks = c(3, 30, 300)
+    ) +
+    scale_y_log10(#name = 'Richness Ratio', 
+      name = NULL,
+      breaks = c(0.5, 1, 2, 4, 8),
+      labels = c("0.5", "1", "2", "4", "8"),
+      limit = c(0.3, 9)
+    ) + 
+    theme_no_y() + 
+    theme_plant())
+
+grid.draw(rich_ratio_light_short_tall )
+
+p1 <- set_panel_size(rich_ratio_light_short_tall , width=unit(10.25,"cm"), height=unit(5,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
+pdf(file.path(gdrive_path,'Figures/Richness/rich_ratio_light_short_tall.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_ratio_light_short_tall.pdf'), 
+                    file.path(gdrive_path2,'Figures/Richness/rich_ratio_light_short_tall.pdf')) 
+)
+
+
+
+(rich_ratio_light_fast_slow <- ggplot( data = richness_wide_light %>%
+                                         filter(n_individuals >= 20, ID == "fast_slow"),
+                                       aes(x = bin_midpoint, y = richness_ratio, 
+                                           fill = richness_ratio, color = richness_ratio)) + # exclude largest short:tall ratio
+    
+    geom_smooth( method = "lm", color = "black", alpha= 0.3, size = 0.5) +
+    geom_point(aes(fill = richness_ratio), 
+               #fill = scale_tall_short,
+               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
+    scale_fast_slow +
+    scale_col_fast_slow +
+    scale_x_log10(name = NULL,
+                  #name = expression(paste('Light per Crown Area (W m'^-2,')')), 
+                  limits = c(2,300), 
+                  breaks = c(3, 30, 300)
+    ) +
+    scale_y_log10(#name = 'Richness Ratio', 
+      name = NULL,
+      #breaks = c(0.5, 1, 2, 4, 8),
+      #labels = c("0.5", "1", "2", "4", "8"),
+      #limit = c(0.3, 9)
+    ) + 
+    #theme_no_y() + #theme_no_x() +
+    theme_plant())
+
+grid.draw(p_ratio_light2.1)
+
+p1 <- set_panel_size(p_ratio_light2.1, width=unit(10.25,"cm"), height=unit(5,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
+pdf(file.path(gdrive_path,'Figures/Richness/p_ratio_light1.1.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Richness/p_ratio_light1.1.pdf'), 
+                    file.path(gdrive_path2,'Figures/Richness/p_ratio_light1.1.pdf')) 
+)
+
+
+p1 <- set_panel_size(p_ratio_light, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Richness/rich_light_ratio.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_light_ratio.pdf'), 
+                    file.path(gdrive_path2,'Figures/Richness/rich_light_ratio.pdf')) 
+)
+
+
+
+#----- previous code
+
+# Arith y scale
+(p_rich <- ggplot(bin_x_fg %>% arrange(desc(fg)) %>%
+                    filter(!fg %in% 'unclassified' & richness > 0), 
+                  aes(x = bin_midpoint, y = richness, fill = fg)) + 
+    geom_point(shape = 21, size = 4, color = "black") +
+    scale_fill_manual(values = guild_fills) + 
+    scale_x_log10(name = 'Diameter (cm)') + 
+    theme_plant() +
+    guides() +
+    
+    scale_y_continuous(name = "Richness", limit = c(-5, 70)) +
+    theme(legend.position = 'right')) 
+
+
+# Log y scale
+(p_rich_log <- p_rich + scale_y_log10(limits = c(0.6, 140), name = "Richness"))
+
+p1 <- set_panel_size(p_rich_log, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+## ratios of richness
+
+
+
+#------ Combine ratio plots
+g_diam  <- ggplotGrob(p_ratio_diam  )
+g_light <- ggplotGrob(p_ratio_light)
+
+g6 <- cbind(g_light, g_diam , size = "first")
+g6$heights <- unit.pmax(g_light$heights, g_diam$heights)
+
+#g6 <- rbind(g_light, g_diam , size = "first")
+#g6$widths<- unit.pmax(g_light$widths, g_diam$widths)
+
+grid.newpage()
+grid.draw(g6)
+ggsave(g6, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Richness/richness_combo.pdf'))
+
+ggsave(g6, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf'))
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf')) 
+)
+
+
+#----- old fits directly to bins
+(ratio_diam_ts <- ggplot(richness_wide %>%
+                           filter(lowest_n_pioneerbreeder >= 20),
+                         aes(x = bin_midpoint, y =  richness_ratio_pioneerbreeder,  fill = richness_ratio_pioneerbreeder)) + # exclude largest short:tall ratio
+    #geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    geom_smooth(method = "lm",
+                color = "black", alpha = 0.3, size = 0.5) +
+    scale_tall_short  +
+    geom_point(aes(fill =  richness_ratio_pioneerbreeder),
+               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
+    scale_x_log10(
+      limits = c(.9, 200), 
+      breaks = c(1,10, 100), 
+      name = NULL
+      #name = expression(paste('Diameter (cm)'))
+    ) + 
+    scale_y_log10(#name = 'Richness Ratio', 
+      name = NULL,
+      breaks = c(0.5, 1, 2, 4, 8),
+      labels = c("0.5", "1", "2", "4", "8"),
+      limit = c(0.2, 10)
+    ) + 
+    theme_no_y() + 
+    theme_no_x() +
+    theme_plant() 
+)
+
+p1 <- set_panel_size(ratio_diam_ts, width=unit(10.25,"cm"), height=unit(5,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
+pdf(file.path(gdrive_path,'Figures/Richness/rich_diam_ratio_ts.pdf'))
+grid.draw(p1)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_diam_ratio_ts.pdf'), 
+                    file.path(gdrive_path2,'Figures/Richness/rich_diam_ratio_ts.pdf')) 
+)
 
