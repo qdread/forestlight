@@ -154,8 +154,8 @@ grob_text_c <- grobTree(textGrob("C", x = 0.05, y = 0.95, gp = gpar(col = "black
 geom_size = 2
 
 area <- ggplot() +
- # geom_point(alpha = 0.01, data = alltree_light_95, 
-  #                         aes(x = dbh_corr, y = light_received_byarea), color = 'chartreuse3') +
+  geom_point(alpha = 0.01, data = alltree_light_95, 
+                           aes(x = dbh_corr, y = light_received_byarea), color = 'chartreuse3') +
   #geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), 
    #               aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
   geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all', dbh_bin < 156), 
@@ -170,12 +170,36 @@ area <- ggplot() +
   annotation_custom(grob_text_a) +
   theme(axis.title.y = element_text(vjust = -2))
 
-area
 
+p1 <- set_panel_size(area, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+pdf(file.path(gdrive_path,'Figures/Light_Individual/light_area2.pdf'))
+grid.draw(p1)
+dev.off()
+
+
+area_hex <- ggplot() +
+  theme_plant() +
+  scale_x_log10(limits = c(0.8, 200), name = exd) +
+  scale_y_log10(name = exl, limits = c(0.8, 1500)) +
+  geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received_byarea)) +
+  hex_scale_log_colors +
+  geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all', dbh_bin < 156), 
+                  aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
+  geom_ribbon(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156), 
+              aes(x = dbh, ymin = q025, ymax = q975), alpha = 0.4) +
+  geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156),
+            aes(x = dbh, y = q50)) +
+  theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
+  theme_no_x() +
+  theme(axis.title.y = element_text(vjust = -3)) +
+guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
+area_hex
 # --- to add secondary height axis, first mask theme_no_x() above
 
 
-p1 <- set_panel_size(area, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p1 <- set_panel_size(area_hex, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
 pdf(file.path(gdrive_path,'Figures/Light_Individual/light_area2.pdf'))
@@ -194,6 +218,19 @@ p2 <- ggplot() +
   scale_y_log10(name = exl, limits = c(0.8, 1500)) +
   theme_plant()
 
+ggplot() +
+  geom_pointrange(data = lightperareacloudbin_all %>% filter(dbh_bin < 156), 
+                  aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
+  geom_ribbon(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156), 
+              aes(x = dbh, ymin = q025, ymax = q975), alpha = 0.4) +
+  geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156),
+            aes(x = dbh, y = q50)) +
+  scale_x_log10(limits = c(0.8, 200), name = exd) +
+  scale_y_log10(name = exl, limits = c(0.8, 1500)) +
+  theme_plant()
+
+lightperareacloudbin_all 
+lightperareacloudbin_fg %>% filter(fg %in% 'all', dbh_bin < 156)
 area1 <- p2 + scale_x_log10(name = 'Diameter (cm)',
                            breaks = c(1,10,100), limits = c(0.8, 200),
                            sec.axis = sec_axis(~ gMM(., a = 57.17, b = 0.7278, k = 21.57),
@@ -255,6 +292,28 @@ system2(command = "pdfcrop",
                   file.path(gdrive_path2,'Figures/Light_Individual/light_volume2.pdf')) 
 )
 
+
+vol_hex <- ggplot() +
+  theme_plant() +
+  scale_x_log10(limits = c(0.8, 200), name = exd) +
+  scale_y_log10(name = exv, limits = c(0.8, 1500)) +
+  geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received_byvolume)) +
+  hex_scale_log_colors +
+  geom_pointrange(data = lightpervolcloudbin_fg %>% filter(fg %in% 'all', dbh_bin < 156), 
+                  aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
+  geom_ribbon(data = fitted_lightcloudbin_fg %>%  filter(fit == 'light per volume',  dbh < 156), 
+              aes(x = dbh, ymin = q025, ymax = q975), alpha = 0.4) +
+  geom_line(data = fitted_lightcloudbin_fg %>%  filter(fit == 'light per volume',  dbh < 156), 
+            aes(x = dbh, y = q50)) +
+  theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
+  theme(axis.title.y = element_text(vjust = -3)) +
+  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
+vol_hex
+p1 <- set_panel_size(vol_hex, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
 lm1 <- lm(log(light_received_byvolume) ~ log(dbh_corr), data = alltree_light_95)
 summary(lm1)
 confint(lm1)
@@ -285,6 +344,19 @@ ggsave(g1, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Lig
 system2(command = "pdfcrop", 
         args  = c(file.path(gdrive_path2,'Figures/Light_Individual/light_combo2.pdf'), 
                   file.path(gdrive_path2,'Figures/Light_Individual/light_combo2.pdf')) 
+)
+
+g_area_hex  <- ggplotGrob(area_hex)
+g_vol_hex <- ggplotGrob(vol_hex)
+light_hex <- rbind(g_area_hex , g_vol_hex, size = "first")
+light_hex$widths <- unit.pmax(g_area_hex$widths, g_vol_hex$widths)
+grid.newpage()
+grid.draw(light_hex)
+ggsave(g1, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Light_Individual/light_combo_hex.pdf'))
+
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/Light_Individual/light_combo_hex.pdf'), 
+                  file.path(gdrive_path2,'Figures/Light_Individual/light_combo_hex.pdf')) 
 )
 
 
@@ -992,23 +1064,43 @@ totallightbins_fg <- read.csv(file.path(fp, 'obs_totallight.csv'), stringsAsFact
 
 str
 # Fig 5a      
+
+# Plot
+grob_text <- grobTree(textGrob("Solar Equivalence", x = 0.27, y = 0.87, hjust = 0,
+                               gp = gpar(col = "gold3", fontsize = 18))) 
+
+grob_a <- grobTree(textGrob("a", x = 0.06, y = 0.91, gp = gpar(col = "black", fontsize = 25, fontface = "bold")))
 totallightbins_fg <- totallightbins_fg %>%
   filter(bin_count >= 20)
-p <- plot_totalprod(year_to_plot = 1995,
-                         fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
-                         model_fit_density = DENS, 
-                         model_fit_production = PROD,
-                         x_limits = c(0.9,150),
-                         y_limits = c(100, 200000),
-                         geom_size = 4,
-                         y_breaks = c(100, 1000, 10000, 100000),
-                         y_labels = c("0.1", "1", "10", "100"),
-                         y_name = expression(paste('Total Light Intercepted (kW cm'^-1,' ha'^-1,')')),
-                         preddat = fitted_totallight,
-                         obsdat = totallightbins_fg,
-                         plot_abline = FALSE)
-p2 <- p + theme_plant()
-p2
+tot_light <- plot_totalprod(year_to_plot = 1995,
+                            fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
+                            model_fit_density = DENS, 
+                            model_fit_production = PROD,
+                            x_limits = c(0.9,200),
+                            y_limits = c(100, 200000),
+                            geom_size = 3.5,
+                            y_breaks = c(100, 1000, 10000, 100000),
+                            x_breaks = c(1, 10, 100),
+                            y_labels = c("0.1", "1", "10", "100"),
+                            y_name = expression(paste('Total Light Intercepted (kW cm'^-1,' ha'^-1,')')),
+                            preddat = fitted_totallight,
+                            obsdat = totallightbins_fg,
+                            plot_abline = FALSE)
+
+
+tot_light2 <- tot_light  + 
+  scale_y_continuous(position = "right", trans = "log10", 
+                     breaks = c(100, 1000, 10000, 100000),
+                     labels = c("0.1", "1", "10", "100"), 
+                     limits = c(200, 200000),
+                     name = expression(atop('Total Light Intercepted',paste('(kW cm'^-1,' ha'^-1,')'))))  +
+  scale_x_log10(name = "Stem Diameter (cm)", limits = c(0.8, 200), position = "top") +
+  theme(aspect.ratio = 0.75) + 
+  geom_abline(intercept = log10(70000), slope = 0, color ="#C9B074",
+              linetype="dashed", size=.75) +
+  annotation_custom(grob_text) #+ annotation_custom(grob_a)
+plot(tot_light2)
+p_tot_light <- tot_light2
 # ---------------Fig 5b--------------
 
 params <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/piecewise_paramci_by_fg.csv'), stringsAsFactors = FALSE)
@@ -1047,7 +1139,7 @@ grob1 <- grobTree(textGrob("Solar", x = 0.68, y = 0.94, hjust = 0,
                            gp = gpar(col = "gold3", fontsize = 18))) 
 grob2 <- grobTree(textGrob("Production", x = 0.68, y = 0.86, hjust = 0,
                            gp = gpar(col = "darkgreen", fontsize = 18)))
-grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.28, y = 0.51, hjust = 0,
+grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.24, y = 0.51, hjust = 0,
                            gp = gpar(col = "black", fontsize = 18))) 
 
 
@@ -1057,28 +1149,43 @@ grob3 <- grobTree(textGrob("Energy Equivalence", x = 0.28, y = 0.51, hjust = 0,
 # compare slopes
 slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'), 
                  aes(x = fg, y = q50, ymin = q025, ymax = q975, fill =  variable, color =variable)) +
+  theme_plant() +
   geom_hline(yintercept = 0, linetype = 'dashed', size = .75) +
   geom_errorbar(position = position_dodge(width = 0.6), size = 0.75, width = 0) +
-  geom_point( position = position_dodge(width = 0.6), shape = 21, size = 3.5, color = "black", stroke = 0.5) +
+  geom_point(position = position_dodge(width = 0.6), shape = 21, size = 3.5, color = "black", stroke = 0.5) +
   geom_errorbar(data = allslopes %>% filter(fg %in% c('Tall', 'Slow', 'All')), 
                 position = position_dodge(width = 0.6), size = 0.75, width = 0) +
-  labs( x = NULL, y = 'Scaling Slope') +
-  scale_y_continuous(limits = c(-1.05, 1.3)) +
+  scale_y_continuous(position = "right", ) +
+  labs(x = NULL) +
+  scale_y_continuous(name = "Scaling Slope", position = "right", limits = c(-1.05, 1.3)) +
   scale_fill_manual(values = c('gold1', 'darkolivegreen3')) +
   scale_color_manual(values = c('gold3', 'darkgreen')) +
-  theme_plant() + 
   theme(axis.text.x = element_text(angle = 25,  vjust = .7, face = "italic", size = 18)) +
   annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3) #+annotation_custom(grob0)
 slopes
 
 g_slopes <- ggplotGrob(slopes)
-
+g_tot_light <- ggplotGrob(p_tot_light)
 combo <- rbind(g_tot_light, g_slopes, size = "first")
 combo$widths <- unit.pmax(g_tot_light$widths,g_slopes$widths)
 grid.newpage()
 grid.draw(combo)
 
 
+g_hex <- ggplotGrob(light_hex)
+g_light <- ggplotGrob(combo)
+new<- cbind(light_hex,combo, size = "first")
+
+combo <- cbind(g_tot_light, g_slopes, size = "first")
+new$heights <- unit.pmax(new$widths, new$widths)
+ggsave(combo, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Symmetry/combo3.pdf'))
+grid.draw(new)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Symmetry/light_combo2.pdf'), 
+                    file.path(gdrive_path2,'Figures/Symmetry/light_combo2.pdf')) 
+)
 #------------- Richness vs abundance
 
 
@@ -1088,8 +1195,7 @@ grid.draw(combo)
                   breaks = c(0.01,  1,  100,  10000),
                   labels = c("0.01",  "1", "100", "10,000"),
                   #labels = signif,
-                  limit = c(0.01, 70000)
-    ) + 
+                  limit = c(0.01, 70000)) + 
     scale_y_log10(labels = signif,
                   limit = c(0.01, 2000), 
                   position = "left",
@@ -1097,21 +1203,21 @@ grid.draw(combo)
     theme_plant() +
     geom_ribbon(data = fitted_richnessvsabundance_filt %>% 
                   filter(!fg %in% 'unclassified'),# %>%
-                #  arrange(desc(fg)),
+                 # arrange(desc(fg)),
                 aes(ymin = q025, ymax = q975), alpha = 0.2, col = NA) + 
     geom_line(data = fitted_richnessvsabundance_filt %>% 
                 filter(!fg %in% 'unclassified') %>%
-                arrange(desc(fg)),
+                #arrange(desc(fg)),
               aes(y = q50), size = 0.5) +
     geom_jitter(data = obs_richnessbydiameter %>% 
                   filter(n_individuals > 0) %>%
                   filter(!fg %in% 'unclassified' & richness > 0) %>% #  & n_individuals >= 20
-                  arrange(desc(fg)), 
+                 # arrange(desc(fg)), 
                 aes(y = richness_by_bin_width, fill = fg, color = fg),
-                shape = 21, size = 3.5, color = "black", width = 0.1) +
+                shape = 21, size = 3.5, color = "black", width = 0) +
     scale_fill_manual(values = guild_fills2) +
     scale_color_manual(values = guild_colors2) +
-    theme_plant()
+    theme(axis.title.y = element_text(vjust = -3)) 
 ) #+
 
 
@@ -1119,13 +1225,13 @@ p1 <- set_panel_size(rich_abun, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Symmetry/rich_diam2.pdf'))
+pdf(file.path(gdrive_path,'Figures/Symmetry/rich_diam3.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Richness/rich_diam2.pdf'), 
-                    file.path(gdrive_path2,'Figures/Richness/rich_diam2.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Symmetry/rich_diam3.pdf'), 
+                    file.path(gdrive_path2,'Figures/Symmetry/rich_diam3.pdf')) 
 )
 
 #--------- combine plots
@@ -1136,11 +1242,11 @@ combo$widths <- unit.pmax(g_rich_abun$widths,g_slopes$widths)
 grid.newpage()
 grid.draw(combo)
 
-ggsave(combo, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Symmetry/combo2.pdf'))
+ggsave(combo, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Symmetry/combo3.pdf'))
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Symmetry/combo2.pdf'), 
-                    file.path(gdrive_path2,'Figures/Symmetry/combo2.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Symmetry/combo3.pdf'), 
+                    file.path(gdrive_path2,'Figures/Symmetry/combo3.pdf')) 
 )
 
 
@@ -2398,8 +2504,8 @@ theme_facet2 <- function ()
 
 #obs_light_raw$fg <- factor(obs_light_raw$fg, levels = c(paste0('fg', 1:5), 'unclassified'),
  #                          labels = c("Fast", "Pioneer", "Slow", "Breeder", "Medium", "Unclassified"))
-#pred_light_5groups$fg <- factor(pred_light_5groups$fg, levels = c(paste0('fg', 1:5)),
- #                               labels = c("Fast", "Pioneer", "Slow", "Breeder", "Medium"))
+pred_light_5groups$fg <- factor(pred_light_5groups$fg, levels = c(paste0('fg', 1:5)),
+                                labels = c("Fast", "Pioneer", "Slow", "Breeder", "Medium"))
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
                                              trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000), 
                                              labels = c(1,10,100,1000), limits=c(1,5000))
@@ -2842,13 +2948,8 @@ indiv_light <- ggplot() +
   geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received)) +
   hex_scale_log_colors +
   geom_pointrange(data = unscaledlightbydbhcloudbin_fg %>% filter(fg %in% 'all'), 
-                  aes(x = dbh_bin, y = q50, ymin = q25, ymax = q75)) +
-  geom_pointrange(data = unscaledlightbydbhcloudbin_fg %>% filter(fg %in% 'all'), 
-                  aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
-  scale_x_log10(name = exd, limits = c(.9, 200)) +
-  scale_y_log10(name = exl, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), 
-                labels = trans_format("log10", math_format(10^.x))) +
-  theme_plant() + theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
+                  aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
+  theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
   hex_scale_log_colors +
   theme_no_x() +
   guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
@@ -2889,7 +2990,7 @@ tot_light <- plot_totalprod(year_to_plot = 1995,
 
 
 tot_light2 <- tot_light  + 
-  scale_y_continuous(position = "left", trans = "log10", 
+  scale_y_continuous(position = "right", trans = "log10", 
                      breaks = c(100, 1000, 10000, 100000),
                      labels = c("0.1", "1", "10", "100"), 
                      limits = c(200, 200000),
