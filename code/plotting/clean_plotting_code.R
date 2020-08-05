@@ -154,8 +154,8 @@ grob_text_c <- grobTree(textGrob("C", x = 0.05, y = 0.95, gp = gpar(col = "black
 geom_size = 2
 
 area <- ggplot() +
-  geom_point(alpha = 0.01, data = alltree_light_95, 
-                           aes(x = dbh_corr, y = light_received_byarea), color = 'chartreuse3') +
+ # geom_point(alpha = 0.01, data = alltree_light_95, 
+  #                         aes(x = dbh_corr, y = light_received_byarea), color = 'chartreuse3') +
   #geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all'), 
    #               aes(x = dbh_bin, y = mean, ymin = q25, ymax = q75)) +
   geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all', dbh_bin < 156), 
@@ -974,6 +974,12 @@ rich2_lms <- obs_richnessbydiameter %>%
 filter(rich2_lms, term != '(Intercept)') # note: 'estimate' = slope
 tidy(rich2_lms)
 
+# more concise
+obs_richnessbydiameter %>%
+  filter(n_individuals > 0) %>%
+  group_by(fg) %>%
+  group_modify(~ broom::tidy(lm(log(richness_by_bin_width) ~ log(abundance_by_bin_width), data = .x), conf.int = T)) %>%
+  filter(term != '(Intercept)')
 ########################################################################################
 # ------------------------------- Fig 5 Symmetry Plots ------------------------------------
 ########################################################################################
