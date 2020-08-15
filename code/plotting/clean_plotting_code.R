@@ -126,6 +126,7 @@ for (i in dir(fp, pattern = 'pred_|fitted_')) {
 #### Extract model output to get the fitted values, slopes, etc.
 load(file.path(gdrive_path, 'data/data_piecewisefits/fits_bylight_forratio.RData'))
 load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
+load(file.path(gdrive_path, 'data/data_forplotting/light_scaling_plotting_data.RData'))
 
 # source the extra extraction functions that aren't in the package
 source(file.path(github_path, 'forestscalingworkflow/R_functions/model_output_extraction_functions.r'))
@@ -178,6 +179,12 @@ pdf(file.path(gdrive_path,'Figures/Light_Individual/light_area2.pdf'))
 grid.draw(p1)
 dev.off()
 
+
+hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
+                                             trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
+                                             labels = c(1,10,100,1000,10000), limits=c(1,10000))
+
+alpha_value <- 1
 
 area_hex <- ggplot() +
   theme_plant() +
@@ -520,22 +527,22 @@ unique(fitted_mort_trunc$fg)
 
 #---  Plot mortality vs light
 p <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
-  #geom_ribbon(aes(x = light_per_area, ymin = q025/5, ymax = q975/5, group = fg, fill = fg), alpha = 0.4) +
-  geom_line(aes(x = light_per_area, y = q50/5, group = fg, color = fg)) +
-  #geom_point(data = bin_mort %>% 
-              # filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), 
-              #        (lived+died) >= 20)  %>% 
-              # mutate(fg = factor(fg, labels = fg_labels)),
-            # aes(x = bin_midpoint, y = mortality/5, fill = fg),
-             #shape = 21, size = geom_size) +
+  geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
+  geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
+  geom_point(data = bin_mort %>% 
+               filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), 
+                      (lived+died) >= 20)  %>% 
+               mutate(fg = factor(fg, labels = fg_labels)),
+             aes(x = bin_midpoint, y = mortality, fill = fg),
+             shape = 21, size = geom_size) +
   scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), 
                 breaks = c(3, 30, 300), 
                 limits = c(1.5, 412)
                 ) +
   scale_y_continuous(trans = "logit", position = "right", 
-                     breaks = c(0.01, 0.03, 0.1), 
-                     labels = c(0.01, 0.03, 0.1), 
-                     limits = c(0.005, 0.15),
+                     breaks = c(0.03, 0.1, 0.3, 0.6), 
+                     labels =  c(0.03, 0.1, 0.3, 0.6), 
+                     limits = c(0.02, 0.7),
                 name = expression(paste("Mortality (yr"^-1,")"))) +
   scale_color_manual(values = guild_colors) +
   scale_fill_manual(values = guild_fills) +
@@ -1188,9 +1195,30 @@ system2(command = "pdfcrop",
 )
 #------------- Richness vs abundance
 
+max_size_fg <- obs_richnessbydiameter %>%
+  filter(n_individuals > 0) %>%
+  group_by(fg) %>%
+  summarize(max_size = max(abundance_by_bin_width)) 
 
+min_size_fg <- obs_richnessbydiameter %>%
+  filter(n_individuals > 0) %>%
+  group_by(fg) %>%
+  summarize(min_size = min(abundance_by_bin_width)) 
 
-(rich_abun <- ggplot(mapping = aes(x = abundance_by_bin_width, col = fg, fill = fg)) + 
+fitted_richnessvsabundance_filt <- fitted_richnessvsabundance %>%
+  left_join(max_size_fg, by = "fg") %>%
+  left_join(min_size_fg, by = "fg") %>%
+  group_by(fg) %>% 
+  filter(abundance_by_bin_width >= min_size) %>%
+  filter(abundance_by_bin_width <= max_size)
+
+library(forcats)
+#obs_richnessbydiameter$fg = with(obs_richnessbydiameter, reorder("fg5", "all", "fg4", "fg3", "fg2", "fg1"))
+str(obs_richnessbydiameter2$fg)
+#obs_richnessbydiameter2 <- obs_richnessbydiameter %>%
+ # filter(fg != "unclassified") %>%
+  #mutate(fg = factor(fg, levels=c("fg5", "all", "fg4", "fg3", "fg2", "fg1")))
+(rich_abun <- ggplot(mapping = aes(x = abundance_by_bin_width, fill = fg, color = fg)) + 
     scale_x_log10(name = expression(paste("Abundance (cm"^-1,")")),
                   breaks = c(0.01,  1,  100,  10000),
                   labels = c("0.01",  "1", "100", "10,000"),
@@ -1200,38 +1228,40 @@ system2(command = "pdfcrop",
                   limit = c(0.01, 2000), 
                   position = "left",
                   name = expression(paste("Richness (cm"^-1,")"))) +
-    theme_plant() +
     geom_ribbon(data = fitted_richnessvsabundance_filt %>% 
-                  filter(!fg %in% 'unclassified'),# %>%
-                 # arrange(desc(fg)),
-                aes(ymin = q025, ymax = q975), alpha = 0.2, col = NA) + 
+                  filter(!fg %in% 'unclassified') %>%
+                  arrange(desc(fg)),
+                aes(ymin = q025, ymax = q975, fill = fg, color = NA), alpha = 0.2, col = NA) + 
     geom_line(data = fitted_richnessvsabundance_filt %>% 
                 filter(!fg %in% 'unclassified') %>%
-                #arrange(desc(fg)),
-              aes(y = q50), size = 0.5) +
+                arrange(desc(fg)),
+              aes(y = q50, color = fg), size = 0.5) +
     geom_jitter(data = obs_richnessbydiameter %>% 
                   filter(n_individuals > 0) %>%
-                  filter(!fg %in% 'unclassified' & richness > 0) %>% #  & n_individuals >= 20
-                 # arrange(desc(fg)), 
-                aes(y = richness_by_bin_width, fill = fg, color = fg),
-                shape = 21, size = 3.5, color = "black", width = 0) +
+                  filter(!fg %in% 'unclassified' & richness > 0)  %>% #  & n_individuals >= 20
+                  arrange(desc(fg)), 
+                aes(y = richness_by_bin_width),
+                shape = 21, size = 3.5, color = "black", width = 0)  +
+    theme_plant() +
     scale_fill_manual(values = guild_fills2) +
     scale_color_manual(values = guild_colors2) +
-    theme(axis.title.y = element_text(vjust = -3)) 
-) #+
+    theme(axis.title.y = element_text(vjust = -3))
+)
+#+#fill = c("fg5" = "gray93", "all" = "black", "fg4" =  "#87Cefa", "fg3" = "#27408b", "fg2" = "#267038", "fg1" = "#BFE046"),
+ #color = c("fg5" = "gray", "all" = "black", "fg4" =  "#87Cefa", "fg3" = "#27408b", "fg2" = "#267038", "fg1" = "#BFE046")),
 
 
-p1 <- set_panel_size(rich_abun, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p1 <- set_panel_size(rich_abun, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Symmetry/rich_diam3.pdf'))
+pdf(file.path(gdrive_path,'Figures/Rich_abun/rich_abun.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Symmetry/rich_diam3.pdf'), 
-                    file.path(gdrive_path2,'Figures/Symmetry/rich_diam3.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Rich_abun/rich_abun.pdf'), 
+                    file.path(gdrive_path2,'Figures/Rich_abun/rich_abun.pdf')) 
 )
 
 #--------- combine plots
@@ -1605,22 +1635,6 @@ fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
   filter(dbh <= max_dbh, dbh >= min_dbh)
 
 
-max_size_fg <- obs_richnessbydiameter %>%
-  filter(n_individuals > 0) %>%
-  group_by(fg) %>%
-  summarize(max_size = max(abundance_by_bin_width)) 
-
-min_size_fg <- obs_richnessbydiameter %>%
-  filter(n_individuals > 0) %>%
-  group_by(fg) %>%
-  summarize(min_size = min(abundance_by_bin_width)) 
-
-fitted_richnessvsabundance_filt <- fitted_richnessvsabundance %>%
-  left_join(max_size_fg, by = "fg") %>%
-  left_join(min_size_fg, by = "fg") %>%
-  group_by(fg) %>% 
-  filter(abundance_by_bin_width >= min_size) %>%
-  filter(abundance_by_bin_width <= max_size)
 
 #-----  labels ------------------------
 library(mgcv)
@@ -2951,7 +2965,7 @@ indiv_light <- ggplot() +
                   aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
   theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
   hex_scale_log_colors +
-  theme_no_x() +
+  #theme_no_x() +
   guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
 indiv_light 
 
@@ -3205,7 +3219,7 @@ system2(command = "pdfcrop",
 )
 
 
-#------------ Fig S15b: GAbundance with light
+#------------ Fig S15b: Abundance with light
 
 l_abun<- ggplot() +
   geom_ribbon(data = dens_pred_dat_lightarea %>% filter(light_area >= 7), 
