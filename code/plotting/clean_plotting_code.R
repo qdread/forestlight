@@ -469,30 +469,33 @@ error_bar_width <- 0.04
 
 # Do some additional computation to correct the error bar width for the number of groups in each bin
 obs_light_binned_plotdata <- obs_light_binned %>% 
-  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg2', 'fg3', 'fg1'))) %>%
+  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2', 'fg1'))) %>%
   filter(year == year_to_plot, mean_n_individuals >= 20, !fg %in% c('alltree', 'unclassified')) %>%
   group_by(bin_midpoint, year) %>% 
   mutate(width = sum(c('fg1','fg2','fg3','fg4','fg5') %in% fg)) %>% 
   ungroup
-
-#----- Plot Growth vs Light
-Fig_3b  <- ggplot(obs_light_binned_plotdata) +
-  geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
-              aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.4) +
-  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot),
-            aes(x = light_area, y = q50, color = fg)) +
-  #geom_errorbar(aes(x = bin_midpoint, ymin = q25, ymax = q75, 
-   #                 group = fg, color = fg, width = 0), #width = error_bar_width * width), 
+pred_light_5groups <- pred_light_5groups %>%
+  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2', 'fg1'))) 
+guild_lookup
+#no jitter
+(Fig_3b  <- ggplot(obs_light_binned_plotdata) +
+    geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
+                aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.4) +
+    geom_line(data = pred_light_5groups %>% filter(year == year_to_plot),
+              aes(x = light_area, y = q50, color = fg)) +
+    #geom_errorbar(aes(x = bin_midpoint, ymin = q25, ymax = q75, 
+    #                 group = fg, color = fg, width = 0), #width = error_bar_width * width), 
     #            position = position_dodge(width = dodge_width)) + 
-  geom_point(aes(x = bin_midpoint, y = mean, group = fg, fill = fg),
-             size = 4, shape = 21, position = position_dodge(width = dodge_width)) +
-  scale_x_log10(name = title_x, limits = c(1.5, 412)) + 
-  scale_y_log10(name = title_y, position = "right", breaks = c(0.01, 0.03, 0.1, 0.3), 
-                labels = c( 0.01, 0.03, 0.1, 0.3)) +
-  scale_color_manual(name = 'Functional group', values = guild_fills, labels = fg_labels) +
-  scale_fill_manual(values = guild_fills, labels = fg_labels, guide = FALSE) +
-  theme_no_x() + theme_plant2
-Fig_3b 
+    geom_point(aes(x = bin_midpoint, y = mean, group = fg, fill = fg), # position = position_dodge(width = dodge_width)) +
+               size = 4, shape = 21) +
+    scale_x_log10(name = title_x, limits = c(1.5, 412)) + 
+    scale_y_log10(name = title_y, position = "right", breaks = c(0.01, 0.03, 0.1, 0.3), 
+                  labels = c( 0.01, 0.03, 0.1, 0.3)) +
+    scale_color_manual(name = 'Functional group', values = guild_fills, labels = fg_labels) +
+    scale_fill_manual(values = guild_fills, labels = fg_labels, guide = FALSE) +
+    theme_no_x() + theme_plant2)
+
+
 
 p2 <- set_panel_size(Fig_3b, width = unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
@@ -502,6 +505,10 @@ pdf(file.path(gdrive_path, "Figures/Life_History/LH_b-2.pdf"))
 grid.draw(p2)
 dev.off()
 
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/Life_History/LH_b-2.pdf'), 
+                  file.path(gdrive_path2,'Figures/Life_History/LH_b-2.pdf')) 
+)
 
 #----------------------- Fig 3c: Mortality vs Light -----
 
@@ -511,22 +518,22 @@ fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortalit
 growth_diam <-  read_csv(file.path(gdrive_path, 'data/clean_summary_tables/clean_parameters_individualdiametergrowth.csv')) 
 
 # Truncate fitted mortality lines to not exceed the range of the observed data, using 20 individuals as the cutoff.
-bin_mort <- bin_mort %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg2', 'fg3', 'fg1')))
+bin_mort <- bin_mort %>% arrange(factor(fg, levels = c('all', 'fg5','fg4', 'fg3', 'fg2','fg1')))
 obs_range_mort <- bin_mort %>% 
-  arrange(factor(fg, levels = c('fg5','fg4','fg2', 'fg3', 'fg1'))) %>%
+  arrange(factor(fg, levels = c('fg5','fg4', 'fg3', 'fg2','fg1'))) %>%
   filter(variable %in% 'light_per_area', lived + died >= 20) %>%
   group_by(fg) %>%
   summarize(min_obs = min(bin_midpoint), max_obs = max(bin_midpoint))
 
 fitted_mort_trunc <- fitted_mort %>%
-  arrange(factor(fg, levels = c('fg5','fg4','fg2', 'fg3', 'fg1'))) %>%
+  arrange(factor(fg, levels = c('fg5','fg4', 'fg3', 'fg2','fg1'))) %>%
   left_join(obs_range_mort) %>%
   left_join(guild_lookup) %>%
   filter(light_per_area >= min_obs & light_per_area <= max_obs)
 unique(fitted_mort_trunc$fg)
 
 #---  Plot mortality vs light
-p <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
+(p <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
   geom_point(data = bin_mort %>% 
@@ -534,7 +541,7 @@ p <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labe
                       (lived+died) >= 20)  %>% 
                mutate(fg = factor(fg, labels = fg_labels)),
              aes(x = bin_midpoint, y = mortality, fill = fg),
-             shape = 21, size = geom_size) +
+             shape = 21, size = 4) +
   scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), 
                 breaks = c(3, 30, 300), 
                 limits = c(1.5, 412)
@@ -546,7 +553,7 @@ p <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labe
                 name = expression(paste("Mortality (yr"^-1,")"))) +
   scale_color_manual(values = guild_colors) +
   scale_fill_manual(values = guild_fills) +
-  theme_plant()
+  theme_plant())
 
 
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
@@ -562,27 +569,12 @@ system2(command = "pdfcrop",
                   file.path(gdrive_path2,'Figures/Life_History/LH_c.pdf')) 
 )
 
-ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
-  geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
-  geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
-  geom_point(data = bin_mort %>% 
-               filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), 
-                      (lived+died) >= 20)  %>% 
-               mutate(fg = factor(fg, labels = fg_labels)),
-             aes(x = bin_midpoint, y = mortality, fill = fg),
-             shape = 21, size = geom_size) +
-  scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), 
-                breaks = c(3, 30, 300), 
-                limits = c(1.5, 412)
-  ) +
-  scale_y_continuous(trans = "logit", position = "right", 
-                     breaks = c(0.01, 0.03, 0.1), 
-                     labels = c(0.01, 0.03, 0.1), 
-                     #limits = c(0.005, 0.15),
-                     name = expression(paste("Mortality (yr"^-1,")"))) +
-  scale_color_manual(values = guild_colors) +
-  scale_fill_manual(values = guild_fills) +
-  theme_plant()
+#crop combined plot
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/Life_History/life_history.pdf'), 
+                  file.path(gdrive_path2,'Figures/Life_History/life_history.pdf')) 
+)
+
 ################################################################################################
 # ------------------------ Fig 4: Main Scaling Plots --------------------------------
 ################################################################################################
@@ -1069,7 +1061,7 @@ fitted_totallight <- read.csv(file.path(fp, 'fitted_totallight.csv'), stringsAsF
 indivlightbins_fg <- read.csv(file.path(fp, 'obs_indivlight.csv'), stringsAsFactors = FALSE)
 totallightbins_fg <- read.csv(file.path(fp, 'obs_totallight.csv'), stringsAsFactors = FALSE)
 
-str
+
 # Fig 5a      
 
 # Plot
@@ -2518,8 +2510,8 @@ theme_facet2 <- function ()
 
 #obs_light_raw$fg <- factor(obs_light_raw$fg, levels = c(paste0('fg', 1:5), 'unclassified'),
  #                          labels = c("Fast", "Pioneer", "Slow", "Breeder", "Medium", "Unclassified"))
-pred_light_5groups$fg <- factor(pred_light_5groups$fg, levels = c(paste0('fg', 1:5)),
-                                labels = c("Fast", "Pioneer", "Slow", "Breeder", "Medium"))
+#pred_light_5groups$fg <- factor(pred_light_5groups$fg, levels = c(paste0('fg', 1:5)),
+ #                               labels = c("Fast", "Pioneer", "Slow", "Breeder", "Medium"))
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
                                              trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000), 
                                              labels = c(1,10,100,1000), limits=c(1,5000))
@@ -2527,17 +2519,26 @@ hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RCol
 unique(obs_light_raw$fg)
 growth_light_hex<- ggplot(obs_light_raw %>% filter(year == year_to_plot, fg %nin% c('alltree','unclassified'))) +
   facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
-  geom_hex(aes(x = light_area, y = production_area)) +
   #geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
-  #          aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
-  geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
-            aes(x = light_area, y = q50), size = 1, color = 'black') +
+  #        aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
+ # geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
+  #          aes(x = light_area, y = q50, group = fg), size = 1, color = 'black') +
+  
   scale_x_log10(name = title_x) + 
-  scale_y_log10(name = title_y, labels=signif) +
+  scale_y_log10(name = title_y, labels = signif) +
   hex_scale_log_colors + 
   theme_plant_small() +
+  geom_hex(aes(x = light_area, y = production_area)) +
   theme(strip.text = element_text(size=14))+
+  facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
   guides(color = FALSE) +
+  #geom_point(data = pred_light %>% filter(year == year_to_plot, fg %nin% c('alltree','unclassified')), 
+   #         aes(x = light_area, y = q50, group = fg), size = 0.5, color = 'black') +
+  geom_line(data = pred_light %>% filter(year == year_to_plot, fg %nin% c('alltree','unclassified')), 
+            aes(x = light_area, y = q50, group = fg), size = 0.5, color = 'black') +
+  geom_point(data = obs_light_binned %>% 
+               filter(year == year_to_plot, !fg %in% c('alltree', 'unclassified')),
+             shape=21, size = 1.5,fill = "black", aes(x = bin_midpoint, y = mean)) +
   theme(panel.border = element_rect(fill=NA),
         strip.background = element_rect(fill=NA),
         legend.position = c(0.7, 0.15),
@@ -2545,15 +2546,17 @@ growth_light_hex<- ggplot(obs_light_raw %>% filter(year == year_to_plot, fg %nin
         legend.title=element_text(size=15))
 growth_light_hex
 
-
 pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/growth_light_hex.pdf"))
 growth_light_hex
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path,'Figures/Supplementals/Growth_light/growth_light_hex.pdf'), 
-                    file.path(gdrive_path,'Figures/Supplementals/Growth_light/growth_light_hex.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Supplementals/Growth_light/growth_light_hex.pdf'), 
+                    file.path(gdrive_path2,'Figures/Supplementals/Growth_light/growth_light_hex.pdf')) 
 )
+
+
+
 #-----------------------------------------------------------------------------
 #------------------------ Fig S5: Mean Growth with Light
 #------------------------------------------------------------------------------
@@ -2631,7 +2634,7 @@ system2(command = "pdfcrop",
 # Remove all tree and unclassified groups
 param_ci$fg <- factor(param_ci$fg ,levels = c("fg1", "fg2", "fg5", "fg4", "fg3"))
 guild_labels2_ <- c("Fast", "Tall", "Medium", "Short", "Slow")
-growth_slope <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
+(growth_slope <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, parameter %in% 'log_slope', !fg %in% c('alltree','unclassified')),
        aes(x = fg, y = mean, ymin = q025, ymax = q975)) + 
   geom_errorbar(width = 0) + geom_point(size = 4) +
   theme(axis.text.x = element_text(angle = 25,  vjust = 0.7))+
@@ -2639,8 +2642,9 @@ growth_slope <- ggplot(param_ci %>% filter(fg != 'NA', year == year_to_plot, par
   scale_y_continuous(expression(atop('Max. Growth Responsiveness',paste('to Light (kg yr'^-1, ' W'^-1,')'))), 
                      limits = c(0.65, 1.1),
                      breaks = seq(0, 1.1, 0.1), labels = seq(0, 1.1, 0.1)) +
-  theme_plant_small() + theme(aspect.ratio = 0.75) + annotation_custom(grob_b)
-growth_slope 
+  theme_plant_small() + theme(aspect.ratio = 0.75) + annotation_custom(grob_b) )
+
+  growth_slope 
 pdf(file.path(gdrive_path, "Figures/Supplementals/Growth_light/max_g_light_slope.pdf"))
 p
 dev.off()
@@ -2762,14 +2766,27 @@ raw_prod <- do.call(rbind, map2(alltreedat, seq(1985,2010,5), function(x, y) cbi
 
 raw_prod <- raw_prod %>%
   mutate(fg = if_else(!is.na(fg), paste0('fg', fg), 'unclassified'))
-
+str(raw_prod)
 
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
                                              trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
                                              labels = c(1,10,100,1000,10000), limits=c(1,10000))
 
+pos = 0
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
+fp <- file.path(gdrive_path, 'data/data_forplotting')
 
-plot_prod_withrawdata2 <- function (year_to_plot = 1995, 
+for (i in dir(fp, pattern = 'obs_')) {
+  n <- gsub('.csv','',i)
+  assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
+}
+
+
+for (i in dir(fp, pattern = 'pred_|fitted_')) {
+  n <- gsub('.csv','',i)
+  assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
+}
+plot_prod_withrawdata2 <- function(year_to_plot = 1995, 
                                     fg_names = c("fg1", "fg2", "fg3", "fg4", "fg5", "unclassified"), 
                                     full_names = c("Fast", "Slow", "Pioneer", "Breeder", "Medium", "Unclassified"), 
                                     func_names = c("power law"), #, "2-segment power law"),
@@ -2808,12 +2825,17 @@ plot_prod_withrawdata2 <- function (year_to_plot = 1995,
                                       labels = func_names)) %>%
     arrange(desc(fg))
   labels <- setNames(full_names, fg_names)
+  
   p <- ggplot2::ggplot() + 
     ggplot2::geom_hex(data = obsdat, ggplot2::aes(x = dbh_corr, y = production)) + 
     ggplot2::facet_wrap(~fg, ncol = 2, labeller = ggplot2::labeller(fg = labels)) + 
     ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
     ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks) + 
     ggplot2::scale_linetype_manual(name = "Growth fit", values = line_types) + 
+    ggplot2::geom_point(data = obs_indivprod %>% filter(year == "1995", fg != "all"),
+                        aes(x = bin_midpoint,  y = mean), 
+                        color = "black", fill = "black", shape = 21, size = 1.5) + 
+   
     hex_scale + 
     theme_plant_small() + 
     ggplot2::coord_fixed(ratio = aspect_ratio) + 
@@ -2841,7 +2863,7 @@ p <- plot_prod_withrawdata2(year_to_plot = 1995,
                             hex_scale = hex_scale_log_colors,
                             plot_abline = FALSE,
                             plot_fits = TRUE)
-
+p
 p <- p + theme(legend.position = 'right', legend.text = element_text(size = 13), 
                legend.title = element_text(size = 15)) + 
   scale_y_log10(labels = c(0.01, 1, 100), 
@@ -2853,7 +2875,10 @@ pdf(file.path(gdrive_path, 'Figures/Supplementals/Growth_Hex/growth_hex.pdf'))
 p
 dev.off()
 
-
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Supplementals/Growth_Hex/growth_hex.pdf'), 
+                    file.path(gdrive_path2,'Figures/Supplementals/Growth_Hex/growth_hex.pdf')) 
+)
 #-------------------------------------------------------------------------------
 # ------------------------   Fig S9: Growth WAIC of Piecewise Models  -----------
 #-------------------------------------------------------------------------------
@@ -2962,10 +2987,11 @@ indiv_light <- ggplot() +
   geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received)) +
   hex_scale_log_colors +
   geom_pointrange(data = unscaledlightbydbhcloudbin_fg %>% filter(fg %in% 'all'), 
-                  aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
+                  aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean), size = .5) +
   theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
   hex_scale_log_colors +
-  #theme_no_x() +
+  geom_smooth(data = alltree_light_95, aes(x = dbh_corr, y = light_received),
+              method = "lm", color = "black", size = .7) +
   guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
 indiv_light 
 
