@@ -1374,37 +1374,41 @@ scale_short_tall2<- scale_fill_gradientn(colours = short_tall_fill2,
                    fill = production_ratio),
                shape = 21, stroke = 0.5, 
                #size = 4.5, 
-               size = 4.5, 
+               size = 4, 
                color = "black") +
-    scale_fast_slow2 +
-    scale_x_log10(limits = c(2, 300), breaks = c(3, 30, 300), 
-                  #position = "bottom", 
-                  position = "top", 
+    scale_fast_slow +
+    scale_x_log10(limits = c(1, 500), breaks = c(3, 30, 300), 
+                  position = "bottom", 
+                  #position = "top", 
                   expression(paste('Light per Crown Area (W m'^-2,')'))) + 
     scale_y_log10(labels = signif, breaks = c( 0.1, 1, 10, 100, 1000), 
                   limits=c(0.02, 200),
                   position = "left",
+                  #position = "right",
                   name = expression("Production Ratio")) + 
     #theme_no_y() + 
     #theme_no_x() +
-    #theme_plant_small() 
-    theme_plant()
+    theme_plant_small() 
+    #theme_plant()
   
 )
 
 
 p1 <- set_panel_size(prod_ratio_fs, width=unit(10.25,"cm"), height=unit(5,"cm"))
+
+p1 <- set_panel_size(prod_ratio_fs, width=unit(3.3,"cm"), height=unit(10.25,"cm"))
+
 grid.newpage()
 grid.draw(p1)
 
 
-pdf(file.path(gdrive_path,'Figures/Ratios/prod_ratio_fs2.pdf'))
+pdf(file.path(gdrive_path,'Figures/Ratios/prod_ratio_fs3.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Ratios/prod_ratio_fs2.pdf'), 
-                    file.path(gdrive_path2,'Figures/Ratios/prod_ratio_fs2.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Ratios/prod_ratio_fs3.pdf'), 
+                    file.path(gdrive_path2,'Figures/Ratios/prod_ratio_fs3.pdf')) 
 )
 
 #p1 <- set_panel_size(prod_ratio_fs2, width=unit(10.25,"cm"), height=unit(7,"cm"))
@@ -1429,15 +1433,16 @@ system2(command = "pdfcrop",
                aes(x = bin_midpoint, y =production_ratio, 
                    fill = production_ratio),
                shape = 21, stroke = 0.5, 
-               size = 4.5, 
+               size = 4, 
                #size = 4.5, 
                color = "black") +
-    scale_tall_short2 +
-    scale_x_log10(limits = c(2, 300), breaks = c(3, 30, 300), 
-                  position = "top", 
+    scale_short_tall +
+    scale_y_log10(limits = c(1, 500), breaks = c(3, 30, 300), 
+                  position = "bottom", 
                   expression(paste('Light per Crown Area (W m'^-2,')'))) + 
-    scale_y_log10(labels = signif, breaks = c(0.1, 1, 10, 100, 1000), 
+    scale_x_log10(labels = signif, breaks = c(0.1, 1, 10, 100, 1000), 
                   limits=c(0.02, 200),
+                  position= "right",
                   name = expression("Production Ratio")) + 
     theme_no_y() + theme_no_x() +
     theme_plant_small() 
@@ -1449,18 +1454,21 @@ p1 <- set_panel_size(prod_ratio_st, width=unit(10.25,"cm"), height=unit(5,"cm"))
 grid.newpage()
 grid.draw(p1)
 
+p1 <- set_panel_size(prod_ratio_st, width=unit(3.3,"cm"), height=unit(10.25,"cm"))
+grid.newpage()
+grid.draw(p1)
 #p1 <- set_panel_size(prod_ratio_st, width=unit(10.25,"cm"), height=unit(7,"cm"))
 #grid.newpage()
 #grid.draw(p1)
 
 
-pdf(file.path(gdrive_path,'Figures/Ratios/prod_ratio_st2.pdf'))
+pdf(file.path(gdrive_path,'Figures/Ratios/prod_ratio_st3.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Ratios/prod_ratio_st2.pdf'), 
-                    file.path(gdrive_path2,'Figures/Ratios/prod_ratio_st2.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Ratios/prod_ratio_st3.pdf'), 
+                    file.path(gdrive_path2,'Figures/Ratios/prod_ratio_st3.pdf')) 
 )
 #----------------------------- Fig 6B Abundance by Diameter ----------------------------
 dens_ratio2 <- prod_ratio_diam %>% 
@@ -1501,18 +1509,21 @@ dens_ratio
                  filter(n_individuals >= 20, density_ratio > 0, ID == "Short-Tall"),
                aes(x = bin_midpoint, y = density_ratio, 
                    fill = density_ratio),
-               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
-    scale_all_short +
+               shape = 21, stroke = 0.5, 
+               #size = 4.5, 
+               size = 4,
+               color = "black") +
+    scale_short_tall +
     scale_x_log10(limits = c(1, 100), breaks = c(1, 10, 100), 
-                  position = "top", 
-                  name = expression(paste('Diameter (cm)'))) + 
+                  position = "bottom", 
+                  name = expression(paste('Tree Size (cm)'))) + 
     scale_y_log10(labels = signif, breaks = c(0.1, 1, 10, 100), 
                   limits=c(0.02, 200),
                   name = NULL) + 
     # name = expression("Density Ratio")) + 
     theme_no_y() + 
-    #theme_no_x() +
-    theme_plant() 
+    theme_no_x() +
+    theme_plant_small() 
 )
 
 
@@ -1520,13 +1531,17 @@ p1 <- set_panel_size(dens_ratio_st, width=unit(10.25,"cm"), height=unit(5,"cm"))
 grid.newpage()
 grid.draw(p1)
 
+p1 <- set_panel_size(dens_ratio_st, width=unit(3.3, "cm"), height=unit(10.25,"cm"))
+grid.newpage()
+grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Ratios/dens_ratio_short_tall.pdf'))
+pdf(file.path(gdrive_path,'Figures/Ratios/dens_ratio_short_tall3.pdf'))
 grid.draw(p1)
 dev.off()
+
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Ratios/dens_ratio_short_tall.pdf'), 
-                    file.path(gdrive_path2,'Figures/Ratios/dens_ratio_short_tall.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Ratios/dens_ratio_short_tall3.pdf'), 
+                    file.path(gdrive_path2,'Figures/Ratios/dens_ratio_short_tall3.pdf')) 
 )
 
 # Density fast slow
@@ -1542,18 +1557,22 @@ system2(command = "pdfcrop",
                  filter(n_individuals >= 20, density_ratio > 0, ID == "Fast-Slow"),
                aes(x = bin_midpoint, y = density_ratio, 
                    fill = density_ratio),
-               shape = 21, stroke = 0.5, size = 4.5, color = "black") +
-    scale_fast_slow2 +
+               shape = 21, stroke = 0.5, 
+               #size = 4.5, 
+               size = 4,
+               color = "black") +
+    scale_fast_slow +
     scale_x_log10(limits = c(1, 100), breaks = c(1, 10, 100), 
-                  position = "top", 
-                  name = expression(paste('Diameter (cm)'))) + 
+                 # position = "top", 
+                  position = "bottom", 
+                  name = expression(paste('Tree Size (cm)'))) + 
     scale_y_log10(labels = signif, breaks = c(0.01, 0.1, 1, 10, 100, 1000), 
                   limits=c(0.02, 200),
                   name = NULL) +
     #name = expression("Density Ratio")) + 
     theme_no_y() + 
     #theme_no_x() +
-    theme_plant() 
+    theme_plant_small() 
 )
 
 
@@ -1561,13 +1580,16 @@ p1 <- set_panel_size(dens_ratio_fs , width=unit(10.25,"cm"), height=unit(5,"cm")
 grid.newpage()
 grid.draw(p1)
 
+p1 <- set_panel_size(dens_ratio_fs , width=unit(3.3,"cm"), height=unit(10.25,"cm"))
+grid.newpage()
+grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Ratios/dens_ratio_fs2.pdf'))
+pdf(file.path(gdrive_path,'Figures/Ratios/dens_ratio_fs3.pdf'))
 grid.draw(p1)
 dev.off()
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Ratios/dens_ratio_fs2.pdf'), 
-                    file.path(gdrive_path2,'Figures/Ratios/dens_ratio_fs2.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Ratios/dens_ratio_fs3.pdf'), 
+                    file.path(gdrive_path2,'Figures/Ratios/dens_ratio_fs3.pdf')) 
 )
 # ---------- combine
 
