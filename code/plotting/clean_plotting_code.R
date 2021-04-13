@@ -186,9 +186,9 @@ area_hex <- ggplot() +
   geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all', dbh_bin < 156), 
                   aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
   geom_ribbon(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156), 
-              aes(x = dbh, ymin = q025, ymax = q975), alpha = 0.4) +
-  geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156),
-            aes(x = dbh, y = q50)) +
+              aes(x = dbh, ymin = q025, ymax = q975), alpha = 1) +
+  #geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156),
+   #         aes(x = dbh, y = q50)) +
   theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
   theme_no_x() +
   theme(axis.title.y = element_text(vjust = -3)) +
@@ -1348,18 +1348,25 @@ system2(command = "pdfcrop",
 guild_colors <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 fast_slow_fill <- c("#27408b", "#BFE046" )
 fast_slow_fill2 <- c("#27408b", "#939E6C" ) #  #A4B662
+fast_slow_fill3 <- c("#27408b", "#AABF5D" ) #  AABF5D
+
 short_tall_fill <- c("#87Cefa", "#267038")  
 short_tall_fill2 <- c("#65A8AA", "#267038")  #599B8F
+short_tall_fill3 <- c("#68ABB0", "267038")  #74B8CC; 9FAF65
+
 scale_fast_slow <- scale_fill_gradientn(colours = fast_slow_fill,
                                         trans = 'log')#,# name = 
 scale_fast_slow2 <- scale_fill_gradientn(colours = fast_slow_fill2,
                                          trans = 'log')#,# name = 
-scale_fast_slow <- scale_color_gradientn(colours = fast_slow_fill,
-                                             trans = 'log')#,# name = 
+scale_fast_slow3 <- scale_fill_gradientn(colours = fast_slow_fill3,
+                                         trans = 'log')#,# name = 
+
 scale_short_tall <- scale_fill_gradientn(colours = short_tall_fill,
                                          trans = 'log')#,# name = 
 scale_short_tall2<- scale_fill_gradientn(colours = short_tall_fill2,
                                           trans = 'log')#,# name = 
+scale_short_tall3<- scale_fill_gradientn(colours = short_tall_fill3,
+                                         trans = 'log')#,# name = 
 
 # Production fast slow Light
 (prod_ratio_fs  <- ggplot() + # exclude largest short:tall ratio
@@ -1373,13 +1380,13 @@ scale_short_tall2<- scale_fill_gradientn(colours = short_tall_fill2,
                aes(x = bin_midpoint, y =production_ratio, 
                    fill = production_ratio),
                shape = 21, stroke = 0.5, 
-               #size = 4.5, 
-               size = 4, 
+               size = 4.5, 
+             #  size = 4, 
                color = "black") +
-    scale_fast_slow +
-    scale_x_log10(limits = c(1, 500), breaks = c(3, 30, 300), 
-                  position = "bottom", 
-                  #position = "top", 
+    scale_fast_slow3 +
+    scale_x_log10(limits = c(2, 400), breaks = c(3, 30, 300), 
+                  #position = "bottom", 
+                  position = "top", 
                   expression(paste('Light per Crown Area (W m'^-2,')'))) + 
     scale_y_log10(labels = signif, breaks = c( 0.1, 1, 10, 100, 1000), 
                   limits=c(0.02, 200),
@@ -1388,15 +1395,15 @@ scale_short_tall2<- scale_fill_gradientn(colours = short_tall_fill2,
                   name = expression("Production Ratio")) + 
     #theme_no_y() + 
     #theme_no_x() +
-    theme_plant_small() 
-    #theme_plant()
+    #theme_plant_small() 
+    theme_plant()
   
 )
 
 
 p1 <- set_panel_size(prod_ratio_fs, width=unit(10.25,"cm"), height=unit(5,"cm"))
 
-p1 <- set_panel_size(prod_ratio_fs, width=unit(3.3,"cm"), height=unit(10.25,"cm"))
+#p1 <- set_panel_size(prod_ratio_fs, width=unit(3.3,"cm"), height=unit(10.25,"cm"))
 
 grid.newpage()
 grid.draw(p1)
@@ -1418,10 +1425,6 @@ system2(command = "pdfcrop",
 
 
 
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Ratios/prod_ratio_fs_v2.pdf'), 
-                    file.path(gdrive_path2,'Figures/Ratios/prod_ratio_fs_v2.pdf')) 
-)
 # Production short tall
 (prod_ratio_st  <- ggplot() + # exclude largest short:tall ratio
     geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975),
@@ -1433,20 +1436,20 @@ system2(command = "pdfcrop",
                aes(x = bin_midpoint, y =production_ratio, 
                    fill = production_ratio),
                shape = 21, stroke = 0.5, 
-               size = 4, 
-               #size = 4.5, 
+               #size = 4, 
+               size = 4.5, 
                color = "black") +
-    scale_short_tall +
-    scale_y_log10(limits = c(1, 500), breaks = c(3, 30, 300), 
-                  position = "bottom", 
+    scale_short_tall2 +
+    scale_y_log10(limits = c(.02, 200), breaks = c(3, 30, 300), 
+                  position = "right", 
                   expression(paste('Light per Crown Area (W m'^-2,')'))) + 
     scale_x_log10(labels = signif, breaks = c(0.1, 1, 10, 100, 1000), 
-                  limits=c(0.02, 200),
-                  position= "right",
+                  limits=c(2, 400),
+                  position= "top",
                   name = expression("Production Ratio")) + 
     theme_no_y() + theme_no_x() +
-    theme_plant_small() 
-  #theme_plant()
+    #theme_plant_small() 
+  theme_plant()
 )
 
 
@@ -1454,9 +1457,9 @@ p1 <- set_panel_size(prod_ratio_st, width=unit(10.25,"cm"), height=unit(5,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-p1 <- set_panel_size(prod_ratio_st, width=unit(3.3,"cm"), height=unit(10.25,"cm"))
-grid.newpage()
-grid.draw(p1)
+#p1 <- set_panel_size(prod_ratio_st, width=unit(3.3,"cm"), height=unit(10.25,"cm"))
+#grid.newpage()
+#grid.draw(p1)
 #p1 <- set_panel_size(prod_ratio_st, width=unit(10.25,"cm"), height=unit(7,"cm"))
 #grid.newpage()
 #grid.draw(p1)
@@ -1496,7 +1499,55 @@ dens_ratio
 
 # color coded points, for each LH pair
 
+# Density fast slow
+(dens_ratio_fs  <- ggplot() + # exclude largest short:tall ratio
+    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    geom_line(aes(x = dbh, y = q50), color = "black",
+              data = ratio_fitted_diam_density %>% filter(ratio == "Fast-Slow")) +
+    geom_ribbon(data = ratio_fitted_diam_density %>% 
+                  filter(ratio == "Fast-Slow"),
+                aes(x = dbh, ymin = q025, ymax = q975), 
+                alpha = 0.25) +
+    geom_point(data = prod_ratio_diam  %>%
+                 filter(n_individuals >= 20, density_ratio > 0, ID == "Fast-Slow"),
+               aes(x = bin_midpoint, y = density_ratio, 
+                   fill = density_ratio),
+               shape = 21, stroke = 0.5, 
+               size = 4.5, 
+               # size = 4,
+               color = "black") +
+    scale_fast_slow3 +
+    scale_x_log10(limits = c(1, 100), breaks = c(1, 10, 100), 
+                  position = "top", 
+                  name = expression(paste('Tree Size (cm)'))) + 
+    scale_y_log10(labels = signif, breaks = c(0.01, 0.1, 1, 10, 100, 1000), 
+                  limits=c(0.02, 200),
+                  name = NULL) +
+    #name = expression("Density Ratio")) + 
+    theme_no_y() + 
+    theme_plant()
+  #theme_no_x() +
+  #theme_plant_small() 
+)
 
+
+p1 <- set_panel_size(dens_ratio_fs , width=unit(10.25,"cm"), height=unit(5,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+#p1 <- set_panel_size(dens_ratio_fs , width=unit(3.3,"cm"), height=unit(10.25,"cm"))
+#grid.newpage()
+#grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Ratios/dens_ratio_fs3.pdf'))
+grid.draw(p1)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Ratios/dens_ratio_fs3.pdf'), 
+                    file.path(gdrive_path2,'Figures/Ratios/dens_ratio_fs3.pdf')) 
+)
+
+# Density short tall
 (dens_ratio_st  <- ggplot() + # exclude largest short:tall ratio
     #geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
     geom_line(aes(x = dbh, y = q50), color = "black",
@@ -1544,53 +1595,7 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path2,'Figures/Ratios/dens_ratio_short_tall3.pdf')) 
 )
 
-# Density fast slow
-(dens_ratio_fs  <- ggplot() + # exclude largest short:tall ratio
-    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
-    geom_line(aes(x = dbh, y = q50), color = "black",
-              data = ratio_fitted_diam_density %>% filter(ratio == "Fast-Slow")) +
-    geom_ribbon(data = ratio_fitted_diam_density %>% 
-                  filter(ratio == "Fast-Slow"),
-                aes(x = dbh, ymin = q025, ymax = q975), 
-                alpha = 0.25) +
-    geom_point(data = prod_ratio_diam  %>%
-                 filter(n_individuals >= 20, density_ratio > 0, ID == "Fast-Slow"),
-               aes(x = bin_midpoint, y = density_ratio, 
-                   fill = density_ratio),
-               shape = 21, stroke = 0.5, 
-               #size = 4.5, 
-               size = 4,
-               color = "black") +
-    scale_fast_slow +
-    scale_x_log10(limits = c(1, 100), breaks = c(1, 10, 100), 
-                 # position = "top", 
-                  position = "bottom", 
-                  name = expression(paste('Tree Size (cm)'))) + 
-    scale_y_log10(labels = signif, breaks = c(0.01, 0.1, 1, 10, 100, 1000), 
-                  limits=c(0.02, 200),
-                  name = NULL) +
-    #name = expression("Density Ratio")) + 
-    theme_no_y() + 
-    #theme_no_x() +
-    theme_plant_small() 
-)
 
-
-p1 <- set_panel_size(dens_ratio_fs , width=unit(10.25,"cm"), height=unit(5,"cm"))
-grid.newpage()
-grid.draw(p1)
-
-p1 <- set_panel_size(dens_ratio_fs , width=unit(3.3,"cm"), height=unit(10.25,"cm"))
-grid.newpage()
-grid.draw(p1)
-
-pdf(file.path(gdrive_path,'Figures/Ratios/dens_ratio_fs3.pdf'))
-grid.draw(p1)
-dev.off()
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Ratios/dens_ratio_fs3.pdf'), 
-                    file.path(gdrive_path2,'Figures/Ratios/dens_ratio_fs3.pdf')) 
-)
 # ---------- combine
 
 g_dens  <- ggplotGrob(dens_ratio )
@@ -3422,6 +3427,109 @@ system2(command = "pdfcrop",
 )
 
 ## -------------------- ------Fig S14: PCA score   -----------------------------
+# production with diameter fast slow
+(prod_ratio_diam_fs  <- ggplot() + # exclude largest short:tall ratio
+   geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975),
+               alpha = 0.25, data = ratio_fitted_diam_prod %>% filter(ratio == "Fast-Slow")) +
+   geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+   geom_line(aes(x = dbh, y = q50), 
+             data = ratio_fitted_diam_prod %>% filter(ratio == "Fast-Slow")) +
+   geom_point(data = prod_ratio_diam  %>%
+                filter(n_individuals >= 20, density_ratio > 0, ID == "Fast-Slow"),
+              aes(x = bin_midpoint, y = production_ratio, 
+                  fill = production_ratio),
+              shape = 21, stroke = 0.5, 
+              #size = 4.5, 
+              size = 4.5, 
+              color = "black") +
+   scale_fast_slow2 +
+   scale_x_log10(limits = c(1, 100), breaks = c(1, 10, 100), 
+                 position = "bottom", 
+                 # position = "top", 
+                 expression(paste('Stem Diameter (cm)'))) + 
+   scale_y_log10(labels = signif, breaks = c( 0.1,  1,  10,  100,  1000), 
+                 limits=c(0.04, 30),
+                 position = "left",
+                 name = expression("Production Ratio")) + 
+   #theme_no_y() + 
+   #theme_no_x() +
+   #theme_plant_small() 
+   theme_plant()
+ 
+)
+
+
+p1 <- set_panel_size(prod_ratio_diam_fs, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Ratios/prod_ratio_diam_fs2.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Supplementals/Ratios/prod_ratio_diam_fs2.pdf'), 
+                    file.path(gdrive_path2,'Figures/Supplementals/Ratios/prod_ratio_diam_fs2.pdf')) 
+)
+guild_colors <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
+fast_slow_fill <- c("#27408b", "#BFE046" )
+short_tall_fill <- c("#87Cefa", "#267038")
+scale_fast_slow2 <- scale_fill_gradientn(colours = fast_slow_fill)#,# name = 
+scale_fast_slow <- scale_color_gradientn(colours = fast_slow_fill,
+                                         trans = 'log')#,# name = 
+scale_short_tall2 <- scale_fill_gradientn(colours = short_tall_fill)#,# name = 
+sca
+PCA_light_st <- PCA_score_by_light %>%
+  filter(year == 1995, n_individuals >= 20, ID == "Short-Tall") %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+ 
+  geom_errorbar(width = error_bar_width) + theme_plant() +
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black", aes(fill = mean)) +
+  scale_short_tall2 +
+  scale_x_log10(limits=c(1.8,450), breaks = c(3, 30, 300),
+                name = expression(paste('Light Intensity (W m'^-2,')'))) + 
+  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score') #+ theme_plant_small()
+PCA_light_st
+
+p1 <- set_panel_size(PCA_light_st, width=unit(11,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/PCA_st_light.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_st_light.pdf'), 
+                    file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_st_light.pdf')) 
+)
+PCA_light_fs <- PCA_score_by_light %>%
+  filter(year == 1995, n_individuals >= 20, ID == "Fast-Slow") %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+  geom_errorbar(width = error_bar_width) + theme_plant() +
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black", aes(fill = mean)) +
+  scale_fast_slow2 +
+  scale_x_log10(limits=c(1.8,450), breaks = c(3, 30, 300),
+                name = expression(paste('Light Intensity (W m'^-2,')'))) + 
+  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score') #+ theme_plant_small()
+PCA_light_fs
+
+p1 <- set_panel_size(PCA_light_fs, width=unit(11,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/PCA_fs_light.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_fs_light.pdf'), 
+                    file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_fs_light.pdf')) 
+)
+
+
 
 grob_p <- grobTree(textGrob("Short-Tall Continuum", x = 0.13, y = 0.93,  hjust = 0,
                             gp = gpar(col = "black", fontface = "italic", fontface = "bold", fontsize = 15))) 
@@ -3474,6 +3582,54 @@ grob_a <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
 grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
                             gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 
+PCA_diam_fs <- score_bin_bydiam  %>%
+  filter(year == 1995, n_individuals >= 20, ID == "Fast-Slow") %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+  geom_errorbar(width = error_bar_width) + theme_plant() +
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black", aes(fill = mean)) +
+  scale_fast_slow2 +
+  scale_x_log10(name = 'Stem Diameter (cm)', limits = c(.8,100)) +
+  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score') #+ theme_plant_small()
+PCA_diam_fs
+
+p1 <- set_panel_size(PCA_diam_fs, width=unit(11,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/PCA_fs_diam.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_fs_diam.pdf'), 
+                    file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_fs_diam.pdf')) 
+)
+
+
+PCA_diam_st <- score_bin_bydiam  %>%
+  filter(year == 1995, n_individuals >= 20, ID == "Short-Tall") %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+  geom_errorbar(width = error_bar_width) + theme_plant() +
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black", aes(fill = mean)) +
+  scale_short_tall2 +
+  scale_x_log10(name = 'Stem Diameter (cm)', limits = c(.8,100)) +
+  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score') #+ theme_plant_small()
+PCA_diam_st
+
+p1 <- set_panel_size(PCA_diam_st, width=unit(11,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/PCA_st_diam.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_st_diam.pdf'), 
+                    file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_st_diam.pdf')) 
+)
 PCA_diam <- score_bin_bydiam %>%
   filter(year == 1995, n_individuals >= 20) %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
