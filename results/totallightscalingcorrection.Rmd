@@ -1,0 +1,81 @@
+---
+title: "Light correction"
+author: "Quentin D. Read"
+date: "4/20/2021"
+output: html_document
+---
+
+This is a quick visualization of the effect of the fraction light captured correction. This corrects for the fact that deeper crowns have more layers of leaves and can absorb a higher fraction of the flux of light energy passing through their crown volume. Therefore the correction has a larger impact on smaller trees because their crowns are not as deep, so they have fewer layers of leaves and let a higher fraction of the light through.
+
+Load the data and get it ready.
+
+```{r}
+
+library(tidyverse)
+library(forestscaling)
+
+# Load data from the forestscalingworkflow package
+load('~/Documents/GitHub/MSU_repos/forestscalingworkflow/data/rawdataobj1995.RData')
+
+theme_set(theme_bw())
+colorscale <- scale_color_brewer(palette = 'Set1')
+
+alltree_light_95 <- alltree_light_95 %>%
+  mutate(fg = factor(fg)) %>%
+  filter(!is.na(fg))
+
+plot_area <- 42.84
+```
+
+The correction factor could go from 0 (tree lets all light through) to 1 (tree can absorb all the light energy passing through its crown volume). It is a function of LAI. We use a log-linear regression fit with data from Kitajima 2005 to get LAI from our allometric crown depth (each species has its own crown depth allometry) and then put that LAI into Beer's Law using the same light extinction coefficient for all trees.
+
+This is a plot of what the correction factor looks like as a function of dbh and functional group. It asymptotes at 1 eventually, but at different rates for different species because crown depth allometry varies by species.
+
+```{r}
+ggplot(alltree_light_95, aes(x = dbh_corr, y = fraction_light_captured, color = fg)) +
+  geom_point() +
+  scale_x_log10(name = 'diameter (cm)') +
+  scale_y_log10(name = 'proportion light captured') +
+  colorscale
+```
+
+Now do the log binning. We get the total amount of potential light energy that can be absorbed by each tree, which is determined by the tree's crown area and shading by neighbors. Then apply the correction by multiplying this number by the correction factor (proportion of total energy that the tree absorbs, with the rest passing through its crown). Then sum it up (both the corrected and uncorrected values) by log binned size classes using the Ethan White method. This is in units of W (energy). Then divide by plot area in hectares to get W/ha. Dimensionally, the correction does not affect anything. It is always in units of W/ha regardless (as the correction is unitless).
+
+```{r}
+total_light_bins <- alltree_light_95 %>%
+  group_by(fg) %>%
+  nest %>%
+  mutate(bins_uncorrected = map(data, ~ logbin(x = .$dbh_corr, y = .$light_received, n = 20)),
+         bins_corrected = map(data, ~ logbin(x = .$dbh_corr, y = .$light_received * .$fraction_light_captured, n = 20))) %>%
+  select(-data)
+```
+
+Reshape data for plotting.
+```{r}
+total_light_bins_uncorrected <- total_light_bins %>%
+  select(fg, bins_uncorrected) %>%
+  unnest(cols = c(bins_uncorrected)) %>%
+  mutate(correction = 'no') 
+
+total_light_bins_corrected <- total_light_bins %>%
+  select(fg, bins_corrected) %>%
+  unnest(cols = c(bins_corrected)) %>%
+  mutate(correction = 'yes') 
+
+dat <- bind_rows(total_light_bins_uncorrected, total_light_bins_corrected) %>%
+  filter(bin_value > 0) %>%
+  mutate(bin_value = bin_value / plot_area)
+```
+
+The plot shows that the correction has qualitatively almost no effect. Visually if you look closely you can see the smaller bins are more affected, as we'd expect because the correction gets closer to 1 as the diameter increases.
+
+```{r}
+ggplot(dat, aes(x = bin_midpoint, y = bin_value, color = fg)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~ correction) +
+  scale_x_log10(name = 'diameter (cm)') +
+  scale_y_log10(name = 'total light absorbed by trees (W/ha)') +
+  colorscale
+```
+
