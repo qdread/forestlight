@@ -19,8 +19,6 @@ github_path <- ifelse(Sys.info()['user'] == 'qread', '~/documents/github/', file
 gdrive_path2 <-  file.path('/Users/jgradym/Google\\ Drive/ForestLight')
 
 library(broom)
-library(forestscaling) # Packaged all the functions and ggplot2 themes here!
-library(tidyverse)
 library(egg)
 library(scales)
 library(RColorBrewer)
@@ -33,6 +31,8 @@ library(rstan)
 library(lme4)
 library(sjstats)
 library(rstanarm)
+library(forestscaling) # Packaged all the functions and ggplot2 themes here!
+library(tidyverse)
 #install_github('qdread/forestscaling')
 
 # Define color schemes and labels
