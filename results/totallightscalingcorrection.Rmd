@@ -2,7 +2,7 @@
 title: "Light correction"
 author: "Quentin D. Read"
 date: "4/20/2021"
-output: html_document
+output: pdf_document
 ---
 
 This is a quick visualization of the effect of the fraction light captured correction. This corrects for the fact that deeper crowns have more layers of leaves and can absorb a higher fraction of the flux of light energy passing through their crown volume. Therefore the correction has a larger impact on smaller trees because their crowns are not as deep, so they have fewer layers of leaves and let a higher fraction of the light through.
