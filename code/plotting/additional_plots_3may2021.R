@@ -1,3 +1,45 @@
+library(broom)
+library(egg)
+library(scales)
+library(RColorBrewer)
+library(gtable)
+library(grid)
+library(reshape2)
+library(hexbin)
+library(Hmisc, pos = 100)
+library(rstan)
+library(lme4)
+library(sjstats)
+library(rstanarm)
+library(forestscaling) # Packaged all the functions and ggplot2 themes here!
+library(tidyverse)
+
+# Paths
+gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google Drive/ForestLight'))
+github_path <- ifelse(Sys.info()['user'] == 'qread', '~/Documents/GitHub/MSU_repos', file.path('/Users/jgradym/Documents/Github'))
+gdrive_path2 <-  file.path('/Users/jgradym/Google\\ Drive/ForestLight')
+
+
+# change these if needed.
+DENS = 3
+PROD = 1
+
+# Load data 
+
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
+fp <- file.path(gdrive_path, 'data/data_forplotting')
+
+for (i in dir(fp, pattern = 'obs_')) {
+  n <- gsub('.csv','',i)
+  assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
+}
+
+
+for (i in dir(fp, pattern = 'pred_|fitted_')) {
+  n <- gsub('.csv','',i)
+  assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
+}
+
 # New plots
 
 
@@ -113,8 +155,8 @@ slopes <- ggplot(allslopes %>% filter(!fg %in% 'Unclassified'),
   scale_y_continuous(name = "Scaling Slope", position = "right", limits = c(-1.05, 1.3)) +
   scale_fill_manual(values = c('gold1', 'darkolivegreen3')) +
   scale_color_manual(values = c('gold3', 'darkgreen')) +
-  theme(axis.text.x = element_text(angle = 25,  vjust = .7, face = "italic", size = 18)) +
-  annotation_custom(grob1) + annotation_custom(grob2) + annotation_custom(grob3) #+annotation_custom(grob0)
+  theme(axis.text.x = element_text(angle = 25,  vjust = .7, face = "italic", size = 18)) #+
+ # annotation_custom(grob1) + annotation_custom(grob2) #+ annotation_custom(grob3) #+annotation_custom(grob0)
 slopes
 
 g_slopes <- ggplotGrob(slopes)
@@ -125,19 +167,13 @@ grid.newpage()
 grid.draw(combo)
 
 
-g_hex <- ggplotGrob(light_hex)
-g_light <- ggplotGrob(combo)
-new <- cbind(light_hex,combo, size = "first")
+ggsave(combo, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Light_Scaling/combo.pdf'))
 
-combo <- cbind(g_tot_light, g_slopes, size = "first")
-new$heights <- unit.pmax(new$widths, new$widths)
-ggsave(combo, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Symmetry/combo3.pdf'))
-grid.draw(new)
-dev.off()
+
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Symmetry/light_combo2.pdf'), 
-                    file.path(gdrive_path2,'Figures/Symmetry/light_combo2.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Light_Scaling/combo.pdf'), 
+                    file.path(gdrive_path2,'Figures/Light_Scaling/combo.pdf')) 
 )
 
 
@@ -155,6 +191,69 @@ totalleafareabins_fg <- read.csv(file.path(fp, 'obs_totalleafarea.csv'), strings
 
 totalleafareabins_fg <- totalleafareabins_fg %>%
   filter(bin_count >= 20)
+guild_colors2 <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
+guild_fills2 <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
+
+plot_totalprod2 <-function(year_to_plot = 1995, 
+                           fg_names = c("fg1", "fg2", "fg3","fg4", "fg5", "all"), 
+                           model_fit_density = 1, 
+                           model_fit_production = 1, 
+                           x_limits, 
+                           x_breaks = c(1, 3, 10, 30, 100, 300), 
+                           y_limits = c(0.03, 100), 
+                           y_breaks = c(0.01, 0.1, 1, 10, 100, 1000), 
+                           y_labels, 
+                           fill_names = guild_fills2, # c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
+                           color_names = guild_colors2, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray"), 
+                           x_name = "Diameter (cm)", 
+                           y_name = expression(paste("Production (kg cm"^-1, " ha"^-1, "  yr"^-1, ")")),
+                           geom_size = 4, 
+                           obsdat = obs_totalprod, 
+                           preddat = fitted_totalprod, 
+                           plot_abline = TRUE, 
+                           abline_slope = 0, 
+                           dodge_width = 0.0,
+                           abline_intercept = 2) 
+{
+  pos <-  ggplot2::position_dodge(width = dodge_width)
+  obsdat <- obsdat %>% 
+    dplyr::filter(fg %in% fg_names, year == year_to_plot, bin_count >= 20) %>% 
+    dplyr::filter(bin_value > 0) %>% 
+    arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1')))
+  obs_limits <- obsdat %>% dplyr::group_by(fg) %>% 
+    dplyr::summarize(min_obs = min(bin_midpoint), 
+                     max_obs = max(bin_midpoint)) 
+  preddat <- preddat %>% dplyr::left_join(obs_limits) %>% 
+    dplyr::filter(dens_model %in% model_fit_density, 
+                  prod_model %in% model_fit_production, 
+                  fg %in% fg_names, year == year_to_plot) %>% 
+    arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))) %>% 
+    dplyr::filter_at(dplyr::vars(dplyr::starts_with("q")), 
+                     dplyr::all_vars(. > min(y_limits))) %>% 
+    dplyr::filter(dbh >=  min_obs & dbh <= max_obs)
+  
+  p <- ggplot2::ggplot() + 
+    ggplot2::geom_ribbon(data = preddat, 
+                         aes(x = dbh, ymin = q025, ymax = q975, 
+                             group = fg, fill = fg), alpha = 0.4, show.legend = F) + 
+    ggplot2::geom_line(data = preddat, show.legend = F,
+                       aes(x = dbh, y = q50, group = fg, color = fg)) + 
+    ggplot2::geom_point(data = obsdat, position = pos,
+                        aes(x = bin_midpoint, y = bin_value, group = fg, fill = fg), 
+                        size = geom_size, color = "black", shape = 21) + 
+    ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
+    ggplot2::scale_y_log10(name = y_name, 
+                           limits = y_limits, breaks = y_breaks, labels = y_labels,  position = "right") + 
+    ggplot2::scale_color_manual(values = guild_colors2) + 
+    ggplot2::scale_fill_manual(values = guild_fills2) + 
+    theme_plant() + theme_no_x() +
+    theme(aspect.ratio = 1)
+  if (plot_abline) 
+    p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
+                                  slope = abline_slope, color = "gray72", 
+                                  linetype = "dashed", size = 0.75)
+  p
+} 
 p <- plot_totalprod2(year_to_plot = 1995,
                      fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                      model_fit_density = DENS, 
@@ -170,21 +269,39 @@ p <- plot_totalprod2(year_to_plot = 1995,
                      plot_abline = FALSE,
                      geom_size = 4)
 p
-p0 <- p + scale_y_continuous(position = "left", trans = "log10", limits = c(9, 5000),
+guild_labels2 <- c('All', 'Fast','Tall', 'Slow', 'Short', 'Medium')
+guide <- guides(fill = guide_legend(title = NULL), override.aes = list(fill = NA), color = F)
+
+p0 <- p + scale_y_continuous(position = "left", trans = "log10", limits = c(10, 7000),
                              name = expression(atop('Total Leaf Area',paste('(m'^2, ' cm'^-1,' ha'^-1,')')))) +
   theme_plant_small(legend = TRUE)  + guide +
   scale_fill_manual(values = guild_fills2, labels = guild_labels2) 
-plot(p0)
+p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
 
 
 
 # Captured light hexbin plot ----------------------------------------------
 
+
+unscaledlightcapturedbydbhcloudbin_fg <- read.csv(file.path(fp, 'unscaledlightcapturedbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
+
 # This plot was modified from the plot on line 3291 of clean_plotting_code.R, using the captured light data instead of incoming light.
+hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
+                                             trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
+                                             labels = c(1,10,100,1000,10000), limits=c(1,10000))
+
+alpha_value <- 1
+hexfill2 <- scale_fill_gradient(low = 'forestgreen', high = 'navy', trans = 'log', breaks = c(1, 10,100))
+exl <- expression(atop('Intercepted Light', paste('per Individual (W)')))
+exd <- 'Diameter (cm)'
+
+labels = trans_format("log10", math_format(10^.x))
 
 ex_lightcaptured <- expression(atop("Captured Light", paste("per Individual (W)")))
 
-indiv_light_captured <- ggplot() +
+(indiv_light_captured <- ggplot() +
   theme_plant() +
   scale_x_log10(name = exd, limits = c(.9, 200)) +
   scale_y_log10(name = ex_lightcaptured, breaks = c(1,100,10000, 1000000), limits = c(1,1000000), 
@@ -197,4 +314,18 @@ indiv_light_captured <- ggplot() +
   hex_scale_log_colors +
   geom_smooth(data = alltree_light_95, aes(x = dbh_corr, y = light_captured),
               method = "lm", color = "black", size = .7) +
+    geom_smooth(data = alltree_light_95, aes(x = dbh_corr, y = light_captured),
+              method = "lm", color = "black", size = .7) +
   guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))
+)
+
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Light_Scaling/indiv_light.pdf'))
+indiv_light
+dev.off()
+
+
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/Supplementals/Light_Scaling/indiv_light.pdf'), 
+                  file.path(gdrive_path2,'Figures/Supplementals/Light_Scaling/indiv_light.pdf')) 
+)
