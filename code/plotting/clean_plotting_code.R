@@ -386,8 +386,23 @@ fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 binomial <- paste(fgbci$genus, fgbci$species, sep = " ")
 binomial
 unique(binomial)
+guild_lookup
 fgbci[fgbci$genus == "Luehea",]
 fgbci[fgbci$genus == "Cecropia",]
+fgbci[fgbci$genus == "Cavanillesia",]
+fgbci[fgbci$genus == "Cupaniopsis",]
+
+fgbci[fgbci$X2new > 2,] # tall
+fgbci[fgbci$X2new < -2,] # short
+fgbci[fgbci$X1new < -2,] # fast
+
+slow <- fgbci[fgbci$fg5 == 3,] %>% select(fg5, binomial,family, X1new) # slow
+slow <- slow[order(desc(slow$X1new)),]
+slow
+write_csv(slow, "~/Desktop/slow_tree_list.csv")
+
+
+fgbci$binomial <- paste(fgbci$genus, fgbci$species, sep = " ") 
 #anacardium excelsum  = slow
 #Luehea seemannii = slow
 
