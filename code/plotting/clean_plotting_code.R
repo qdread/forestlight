@@ -130,6 +130,7 @@ source(file.path(github_path, 'forestlight/stan/get_ratio_slopes_fromfit.R'))
 
 lightperareacloudbin_fg <- read.csv(file.path(fp, 'lightperareacloudbin_fg.csv'), stringsAsFactors = FALSE)
 lightpervolcloudbin_fg <- read.csv(file.path(fp, 'lightpervolcloudbin_fg.csv'), stringsAsFactors = FALSE)
+lightperleafareacloudbin_fg <- read.csv(file.path(fp, 'lightperleafareacloudbin_fg.csv'), stringsAsFactors = FALSE)
 unscaledlightbydbhcloudbin_fg <- read.csv(file.path(fp, 'unscaledlightbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
 unscaledlightcapturedbydbhcloudbin_fg <- read.csv(file.path(fp, 'unscaledlightcapturedbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
 fitted_lightcloudbin_fg <-read.csv(file.path(fp, 'fitted_lightbysizealltrees_fig1.csv'), stringsAsFactors = FALSE)
@@ -357,6 +358,26 @@ system2(command = "pdfcrop",
         args  = c(file.path(gdrive_path2,'Figures/Light_Individual/light_combo_hex.pdf'), 
                   file.path(gdrive_path2,'Figures/Light_Individual/light_combo_hex.pdf')) 
 )
+
+### Light per leaf area hexbin plot -- added QDR 03 June 2021
+exla <- expression(atop('Light per Leaf Area', paste('(W m'^-2, ')')))
+
+leafarea_hex <- ggplot() +
+  theme_plant() +
+  scale_x_log10(limits = c(0.8, 200), name = exd) +
+  scale_y_log10(name = exla) + #, limits = c(0.8, 1500)) +
+  geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_captured/leaf_area)) +
+  hex_scale_log_colors +
+  geom_pointrange(data = lightperleafareacloudbin_fg %>% filter(fg %in% 'all', dbh_bin < 156), 
+                  aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
+  geom_ribbon(data = fitted_lightcloudbin_fg %>%  filter(fit == "light captured per leaf area",  dbh < 156), 
+              aes(x = dbh, ymin = q025, ymax = q975), alpha = 0.4) +
+  geom_line(data = fitted_lightcloudbin_fg %>%  filter(fit == "light captured per leaf area",  dbh < 156), 
+            aes(x = dbh, y = q50)) +
+  theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
+  theme(axis.title.y = element_text(vjust = -3)) +
+  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
+leafarea_hex
 
 
 ################################################################################################
