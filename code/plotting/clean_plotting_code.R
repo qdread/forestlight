@@ -178,7 +178,7 @@ hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RCol
                                              labels = c(1,10,100,1000,10000), limits=c(1,10000))
 
 alpha_value <- 1
-
+lm_area <- lm()
 area_hex <- ggplot() +
   theme_plant() +
   scale_x_log10(limits = c(0.8, 200), name = exd) +
@@ -317,7 +317,7 @@ grid.draw(p1)
 lm1 <- lm(log(light_received_byvolume) ~ log(dbh_corr), data = alltree_light_95)
 summary(lm1)
 confint(lm1)
-lm2 <- lm(log(light_received_byvolume) ~ log(dbh_corr), data = alltree_light_95)
+lm2 <- lm(log(light_received_byarea) ~ log(dbh_corr), data = alltree_light_95)
 summary(lm2)
 confint(lm2)
 lm3 <- lm(log(light_received_byvolume) ~ log(dbh_corr), data = alltree_light_95)
@@ -379,7 +379,19 @@ leafarea_hex <- ggplot() +
   guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
 leafarea_hex
 
+# compare slopes
+lm_crown_area  <- lm(log(light_received_byarea) ~ log( dbh_corr), data = alltree_light_95 )
+summary(lm_crown_area )
 
+lm_leaf_area <- lm(log(light_captured/leaf_area) ~ log( dbh_corr), data = alltree_light_95 )
+summary(lm_leaf_area)
+# ratio largest to smallest
+lightperleafareacloudbin_fg$q50[20]/lightperleafareacloudbin_fg$q50[1] #27.5 per leaf area
+lightperareacloudbin_fg$q50[20]/lightperareacloudbin_fg$q50[1] #55.4 per crown area
+# ratio largest to smallest using slope and evaluating at size 1.55 vs 67 (where its linear)
+0.987*(67.05-1.16) #65.0 per crown area
+0.844*(67.05-1.16) #55.6 per crown area
+65/55.6 
 ################################################################################################
 # ---------------------------- Fig 2: Scaling Schematic -------------------------
 ################################################################################################
