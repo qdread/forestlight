@@ -3,6 +3,10 @@
 
 # Set path to data on google drive
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users',Sys.info()['user'],'Google Drive/ForestLight'))
+github_path <- ifelse(Sys.info()['user'] == 'qread', '~/Documents/GitHub/MSU_repos', file.path('/Users/jgradym/Documents/Github'))
+
+
+gdrive_path2 <-  file.path('/Users/jgradym/Google\\ Drive/ForestLight')
 
 library(forestscaling) # Packaged all the functions and ggplot2 themes here!
 
@@ -13,6 +17,31 @@ library(RColorBrewer)
 library(gtable)
 library(grid)
 library(reshape2)
+
+#---------------------------- Data ---------------------------- 
+load(file.path(gdrive_path, 'data/rawdataobj_alternativecluster.R'))
+fp <- file.path(gdrive_path, 'data/data_forplotting')
+
+for (i in dir(fp, pattern = 'obs_')) {
+  n <- gsub('.csv','',i)
+  assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
+}
+
+
+for (i in dir(fp, pattern = 'pred_|fitted_')) {
+  n <- gsub('.csv','',i)
+  assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
+}
+
+#### Extract model output to get the fitted values, slopes, etc.
+load(file.path(gdrive_path, 'data/data_piecewisefits/fits_bylight_forratio.RData'))
+load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
+load(file.path(gdrive_path, 'data/data_forplotting/light_scaling_plotting_data.RData'))
+
+# source the extra extraction functions that aren't in the package
+source(file.path(github_path, 'forestscalingworkflow/R_functions/model_output_extraction_functions.r'))
+source(file.path(github_path, 'forestlight/stan/get_ratio_slopes_fromfit.R'))
+
 
 # Define color schemes and labels
 guild_fills <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "ivory")
@@ -46,7 +75,10 @@ ggplot() +
 
 alpha_value <- 0.6
 hexfill <- scale_fill_gradient(low = 'blue', high = 'red', trans = 'log', breaks = c(1,10,100,1000))
-hex_scale_log_colors 
+hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
+                                             trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
+                                             labels = c(1,10,100,1000,10000), limits=c(1,10000))
+
 ####### by area #######
 # Each group
 ggplot() +
