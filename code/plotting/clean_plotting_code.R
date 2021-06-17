@@ -419,11 +419,21 @@ fgbci$PC_breeder_to_pioneer <- fgbci$X2new
 binomial <- paste(fgbci$genus, fgbci$species, sep = " ")
 binomial
 unique(binomial)
+guild_lookup <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','all','unclassified'), 
+                           fg_name = c('Fast','Tall','Slow','Short','Medium','All','Unclassified'))
 guild_lookup
 fgbci[fgbci$genus == "Luehea",]
 fgbci[fgbci$genus == "Cecropia",]
 fgbci[fgbci$genus == "Cavanillesia",]
-fgbci[fgbci$genus == "Cupaniopsis",]
+
+#compare to Kitajima
+fgbci[fgbci$genus == "Anacardium",] # Tall; in paper early-late; max height 30 m
+fgbci[fgbci$genus == "Luehea",] # tall (almost medium); early-late; max height 30 m
+fgbci[fgbci$genus == "Cecropia",]  #fast; high pioneer
+fgbci[fgbci$genus == "Antirrhoea",] #NA; early successional;  max height <20m
+fgbci[fgbci$genus == "Castilla",] #NA;  early successional; max height <20m
+
+Antirrhoea
 
 fgbci[fgbci$X2new > 2,] # tall
 fgbci[fgbci$X2new < -2,] # short
@@ -432,7 +442,7 @@ fgbci[fgbci$X1new < -2,] # fast
 slow <- fgbci[fgbci$fg5 == 3,] %>% select(fg5, binomial,family, X1new) # slow
 slow <- slow[order(desc(slow$X1new)),]
 slow
-write_csv(slow, "~/Desktop/slow_tree_list.csv")
+#write_csv(slow, "~/Desktop/slow_tree_list.csv")
 
 
 fgbci$binomial <- paste(fgbci$genus, fgbci$species, sep = " ") 
@@ -1115,7 +1125,7 @@ tot_light <- plot_totalprod(year_to_plot = 1995,
                             fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                             model_fit_density = DENS, 
                             model_fit_production = PROD,
-                            x_limits = c(0.9,200),
+                            x_limits = c(0.8, 200),
                             y_limits = c(100, 200000),
                             geom_size = 3.5,
                             y_breaks = c(100, 1000, 10000, 100000),
@@ -1135,8 +1145,8 @@ tot_light2 <- tot_light  +
                      name = expression(atop('Total Light Intercepted',paste('(kW cm'^-1,' ha'^-1,')'))))  +
   scale_x_log10(name = "Stem Diameter (cm)", limits = c(0.8, 200), position = "top") +
   theme(aspect.ratio = 0.75) + 
-  geom_abline(intercept = log10(70000), slope = 0, color ="#C9B074",
-              linetype="dashed", size=.75) +
+  geom_abline(intercept = log10(70000), slope = 0, color = "#C9B074",
+              linetype = "dashed", size = 0.75) +
   annotation_custom(grob_text) #+ annotation_custom(grob_a)
 plot(tot_light2)
 p_tot_light <- tot_light2
@@ -1211,20 +1221,19 @@ grid.newpage()
 grid.draw(combo)
 
 
-g_hex <- ggplotGrob(light_hex)
-g_light <- ggplotGrob(combo)
-new <- cbind(light_hex,combo, size = "first")
+#combo <- cbind(g_tot_light, g_slopes, size = "first")
+#combo$heights <- unit.pmax(g_tot_light$heights, g_slopes$heights)
+#grid.newpage()
+#grid.draw(combo)
 
-combo <- cbind(g_tot_light, g_slopes, size = "first")
-new$heights <- unit.pmax(new$widths, new$widths)
-ggsave(combo, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Symmetry/combo3.pdf'))
-grid.draw(new)
-dev.off()
 
+
+ggsave(combo, height = 8.6, width = 6, filename = file.path(gdrive_path,'Figures/Light_Scaling/combo.pdf'))
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Symmetry/light_combo2.pdf'), 
-                    file.path(gdrive_path2,'Figures/Symmetry/light_combo2.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Symmetry/light_combo.pdf'), 
+                    file.path(gdrive_path2,'Figures/Symmetry/light_combo.pdf')) 
 )
+#--
 #------------- Richness vs abundance
 
 max_size_fg <- obs_richnessbydiameter %>%
