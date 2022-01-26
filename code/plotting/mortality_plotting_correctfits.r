@@ -14,6 +14,7 @@ github_path <- ifelse(user == 'qread', '~/Documents/GitHub/forestlight', file.pa
 bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalitybins.csv')) # Load binned data
 mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv')) # Load raw data
 fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
+fitted_mortbydbh <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortalitydbh_ci_by_fg.csv')) # Load fitted values, mortality by dbh
 
 # Make some simple plots --------------------------------------------------
 
@@ -70,13 +71,13 @@ dev.off()
 
 # Added 25 Jan 2022
 
-(pdiam <- ggplot(data = fitted_mort %>% mutate(fg = factor(fg, labels = fg_labels))) +
-   geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
-   geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
-   geom_point(data = bin_mort %>% filter(variable == 'light_per_area', !fg %in% c('all','unclassified'), (lived+died) > 20)  %>% mutate(fg = factor(fg, labels = fg_labels)),
+(pdiam <- ggplot(data = fitted_mortbydbh %>% mutate(fg = factor(fg, labels = fg_labels))) +
+   geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.3) +
+   geom_line(aes(x = dbh, y = q50, group = fg, color = fg)) +
+   geom_point(data = bin_mort %>% filter(variable == 'dbh', !fg %in% c('all','unclassified'), (lived+died) > 20)  %>% mutate(fg = factor(fg, labels = fg_labels)),
               aes(x = bin_midpoint, y = mortality, fill = fg), #lived + died),
               shape = 21, size = 3) +
-   scale_x_log10(name = parse(text = 'Light~per~Crown~Area~(W~m^-2)'), limits = c(1.1, 412)) +
+   scale_x_log10(name = 'Diameter (cm)', limits = c(1, 270)) +
    scale_y_continuous(breaks = c(0.03, 0.3, .1), labels = c(0.03, 0.3, 0.1), limits = c(0.02, .5),
                       name = expression(paste("Mortality (5 yr"^-1,")")), trans = 'logit') +
    #scale_size_continuous(name = 'Individuals', trans = 'log', breaks = 10^(0:3)) +
