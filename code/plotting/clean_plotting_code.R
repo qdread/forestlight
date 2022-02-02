@@ -12,8 +12,8 @@ PROD = 1
 # Set path to data on google drive
 #devtools::install_github('qdread/forestscaling')
 
-gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Google Drive/ForestLight'))
-github_path <- ifelse(Sys.info()['user'] == 'qread', '~/Documents/GitHub/MSU_repos', file.path('/Users/jgradym/Documents/Github'))
+gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Volumes/GoogleDrive/My Drive/ForestLight'))
+github_path <- ifelse(Sys.info()['user'] == 'qread', '~/Documents/GitHub/MSU_repos', file.path('/Users/jgradym/Documents/GitHub/'))
 
 
 gdrive_path2 <-  file.path('/Users/jgradym/Google\\ Drive/ForestLight')
@@ -120,7 +120,7 @@ load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
 load(file.path(gdrive_path, 'data/data_forplotting/light_scaling_plotting_data.RData'))
 
 # source the extra extraction functions that aren't in the package
-source(file.path(github_path, 'forestscalingworkflow/R_functions/model_output_extraction_functions.r'))
+source(file.path(github_path, 'forestlight/stan/clean_workflow/model_output_extraction_functions.r'))
 source(file.path(github_path, 'forestlight/stan/get_ratio_slopes_fromfit.R'))
 
 
@@ -178,8 +178,7 @@ hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RCol
                                              labels = c(1,10,100,1000,10000), limits=c(1,10000))
 
 alpha_value <- 1
-lm_area <- lm()
-area_hex <- ggplot() +
+(area_hex <- ggplot() +
   theme_plant() +
   scale_x_log10(limits = c(0.8, 200), name = exd) +
   scale_y_log10(name = exl, limits = c(0.8, 1500)) +
@@ -189,13 +188,13 @@ area_hex <- ggplot() +
                   aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
   geom_ribbon(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156), 
               aes(x = dbh, ymin = q025, ymax = q975), alpha = 1) +
-  #geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156),
-   #         aes(x = dbh, y = q50)) +
+  geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156),
+            aes(x = dbh, y = q50)) +
   theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
   theme_no_x() +
   theme(axis.title.y = element_text(vjust = -3)) +
-  guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
-area_hex
+  guides(fill = guide_legend(override.aes = list(alpha = alpha_value))))# +
+
 # --- to add secondary height axis, first mask theme_no_x() above
 
 
@@ -203,6 +202,39 @@ p1 <- set_panel_size(area_hex, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
 pdf(file.path(gdrive_path,'Figures/Light_Individual/light_area2.pdf'))
+grid.draw(p1)
+dev.off()
+
+
+hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(RColorBrewer::brewer.pal(9, 'Greys'), bias=1)(50),
+                                             trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
+                                             labels = c(1,10,100,1000,10000), limits=c(1,10000))
+
+alpha_value <- 1
+(area_hex <- ggplot() +
+    theme_plant() +
+    scale_x_log10(limits = c(0.8, 200), name = exd) +
+    scale_y_log10(name = exl, limits = c(0.8, 1500)) +
+    geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received_byarea)) +
+    hex_scale_log_colors +
+    # geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all', dbh_bin < 156), 
+    #                aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
+    #geom_ribbon(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156), 
+    #           aes(x = dbh, ymin = q025, ymax = q975), alpha = 1) +
+    #geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156),
+    #         aes(x = dbh, y = q50)) +
+    theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
+    theme_no_x() +
+    theme(axis.title.y = element_text(vjust = -3)) +
+    guides(fill = guide_legend(override.aes = list(alpha = alpha_value))))# +
+#area_hex
+# --- to add secondary height axis, first mask theme_no_x() above
+
+
+p1 <- set_panel_size(area_hex, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+pdf(file.path(gdrive_path,'Figures/Light_Individual/light_area2_gray.pdf'))
 grid.draw(p1)
 dev.off()
 
@@ -439,13 +471,13 @@ fgbci[fgbci$X2new > 2,] # tall
 fgbci[fgbci$X2new < -2,] # short
 fgbci[fgbci$X1new < -2,] # fast
 
-slow <- fgbci[fgbci$fg5 == 3,] %>% select(fg5, binomial,family, X1new) # slow
+fgbci$binomial <- paste(fgbci$genus, fgbci$species, sep = " ") 
+slow <- fgbci[fgbci$fg5 == 3,] %>% dplyr::select(fg5, binomial, family, X1new) # slow
 slow <- slow[order(desc(slow$X1new)),]
 slow
 #write_csv(slow, "~/Desktop/slow_tree_list.csv")
 
 
-fgbci$binomial <- paste(fgbci$genus, fgbci$species, sep = " ") 
 #anacardium excelsum  = slow
 #Luehea seemannii = slow
 
@@ -582,7 +614,7 @@ fitted_mort_trunc <- fitted_mort %>%
   filter(light_per_area >= min_obs & light_per_area <= max_obs)
 unique(fitted_mort_trunc$fg)
 
-#---  Plot mortality vs light
+
 (p <- ggplot(data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
     geom_ribbon(aes(x = light_per_area, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
     geom_line(aes(x = light_per_area, y = q50, group = fg, color = fg)) +
@@ -625,6 +657,63 @@ system2(command = "pdfcrop",
                   file.path(gdrive_path2,'Figures/Life_History/life_history.pdf')) 
 )
 
+
+#----------------- ---------------------------------------------
+#----------------- Binned mortality by size ---------------------
+#----------------- ---------------------------------------------
+
+bin_mort <- bin_mort %>% arrange(factor(fg, levels = c('all', 'fg5','fg4', 'fg3', 'fg2','fg1')))
+fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
+
+#---  Plot mortality vs light
+obs_range_mort <- bin_mort %>% 
+  arrange(factor(fg, levels = c('fg5','fg4', 'fg3', 'fg2','fg1'))) %>%
+  filter(variable %in% 'dbh', lived + died >= 20) %>%
+  group_by(fg) %>%
+  summarize(min_obs = min(bin_midpoint), max_obs = max(bin_midpoint))
+
+fitted_mort_trunc <- fitted_mort %>%
+  arrange(factor(fg, levels = c('fg5','fg4', 'fg3', 'fg2','fg1'))) %>%
+  left_join(obs_range_mort) %>%
+  left_join(guild_lookup) #%>%
+  #filter(dbh >= min_obs & dbh <= max_obs)
+unique(fitted_mort_trunc$fg)
+
+(p <- ggplot() +#data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
+    #geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
+    #geom_line(aes(x = dbh, y = q50, group = fg, color = fg)) +
+    geom_point(data = bin_mort %>% 
+                 filter(variable == 'dbh', !fg %in% c('all','unclassified'), 
+                        (lived+died) >= 20)  %>% 
+                 mutate(fg = factor(fg, labels = fg_labels)),
+               aes(x = bin_midpoint, y = mortality, fill = fg),
+               shape = 21, size = 4) +
+    scale_x_log10(name = parse(text = 'Stem~Diameter~(cm^2)'), 
+                  # breaks = c(3, 30, 300), 
+                  # limits = c(1.5, 412)
+    ) +
+    scale_y_continuous(trans = "logit", position = "right", 
+                       breaks = c(0.03, 0.1, 0.3, 0.6), 
+                       labels =  c(0.03, 0.1, 0.3, 0.6), 
+                       limits = c(0.02, 0.7),
+                       name = expression(paste("Mortality (5 yr"^-1,")"))) +
+    scale_color_manual(values = guild_colors) +
+    scale_fill_manual(values = guild_fills) +
+    theme_plant())
+
+
+p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p2)  #notice that LLP and Slow show steep slow of mortality with light!
+
+pdf(file.path(gdrive_path, "Figures/Life_History/LH_c_dbh.pdf"))
+grid.draw(p2)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/Life_History/LH_c_dbh.pdf'), 
+                  file.path(gdrive_path2,'Figures/Life_History/LH_c_dbh.pdf')) 
+)
 ################################################################################################
 # ------------------------ Fig 4: Main Scaling Plots --------------------------------
 ################################################################################################
