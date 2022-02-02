@@ -7,8 +7,8 @@ library(tidyverse)
 
 # Check out this slick trick so that we no longer need to comment out any paths - just run this and it sees if it's Quentin or not.
 user <- Sys.info()['user']
-gdrive_path <- ifelse(user == 'qread', '~/google_drive/ForestLight/', file.path('/Users',user,'Google Drive/ForestLight'))
-github_path <- ifelse(user == 'qread', '~/Documents/GitHub/forestlight', file.path('/Users',user,'Documents/GitHub/forestlight'))
+gdrive_path <- ifelse(user == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradymGoogle Drive/ForestLight'))
+github_path <- ifelse(user == 'qread', '~/Documents/GitHub/forestlight', file.path('/Users/jgradym/Documents/GitHub/forestlight'))
 
 bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalitybins.csv')) # Load binned data
 mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv')) # Load raw data
