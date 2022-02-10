@@ -33,7 +33,7 @@ library(sjstats)
 library(rstanarm)
 library(forestscaling) # Packaged all the functions and ggplot2 themes here!
 library(tidyverse)
-#install_github('qdread/forestscaling')
+#devtools::install_github('qdread/forestscaling')
 
 # Define color schemes and labels
 guild_fills <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
@@ -692,6 +692,16 @@ unique(fitted_mort_trunc$fg)
                   # breaks = c(3, 30, 300), 
                   # limits = c(1.5, 412)
     ) +
+    stat_smooth(span = 2, data = bin_mort %>% 
+                  filter(variable == 'dbh', !fg %in% c('all','unclassified'), 
+                         (lived+died) >= 20)  %>% 
+                  mutate(fg = factor(fg, labels = fg_labels)),
+                aes(x = bin_midpoint, y = mortality, color = fg), se = F) +
+    stat_smooth(span = 2, data = bin_mort %>% 
+                  filter(variable == 'dbh', !fg %in% c('all','unclassified'), 
+                         (lived+died) >= 20)  %>% 
+                  mutate(fg = factor(fg, labels = fg_labels)),
+                aes(x = bin_midpoint, y = mortality, color = fg, fill = fg), alpha = 0.1) +
     scale_y_continuous(trans = "logit", position = "right", 
                        breaks = c(0.03, 0.1, 0.3, 0.6), 
                        labels =  c(0.03, 0.1, 0.3, 0.6), 
@@ -705,15 +715,15 @@ unique(fitted_mort_trunc$fg)
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p2)  #notice that LLP and Slow show steep slow of mortality with light!
-
-pdf(file.path(gdrive_path, "Figures/Life_History/LH_c_dbh.pdf"))
-grid.draw(p2)
+pdf('~/Desktop/Mortality.pdf')
+grid.newpage()
+grid.draw(p2)  
 dev.off()
-
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/Life_History/LH_c_dbh.pdf'), 
-                  file.path(gdrive_path2,'Figures/Life_History/LH_c_dbh.pdf')) 
+        args  = c('~/Desktop/Mortality.pdf', 
+        '~/Desktop/Mortality.pdf') 
 )
+
 ################################################################################################
 # ------------------------ Fig 4: Main Scaling Plots --------------------------------
 ################################################################################################
@@ -735,7 +745,70 @@ geom_size = 2
 # Model fit 1 = power law
 # Model fit 2 = power law exp
 
+#-------------------------------------------------------------------------------------------
+#-------------------Alt growth and abundance Figure -------------------------------------
+#-------------------------------------------------------------------------------------------
+geom_size = 4
+Fig_3a <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
+  geom_point(shape = 24, size = geom_size, color = "black") + 
+  labs(x = 'Survivorship–Growth Tradeoff', y = 'Stature—Recruitment Tradeoff') +
+  scale_y_continuous(limits = c(-6,6), breaks = seq(-6,6,3))+
+  scale_x_continuous(limits = c(-6,6), breaks = seq(-6,6,3))+
+  scale_color_manual(values = guild_colors, labels = fg_labels, name = 'functional group')+
+  scale_fill_manual(values = guild_fills) + theme_plant()
+Fig_3a 
 
+p2  <- set_panel_size(Fig_3a , width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+
+
+hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
+                                             trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
+                                             labels = c(1,10,100,1000,10000), limits=c(1,30000))
+
+(p <- ggplot() +
+    geom_hex(data = raw_prod, aes(x = dbh_corr, y = production)) + #+
+    hex_scale_log_colors +
+    scale_y_log10(#name = expression(paste("Growth (kg yr"^-1, ")")), 
+                  breaks = c(0.0001, 0.01, 1, 100, 10000), labels = c("0.0001", 0.01, 1, 100, "10,000"), limits = c(0.0001, 10000)) +
+    scale_x_log10(name = "Stem Diameter (cm)", limits = c(0.8, 400)) +
+    theme_plant2 #+ theme(legend.position = "right", legend.text = element_text(size = 14), legend.title = element_text(size = 18))
+)
+p_hex <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+
+grid.newpage()
+grid.draw(p_hex)
+pdf("~/Desktop/growth_hex.pdf")
+grid.newpage()
+grid.draw(p_hex)
+dev.off()
+system2(command = "pdfcrop", 
+        args  = c("~/Desktop/growth_hex.pdf", 
+                  "~/Desktop/growth_hex.pdf") 
+)
+(p1 <- ggplot() +
+  theme_plant2 +
+  geom_line(data = pred_dens %>% filter(fg == "all", year == "1995", dens_model == 3), 
+            aes(x = dbh, y = q50), color = "black") +
+  geom_ribbon(data = pred_dens %>% filter(fg == "all", year == "1995", dens_model == 3), 
+              aes(x = dbh, ymin = q025, ymax = q975), fill = "black", color = NA, alpha = 0.3) +
+  geom_point(data = obs_dens %>% filter(fg == "all", year == "1995"), 
+             aes(x = bin_midpoint, y = bin_value),
+             size = 4) +
+  scale_y_log10(name = expression(paste("Abundance (Individuals cm"^-1, "  ha"^-1, ")")),
+                labels = c(0.01, .1, 1, 10, 100, 1000), breaks = c(0.01, .1, 1, 10, 100, 1000), limits = c(0.002, 3000), position = "right") +
+  scale_x_log10(limits = c(0.8, 400), name = "Stem Diameter (cm)"))
+
+p_abun<- set_panel_size(p1, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+grid.newpage()
+grid.draw(p_abun)
+pdf("~/Desktop/abun.pdf")
+grid.newpage()
+grid.draw(p_abun)
+dev.off()
+system2(command = "pdfcrop", 
+        args  = c("~/Desktop/abun.pdf", 
+                  "~/Desktop/abun.pdf") 
+)
 # ------------------- Fig 4a: Individual Growth ~ Diameter --------------------------
 
 plot_prod2 <- 
@@ -959,6 +1032,13 @@ system2(command = "pdfcrop",
         args    = c(file.path(gdrive_path2,'Figures/Main_Scaling/Density.pdf'), 
                     file.path(gdrive_path2,'Figures/Main_Scaling/Density.pdf')) 
 )
+
+unique(pred_dens$fg)
+
+
+head(pred_dens)
+
+
 
 #------------------- Fig 4C: Total Production ~ Diameter --------------------------
 obs_totalprod <- obs_totalprod %>%
@@ -3334,6 +3414,8 @@ system2(command = "pdfcrop",
         args    = c(file.path(gdrive_path2,'Figures/Supplementals/Growth_Hex/growth_hex.pdf'), 
                     file.path(gdrive_path2,'Figures/Supplementals/Growth_Hex/growth_hex.pdf')) 
 )
+
+
 #-------------------------------------------------------------------------------
 # ------------------------   Fig S9: Growth WAIC of Piecewise Models  -----------
 #-------------------------------------------------------------------------------
