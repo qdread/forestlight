@@ -17,6 +17,7 @@ github_path <- ifelse(Sys.info()['user'] == 'qread', '~/Documents/GitHub/MSU_rep
 
 
 gdrive_path2 <-  file.path('/Users/jgradym/Google\\ Drive/ForestLight')
+gdrive_path2 <-  file.path('/Volumes/GoogleDrive/My\\ Drive/ForestLight')
 
 library(broom)
 library(egg)
@@ -500,20 +501,27 @@ slow
 
 
 ####--------- Fig 3a, PCA
+geom_size = 3
 geom_size = 4
 Fig_3a <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
-  geom_point(shape = 24, size = geom_size, color = "black") + 
+ # geom_point(shape = 24, size = geom_size, color = "black") + 
+  geom_point(shape = 24, size = geom_size, stroke = 0.3, color = "black") + 
   labs(x = 'Survivorship–Growth Tradeoff', y = 'Stature—Recruitment Tradeoff') +
+  #theme_plant() + 
+  theme_plant_small() + theme(aspect.ratio = 0.75) +
   scale_y_continuous(limits = c(-6,6), breaks = seq(-6,6,3))+
-  scale_x_continuous(limits = c(-6,6), breaks = seq(-6,6,3))+
+  scale_x_continuous(limits = c(-6,7), breaks = seq(-6,6,3))+
   scale_color_manual(values = guild_colors, labels = fg_labels, name = 'functional group')+
-  scale_fill_manual(values = guild_fills) + theme_plant()
+  scale_fill_manual(values = guild_fills) 
 Fig_3a 
 
 p2  <- set_panel_size(Fig_3a , width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+p2 <- set_panel_size(Fig_3a , width=unit(10.25,"cm"), height=unit(7,"cm"))
+p2 <- set_panel_size(Fig_3a , width=unit(10.25,"cm"), height=unit(8,"cm"))
+
 grid.newpage()
 grid.draw(p2)
-pdf(file.path(gdrive_path, 'Figures/Life_History/LH_a.pdf'))
+pdf(file.path(gdrive_path, 'Figures/Life_History/LH_a_wide.pdf'))
 grid.draw(p2)
 dev.off()
 
@@ -688,7 +696,7 @@ unique(fitted_mort_trunc$fg)
                  mutate(fg = factor(fg, labels = fg_labels)),
                aes(x = bin_midpoint, y = mortality, fill = fg),
                shape = 21, size = 4) +
-    scale_x_log10(name = parse(text = 'Stem~Diameter~(cm^2)'), 
+    scale_x_log10(name = parse(text = 'Stem~Diameter~(cm)'), 
                   # breaks = c(3, 30, 300), 
                   # limits = c(1.5, 412)
     ) +
@@ -702,7 +710,7 @@ unique(fitted_mort_trunc$fg)
                          (lived+died) >= 20)  %>% 
                   mutate(fg = factor(fg, labels = fg_labels)),
                 aes(x = bin_midpoint, y = mortality, color = fg, fill = fg), alpha = 0.1) +
-    scale_y_continuous(trans = "logit", position = "right", 
+    scale_y_continuous(trans = "logit", position = "left", 
                        breaks = c(0.03, 0.1, 0.3, 0.6), 
                        labels =  c(0.03, 0.1, 0.3, 0.6), 
                        limits = c(0.02, 0.7),
@@ -715,13 +723,13 @@ unique(fitted_mort_trunc$fg)
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p2)  #notice that LLP and Slow show steep slow of mortality with light!
-pdf('~/Desktop/Mortality.pdf')
+pdf(file.path(gdrive_path,'Figures/Main_Scaling/Mortality/mort_size.pdf'))
 grid.newpage()
 grid.draw(p2)  
 dev.off()
 system2(command = "pdfcrop", 
-        args  = c('~/Desktop/Mortality.pdf', 
-        '~/Desktop/Mortality.pdf') 
+        file.path(gdrive_path2,'Figures/Main_Scaling/Mortality/mort_size.pdf'), 
+        file.path(gdrive_path2,'Figures/Main_Scaling/Mortality/mort_size.pdf') 
 )
 
 ################################################################################################
@@ -744,6 +752,13 @@ geom_size = 2
 # Specify dodging with a certain width of error bar
 # Model fit 1 = power law
 # Model fit 2 = power law exp
+############################################################################################3
+############################################################################################3
+############################################################################################3
+############################################################################################3
+############################################################################################3
+############################################################################################3
+############################################################################################3
 
 #-------------------------------------------------------------------------------------------
 #-------------------Alt growth and abundance Figure -------------------------------------
@@ -766,24 +781,33 @@ hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RCol
                                              labels = c(1,10,100,1000,10000), limits=c(1,30000))
 
 (p <- ggplot() +
-    geom_hex(data = raw_prod, aes(x = dbh_corr, y = production)) + #+
+    geom_hex(data = raw_prod %>% filter(year == 1995), aes(x = dbh_corr, y = production)) + #+
+    geom_point(data = obs_indivprod %>% filter(year == 1995, 
+                                               #mean_n_individuals >= 20,
+                                               fg == "all"),
+               aes(x = bin_midpoint, y = mean), shape = 21, size = 2.5, color = "black", fill = "gray10") +
+    geom_line(data = pred_indivprod %>% filter(year == 1995, fg == "all", prod_model == 1),
+              aes(x = dbh, y = q50), color = "black") +
     hex_scale_log_colors +
-    scale_y_log10(#name = expression(paste("Growth (kg yr"^-1, ")")), 
-                  breaks = c(0.0001, 0.01, 1, 100, 10000), labels = c("0.0001", 0.01, 1, 100, "10,000"), limits = c(0.0001, 10000)) +
-    scale_x_log10(name = "Stem Diameter (cm)", limits = c(0.8, 400)) +
-    theme_plant2 #+ theme(legend.position = "right", legend.text = element_text(size = 14), legend.title = element_text(size = 18))
+    scale_y_log10(name = expression(paste("Growth (kg yr"^-1, ")")), position = "left",
+                 #breaks = c(0.0001, 0.01, 1, 100, 10000), labels = c("0.0001", 0.01, 1, 100, "10,000"),
+                  breaks = c(0.001, 0.01, 0.1,1, 10, 100, 1000), labels = c("0.001", 0.01, 0.1, 1, 10,100, "1000"),
+                  limits = c(0.0005, 3000)) +
+    scale_x_log10(name = "Stem Diameter (cm)", limits = c(0.8, 400), breaks = c(1, 3, 10, 30, 100, 300)) +
+    theme_plant_small() + theme(legend.position = "right", legend.text = element_text(size = 14), legend.title = element_text(size = 14))
 )
 p_hex <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
-
+p_hex  <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p_hex)
-pdf("~/Desktop/growth_hex.pdf")
-grid.newpage()
+#pdf("/Volumes/GoogleDrive/ForestLight/Figures/New_main/growth_hex2.pdf")
+pdf("/Volumes/GoogleDrive/.shortcut-targets-by-id/0Bzy2GmZ-I6IcT0JmNk96Sl9iMVU/ForestLight/Figures/New_main/growth_hex/growth_hex2.pdf")
 grid.draw(p_hex)
 dev.off()
+gdrive_path2 = "/Volumes/GoogleDrive/.shortcut-targets-by-id/0Bzy2GmZ-I6IcT0JmNk96Sl9iMVU/ForestLight"
 system2(command = "pdfcrop", 
-        args  = c("~/Desktop/growth_hex.pdf", 
-                  "~/Desktop/growth_hex.pdf") 
+        file.path(gdrive_path2,'Figures/New_main/growth_hex.pdf'), 
+        file.path(gdrive_path2,'Figures/New_main/growth_hex.pdf') 
 )
 (p1 <- ggplot() +
   theme_plant2 +
@@ -809,6 +833,11 @@ system2(command = "pdfcrop",
         args  = c("~/Desktop/abun.pdf", 
                   "~/Desktop/abun.pdf") 
 )
+############################################################################################3
+############################################################################################3
+############################################################################################3
+############################################################################################3
+
 # ------------------- Fig 4a: Individual Growth ~ Diameter --------------------------
 
 plot_prod2 <- 
@@ -825,6 +854,7 @@ plot_prod2 <-
             x_name = "Diameter (cm)", 
             y_name = expression(paste("Growth (kg yr"^-1, ")")),
             average = "mean", 
+            position = "right",
             plot_errorbar = FALSE, 
             error_min = "ci_min",
             error_max = "ci_max", 
@@ -884,7 +914,7 @@ plot_prod2 <-
                                               y = average, group = "fg", fill = "fg"), 
                           size = geom_size, color = "black", shape = 21, position = pos) + 
       ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
-      ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) + 
+      ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels, position = position) + 
       #theme_no_x() + 
       ggplot2::theme(rect = ggplot2::element_rect(fill = "transparent")) + 
       ggplot2::scale_color_manual(values = color_names) + 
@@ -923,12 +953,12 @@ p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Main_Scaling/Growth.pdf'))
+pdf(file.path(gdrive_path,'Figures/Main_Scaling/Growth_right.pdf'))
 grid.draw(p1)
 dev.off()
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/Main_Scaling/Growth.pdf'), 
-                  file.path(gdrive_path2,'Figures/Main_Scaling/Growth.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/Main_Scaling/Growth_right.pdf'), 
+                  file.path(gdrive_path2,'Figures/Main_Scaling/Growth_right.pdf')) 
 )
 # --- to add secondary height axis, first mask theme_no_x() above
 p0 <- p + scale_x_log10(name = 'Diameter (cm)',
@@ -1428,6 +1458,7 @@ str(obs_richnessbydiameter2$fg)
 #obs_richnessbydiameter2 <- obs_richnessbydiameter %>%
 # filter(fg != "unclassified") %>%
 #mutate(fg = factor(fg, levels=c("fg5", "all", "fg4", "fg3", "fg2", "fg1")))
+
 (rich_abun <- ggplot(mapping = aes(x = abundance_by_bin_width, fill = fg, color = fg)) + 
     scale_x_log10(name = expression(paste("Abundance (cm"^-1,")")),
                   breaks = c(0.01,  1,  100,  10000),
@@ -1439,22 +1470,22 @@ str(obs_richnessbydiameter2$fg)
                   position = "left",
                   name = expression(paste("Richness (cm"^-1,")"))) +
     geom_ribbon(data = fitted_richnessvsabundance_filt %>% 
-                  filter(!fg %in% 'unclassified') %>%
+                  filter(!fg %in% c('unclassified', 'all')) %>%
                   arrange(desc(fg)),
                 aes(ymin = q025, ymax = q975, fill = fg, color = NA), alpha = 0.2, col = NA) + 
     geom_line(data = fitted_richnessvsabundance_filt %>% 
-                filter(!fg %in% 'unclassified') %>%
+                filter(!fg %in% c('unclassified', 'all')) %>%
                 arrange(desc(fg)),
               aes(y = q50, color = fg), size = 0.5) +
     geom_jitter(data = obs_richnessbydiameter %>% 
                   filter(n_individuals > 0) %>%
-                  filter(!fg %in% 'unclassified' & richness > 0)  %>% #  & n_individuals >= 20
+                  filter(!fg %in% c('unclassified', 'all') & richness > 0)  %>% #  & n_individuals >= 20
                   arrange(desc(fg)), 
                 aes(y = richness_by_bin_width),
                 shape = 21, size = 3.5, color = "black", width = 0)  +
     theme_plant() +
-    scale_fill_manual(values = guild_fills2) +
-    scale_color_manual(values = guild_colors2) +
+    scale_fill_manual(values = guild_fills) +
+    scale_color_manual(values = guild_colors) +
     theme(axis.title.y = element_text(vjust = -3))
 )
 #+#fill = c("fg5" = "gray93", "all" = "black", "fg4" =  "#87Cefa", "fg3" = "#27408b", "fg2" = "#267038", "fg1" = "#BFE046"),
@@ -1488,8 +1519,156 @@ system2(command = "pdfcrop",
         args    = c(file.path(gdrive_path2,'Figures/Symmetry/combo3.pdf'), 
                     file.path(gdrive_path2,'Figures/Symmetry/combo3.pdf')) 
 )
+########################################################################################
+# ------------------------------- Fig x, stacked histogram ------------------------------
+########################################################################################
+guild_fills2 = c(fg1 = "#BFE046", fg2 =  "#267038", fg3 = "#27408b", fg4 = "#87Cefa", fg5 = "gray93")
+
+#---------------------------
+#---------- Percent abundance
+#---------------------------
+obs_dens$fg2<- factor(obs_dens$fg, levels = c("fg3", "fg2","fg1",  "fg4", "fg5", "all", "unclassified")) # Loo
+obs_dens$fg2<- factor(obs_dens$fg, levels = c("fg3", "fg1","fg2",  "fg4", "fg5", "all", "unclassified")) # Loo
+obs_dens$bin_count2<- obs_dens$bin_count
+obs_dens$bin_count2[is.na(obs_dens$bin_count2)] = 0
+unique(obs_dens$fg)
+ggplot(data = obs_dens %>%  filter(!fg2 %in% c("all", "unclassified")),
+       aes(x = bin_midpoint, y = bin_count, fill = fg2)) + # could use bin_value instead of bin_count - no difference
+  geom_col(position = position_fill(reverse = TRUE)) +
+  scale_fill_manual(values = guild_fills2) +
+  theme_plant +
+  scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300)) +
+  scale_y_continuous(labels = scales::percent, name = "Relative Abundance") 
 
 
+ggplot(data = obs_dens %>%  filter(!fg2 %in% c("all", "unclassified")),
+       aes(x = bin_midpoint, y = bin_count, fill = fg2)) + # could use bin_value instead of bin_count - no difference
+  geom_col(position = position_fill(reverse = TRUE), width = 0.125) +
+  scale_fill_manual(values = guild_fills2) +
+  theme_plant +
+  scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300)) +
+  scale_y_continuous(labels = scales::percent, name = "Relative Abundance") 
+
+ggplot(data = obs_dens %>%  filter(!fg2 %in% c("all", "unclassified")),
+       aes(x = bin_midpoint, y = bin_value, fill = fg2)) + # could use bin_value instead of bin_count - no difference
+  geom_area(aes(fill = fg2, group = fg2), position = "fill") +
+  scale_fill_manual(values = guild_fills2) +
+  theme_plant +
+  scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300),  expand = c(0,0)) +
+  scale_y_continuous(labels = scales::percent, name = "Relative Abundance", expand = c(0,0)) 
+
+########################################################################
+########################################################################
+########################################################################
+#-----------------------------
+#---------- Percent Richness
+#---------------------------
+str(obs_richnessbydiameter)
+str(obs_dens)
+obs_richnessbydiameter$fg2 <- factor(obs_richnessbydiameter$fg, levels = c("fg3", "fg2","fg1", "fg4", "fg5", "all", "unclassified")) # Loo
+obs_richnessbydiameter$fg2 <- factor(obs_richnessbydiameter$fg, levels = c("fg3", "fg2","fg1", "fg4", "fg5", "all", "unclassified")) # Loo
+guild_fills2 = 
+unique(obs_richnessbydiameter$fg2)
+#---------- Bar plot
+ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified")),
+       aes(x = bin_midpoint, y = richness, fill = fg2)) +
+  geom_col(position = position_fill(reverse = TRUE)) +
+  #geom_col(position = "fill") +
+  scale_fill_manual(values = guild_fills2) +
+  theme_plant +
+  scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), expand = c(0,0)) +
+  scale_y_continuous(labels = scales::percent, name = "Relative Richness", expand = c(0,0)) 
+
+ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified")),
+       aes(x = bin_midpoint, y = richness, fill = fg2)) +
+  geom_col(position = position_fill(reverse = TRUE), width = .125) +
+  scale_fill_manual(values = guild_fills2) +
+  theme_plant +
+  scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), expand = c(0,0)) +
+  scale_y_continuous(labels = scales::percent, name = "Relative Richness", expand = c(0,0)) 
+
+
+ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified")),
+       aes(x = bin_midpoint, y = richness, fill = fg2)) +
+  geom_col(position = position_fill(reverse = TRUE), width = .125) +
+  scale_fill_manual(values = guild_fills2) +
+  theme_plant +
+  scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), expand = c(0,0)) +
+  scale_y_continuous(labels = scales::percent, name = "Relative Richness", expand = c(0,0)) 
+
+########################################################################
+########################################################################
+########################################################################
+#---------- Area plot
+ggplot(data = obs_richnessbydiameter%>% filter(!fg2 %in% c("all", "unclassified")),
+       aes(x = bin_midpoint, y = richness, fill = fg2)) +
+  geom_area(position = position_fill(reverse = TRUE)) +
+  scale_fill_manual(values = guild_fills2) +
+  theme_plant +
+  scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), expand = c(0,0)) +
+  scale_y_continuous(labels = scales::percent, name = "Relative Richness", expand = c(0,0)) 
+
+# percent richness area
+( p = ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified")),
+       aes(x = bin_midpoint, y = richness_by_bin_width, fill = fg2)) +
+  geom_area(position = position_fill(reverse = TRUE)) +
+  scale_fill_manual(values = guild_fills2) +
+  theme_plant +theme(legend.position = "none") +
+  #theme(aspect.ratio = 0.5) +
+  scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), expand = c(0,0)) +
+  scale_y_continuous(labels = scales::percent, position = "right", name = "Percent Richness", expand = c(0,0)) 
+)
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/New_main/percent_rich.pdf'))
+grid.draw(p1)
+dev.off()
+
+#---- percent abundance area
+( p = ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified")),
+             aes(x = bin_midpoint, y = abundance_by_bin_width, fill = fg2)) +
+    geom_area(position = position_fill(reverse = TRUE)) +
+    scale_fill_manual(values = guild_fills2) +
+    theme_plant_small() + theme(legend.position = "none") +
+    #theme(aspect.ratio = 0.5) +
+    #theme_no_x() +
+    scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), 
+                  #limits = c(0.8, 400),
+                  expand = c(0,0)) +
+    scale_y_continuous(labels = scales::percent,
+                       position = "left", 
+                       name = "Percent Abundance", expand = c(0,0)) 
+
+)
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+pdf(file.path(gdrive_path,'Figures/New_main/percent/percent_abundance3.pdf'))
+grid.draw(p1)
+dev.off()
+########################################################################
+########################################################################
+########################################################################
+
+(p <- ggplot(data = obs_richnessbydiameter%>% filter(!fg2 %in% c("all", "unclassified")),
+       aes(x = bin_midpoint, y = abundance_by_bin_width, fill = fg2)) +
+  geom_area(position = position_fill(reverse = TRUE)) +
+  scale_fill_manual(values = guild_fills) +
+  theme_plant_small() + theme(legend.position = "none") + 
+  #theme(aspect.ratio = 0.5) +
+  scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), #limits = c(1, 300), 
+                expand = c(0,0)) +
+  scale_y_continuous(labels = scales::percent, position = "left", name = "Relative Abundnace", expand = c(0,0)) 
+)
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Percent/percent_abun.pdf'))
+grid.draw(p1)
+dev.off()
 ########################################################################################
 # ------------------------------- Fig 6, Ratio Scaling ------------------------------------
 ########################################################################################
@@ -1581,6 +1760,8 @@ short_tall_fill <- c("#87Cefa", "#267038")
 short_tall_fill2 <- c("#65A8AA", "#267038")  #599B8F
 short_tall_fill3 <- c("#68ABB0", "267038")  #74B8CC; 9FAF65
 
+tall_slow_fill <- c("#27408b", "#267038")  #74B8CC; 9FAF65
+
 scale_fast_slow <- scale_fill_gradientn(colours = fast_slow_fill,
                                         trans = 'log')#,# name = 
 scale_fast_slow2 <- scale_fill_gradientn(colours = fast_slow_fill2,
@@ -1593,6 +1774,9 @@ scale_short_tall <- scale_fill_gradientn(colours = short_tall_fill,
 scale_short_tall2<- scale_fill_gradientn(colours = short_tall_fill2,
                                           trans = 'log')#,# name = 
 scale_short_tall3<- scale_fill_gradientn(colours = short_tall_fill3,
+                                         trans = 'log')#,# name = 
+
+scale_tall_slow <- scale_fill_gradientn(colours = tall_slow_fill,
                                          trans = 'log')#,# name = 
 
 # Production fast slow Light
@@ -1700,6 +1884,58 @@ system2(command = "pdfcrop",
         args    = c(file.path(gdrive_path2,'Figures/Ratios/prod_ratio_st3.pdf'), 
                     file.path(gdrive_path2,'Figures/Ratios/prod_ratio_st3.pdf')) 
 )
+
+
+# Production tall slow Light
+(prod_ratio_tallslow  <- ggplot() + # exclude largest short:tall ratio
+    geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975),
+                alpha = 0.25, data = ratio_fitted_lightarea_prod %>% filter(ratio == "Fast-Slow")) +
+    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    geom_line(aes(x = light_area, y = q50), 
+              data = ratio_fitted_lightarea_prod %>% filter(ratio == "Fast-Slow")) +
+    geom_point(data = prod_ratio_light  %>%
+                 filter(n_individuals >= 20, density_ratio > 0, ID == "Fast-Slow"),
+               aes(x = bin_midpoint, y =production_ratio, 
+                   fill = production_ratio),
+               shape = 21, stroke = 0.5, 
+               size = 4.5, 
+               #  size = 4, 
+               color = "black") +
+    scale_fast_slow3 +
+    scale_x_log10(limits = c(2, 400), breaks = c(3, 30, 300), 
+                  #position = "bottom", 
+                  position = "top", 
+                  expression(paste('Light per Crown Area (W m'^-2,')'))) + 
+    scale_y_log10(labels = signif, breaks = c( 0.1, 1, 10, 100, 1000), 
+                  limits=c(0.02, 200),
+                  position = "left",
+                  #position = "right",
+                  name = expression("Production Ratio")) + 
+    #theme_no_y() + 
+    #theme_no_x() +
+    #theme_plant_small() 
+    theme_plant()
+  
+)
+
+
+p1 <- set_panel_size(prod_ratio_fs, width=unit(10.25,"cm"), height=unit(5,"cm"))
+
+#p1 <- set_panel_size(prod_ratio_fs, width=unit(3.3,"cm"), height=unit(10.25,"cm"))
+
+grid.newpage()
+grid.draw(p1)
+
+
+pdf(file.path(gdrive_path,'Figures/Ratios/prod_ratio_fs3.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Ratios/prod_ratio_fs3.pdf'), 
+                    file.path(gdrive_path2,'Figures/Ratios/prod_ratio_fs3.pdf')) 
+)
+
 #----------------------------- Fig 6B Abundance by Diameter ----------------------------
 dens_ratio2 <- prod_ratio_diam %>% 
   filter(density_ratio > 0) %>%
@@ -1855,8 +2091,188 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf')) 
 )
 #----------------------------------------------
-#--------------- Optional: Abundance vs Light --------------------
+#--------------- Richnes by Diameter --------------------
 #----------------------------------------------
+obs_richnessbydiameter_ratio$tall_slow_ratio = obs_richnessbydiameter_ratio$richness_fg2/obs_richnessbydiameter_ratio$richness_fg3
+# Richness tall slow Light
+(rich_ratio_tallslow  <- ggplot(data = obs_richnessbydiameter_ratio %>% 
+                                  filter(n_individuals_fg3 >= 20,n_individuals_fg2 >= 20),
+                                aes(x =  bin_midpoint, y = tall_slow_ratio, fill = tall_slow_ratio)) + # exclude largest short:tall ratio
+   #geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975),
+     #          alpha = 0.25, data = ratio_fitted_lightarea_prod %>% filter(ratio == "Fast-Slow")) +
+   geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+   #geom_line(aes(x = light_area, y = q50), 
+    #         data = ratio_fitted_lightarea_prod %>% filter(ratio == "Fast-Slow")) +
+    stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
+   geom_point(shape = 21, stroke = 0.5, 
+              size = 4, 
+              #  size = 4, 
+              color = "black") +
+    scale_tall_slow  +
+   scale_x_log10(limits = c(1, 100), breaks = c(1, 10, 100), 
+                 #position = "bottom", 
+                 position = "top", 
+                 expression(paste('Stem Diameter (cm)'))) + 
+   scale_y_log10(labels = signif, breaks = c( 0.1, 0.3, 1, 3, 10), 
+                 limits=c(0.3, 4),
+                 #position = "left",
+                 position = "right",
+                 name = expression("Richness Ratio")) + 
+   
+   theme_plant()
+ 
+)
+
+
+p1 <- set_panel_size(rich_ratio_tallslow , width=unit(10.25,"cm"), height=unit(5,"cm"))
+grid.newpage()
+grid.draw(p1)
+pdf(file.path(gdrive_path, '/Figures/New_main/ratios/richness_ratio_diam_tallslow.pdf'))
+grid.draw(p1)
+dev.off()
+(rich_ratio_fastslow  <- ggplot(data = obs_richnessbydiameter_ratio %>% 
+                                  filter(n_individuals_fg3 >= 20,n_individuals_fg2 >= 20),
+                                aes(x =  bin_midpoint, y = richness_ratio_fastslow, fill = richness_ratio_fastslow)) + # exclude largest short:tall ratio
+    #geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975),
+    #          alpha = 0.25, data = ratio_fitted_lightarea_prod %>% filter(ratio == "Fast-Slow")) +
+    #geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    #geom_line(aes(x = light_area, y = q50), 
+    #         data = ratio_fitted_lightarea_prod %>% filter(ratio == "Fast-Slow")) +
+    stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
+    geom_point(shape = 21, stroke = 0.5, 
+               size = 4, 
+               #  size = 4, 
+               color = "black") +
+    scale_fast_slow3  +
+    scale_x_log10(limits = c(1, 100), breaks = c(1, 3, 10, 30, 100), 
+                  #position = "bottom", 
+                  position = "top", 
+                  expression(paste('Stem Diameter (cm)'))) + 
+    scale_y_log10(labels = signif, breaks = c( 0.1, 0.3, 1, 3, 10), 
+                  limits=c(0.3, 4),
+                  #position = "left",
+                  position = "right",
+                  name = expression("Richness Ratio")) + 
+    
+    theme_plant() + theme_no_x() +theme_no_y()
+  
+)
+
+
+p1 <- set_panel_size(rich_ratio_fastslow  , width=unit(10.25,"cm"), height=unit(5,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path, '/Figures/New_main/ratios/richness_ratio_diam_fastslow.pdf'))
+grid.draw(p1)
+dev.off()
+
+
+#abundance ratios
+obs_richnessbydiameter_ratio$tall_slow_abun_ratio = obs_richnessbydiameter_ratio$n_individuals_fg2/obs_richnessbydiameter_ratio$n_individuals_fg3
+obs_richnessbydiameter_ratio$fast_slow_abun_ratio = obs_richnessbydiameter_ratio$n_individuals_fg1/obs_richnessbydiameter_ratio$n_individuals_fg3
+
+# Abundance tall slow Light
+(abun_ratio_tallslow  <- ggplot(data = obs_richnessbydiameter_ratio %>% 
+                                  filter(n_individuals_fg3 >= 20,n_individuals_fg2 >= 20),
+                                aes(x =  bin_midpoint, y = tall_slow_abun_ratio, fill = tall_slow_abun_ratio)) + # exclude largest short:tall ratio
+    #geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975),
+    #          alpha = 0.25, data = ratio_fitted_lightarea_prod %>% filter(ratio == "Fast-Slow")) +
+    geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    #geom_line(aes(x = light_area, y = q50), 
+    #         data = ratio_fitted_lightarea_prod %>% filter(ratio == "Fast-Slow")) +
+    stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
+    geom_point(shape = 21, stroke = 0.5, 
+               size = 4, 
+               #  size = 4, 
+               color = "black") +
+    scale_tall_slow  +
+    scale_x_log10(limits = c(1, 100), breaks = c(1, 10,  100), 
+                  #position = "bottom", 
+                  position = "top", 
+                  expression(paste('Stem Diameter (cm)'))) + 
+    scale_y_log10(labels = signif, breaks = c( 0.03, 0.3, 3), 
+                  #limits=c(0.03, 4),
+                  position = "left",
+                  #position = "right",
+                  name = expression("Abundance Ratio")) + 
+    
+    theme_plant()
+  
+)
+
+
+p1 <- set_panel_size(abun_ratio_tallslow , width=unit(10.25,"cm"), height=unit(5,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
+pdf(file.path(gdrive_path, '/Figures/New_main/ratios/abun_ratio_diam_tall_slow.pdf'))
+grid.draw(p1)
+dev.off()
+
+# Abundance fast slow Light
+(abun_ratio_fastslow  <- ggplot(data = obs_richnessbydiameter_ratio %>% 
+                                  filter(n_individuals_fg3 >= 20, n_individuals_fg1 >= 20),
+                                aes(x =  bin_midpoint, y = fast_slow_abun_ratio, fill = fast_slow_abun_ratio)) + # exclude largest short:tall ratio
+    #geom_ribbon(aes(x = light_area, ymin = q025, ymax = q975),
+    #          alpha = 0.25, data = ratio_fitted_lightarea_prod %>% filter(ratio == "Fast-Slow")) +
+    #geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+    #geom_line(aes(x = light_area, y = q50), 
+    #         data = ratio_fitted_lightarea_prod %>% filter(ratio == "Fast-Slow")) +
+    stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
+    geom_point(shape = 21, stroke = 0.5, 
+               size = 4, 
+               #  size = 4.5, 
+               color = "black") +
+    scale_fast_slow3  +
+    scale_x_log10(limits = c(1, 200), breaks = c(1, 10,  100), 
+                  #position = "bottom", 
+                  position = "top", 
+                  expression(paste('Stem Diameter (cm)'))) + 
+    scale_y_log10(labels = signif,  breaks = c( 0.03, 0.3, 3), 
+                  limits=c(0.03, 4),
+                  position = "left",
+                  #position = "right",
+                  name = expression("Abundance Ratio")) + 
+    
+    theme_plant() + theme_no_x() +theme_no_y()
+  
+)
+
+
+p1 <- set_panel_size(abun_ratio_fastslow , width=unit(10.25,"cm"), height=unit(5,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
+pdf(file.path(gdrive_path, '/Figures/New_main/ratios/abun_ratio_diam_fast_slow.pdf'))
+grid.draw(p1)
+dev.off()
+
+#helpful?
+
+
+
+
+
+#---------- Richness Ratios --------------
+max_dbh_fg <- obs_richnessbydiameter  %>%
+  filter(n_individuals >= 20) %>%
+  group_by(fg) %>%
+  summarize(max_dbh = max(bin_midpoint) +2 )
+
+min_dbh_fg <-obs_richnessbydiameter  %>%
+  filter(n_individuals >= 20) %>%
+  group_by(fg) %>%
+  summarize(min_dbh = min(bin_midpoint) -0.1)
+
+fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
+  left_join(max_dbh_fg) %>%
+  left_join(min_dbh_fg) %>%
+  group_by(fg) %>%
+  filter(dbh <= max_dbh, dbh >= min_dbh)
+
 
 #----------------------------------------------
 #--------------- Optional: Production vs Diameter --------------------
