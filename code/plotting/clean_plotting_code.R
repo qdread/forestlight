@@ -1460,15 +1460,16 @@ str(obs_richnessbydiameter2$fg)
 #mutate(fg = factor(fg, levels=c("fg5", "all", "fg4", "fg3", "fg2", "fg1")))
 
 (rich_abun <- ggplot(mapping = aes(x = abundance_by_bin_width, fill = fg, color = fg)) + 
-    scale_x_log10(name = expression(paste("Abundance (cm"^-1,")")),
+    scale_x_log10(name = expression(paste("Abundance (cm"^-1," ha"^-1,")")),
                   breaks = c(0.01,  1,  100,  10000),
                   labels = c("0.01",  "1", "100", "10,000"),
                   #labels = signif,
-                  limit = c(0.01, 70000)) + 
+                  #limit = c(0.01, 70000)
+                  ) + 
     scale_y_log10(labels = signif,
-                  limit = c(0.01, 2000), 
+                  #limit = c(0.01, 2000), 
                   position = "left",
-                  name = expression(paste("Richness (cm"^-1,")"))) +
+                  name = expression(paste("Richness (cm"^-1," ha"^-1,")"))) +
     geom_ribbon(data = fitted_richnessvsabundance_filt %>% 
                   filter(!fg %in% c('unclassified', 'all')) %>%
                   arrange(desc(fg)),
@@ -1477,7 +1478,7 @@ str(obs_richnessbydiameter2$fg)
                 filter(!fg %in% c('unclassified', 'all')) %>%
                 arrange(desc(fg)),
               aes(y = q50, color = fg), size = 0.5) +
-    geom_jitter(data = obs_richnessbydiameter %>% 
+    geom_jitter(data = obs_richnesssbydiameter %>% 
                   filter(n_individuals > 0) %>%
                   filter(!fg %in% c('unclassified', 'all') & richness > 0)  %>% #  & n_individuals >= 20
                   arrange(desc(fg)), 
@@ -1488,15 +1489,89 @@ str(obs_richnessbydiameter2$fg)
     scale_color_manual(values = guild_colors) +
     theme(axis.title.y = element_text(vjust = -3))
 )
+
+
+(rich_abun <- ggplot() + 
+    theme_plant() +
+    scale_fill_manual(values = guild_fills) +
+    scale_color_manual(values = guild_colors) +
+    geom_jitter(data = obs_richnessbydiameter %>%   arrange(desc(fg)) %>% 
+                  filter(n_individuals > 0) %>%
+                  filter(!fg %in% c('unclassified', 'all') & richness > 0),  #  & n_individuals >= 20
+                aes(x = abundance_by_bin_width, y = richness_by_bin_width,
+                    fill = fg, color = fg),
+      shape = 21, size = 3.5, color = "black", width = 0)  +
+    theme(axis.title.y = element_text(vjust = -3)) + 
+    scale_x_log10(name = expression(paste("Abundance (cm"^-1,")")),
+                  breaks = c(0.01,  1,  100,  10000),
+                  labels = c("0.01",  "1", "100", "10,000"),
+                  #labels = signif,
+                  limit = c(0.01, 70000)
+    ) + 
+    scale_y_log10(labels = signif,
+                  limit = c(0.01,300), 
+                  breaks = c(0.01, 0.1, 1,  10,  100),
+                  #labels = c("0.01",  "1", "100", "10,000"),
+                  position = "left",
+                  name = expression(paste("Richness (cm"^-1,")"))) +
+    geom_ribbon(data = fitted_richnessvsabundance_filt %>% 
+                  filter(!fg %in% c('unclassified', 'all')) %>%
+                  arrange(desc(fg)),
+                aes(x = abundance_by_bin_width, ymin = q025, ymax = q975, fill = fg, color = NA), alpha = 0.2, col = NA) + 
+    geom_line(data = fitted_richnessvsabundance_filt %>% 
+                filter(!fg %in% c('unclassified', 'all')) %>%
+                arrange(desc(fg)),
+              aes(x = abundance_by_bin_width,y = q50, color = fg), size = 0.5) )
+
+p1 <- set_panel_size(rich_abun, width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/New_main/rich_abun/rich_abun_v0.pdf'))
+grid.draw(p1)
+dev.off()
+
+# per ha
+plot_area = 50
+(rich_abun <- ggplot() + 
+    theme_plant() +
+    scale_fill_manual(values = guild_fills) +
+    scale_color_manual(values = guild_colors) +
+    geom_jitter(data = obs_richnessbydiameter %>%   arrange(desc(fg)) %>% 
+                  filter(n_individuals > 0) %>%
+                  filter(!fg %in% c('unclassified', 'all') & richness > 0),  #  & n_individuals >= 20
+                aes(x = abundance_by_bin_width/plot_area, y = richness_by_bin_width/plot_area,
+                    fill = fg, color = fg),
+                shape = 21, size = 3.5, color = "black", width = 0)  +
+    theme(axis.title.y = element_text(vjust = -3)) + 
+    scale_x_log10(name = expression(paste("Abundance (cm"^-1," ha"^-1,")")),
+                  breaks = c(0.01,  1,  100),
+                  labels = c("0.01",  "1", "100"),
+                  #labels = signif,
+                  limit = c(0.001, 300)
+    ) + 
+    scale_y_log10(labels = signif,
+                  limit = c(0.0003, 3), 
+                  position = "left",
+                  name = expression(paste("Richness (cm"^-1," ha"^-1,")"))) +
+    geom_ribbon(data = fitted_richnessvsabundance_filt %>% 
+                  filter(!fg %in% c('unclassified', 'all')) %>%
+                  arrange(desc(fg)),
+                aes(x = abundance_by_bin_width/plot_area, ymin = q025/plot_area, ymax = q975/plot_area, fill = fg, color = NA), alpha = 0.2, col = NA) + 
+    geom_line(data = fitted_richnessvsabundance_filt %>% 
+                filter(!fg %in% c('unclassified', 'all')) %>%
+                arrange(desc(fg)),
+              aes(x = abundance_by_bin_width/plot_area, y = q50/plot_area, color = fg), size = 0.5) )
+
 #+#fill = c("fg5" = "gray93", "all" = "black", "fg4" =  "#87Cefa", "fg3" = "#27408b", "fg2" = "#267038", "fg1" = "#BFE046"),
 #color = c("fg5" = "gray", "all" = "black", "fg4" =  "#87Cefa", "fg3" = "#27408b", "fg2" = "#267038", "fg1" = "#BFE046")),
 
 
-p1 <- set_panel_size(rich_abun, width=unit(10.25,"cm"), height=unit(8,"cm"))
+p1 <- set_panel_size(rich_abun, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/Rich_abun/rich_abun.pdf'))
+pdf(file.path(gdrive_path,'Figures/New_main/rich_abun/rich_abun_per_ha.pdf'))
 grid.draw(p1)
 dev.off()
 
