@@ -127,7 +127,7 @@ guild_lookup <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','all','unclassif
 
 ####--------- Fig 3a, PCA
 geom_size = 3
-geom_size = 4
+#geom_size = 4
 Fig_3a <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
   # geom_point(shape = 24, size = geom_size, color = "black") + 
   geom_point(shape = 24, size = geom_size, stroke = 0.3, color = "black") + 
@@ -146,9 +146,14 @@ p2 <- set_panel_size(Fig_3a , width=unit(10.25,"cm"), height=unit(8,"cm"))
 
 grid.newpage()
 grid.draw(p2)
-pdf(file.path(gdrive_path, 'Figures/Life_History/LH_a_wide.pdf'))
+pdf(file.path(gdrive_path, 'Figures/New_main/life_history/life_history.pdf'))
 grid.draw(p2)
 dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/life_history/life_history.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/life_history/life_history.pdf')) 
+)
 
 #peering into things
 guild_lookup
@@ -218,10 +223,14 @@ str(obs_dens)
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
-pdf(file.path(gdrive_path,'Figures/New_main/percent/percent_abundance3.pdf'))
+pdf(file.path(gdrive_path,'Figures/New_main/percent/percent_abundance.pdf'))
 grid.draw(p1)
 dev.off()
 
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/percent/percent_abundance'), 
+                    file.path(gdrive_path2,'Figures/New_main/percent/percent_abundance')) 
+)
 
 #bar plot
 ggplot(data = obs_dens %>%  filter(!fg2 %in% c("all", "unclassified")),
@@ -467,8 +476,8 @@ pdf(file.path(gdrive_path,'Figures/New_main/production/Total_Production.pdf'))
 grid.draw(p1)
 dev.off()
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/Main_Scaling/Total_Production.pdf'), 
-                    file.path(gdrive_path2,'Figures/Main_Scaling/Total_Production.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/production/Total_Production.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/production/Total_Production.pdf')) 
 )
 #----------------------------------------------------------------------------------
 #--------------------------   Richness  -------------------------------------------
@@ -532,8 +541,8 @@ dev.off()
 
 
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/Main_Scaling/Richness.pdf'), 
-                  file.path(gdrive_path2,'Figures/Main_Scaling/Richness.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/new_main/richness/Richness.pdf'), 
+                  file.path(gdrive_path2,'Figures/new_main/richness/Richness.pdf')) 
 )
 
 ########################################################################
@@ -614,9 +623,14 @@ p1 <- set_panel_size(rich_ratio_tallslow , width=unit(10.25,"cm"), height=unit(8
 
 grid.newpage()
 grid.draw(p1)
-pdf(file.path(gdrive_path, '/Figures/New_main/ratios/richness_ratio_diam_tallslow.pdf'))
+pdf(file.path(gdrive_path, 'Figures/New_main/ratios/richness_ratio_diam_tallslow.pdf'))
 grid.draw(p1)
 dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/ratios/richness_ratio_diam_tallslow.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/ratios/richness_ratio_diam_tallslow.pdf')) 
+)
 
 #------------------ Plot Fast Slow  Richness ~ diameter -----------
 
@@ -653,7 +667,10 @@ pdf(file.path(gdrive_path, '/Figures/New_main/ratios/richness_ratio_diam_fastslo
 grid.draw(p1)
 dev.off()
 
-
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/ratios/richness_ratio_diam_fastslow.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/ratios/richness_ratio_diam_fastslow.pdf')) 
+)
 
 #----------------------------------------------------------------------------------
 #--------------------------  Abundance  -------------------------------------------
@@ -689,11 +706,15 @@ p1 <- set_panel_size(abun_ratio_tallslow , width=unit(10.25,"cm"), height=unit(8
 
 grid.newpage()
 grid.draw(p1)
-pdf(file.path(gdrive_path, '/Figures/New_main/ratios/abun_ratio_diam_tall_slow_right.pdf'))
+pdf(file.path(gdrive_path, 'Figures/New_main/ratios/abun_ratio_diam_tall_slow_right.pdf'))
 #pdf(file.path(gdrive_path, '/Figures/New_main/ratios/abun_ratio_diam_tall_slow_square.pdf'))
-
 grid.draw(p1)
 dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/ratios/abun_ratio_diam_tall_slow_right.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/ratios/abun_ratio_diam_tall_slow_right.pdf')) 
+)
 
 #------------------------ Abundance Fast slow ----------------
 
@@ -732,6 +753,11 @@ pdf(file.path(gdrive_path, '/Figures/New_main/ratios/abun_ratio_diam_fast_slow.p
 grid.draw(p1)
 dev.off()
 
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/ratios/abun_ratio_diam_fast_slow.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/ratios/abun_ratio_diam_fast_slow.pdf')) 
+)
+
 
 #----------------------------------------------------------------------------------
 #--------------------------  Productivity  -------------------------------------------
@@ -769,11 +795,16 @@ prod_ratio = data.frame("bin_midpoint" = prod1995$bin_midpoint[1:15], "fast_slow
 p1 <- set_panel_size(prod_fastslow  , width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
-pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_fastslow_square.pdf'))
-pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_fastslow.pdf'))
+#pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_fastslow_square.pdf'))
+pdf(file.path(gdrive_path, 'Figures/New_main/ratios/production_ratio_diam_fastslow.pdf'))
 grid.draw(p1)
 dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/ratios/production_ratio_diam_fastslow.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/ratios/production_ratio_diam_fastslow.pdf')) 
+)
 
+#---------- productivity Tall vs Slow --------------
 (prod_tallslow <- ggplot(data = prod_ratio, 
                          aes(x =  bin_midpoint, y = tall_slow_prod , fill = tall_slow_prod )) + # exclude largest short:tall ratio
     stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
@@ -798,13 +829,16 @@ p1 <- set_panel_size(prod_tallslow , width=unit(10.25,"cm"), height=unit(8,"cm")
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_tallslow_square.pdf'))
-pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_tallslow.pdf'))
-pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_tallslow_right.pdf'))
-
+#pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_tallslow_square.pdf'))
+#pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_tallslow.pdf'))
+pdf(file.path(gdrive_path, 'Figures/New_main/ratios/production_ratio_diam_tallslow_right.pdf'))
 grid.draw(p1)
 dev.off()
 
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/ratios/production_ratio_diam_tallslow_right.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/ratios/production_ratio_diam_tallslow_right.pdf')) 
+)
 
 ######################################################################################################
 #########################         Mechanisms             ############################################
@@ -834,7 +868,7 @@ plot_prod3 <- function (year_to_plot = 1995,
                         error_bar_thickness = 0.5, 
                         dodge_width = 0.07, 
                         dodge_errorbar = TRUE, 
-                        geom_size = 3.5, 
+                        geom_size = 4, 
                         obsdat = obs_indivprod, 
                         preddat = fitted_indivprod, 
                         plot_abline = TRUE, 
@@ -887,11 +921,11 @@ plot_prod3 <- function (year_to_plot = 1995,
                         size = geom_size, color = "black", shape = 21, position = pos) + 
     ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
     ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) + 
-    theme_no_x() + 
+    #theme_no_x() + 
     ggplot2::theme(rect = ggplot2::element_rect(fill = "transparent")) + 
     ggplot2::scale_color_manual(values = color_names) + 
     ggplot2::scale_fill_manual(values = fill_names) + 
-    theme_plant() + theme_no_x() +
+    theme_plant() +#+ theme_no_x() +
     if (plot_abline) {
       p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
                                     slope = abline_slope, color = "gray72", linetype = "dashed", 
@@ -924,13 +958,13 @@ p <- plot_prod3(year_to_plot = 1995,
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p2)
-pdf(file.path(gdrive_path,'Figures/New_main/growth_diam/Diam_growth.pdf'))
+pdf(file.path(gdrive_path,'Figures/New_main/growth_diam/Diam_growth_x.pdf'))
 grid.draw(p2)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/growth_diam/Diam_growth.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/growth_diam/Diam_growth.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/growth_diam/Diam_growth_x.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/growth_diam/Diam_growth_x.pdf')) 
 )
 
 #---------------------------------------------------------------------------------------------------
@@ -1112,7 +1146,7 @@ unique(fitted_mort_trunc$fg)
     scale_y_continuous(trans = "logit", position = "right", 
                        breaks = c(0.03, 0.1, 0.3, 0.6), 
                        labels =  c(0.03, 0.1, 0.3, 0.6), 
-                       limits = c(0.02, 0.7),
+                       limits = c(0.02, 0.8),
                        name = expression(paste("Mortality (5 yr"^-1,")"))) +
     scale_color_manual(values = guild_colors) +
     scale_fill_manual(values = guild_fills) +
@@ -1166,7 +1200,7 @@ plot_area = 50
                   filter(!fg %in% c('unclassified', 'all') & richness > 0),  #  & n_individuals >= 20
                 aes(x = abundance_by_bin_width/plot_area, y = richness_by_bin_width/plot_area,
                     fill = fg, color = fg),
-                shape = 21, size = 3.5, color = "black", width = 0)  +
+                shape = 21, size = 4, color = "black", width = 0)  +
     theme(axis.title.y = element_text(vjust = -3)) + 
     scale_x_log10(name = expression(paste("Abundance (cm"^-1," ha"^-1,")")),
                   breaks = c(0.01,  1,  100),
