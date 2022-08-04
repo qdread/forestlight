@@ -86,7 +86,7 @@ grob_all <- grobTree(textGrob("All", x = 0.04, y = 0.60,  hjust = 0,
                               gp = gpar(col = "black", fontsize = 15, fontface = "italic"))) 
 
 grob_slow3 <- grobTree(textGrob("Slow", x = 0.04, y = 0.81,  hjust = 0,
-                                gp = gpar(col = "#27408b", fontsize = 15, fontface = "italic"))) 
+                                gp = gpar(col = "#27408b", fontsize = 15, fontface = "italic")))   
 
 grob_short3 <- grobTree(textGrob("Short", x = 0.04, y = 0.74,  hjust = 0,
                                  gp = gpar(col = "#87Cefa", fontsize = 15, fontface = "italic"))) 
@@ -1001,7 +1001,7 @@ plot_dens2 <- function (year_to_plot = 1995,
                         preddat = pred_dens, 
                         plot_abline = TRUE, 
                         abline_slope = -2, 
-                        abline_intercept = 4,
+                        abline_intercept = -10,
                         dodge_width = 0.07) 
 {
   pos <-  ggplot2::position_dodge(width = dodge_width)
@@ -1038,23 +1038,23 @@ plot_dens2 <- function (year_to_plot = 1995,
     ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) + 
     ggplot2::scale_color_manual(values = color_names) + 
     ggplot2::scale_fill_manual(values = fill_names) + 
-    theme_plant()
+    theme_plant() + theme_no_x()
 }
-p <- plot_dens2(year_to_plot = 1995,
+(p <- plot_dens2(year_to_plot = 1995,
                 fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
                 model_fit = DENS,
                 dodge_width = 0.0,
-                x_limits = c(.9, 200),
+                x_limits = c(.9, 160),
                 y_limits = c(0.007, 4000),
                 x_breaks = c(1, 10, 100),
                 y_labels = c(0.001, 0.1, 10,1000),
-                y_breaks = c(0.001, 0.1,  10, 1000))
+                y_breaks = c(0.001, 0.1,  10, 1000)))
 #p <- p +annotation_custom(grob_text_b)
 
-p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
-pdf(file.path(gdrive_path,'Figures/Main_Scaling/Density.pdf'))
+pdf(file.path(gdrive_path,'Figures/Main_Scaling/Density3.pdf'))
 grid.draw(p1)
 dev.off()
 
@@ -1254,7 +1254,7 @@ fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
                   arrange(desc(fg)), 
                 aes(x = bin_midpoint, y = richness_by_bin_width, fill = fg, color = fg),
                 shape = 21, size = 4, color = "black", width = 0.02) + #0.02
-    geom_abline(intercept = log10(30000), slope = -2, linetype = "dashed", color = "gray72", size = 0.75) +
+    #geom_abline(intercept = log10(30000), slope = -2, linetype = "dashed", color = "gray72", size = 0.75) +
     scale_x_log10(name = 'Diameter (cm)',
                   limit = c(.9, 200)) + 
     scale_y_log10(labels = signif,
@@ -1263,12 +1263,12 @@ fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
                   name = expression(paste("Richness (cm"^-1,")"))) +
     scale_fill_manual(values = guild_fills2) +
     scale_color_manual(values = guild_colors2) +
-    theme_plant() #+
+    theme_plant() + theme_no_x()
   
 )
 
 
-p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(7,"cm"))
+p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
@@ -2166,7 +2166,7 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/Main_comparison.pdf')) 
 )
 #----------------------------------------------
-#--------------- Richnes by Diameter --------------------
+#--------------- Richness by Diameter --------------------
 #----------------------------------------------
 obs_richnessbydiameter_ratio$tall_slow_ratio = obs_richnessbydiameter_ratio$richness_fg2/obs_richnessbydiameter_ratio$richness_fg3
 # Richness tall slow Light
@@ -2243,7 +2243,7 @@ grid.draw(p1)
 dev.off()
 
 
-#abundance ratios
+#------------- abundance ratios by diameter --------
 obs_richnessbydiameter_ratio$tall_slow_abun_ratio = obs_richnessbydiameter_ratio$n_individuals_fg2/obs_richnessbydiameter_ratio$n_individuals_fg3
 obs_richnessbydiameter_ratio$fast_slow_abun_ratio = obs_richnessbydiameter_ratio$n_individuals_fg1/obs_richnessbydiameter_ratio$n_individuals_fg3
 
@@ -2328,7 +2328,87 @@ dev.off()
 #helpful?
 
 
+#----------- Production by Diameter Ratio
+obs_richnessbydiameter_ratio$tall_slow_abun_ratio = obs_richnessbydiameter_ratio$n_individuals_fg2/obs_richnessbydiameter_ratio$n_individuals_fg3
+obs_richnessbydiameter_ratio$fast_slow_abun_ratio = obs_richnessbydiameter_ratio$n_individuals_fg1/obs_richnessbydiameter_ratio$n_individuals_fg3
 
+prod1995 = obs_totalprod %>%
+  filter(year == 1995, bin_count >= 20) #%>%
+  #mutate(fast_slow_prod = NA, tall_slow_prod = NA)
+fast_slow_prod = prod1995$bin_value[prod1995$fg == "fg1"]/prod1995$bin_value[prod1995$fg == "fg3"]
+tall_slow_prod = prod1995$bin_value[prod1995$fg == "fg2"][1:15]/prod1995$bin_value[prod1995$fg == "fg3"]
+prod_ratio = data.frame("bin_midpoint" = prod1995$bin_midpoint[1:15], "fast_slow_prod" = fast_slow_prod, "tall_slow_prod" = tall_slow_prod)   
+
+
+
+(prod_fastslow  <- ggplot(data = prod_ratio, 
+                                aes(x =  bin_midpoint, y = fast_slow_prod , fill = fast_slow_prod )) + # exclude largest short:tall ratio
+    stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
+    geom_point(shape = 21, stroke = 0.5, 
+               size = 4, 
+               #  size = 4, 
+               color = "black") +
+    scale_fast_slow3  +
+    scale_x_log10(#limits = c(1, 100), breaks = c(1, 3, 10, 30, 100), 
+                  #position = "bottom", 
+                  limits = c(.9, 200),
+                  position = "top", 
+                  expression(paste('Stem Diameter (cm)'))) + 
+    scale_y_log10(labels = signif, breaks = c(0.03,  0.3, 3), 
+                  limits=c(0.03, 4),
+                  #position = "left",
+                  position = NULL,
+                  name = expression("Production Ratio")) + 
+    
+    theme_plant() +theme_no_y()#+ theme_no_x() 
+)
+
+
+p1 <- set_panel_size(prod_fastslow  , width=unit(8,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+p1 <- set_panel_size(prod_fastslow  , width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_fastslow_square.pdf'))
+pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_fastslow.pdf'))
+grid.draw(p1)
+dev.off()
+
+(prod_tallslow <- ggplot(data = prod_ratio, 
+                          aes(x =  bin_midpoint, y = tall_slow_prod , fill = tall_slow_prod )) + # exclude largest short:tall ratio
+    stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
+    geom_point(shape = 21, stroke = 0.5, 
+               size = 4, 
+               #  size = 4, 
+               color = "black") +
+    scale_tall_slow  +
+    scale_x_log10(#limits = c(1, 100), breaks = c(1, 3, 10, 30, 100), 
+      limits = c(.9, 200),
+      position = NULL, 
+      expression(paste('Stem Diameter (cm)'))) + 
+    scale_y_log10(labels = signif, breaks = c( 0.03, 0.1, 0.3, 1, 3, 10), 
+                  limits=c(0.03, 4),
+                  #position = "left",
+                  position = "right",
+                  name = expression("Production Ratio")) + 
+    
+    theme_plant() + theme_no_x() +theme_no_y()
+)
+
+p1 <- set_panel_size(prod_tallslow, width=unit(8,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+p1 <- set_panel_size(prod_tallslow , width=unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_tallslow_square.pdf'))
+pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_tallslow.pdf'))
+grid.draw(p1)
+dev.off()
 
 
 #---------- Richness Ratios --------------
