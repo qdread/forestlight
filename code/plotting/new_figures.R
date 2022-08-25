@@ -37,10 +37,11 @@ library(tidyverse)
 #devtools::install_github('qdread/forestscaling')
 
 # Define color schemes and labels
-guild_fills <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
-guild_fills2 <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
-guild_colors <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
-guild_colors2 <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
+guild_fills_all = c(fg1 = "#BFE046", fg2 =  "#267038", fg3 = "#27408b", fg4 = "#87Cefa", fg5 = "gray93", all = "black")
+guild_fills_fg = c(fg1 = "#BFE046", fg2 =  "#267038", fg3 = "#27408b", fg4 = "#87Cefa", fg5 = "gray93")
+guild_fills = c( "#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
+guild_colors_fg <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
+guild_colors_all <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 
 fg_labels <- c("fg1", "fg2","fg3", "fg4", "fg5")
 fg_labels2 <- c("all", "fg1", "fg2","fg3", "fg4", "fg5")
@@ -66,6 +67,24 @@ grob_a <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
 grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
                             gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 
+#guide <- guides(color = guide_legend(title=NULL), fill = guide_legend(title=NULL)) #, color = F, override.aes=list(fill=NA))
+grob_fast <- grobTree(textGrob("Fast", x = 0.04, y = 0.95,  hjust = 0,
+                               gp = gpar(col = "#BFE046", fontsize = 15, fontface = "italic"))) 
+
+grob_tall <- grobTree(textGrob("Tall", x = 0.04, y = 0.88,  hjust = 0,
+                               gp = gpar(col = "#267038", fontsize = 15, fontface = "italic"))) 
+
+grob_medium <- grobTree(textGrob("Medium", x = 0.04, y = 0.81,  hjust = 0,
+                                 gp = gpar(col = "gray70", fontsize = 15, fontface = "italic"))) 
+
+grob_slow <- grobTree(textGrob("Slow", x = 0.04, y = 0.74,  hjust = 0,
+                               gp = gpar(col = "#27408b", fontsize = 15, fontface = "italic"))) 
+
+grob_short <- grobTree(textGrob("Short", x = 0.04, y = 0.67,  hjust = 0,
+                                gp = gpar(col = "#87Cefa", fontsize = 15, fontface = "italic"))) 
+
+grob_all <- grobTree(textGrob("All", x = 0.04, y = 0.60,  hjust = 0,
+                              gp = gpar(col = "black", fontsize = 15, fontface = "italic"))) 
 
 # To add back the legend
 theme_plant2 <- theme_plant() + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
@@ -125,7 +144,7 @@ guild_lookup <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','all','unclassif
                            fg_name = c('Fast','Tall','Slow','Short','Medium','All','Unclassified'))
 
 
-####--------- Fig 3a, PCA
+####--------- Fig 1A PCA Plot -----------------------
 geom_size = 3
 #geom_size = 4
 Fig_3a <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = factor(fg5))) +
@@ -136,7 +155,7 @@ Fig_3a <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill
   theme_plant_small() + theme(aspect.ratio = 0.75) +
   scale_y_continuous(limits = c(-6,6), breaks = seq(-6,6,3))+
   scale_x_continuous(limits = c(-6,7), breaks = seq(-6,6,3))+
-  scale_color_manual(values = guild_colors, labels = fg_labels, name = 'functional group')+
+  scale_color_manual(values = guild_colors_fg, labels = fg_labels, name = 'functional group')+
   scale_fill_manual(values = guild_fills) 
 Fig_3a 
 
@@ -188,7 +207,6 @@ slow
 ########################################################################################
 # ------------------------------- Fig x, stacked histogram ------------------------------
 ########################################################################################
-guild_fills2 = c(fg1 = "#BFE046", fg2 =  "#267038", fg3 = "#27408b", fg4 = "#87Cefa", fg5 = "gray93")
 
 #---------------------------
 #---------- Percent abundance
@@ -197,7 +215,7 @@ obs_dens$fg2 <- factor(obs_dens$fg, levels = c("fg3", "fg4","fg2", "fg1", "fg5",
 obs_dens$fg2 <- factor(obs_dens$fg, levels = c("fg3", "fg4", "fg1", "fg2", "fg5", "all", "unclassified")) # Loo
 obs_dens$fg2 <- factor(obs_dens$fg, levels = c("fg5", "fg3", "fg4", "fg1", "fg2",  "all", "unclassified")) # Loo
 
-#obs_dens$fg2<- factor(obs_dens$fg, levels = c("fg3", "fg1","fg2",  "fg4", "fg5", "all", "unclassified")) # Loo
+obs_dens$fg2<- factor(obs_dens$fg, levels = c("fg3", "fg1","fg2",  "fg4", "fg5", "all", "unclassified")) # Loo
 obs_dens$bin_count2<- obs_dens$bin_count
 obs_dens$bin_count2[is.na(obs_dens$bin_count2)] = 0
 unique(obs_dens$fg)
@@ -205,11 +223,16 @@ str(obs_richnessbydiameter)
 str(obs_dens)
 
 #area plot
+
+obs_richnessbydiameter$fg2 <- factor(obs_richnessbydiameter$fg, levels = c("fg3", "fg4","fg2","fg1",  "fg5", "all", "unclassified")) # Loo
+obs_richnessbydiameter = obs_richnessbydiameter %>%
+  group_by(fg) %>%
+  mutate(perc_abun = n_individuals/obs_richnessbydiameter$n_individuals[obs_richnessbydiameter$fg == "all"])
 (p = ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified")),
              aes(x = bin_midpoint, y = abundance_by_bin_width, fill = fg2)) +
     geom_area(position = position_fill(reverse = TRUE)) +
-    scale_fill_manual(values = guild_fills2) +
-    theme_plant_small() + theme(legend.position = "none") +
+    scale_fill_manual(values = guild_fills_fg) +
+    theme_plant()+ theme(legend.position = "none") +
     #theme(aspect.ratio = 0.5) +
     #theme_no_x() +
     scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), 
@@ -236,7 +259,7 @@ system2(command = "pdfcrop",
 ggplot(data = obs_dens %>%  filter(!fg2 %in% c("all", "unclassified")),
        aes(x = bin_midpoint, y = bin_count, fill = fg2)) + # could use bin_value instead of bin_count - no difference
   geom_col(position = position_fill(reverse = TRUE), width = 0.125) +
-  scale_fill_manual(values = guild_fills2) +
+  scale_fill_manual(values = guild_fills_fg) +
   theme_plant +
   scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300)) +
   scale_y_continuous(labels = scales::percent, name = "Relative Abundance") 
@@ -245,7 +268,7 @@ ggplot(data = obs_dens %>%  filter(!fg2 %in% c("all", "unclassified")),
 ggplot(data = obs_dens %>%  filter(!fg2 %in% c("all", "unclassified")),
        aes(x = bin_midpoint, y = bin_value, fill = fg2)) + # could use bin_value instead of bin_count - no difference
   geom_area(aes(fill = fg2, group = fg2), position = "fill") +
-  scale_fill_manual(values = guild_fills2) +
+  scale_fill_manual(values = guild_fills_fg) +
   theme_plant +
   scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300),  expand = c(0,0)) +
   scale_y_continuous(labels = scales::percent, name = "Relative Abundance", expand = c(0,0)) 
@@ -262,7 +285,7 @@ obs_richnessbydiameter$fg2 <- factor(obs_richnessbydiameter$fg, levels = c("fg3"
 ggplot(data = obs_richnessbydiameter%>% filter(!fg2 %in% c("all", "unclassified")),
        aes(x = bin_midpoint, y = richness, fill = fg2)) +
   geom_area(position = position_fill(reverse = TRUE)) +
-  scale_fill_manual(values = guild_fills2) +
+  scale_fill_manual(values = guild_fills_fg) +
   theme_plant +
   scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), expand = c(0,                                                                                           0)) +
   scale_y_continuous(labels = scales::percent, name = "Relative Richness", expand = c(0,0)) 
@@ -273,7 +296,7 @@ ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified
        aes(x = bin_midpoint, y = richness, fill = fg2)) +
   geom_col(position = position_fill(reverse = TRUE)) +
   #geom_col(position = "fill") +
-  scale_fill_manual(values = guild_fills2) +
+  scale_fill_manual(values = guild_fills_fg) +
   theme_plant +
   scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), expand = c(0,0)) +
   scale_y_continuous(labels = scales::percent, name = "Relative Richness", expand = c(0,0)) 
@@ -281,7 +304,7 @@ ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified
 ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified")),
        aes(x = bin_midpoint, y = richness, fill = fg2)) +
   geom_col(position = position_fill(reverse = TRUE), width = .125) +
-  scale_fill_manual(values = guild_fills2) +
+  scale_fill_manual(values = guild_fills_fg) +
   theme_plant +
   scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), expand = c(0,0)) +
   scale_y_continuous(labels = scales::percent, name = "Relative Richness", expand = c(0,0)) 
@@ -290,10 +313,57 @@ ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified
 ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified")),
        aes(x = bin_midpoint, y = richness, fill = fg2)) +
   geom_col(position = position_fill(reverse = TRUE), width = .125) +
-  scale_fill_manual(values = guild_fills2) +
+  scale_fill_manual(values = guild_fills_fg) +
   theme_plant +
   scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), expand = c(0,0)) +
   scale_y_continuous(labels = scales::percent, name = "Relative Richness", expand = c(0,0)) 
+
+
+
+###################################################################################
+################# Biomass growth heat map #####################
+###################################################################################
+
+hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
+                                             trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
+                                             labels = c(1,10,100,1000,10000), limits=c(1,30000))
+
+(p <- ggplot() +
+    geom_hex(data = raw_prod %>% filter(year == 1995), aes(x = dbh_corr, y = production)) + #+
+    geom_point(data = obs_indivprod %>% filter(year == 1995, 
+                                               #mean_n_individuals >= 20,
+                                               fg == "all"),
+               aes(x = bin_midpoint, y = mean), shape = 21, size = 2.5, color = "black", fill = "gray10") +
+   # geom_line(data = pred_indivprod %>% filter(year == 1995, fg == "all", prod_model == 1),
+    #          aes(x = dbh, y = q50), color = "black") +
+    geom_smooth(data = raw_prod %>% filter(year == 1995), aes(x = dbh_corr, y = production),
+              color = "black", method = "lm", se = T, size = .5, alpha = 0.2) +
+    hex_scale_log_colors +
+    scale_y_log10(name = expression(paste("Growth (kg yr"^-1, ")")), position = "left",
+                  #breaks = c(0.0001, 0.01, 1, 100, 10000), labels = c("0.0001", 0.01, 1, 100, "10,000"),
+                  breaks = c(0.001, 0.01, 0.1,1, 10, 100, 1000), labels = c("0.001", 0.01, 0.1, 1, 10,100, "1000"),
+                  limits = c(0.0005, 3000)) +
+    theme_plant_small() + theme(legend.position = "right", legend.text = element_text(size = 14), legend.title = element_text(size = 14))
+)
+p_hex <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+p_hex  <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p_hex)
+
+raw_prod$fg
+sum(!is.na(raw_prod$production[raw_prod$year == 1995]))
+
+#pdf("/Volumes/GoogleDrive/ForestLight/Figures/New_main/growth_hex2.pdf")
+
+pdf(file.path(gdrive_path2,'Figures/new_main/Final_figs/Fig_3/growth_hex.pdf'))
+grid.draw(p_hex)
+dev.off()
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/new_main/Final_figs/Fig_3/growth_hex.pdf'), 
+                  file.path(gdrive_path2,'Figures/new_main/Final_figs/Fig_3/growth_hex.pdf')) 
+)
+
+
 
 
 ###################################################################################
@@ -314,7 +384,7 @@ plot_dens2 <- function (year_to_plot = 1995,
                         y_limits, 
                         y_breaks, 
                         y_labels, 
-                        fill_names = guild_fills2, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
+                        fill_names = guild_fills_all, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
                         color_names = guild_colors2, #c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),  
                         x_name = "Stem Diameter (cm)",
                         y_name = expression(paste("Density (n ha"^-1, "cm"^-1, ")")), 
@@ -404,10 +474,10 @@ plot_totalprod2 <-function(year_to_plot = 1995,
                            y_limits = c(0.03, 100), 
                            y_breaks = c(0.01, 0.1, 1, 10, 100, 1000), 
                            y_labels, 
-                           fill_names = guild_fills2, # c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
+                           fill_names = guild_fills_all, # c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
                            color_names = guild_colors2, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray"), 
                            x_name = "Diameter (cm)", 
-                           y_name = expression(paste("Production (kg cm"^-1, " ha"^-1, "  yr"^-1, ")")),
+                           y_name = expression(paste("Productivity (kg cm"^-1, " ha"^-1, "  yr"^-1, ")")),
                            geom_size = 4, 
                            obsdat = obs_totalprod, 
                            preddat = fitted_totalprod, 
@@ -446,7 +516,7 @@ plot_totalprod2 <-function(year_to_plot = 1995,
     ggplot2::scale_y_log10(name = y_name, 
                            limits = y_limits, breaks = y_breaks, labels = y_labels,  position = "left") + 
     ggplot2::scale_color_manual(values = guild_colors2) + 
-    ggplot2::scale_fill_manual(values = guild_fills2) + 
+    ggplot2::scale_fill_manual(values = guild_fills_all) + 
     theme_plant() + theme_no_x() +
     theme(aspect.ratio = 1)
   if (plot_abline) 
@@ -506,25 +576,25 @@ fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
 (p_rich_cm <- ggplot() + 
     geom_ribbon(data = fitted_richnessbydiameter_filtered  %>% 
                   arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
-                aes(x = dbh, ymin = q025, ymax = q975,
+                aes(x = dbh, ymin = q025/50, ymax = q975/50,
                     group = fg, fill = fg), alpha = 0.4) +
     geom_line(data = fitted_richnessbydiameter_filtered  %>% 
                 arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
-              aes(x = dbh, y = q50, group = fg, color = fg)) +
+              aes(x = dbh, y = q50/50, group = fg, color = fg)) +
     geom_jitter(data = obs_richnessbydiameter %>% 
                   arrange(desc(fg)) %>%
                   filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20) %>%
                   arrange(desc(fg)), 
-                aes(x = bin_midpoint, y = richness_by_bin_width, fill = fg, color = fg),
+                aes(x = bin_midpoint, y = richness_by_bin_width/50, fill = fg, color = fg),
                 shape = 21, size = 4, color = "black", width = 0.02) + #0.02
     #geom_abline(intercept = log10(30000), slope = -2, linetype = "dashed", color = "gray72", size = 0.75) +
     scale_x_log10(name = 'Stem Diameter (cm)',
                   limit = c(.9, 160)) + 
     scale_y_log10(labels = signif,
-                  limit = c(0.1, 3000), 
+                  limit = c( .003, 50), 
                   position = "left",
-                  name = expression(paste("Richness (cm"^-1,")"))) +
-    scale_fill_manual(values = guild_fills2) +
+                  name = expression(paste("Richness (cm"^-1, " ha"^-1,")"))) +
+    scale_fill_manual(values = guild_fills_all) +
     scale_color_manual(values = guild_colors2) +
     theme_plant() #+ theme_no_x()
   
@@ -535,14 +605,13 @@ p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/new_main/richness/Richness.pdf'))
+pdf(file.path(gdrive_path,'Figures/new_main/Final_figs/Fig_4/richness/Richness.pdf'))
 grid.draw(p1)
 dev.off()
 
-
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/new_main/richness/Richness.pdf'), 
-                  file.path(gdrive_path2,'Figures/new_main/richness/Richness.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/new_main/Final_figs/Fig_4/richness/Richness.pdf'), 
+                  file.path(gdrive_path2,'Figures/new_main/Final_figs/Fig_4/richness/Richness.pdf')) 
 )
 
 ########################################################################
@@ -848,6 +917,7 @@ system2(command = "pdfcrop",
 #---------------------------------------------------------------------------------------------------
 #--------------------------     Diameter Growth         -------------------------------------------
 #---------------------------------------------------------------------------------------------------
+#used modified mass growth function
 plot_prod3 <- function (year_to_plot = 1995, 
                         fg_names = c("Fast", "Tall", "Slow",  "Short", "Medium", "All"), 
                         model_fit = 1, 
@@ -869,7 +939,7 @@ plot_prod3 <- function (year_to_plot = 1995,
                         dodge_width = 0.07, 
                         dodge_errorbar = TRUE, 
                         geom_size = 4, 
-                        obsdat = obs_indivprod, 
+                        obsdat = obs_indivdprod, 
                         preddat = fitted_indivprod, 
                         plot_abline = TRUE, 
                         abline_slope = 2, 
@@ -933,6 +1003,8 @@ plot_prod3 <- function (year_to_plot = 1995,
     }
   p
 }
+p
+#change to stem diameter growth
 p <- plot_prod3(year_to_plot = 1995,
                 fg_names = c('fg1','fg2','fg3','fg4','fg5'),
                 model_fit = PROD,
@@ -943,16 +1015,16 @@ p <- plot_prod3(year_to_plot = 1995,
                 y_labels = c(0.03, 0.1, 0.3, 1),
                 error_bar_width = 0,
                 dodge_width = 0.07,
-                obsdat = obs_indivdiamgrowth,
+                obsdat = obs_indivdiamgrowth, #diameter growth
                 preddat = fitted_indivdiamgrowth,
                 plot_abline = FALSE,
                 x_name = 'Stem Diameter (cm)',
                 y_name = expression(paste('Diameter Growth (cm yr'^-1,')')))
-
+p
 (p1 <- p + theme(axis.text.x = element_text(), axis.ticks.x = element_line()) + 
     annotation_custom(grob_fast) + annotation_custom(grob_tall) + annotation_custom(grob_medium) + 
     annotation_custom(grob_slow) + annotation_custom(grob_short) +
-    labs(x = 'Diameter (cm)') + theme(plot.margin = grid::unit(c(0,1,0,0), "cm")) +theme_plant_small())
+    labs(x = 'Stem Diameter (cm)') + theme(plot.margin = grid::unit(c(0,1,0,0), "cm")) +theme_plant_small())
 
 
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
