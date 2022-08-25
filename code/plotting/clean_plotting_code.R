@@ -3559,7 +3559,7 @@ plot_prod3 <- function (year_to_plot = 1995,
     }
   p
 }
-p <- plot_prod3(year_to_plot = 1995,
+(p <- plot_prod3(year_to_plot = 1995,
                 fg_names = c('fg1','fg2','fg3','fg4','fg5'),
                 model_fit = PROD,
                 x_limits = c(1, 230),
@@ -3574,6 +3574,7 @@ p <- plot_prod3(year_to_plot = 1995,
                 plot_abline = FALSE,
                 x_name = 'Stem Diameter (cm)',
                 y_name = expression(paste('Diameter Growth (cm yr'^-1,')')))
+)
 
 (p1 <- p + theme(axis.text.x = element_text(), axis.ticks.x = element_line()) + 
  annotation_custom(grob_fast) + annotation_custom(grob_tall) + annotation_custom(grob_medium) + 
