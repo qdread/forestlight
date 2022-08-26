@@ -471,11 +471,18 @@ Antirrhoea
 fgbci[fgbci$X2new > 2,] # tall
 fgbci[fgbci$X2new < -2,] # short
 fgbci[fgbci$X1new < -2,] # fast
-
+fgbci$fg5 <- as.factor(fgbci$fg5 )
 fgbci$binomial <- paste(fgbci$genus, fgbci$species, sep = " ") 
 slow <- fgbci[fgbci$fg5 == 3,] %>% dplyr::select(fg5, binomial, family, X1new) # slow
 slow <- slow[order(desc(slow$X1new)),]
-slow
+length(slow$binomial)
+count(fgbci$fg5 == 3)
+length(fgbci$fg5[fgbci$fg5 == "1"])
+length(fgbci$fg5[fgbci$fg5 == "2"])
+length(fgbci$fg5[fgbci$fg5 == "3"])
+length(fgbci$fg5[fgbci$fg5 == "4"])
+length(fgbci$fg5[fgbci$fg5 == "5"])
+length(unique(fast$binomial))
 #write_csv(slow, "~/Desktop/slow_tree_list.csv")
 
 
