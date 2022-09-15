@@ -1195,6 +1195,23 @@ unique(fitted_mort_trunc$fg)
 (p <- ggplot() +#data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
     #geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
     #geom_line(aes(x = dbh, y = q50, group = fg, color = fg)) +
+    
+     stat_smooth(span = 2, data = bin_mort %>%  # to single out gray and make CI darker
+                filter(variable == 'dbh', fg == "fg5", 
+                     (lived+died) >= 20),
+            aes(x = bin_midpoint, y = mortality, se = T),
+               color = "gray", fill = "gray", alpha = 0.2) +
+    stat_smooth(span = 2, data = bin_mort %>% 
+                  filter(variable == 'dbh', !fg %in% c('all','unclassified'), 
+                         (lived+died) >= 20)  %>% 
+                  mutate(fg = factor(fg, labels = fg_labels)),
+                aes(x = bin_midpoint, y = mortality, color = fg, fill = fg), alpha = 0.25) +
+  
+    scale_y_continuous(trans = "logit", position = "right", 
+                       breaks = c(0.03, 0.1, 0.3, 0.6), 
+                       labels =  c(0.03, 0.1, 0.3, 0.6), 
+                       limits = c(0.02, 0.8),
+                       name = expression(paste("Mortality (5 yr"^-1,")"))) +
     geom_point(data = bin_mort %>% 
                  filter(variable == 'dbh', !fg %in% c('all','unclassified'), 
                         (lived+died) >= 20)  %>% 
@@ -1203,23 +1220,8 @@ unique(fitted_mort_trunc$fg)
                shape = 21, size = 4) +
     scale_x_log10(name = parse(text = 'Stem~Diameter~(cm)'), 
                   # breaks = c(3, 30, 300), 
-                   limits = c(.9, 160)
+                  limits = c(.9, 160)
     ) +
-    stat_smooth(span = 2, data = bin_mort %>% 
-                  filter(variable == 'dbh', !fg %in% c('all','unclassified'), 
-                         (lived+died) >= 20)  %>% 
-                  mutate(fg = factor(fg, labels = fg_labels)),
-                aes(x = bin_midpoint, y = mortality, color = fg), se = F) +
-    stat_smooth(span = 2, data = bin_mort %>% 
-                  filter(variable == 'dbh', !fg %in% c('all','unclassified'), 
-                         (lived+died) >= 20)  %>% 
-                  mutate(fg = factor(fg, labels = fg_labels)),
-                aes(x = bin_midpoint, y = mortality, color = fg, fill = fg), alpha = 0.1) +
-    scale_y_continuous(trans = "logit", position = "right", 
-                       breaks = c(0.03, 0.1, 0.3, 0.6), 
-                       labels =  c(0.03, 0.1, 0.3, 0.6), 
-                       limits = c(0.02, 0.8),
-                       name = expression(paste("Mortality (5 yr"^-1,")"))) +
     scale_color_manual(values = guild_colors) +
     scale_fill_manual(values = guild_fills) +
     theme_plant() )#+ theme_no_x())
@@ -1232,10 +1234,12 @@ pdf(file.path(gdrive_path,'Figures/New_main/mortality/mortality.pdf'))
 grid.newpage()
 grid.draw(p2)  
 dev.off()
+
 system2(command = "pdfcrop", 
-        file.path(gdrive_path2,'Figures/New_main/mortality/mortality.pdf'), 
-        file.path(gdrive_path2,'Figures/New_main/mortality/mortality.pdf') 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/mortality/mortality.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/mortality/mortality.pdf')) 
 )
+
 
 #---------------------------------------------------------------------------------------------------
 #--------------------------   Richness ~ Abundance   --------------------------------------------------------
@@ -1309,3 +1313,176 @@ system2(command = "pdfcrop",
         args    = c(file.path(gdrive_path2,'Figures/New_main/rich_abun/rich_abun_per_ha.pdf'), 
                     file.path(gdrive_path2,'Figures/New_main/rich_abun/rich_abun_per_ha.pdf')) 
 )
+
+
+####################################################################
+#--------------- light per stem diameter ---------------------------
+####################################################################
+
+lightperareacloudbin_fg <- read.csv(file.path(fp, 'lightperareacloudbin_fg.csv'), stringsAsFactors = FALSE)
+lightpervolcloudbin_fg <- read.csv(file.path(fp, 'lightpervolcloudbin_fg.csv'), stringsAsFactors = FALSE)
+lightperleafareacloudbin_fg <- read.csv(file.path(fp, 'lightperleafareacloudbin_fg.csv'), stringsAsFactors = FALSE)
+unscaledlightbydbhcloudbin_fg <- read.csv(file.path(fp, 'unscaledlightbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
+unscaledlightcapturedbydbhcloudbin_fg <- read.csv(file.path(fp, 'unscaledlightcapturedbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
+fitted_lightcloudbin_fg <-read.csv(file.path(fp, 'fitted_lightbysizealltrees_fig1.csv'), stringsAsFactors = FALSE)
+
+exl <- expression(atop('Light per Crown Area', paste('(W m'^-2, ')')))
+exv <- expression(atop('Light per Crown Volume', paste('(W m'^-3, ')')))
+exd <- 'Stem Diameter (cm)'
+
+
+#----------------------   Fig 1a: Light per crown area by diameter -----------------------------
+
+grob_text_a <- grobTree(textGrob("A", x = 0.07, y = 0.9, gp = gpar(col = "black", fontsize = 23, fontface = "bold")))
+grob_text_b <- grobTree(textGrob("B", x = 0.07, y = 0.9, gp = gpar(col = "black", fontsize = 23, fontface = "bold")))
+grob_text_c <- grobTree(textGrob("C", x = 0.05, y = 0.95, gp = gpar(col = "black", fontsize = 23, fontface = "bold")))
+geom_size = 2
+
+hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
+                                             trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
+                                             labels = c(1,10,100,1000,10000), limits=c(1,10000))
+
+
+alpha_value <- 1
+(light_hex <- ggplot() +
+    theme_plant2 +
+    scale_x_log10(limits = c(0.8, 200), name = exd) +
+    scale_y_log10(name = exl, limits = c(0.8, 1500)) +
+    geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received_byarea)) +
+    hex_scale_log_colors +
+    theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
+    #theme_no_x() +
+    geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all', dbh_bin < 156), 
+                    aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
+    geom_ribbon(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156), 
+                aes(x = dbh, ymin = q025, ymax = q975), alpha = 1) +
+    geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156),
+              aes(x = dbh, y = q50)) +
+    theme(axis.title.y = element_text(vjust = -3)) #+
+    #guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
+)
+#area_hex
+# --- to add secondary height axis, first mask theme_no_x() above
+
+
+p1 <- set_panel_size(light_hex, width=unit(10.25,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
+pdf(file.path(gdrive_path, "Figures/New_main/Final_figs/light/light_diam_hex2.pdf"))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/light/light_diam_hex2.pdf'), 
+                  file.path(gdrive_path2,'Figures/New_main/Final_figs/light/light_diam_hex2.pdf')) 
+)
+
+#-----------------------------------------------------------
+#------------------------ growth by light ------------------
+#-----------------------------------------------------------
+
+title_x <- expression(paste('Light per Crown Area (W m'^-2,')',sep=''))
+title_y <- expression(atop('Growth per Crown Area', paste('(kg yr'^-1, ' m'^-2,')', sep='')))
+scale_y_log10(name =  expression(atop('Growth per Crown Area',
+                                      paste('(kg y'^-1, ' m'^-2,')'))))
+
+
+obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
+obs_light_raw <- read.csv(file.path(fp, 'obs_light_raw.csv'), stringsAsFactors = FALSE)
+pred_light <- read.csv(file.path(fp, 'pred_light.csv'), stringsAsFactors = FALSE)
+param_ci <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/lightbyarea_paramci_by_fg.csv'), stringsAsFactors = FALSE)
+
+# Get rid of the predicted points that are outside the limits of the observed data for each FG
+obs_limits <- obs_light_binned %>%
+  group_by(fg, year) %>%
+  summarize(min_obs = min(bin_midpoint), max_obs = max(bin_midpoint))
+
+pred_light <- pred_light %>%
+  left_join(obs_limits) %>%
+  filter(light_area >= min_obs & light_area <= max_obs)
+
+pred_light_5groups <- pred_light %>% filter(!fg %in% c('alltree','unclassified'))
+
+melt_pars <- melt(param_ci, id.vars=1:3)
+cast_pars <- dcast(melt_pars, fg+year~parameter+variable)
+
+dodge_width <- 0.07
+error_bar_width <- 0.04
+
+
+obs_light_binned_plotdata <- obs_light_binned %>% 
+  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2', 'fg1'))) %>%
+  filter(year == year_to_plot, mean_n_individuals >= 20, !fg %in% c('alltree', 'unclassified')) %>%
+  group_by(bin_midpoint, year) %>% 
+  mutate(width = sum(c('fg1','fg2','fg3','fg4','fg5') %in% fg)) %>% 
+  ungroup
+pred_light_5groups <- pred_light_5groups %>%
+  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2', 'fg1'))) 
+guild_lookup
+
+
+(light_growth  <- ggplot(obs_light_binned_plotdata) +
+    geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
+                aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.4) +
+    geom_line(data = pred_light_5groups %>% filter(year == year_to_plot),
+              aes(x = light_area, y = q50, color = fg)) +
+    geom_point(aes(x = bin_midpoint, y = mean, group = fg, fill = fg), # position = position_dodge(width = dodge_width)) +
+               size = 4, shape = 21) +
+    scale_x_log10(name = title_x, limits = c(1.5, 412)) + 
+    scale_y_log10(name = title_y, position = "left", breaks = c(0.01, 0.03, 0.1, 0.3), 
+                  labels = c( 0.01, 0.03, 0.1, 0.3)) +
+    scale_color_manual(name = 'Functional group', values = guild_fills, labels = fg_labels) +
+    scale_fill_manual(values = guild_fills, labels = fg_labels, guide = T) +
+    #theme_no_x() + 
+    theme_plant2)
+
+unique()
+
+p2 <- set_panel_size(light_growth, width = unit(10.25,"cm"), height=unit(7,"cm"))
+grid.newpage()
+grid.draw(p2)
+
+pdf(file.path(gdrive_path, "Figures/New_main/Final_figs/light/light_growth.pdf"))
+grid.draw(p2)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/light/light_growth.pdf'), 
+                  file.path(gdrive_path2,'Figures/New_main/Final_figs/light/light_growth.pdf')) 
+)
+
+#-----------------------------------
+
+#---------------- all trees -------
+growth_light_hex<- ggplot(obs_light_raw %>% filter(year == year_to_plot)) +
+  #facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
+  geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot, fg == "alltree_light_95"), 
+              aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
+  # geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
+  #          aes(x = light_area, y = q50, group = fg), size = 1, color = 'black') +
+  
+  scale_x_log10(name = title_x) + 
+  scale_y_log10(name = title_y, labels = signif) +
+  hex_scale_log_colors + 
+  theme_plant2 +
+  geom_hex(aes(x = light_area, y = production_area)) +
+  # theme(strip.text = element_text(size=14))+
+  #facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
+  #guides(color = FALSE) +
+  #geom_point(data = pred_light %>% filter(year == year_to_plot, fg %nin% c('alltree','unclassified')), 
+  #         aes(x = light_area, y = q50, group = fg), size = 0.5, color = 'black') +
+  geom_line(data = pred_light %>% filter(year == year_to_plot, fg  == 'alltree'), 
+            aes(x = light_area, y = q50, group = fg), color = 'black') +
+  geom_point(data = obs_light_binned %>% 
+               filter(year == year_to_plot, fg  == 'alltree'),
+             shape=21, size = 3, fill = "black", aes(x = bin_midpoint, y = mean)) +
+  theme(panel.border = element_rect(fill=NA),
+        strip.background = element_rect(fill=NA),
+        #legend.position = c(0.7, 0.15),
+        legend.text = element_text(size = 12),
+        legend.title=element_text(size=15))
+growth_light_hex
+
+unique(pred_light_5groups$fg)
