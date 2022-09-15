@@ -192,7 +192,7 @@ alpha_value <- 1
   geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156),
             aes(x = dbh, y = q50)) +
   theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
-  theme_no_x() +
+  #theme_no_x() +
   theme(axis.title.y = element_text(vjust = -3)) +
   guides(fill = guide_legend(override.aes = list(alpha = alpha_value))))# +
 
@@ -202,6 +202,7 @@ alpha_value <- 1
 p1 <- set_panel_size(area_hex, width=unit(10.25,"cm"), height=unit(7,"cm"))
 grid.newpage()
 grid.draw(p1)
+
 pdf(file.path(gdrive_path,'Figures/Light_Individual/light_area2.pdf'))
 grid.draw(p1)
 dev.off()
@@ -218,12 +219,12 @@ alpha_value <- 1
     scale_y_log10(name = exl, limits = c(0.8, 1500)) +
     geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received_byarea)) +
     hex_scale_log_colors +
-    # geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all', dbh_bin < 156), 
-    #                aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
-    #geom_ribbon(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156), 
-    #           aes(x = dbh, ymin = q025, ymax = q975), alpha = 1) +
-    #geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156),
-    #         aes(x = dbh, y = q50)) +
+     geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all', dbh_bin < 156), 
+                    aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
+    geom_ribbon(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156), 
+               aes(x = dbh, ymin = q025, ymax = q975), alpha = 1) +
+    geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156),
+             aes(x = dbh, y = q50)) +
     theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
     theme_no_x() +
     theme(axis.title.y = element_text(vjust = -3)) +
@@ -590,7 +591,8 @@ guild_lookup
                   labels = c( 0.01, 0.03, 0.1, 0.3)) +
     scale_color_manual(name = 'Functional group', values = guild_fills, labels = fg_labels) +
     scale_fill_manual(values = guild_fills, labels = fg_labels, guide = FALSE) +
-    theme_no_x() + theme_plant2)
+    theme_no_x() + 
+    theme_plant2)
 
 
 
@@ -3669,7 +3671,35 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path2,'Figures/Supplementals/Growth_light/growth_light_hex.pdf')) 
 )
 
-
+#---------------- all trees -------
+growth_light_hex<- ggplot(obs_light_raw %>% filter(year == year_to_plot)) +
+  #facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
+  geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot, fg == "alltree_light_95"), 
+          aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
+  # geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
+  #          aes(x = light_area, y = q50, group = fg), size = 1, color = 'black') +
+  
+  scale_x_log10(name = title_x) + 
+  scale_y_log10(name = title_y, labels = signif) +
+  hex_scale_log_colors + 
+  theme_plant2 +
+  geom_hex(aes(x = light_area, y = production_area)) +
+ # theme(strip.text = element_text(size=14))+
+  #facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
+  #guides(color = FALSE) +
+  #geom_point(data = pred_light %>% filter(year == year_to_plot, fg %nin% c('alltree','unclassified')), 
+  #         aes(x = light_area, y = q50, group = fg), size = 0.5, color = 'black') +
+  geom_line(data = pred_light %>% filter(year == year_to_plot, fg  == 'alltree'), 
+            aes(x = light_area, y = q50, group = fg), color = 'black') +
+  geom_point(data = obs_light_binned %>% 
+               filter(year == year_to_plot, fg  == 'alltree'),
+             shape=21, size = 3, fill = "black", aes(x = bin_midpoint, y = mean)) +
+  theme(panel.border = element_rect(fill=NA),
+        strip.background = element_rect(fill=NA),
+        #legend.position = c(0.7, 0.15),
+        legend.text = element_text(size = 12),
+        legend.title=element_text(size=15))
+growth_light_hex
 
 #-----------------------------------------------------------------------------
 #------------------------ Fig S5: Mean Growth with Light
