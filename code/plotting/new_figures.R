@@ -11,13 +11,11 @@ PROD = 1
 
 # Set path to data on google drive
 #devtools::install_github('qdread/forestscaling')
-
-gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Volumes/GoogleDrive/My Drive/ForestLight'))
+gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/My Drive/ForestLight'))
 github_path <- ifelse(Sys.info()['user'] == 'qread', '~/Documents/GitHub/MSU_repos', file.path('/Users/jgradym/Documents/GitHub/'))
 
-
-gdrive_path2 <-  file.path('/Users/jgradym/Google\\ Drive/ForestLight')
-gdrive_path2 <-  file.path('/Volumes/GoogleDrive/My\\ Drive/ForestLight')
+gdrive_path2 <-  file.path('/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/My\\ Drive/ForestLight')
+#gdrive_path2 <-  file.path('/Volumes/GoogleDrive/My\\ Drive/ForestLight')
 
 library(broom)
 library(egg)
@@ -86,6 +84,18 @@ grob_short <- grobTree(textGrob("Short", x = 0.04, y = 0.67,  hjust = 0,
 grob_all <- grobTree(textGrob("All", x = 0.04, y = 0.60,  hjust = 0,
                               gp = gpar(col = "black", fontsize = 15, fontface = "italic"))) 
 
+fast_slow_fill <- c("#27408b", "#BFE046" )
+fast_slow_fill2 <- c("#27408b", "#939E6C" ) #  #A4B662
+fast_slow_fill3 <- c("#27408b", "#AABF5D" ) #  AABF5D
+tall_slow_fill <- c("#27408b", "#267038")  #74B8CC; 9FAF65
+
+scale_tall_slow <- scale_fill_gradientn(colours = tall_slow_fill,
+                                        trans = 'log')#,# name = 
+scale_fast_slow <- scale_fill_gradientn(colours = fast_slow_fill,
+                                        trans = 'log')#,# name = 
+scale_fast_slow3 <- scale_fill_gradientn(colours = fast_slow_fill3,
+                                         trans = 'log')#,# name = 
+
 # To add back the legend
 theme_plant2 <- theme_plant() + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
 theme_plant <- theme_plant() + 
@@ -108,7 +118,6 @@ for (i in dir(fp, pattern = 'pred_|fitted_')) {
   n <- gsub('.csv','',i)
   assign(n, read.csv(file.path(fp, i), stringsAsFactors = FALSE))
 }
-
 #### Extract model output to get the fitted values, slopes, etc.
 load(file.path(gdrive_path, 'data/data_piecewisefits/fits_bylight_forratio.RData'))
 load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
@@ -117,8 +126,6 @@ load(file.path(gdrive_path, 'data/data_forplotting/light_scaling_plotting_data.R
 # source the extra extraction functions that aren't in the package
 source(file.path(github_path, 'forestlight/stan/clean_workflow/model_output_extraction_functions.r'))
 source(file.path(github_path, 'forestlight/stan/get_ratio_slopes_fromfit.R'))
-
-
 
 
 ##########################################################################################
@@ -165,9 +172,9 @@ p2 <- set_panel_size(Fig_3a , width=unit(10.25,"cm"), height=unit(8,"cm"))
 
 grid.newpage()
 grid.draw(p2)
-pdf(file.path(gdrive_path, 'Figures/New_main/life_history/life_history.pdf'))
-grid.draw(p2)
-dev.off()
+#pdf(file.path(gdrive_path, 'Figures/New_main/life_history/life_history.pdf'))
+#grid.draw(p2)
+#dev.off()
 
 system2(command = "pdfcrop", 
         args    = c(file.path(gdrive_path2,'Figures/New_main/life_history/life_history.pdf'), 
@@ -263,15 +270,6 @@ ggplot(data = obs_dens %>%  filter(!fg2 %in% c("all", "unclassified")),
   theme_plant +
   scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300)) +
   scale_y_continuous(labels = scales::percent, name = "Relative Abundance") 
-
-# doesn't work
-ggplot(data = obs_dens %>%  filter(!fg2 %in% c("all", "unclassified")),
-       aes(x = bin_midpoint, y = bin_value, fill = fg2)) + # could use bin_value instead of bin_count - no difference
-  geom_area(aes(fill = fg2, group = fg2), position = "fill") +
-  scale_fill_manual(values = guild_fills_fg) +
-  theme_plant +
-  scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300),  expand = c(0,0)) +
-  scale_y_continuous(labels = scales::percent, name = "Relative Abundance", expand = c(0,0)) 
 
 
 #-----------------------------
@@ -454,6 +452,70 @@ system2(command = "pdfcrop",
         args    = c(file.path(gdrive_path2,'Figures/new_main/abundance/abundance.pdf'), 
                     file.path(gdrive_path2,'Figures/new_main/abundance/abundance.pdf')) 
 )
+#----------------------------------------------------------------------------------
+#--------------------------   Richness  -------------------------------------------
+#----------------------------------------------------------------------------------
+
+
+# filter fitted sizes by binned sizes
+max_dbh_fg <- obs_richnessbydiameter  %>%
+  filter(n_individuals >= 20) %>%
+  group_by(fg) %>%
+  summarize(max_dbh = max(bin_midpoint) +2 )
+
+min_dbh_fg <-obs_richnessbydiameter  %>%
+  filter(n_individuals >= 20) %>%
+  group_by(fg) %>%
+  summarize(min_dbh = min(bin_midpoint) -0.1)
+
+fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
+  left_join(max_dbh_fg) %>%
+  left_join(min_dbh_fg) %>%
+  group_by(fg) %>%
+  filter(dbh <= max_dbh, dbh >= min_dbh)
+
+
+#---- Plot Richness ------
+(p_rich_cm <- ggplot() + 
+   geom_ribbon(data = fitted_richnessbydiameter_filtered  %>% 
+                 arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
+               aes(x = dbh, ymin = q025/50, ymax = q975/50,
+                   group = fg, fill = fg), alpha = 0.4) +
+   geom_line(data = fitted_richnessbydiameter_filtered  %>% 
+               arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
+             aes(x = dbh, y = q50/50, group = fg, color = fg)) +
+   geom_jitter(data = obs_richnessbydiameter %>% 
+                 arrange(desc(fg)) %>%
+                 filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20) %>%
+                 arrange(desc(fg)), 
+               aes(x = bin_midpoint, y = richness_by_bin_width/50, fill = fg, color = fg),
+               shape = 21, size = 4, color = "black", width = 0.02) + #0.02
+   #geom_abline(intercept = log10(30000), slope = -2, linetype = "dashed", color = "gray72", size = 0.75) +
+   scale_x_log10(name = 'Stem Diameter (cm)',
+                 limit = c(.9, 160)) + 
+   scale_y_log10(labels = signif,
+                 limit = c( .003, 50), 
+                 position = "left",
+                 name = expression(paste("Richness (cm"^-1, " ha"^-1,")"))) +
+   scale_fill_manual(values = guild_fills_all) +
+   scale_color_manual(values = guild_colors2) +
+   theme_plant() #+ theme_no_x()
+ 
+)
+
+
+p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/new_main/Final_figs/Fig_4/richness/Richness.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/new_main/Final_figs/Fig_4/richness/Richness.pdf'), 
+                  file.path(gdrive_path2,'Figures/new_main/Final_figs/Fig_4/richness/Richness.pdf')) 
+)
 
 #----------------------------------------------------------------------------------
 #--------------------------   Productivity  ---------------------------------------
@@ -548,70 +610,6 @@ dev.off()
 system2(command = "pdfcrop", 
         args    = c(file.path(gdrive_path2,'Figures/New_main/production/Total_Production.pdf'), 
                     file.path(gdrive_path2,'Figures/New_main/production/Total_Production.pdf')) 
-)
-#----------------------------------------------------------------------------------
-#--------------------------   Richness  -------------------------------------------
-#----------------------------------------------------------------------------------
-
-
-# filter fitted sizes by binned sizes
-max_dbh_fg <- obs_richnessbydiameter  %>%
-  filter(n_individuals >= 20) %>%
-  group_by(fg) %>%
-  summarize(max_dbh = max(bin_midpoint) +2 )
-
-min_dbh_fg <-obs_richnessbydiameter  %>%
-  filter(n_individuals >= 20) %>%
-  group_by(fg) %>%
-  summarize(min_dbh = min(bin_midpoint) -0.1)
-
-fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
-  left_join(max_dbh_fg) %>%
-  left_join(min_dbh_fg) %>%
-  group_by(fg) %>%
-  filter(dbh <= max_dbh, dbh >= min_dbh)
-
-
-#---- Plot Richness ------
-(p_rich_cm <- ggplot() + 
-    geom_ribbon(data = fitted_richnessbydiameter_filtered  %>% 
-                  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
-                aes(x = dbh, ymin = q025/50, ymax = q975/50,
-                    group = fg, fill = fg), alpha = 0.4) +
-    geom_line(data = fitted_richnessbydiameter_filtered  %>% 
-                arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
-              aes(x = dbh, y = q50/50, group = fg, color = fg)) +
-    geom_jitter(data = obs_richnessbydiameter %>% 
-                  arrange(desc(fg)) %>%
-                  filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20) %>%
-                  arrange(desc(fg)), 
-                aes(x = bin_midpoint, y = richness_by_bin_width/50, fill = fg, color = fg),
-                shape = 21, size = 4, color = "black", width = 0.02) + #0.02
-    #geom_abline(intercept = log10(30000), slope = -2, linetype = "dashed", color = "gray72", size = 0.75) +
-    scale_x_log10(name = 'Stem Diameter (cm)',
-                  limit = c(.9, 160)) + 
-    scale_y_log10(labels = signif,
-                  limit = c( .003, 50), 
-                  position = "left",
-                  name = expression(paste("Richness (cm"^-1, " ha"^-1,")"))) +
-    scale_fill_manual(values = guild_fills_all) +
-    scale_color_manual(values = guild_colors2) +
-    theme_plant() #+ theme_no_x()
-  
-)
-
-
-p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(8,"cm"))
-grid.newpage()
-grid.draw(p1)
-
-pdf(file.path(gdrive_path,'Figures/new_main/Final_figs/Fig_4/richness/Richness.pdf'))
-grid.draw(p1)
-dev.off()
-
-system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/new_main/Final_figs/Fig_4/richness/Richness.pdf'), 
-                  file.path(gdrive_path2,'Figures/new_main/Final_figs/Fig_4/richness/Richness.pdf')) 
 )
 
 ########################################################################
