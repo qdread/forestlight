@@ -14,8 +14,7 @@ PROD = 1
 gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/My Drive/ForestLight'))
 github_path <- ifelse(Sys.info()['user'] == 'qread', '~/Documents/GitHub/MSU_repos', file.path('/Users/jgradym/Documents/GitHub/'))
 
-gdrive_path2 <-  file.path('/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/My\\ Drive/ForestLight')
-#gdrive_path2 <-  file.path('/Volumes/GoogleDrive/My\\ Drive/ForestLight')
+gdrive_path2 <- file.path('/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/My\\ Drive/ForestLight')
 
 library(broom)
 library(egg)
@@ -38,6 +37,7 @@ library(tidyverse)
 guild_fills_all = c(fg1 = "#BFE046", fg2 =  "#267038", fg3 = "#27408b", fg4 = "#87Cefa", fg5 = "gray93", all = "black")
 guild_fills_fg = c(fg1 = "#BFE046", fg2 =  "#267038", fg3 = "#27408b", fg4 = "#87Cefa", fg5 = "gray93")
 guild_fills = c( "#BFE046", "#267038", "#27408b", "#87Cefa", "gray93")
+
 guild_colors_fg <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 guild_colors_all <- c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
 
@@ -101,7 +101,6 @@ theme_plant2 <- theme_plant() + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
 theme_plant <- theme_plant() + 
   theme(plot.margin=grid::unit(c(0,0,0,0), "mm"), legend.position = "right", legend.text = element_text(size = 14 ), 
         legend.key = element_blank())
-
 
 
 #---------------------------- Data ---------------------------- 
@@ -321,6 +320,11 @@ ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified
 ###################################################################################
 ################# Biomass growth heat map #####################
 ###################################################################################
+raw_prod <- do.call(rbind, map2(alltreedat, seq(1985,2010,5), function(x, y) cbind(year = y, x %>% filter(!recruit) %>% select(fg, dbh_corr, production))))
+
+raw_prod <- raw_prod %>%
+  mutate(fg = if_else(!is.na(fg), paste0('fg', fg), 'unclassified'))
+str(raw_prod)
 
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
                                              trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
@@ -337,6 +341,7 @@ hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RCol
     geom_smooth(data = raw_prod %>% filter(year == 1995), aes(x = dbh_corr, y = production),
               color = "black", method = "lm", se = T, size = .5, alpha = 0.2) +
     hex_scale_log_colors +
+    scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300)) + 
     scale_y_log10(name = expression(paste("Growth (kg yr"^-1, ")")), position = "left",
                   #breaks = c(0.0001, 0.01, 1, 100, 10000), labels = c("0.0001", 0.01, 1, 100, "10,000"),
                   breaks = c(0.001, 0.01, 0.1,1, 10, 100, 1000), labels = c("0.001", 0.01, 0.1, 1, 10,100, "1000"),
@@ -383,7 +388,7 @@ plot_dens2 <- function (year_to_plot = 1995,
                         y_breaks, 
                         y_labels, 
                         fill_names = guild_fills_all, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
-                        color_names = guild_colors2, #c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),  
+                        color_names = guild_colors_all, #c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),  
                         x_name = "Stem Diameter (cm)",
                         y_name = expression(paste("Density (n ha"^-1, "cm"^-1, ")")), 
                         geom_size = 4, 
@@ -444,6 +449,7 @@ plot_dens2 <- function (year_to_plot = 1995,
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
+
 pdf(file.path(gdrive_path,'Figures/new_main/abundance/abundance.pdf'))
 grid.draw(p1)
 dev.off()
@@ -498,7 +504,7 @@ fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
                  position = "left",
                  name = expression(paste("Richness (cm"^-1, " ha"^-1,")"))) +
    scale_fill_manual(values = guild_fills_all) +
-   scale_color_manual(values = guild_colors2) +
+   scale_color_manual(values = guild_colors_all) +
    theme_plant() #+ theme_no_x()
  
 )
@@ -537,7 +543,7 @@ plot_totalprod2 <-function(year_to_plot = 1995,
                            y_breaks = c(0.01, 0.1, 1, 10, 100, 1000), 
                            y_labels, 
                            fill_names = guild_fills_all, # c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
-                           color_names = guild_colors2, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray"), 
+                           color_names = guild_colors_all, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray"), 
                            x_name = "Diameter (cm)", 
                            y_name = expression(paste("Productivity (kg cm"^-1, " ha"^-1, "  yr"^-1, ")")),
                            geom_size = 4, 
@@ -577,7 +583,7 @@ plot_totalprod2 <-function(year_to_plot = 1995,
     ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
     ggplot2::scale_y_log10(name = y_name, 
                            limits = y_limits, breaks = y_breaks, labels = y_labels,  position = "left") + 
-    ggplot2::scale_color_manual(values = guild_colors2) + 
+    ggplot2::scale_color_manual(values = guild_colors_all) + 
     ggplot2::scale_fill_manual(values = guild_fills_all) + 
     theme_plant() + theme_no_x() +
     theme(aspect.ratio = 1)
@@ -740,7 +746,7 @@ system2(command = "pdfcrop",
 )
 
 #----------------------------------------------------------------------------------
-#--------------------------  Abundance  -------------------------------------------
+#--------------------------  Abundance Ratio -------------------------------------------
 #----------------------------------------------------------------------------------
 
 obs_richnessbydiameter_ratio$tall_slow_abun_ratio = obs_richnessbydiameter_ratio$n_individuals_fg2/obs_richnessbydiameter_ratio$n_individuals_fg3
@@ -924,8 +930,8 @@ plot_prod3 <- function (year_to_plot = 1995,
                         y_limits, 
                         y_labels, 
                         y_breaks, 
-                        fill_names = guild_fills, # c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
-                        color_names = guild_colors, #c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
+                        fill_names = guild_fills_fg, # c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
+                        color_names = guild_colors_fg, #c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
                         x_name = "Diameter (cm)", 
                         y_name = expression(paste("Growth (kg yr"^-1, ")")),
                         average = "mean", 
@@ -1446,174 +1452,3 @@ system2(command = "pdfcrop",
 )
 
 
-####################################################################
-#--------------- light per stem diameter ---------------------------
-####################################################################
-
-lightperareacloudbin_fg <- read.csv(file.path(fp, 'lightperareacloudbin_fg.csv'), stringsAsFactors = FALSE)
-lightpervolcloudbin_fg <- read.csv(file.path(fp, 'lightpervolcloudbin_fg.csv'), stringsAsFactors = FALSE)
-lightperleafareacloudbin_fg <- read.csv(file.path(fp, 'lightperleafareacloudbin_fg.csv'), stringsAsFactors = FALSE)
-unscaledlightbydbhcloudbin_fg <- read.csv(file.path(fp, 'unscaledlightbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
-unscaledlightcapturedbydbhcloudbin_fg <- read.csv(file.path(fp, 'unscaledlightcapturedbydbhcloudbin_fg.csv'), stringsAsFactors = FALSE)
-fitted_lightcloudbin_fg <-read.csv(file.path(fp, 'fitted_lightbysizealltrees_fig1.csv'), stringsAsFactors = FALSE)
-
-exl <- expression(atop('Light per Crown Area', paste('(W m'^-2, ')')))
-exv <- expression(atop('Light per Crown Volume', paste('(W m'^-3, ')')))
-exd <- 'Stem Diameter (cm)'
-
-
-#----------------------   Fig 1a: Light per crown area by diameter -----------------------------
-
-grob_text_a <- grobTree(textGrob("A", x = 0.07, y = 0.9, gp = gpar(col = "black", fontsize = 23, fontface = "bold")))
-grob_text_b <- grobTree(textGrob("B", x = 0.07, y = 0.9, gp = gpar(col = "black", fontsize = 23, fontface = "bold")))
-grob_text_c <- grobTree(textGrob("C", x = 0.05, y = 0.95, gp = gpar(col = "black", fontsize = 23, fontface = "bold")))
-geom_size = 2
-
-hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
-                                             trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
-                                             labels = c(1,10,100,1000,10000), limits=c(1,10000))
-
-
-alpha_value <- 1
-(light_hex <- ggplot() +
-    theme_plant2 +
-    scale_x_log10(limits = c(0.8, 200), name = exd) +
-    scale_y_log10(name = exl, limits = c(0.8, 1500)) +
-    geom_hex(alpha = alpha_value, data = alltree_light_95, aes(x = dbh_corr, y = light_received_byarea)) +
-    hex_scale_log_colors +
-    theme(legend.position = "right", legend.text = element_text(size = 15), legend.title = element_text(size = 16))+
-    #theme_no_x() +
-    geom_pointrange(data = lightperareacloudbin_fg %>% filter(fg %in% 'all', dbh_bin < 156), 
-                    aes(x = dbh_bin, y = mean, ymin = mean, ymax = mean)) +
-    geom_ribbon(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156), 
-                aes(x = dbh, ymin = q025, ymax = q975), alpha = 1) +
-    geom_line(data = fitted_lightcloudbin_fg %>% filter(fit == 'light per area', dbh < 156),
-              aes(x = dbh, y = q50)) +
-    theme(axis.title.y = element_text(vjust = -3)) #+
-    #guides(fill = guide_legend(override.aes = list(alpha = alpha_value)))# +
-)
-#area_hex
-# --- to add secondary height axis, first mask theme_no_x() above
-
-
-p1 <- set_panel_size(light_hex, width=unit(10.25,"cm"), height=unit(8,"cm"))
-grid.newpage()
-grid.draw(p1)
-
-
-pdf(file.path(gdrive_path, "Figures/New_main/Final_figs/light/light_diam_hex2.pdf"))
-grid.draw(p1)
-dev.off()
-
-system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/light/light_diam_hex2.pdf'), 
-                  file.path(gdrive_path2,'Figures/New_main/Final_figs/light/light_diam_hex2.pdf')) 
-)
-
-#-----------------------------------------------------------
-#------------------------ growth by light ------------------
-#-----------------------------------------------------------
-
-title_x <- expression(paste('Light per Crown Area (W m'^-2,')',sep=''))
-title_y <- expression(atop('Growth per Crown Area', paste('(kg yr'^-1, ' m'^-2,')', sep='')))
-scale_y_log10(name =  expression(atop('Growth per Crown Area',
-                                      paste('(kg y'^-1, ' m'^-2,')'))))
-
-
-obs_light_binned <- read.csv(file.path(fp, 'obs_light_binned.csv'), stringsAsFactors = FALSE)
-obs_light_raw <- read.csv(file.path(fp, 'obs_light_raw.csv'), stringsAsFactors = FALSE)
-pred_light <- read.csv(file.path(fp, 'pred_light.csv'), stringsAsFactors = FALSE)
-param_ci <- read.csv(file.path(gdrive_path, 'data/data_piecewisefits/lightbyarea_paramci_by_fg.csv'), stringsAsFactors = FALSE)
-
-# Get rid of the predicted points that are outside the limits of the observed data for each FG
-obs_limits <- obs_light_binned %>%
-  group_by(fg, year) %>%
-  summarize(min_obs = min(bin_midpoint), max_obs = max(bin_midpoint))
-
-pred_light <- pred_light %>%
-  left_join(obs_limits) %>%
-  filter(light_area >= min_obs & light_area <= max_obs)
-
-pred_light_5groups <- pred_light %>% filter(!fg %in% c('alltree','unclassified'))
-
-melt_pars <- melt(param_ci, id.vars=1:3)
-cast_pars <- dcast(melt_pars, fg+year~parameter+variable)
-
-dodge_width <- 0.07
-error_bar_width <- 0.04
-
-
-obs_light_binned_plotdata <- obs_light_binned %>% 
-  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2', 'fg1'))) %>%
-  filter(year == year_to_plot, mean_n_individuals >= 20, !fg %in% c('alltree', 'unclassified')) %>%
-  group_by(bin_midpoint, year) %>% 
-  mutate(width = sum(c('fg1','fg2','fg3','fg4','fg5') %in% fg)) %>% 
-  ungroup
-pred_light_5groups <- pred_light_5groups %>%
-  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2', 'fg1'))) 
-guild_lookup
-
-
-(light_growth  <- ggplot(obs_light_binned_plotdata) +
-    geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot), 
-                aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.4) +
-    geom_line(data = pred_light_5groups %>% filter(year == year_to_plot),
-              aes(x = light_area, y = q50, color = fg)) +
-    geom_point(aes(x = bin_midpoint, y = mean, group = fg, fill = fg), # position = position_dodge(width = dodge_width)) +
-               size = 4, shape = 21) +
-    scale_x_log10(name = title_x, limits = c(1.5, 412)) + 
-    scale_y_log10(name = title_y, position = "left", breaks = c(0.01, 0.03, 0.1, 0.3), 
-                  labels = c( 0.01, 0.03, 0.1, 0.3)) +
-    scale_color_manual(name = 'Functional group', values = guild_fills, labels = fg_labels) +
-    scale_fill_manual(values = guild_fills, labels = fg_labels, guide = T) +
-    #theme_no_x() + 
-    theme_plant2)
-
-unique()
-
-p2 <- set_panel_size(light_growth, width = unit(10.25,"cm"), height=unit(7,"cm"))
-grid.newpage()
-grid.draw(p2)
-
-pdf(file.path(gdrive_path, "Figures/New_main/Final_figs/light/light_growth.pdf"))
-grid.draw(p2)
-dev.off()
-
-system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/light/light_growth.pdf'), 
-                  file.path(gdrive_path2,'Figures/New_main/Final_figs/light/light_growth.pdf')) 
-)
-
-#-----------------------------------
-
-#---------------- all trees -------
-growth_light_hex<- ggplot(obs_light_raw %>% filter(year == year_to_plot)) +
-  #facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
-  geom_ribbon(data = pred_light_5groups %>% filter(year == year_to_plot, fg == "alltree_light_95"), 
-              aes(x = light_area, ymin = q025, ymax = q975, fill = fg), alpha = 0.3) +
-  # geom_line(data = pred_light_5groups %>% filter(year == year_to_plot), 
-  #          aes(x = light_area, y = q50, group = fg), size = 1, color = 'black') +
-  
-  scale_x_log10(name = title_x) + 
-  scale_y_log10(name = title_y, labels = signif) +
-  hex_scale_log_colors + 
-  theme_plant2 +
-  geom_hex(aes(x = light_area, y = production_area)) +
-  # theme(strip.text = element_text(size=14))+
-  #facet_wrap(~ fg, ncol = 2, labeller = as_labeller(fg_labeler)) +
-  #guides(color = FALSE) +
-  #geom_point(data = pred_light %>% filter(year == year_to_plot, fg %nin% c('alltree','unclassified')), 
-  #         aes(x = light_area, y = q50, group = fg), size = 0.5, color = 'black') +
-  geom_line(data = pred_light %>% filter(year == year_to_plot, fg  == 'alltree'), 
-            aes(x = light_area, y = q50, group = fg), color = 'black') +
-  geom_point(data = obs_light_binned %>% 
-               filter(year == year_to_plot, fg  == 'alltree'),
-             shape=21, size = 3, fill = "black", aes(x = bin_midpoint, y = mean)) +
-  theme(panel.border = element_rect(fill=NA),
-        strip.background = element_rect(fill=NA),
-        #legend.position = c(0.7, 0.15),
-        legend.text = element_text(size = 12),
-        legend.title=element_text(size=15))
-growth_light_hex
-
-unique(pred_light_5groups$fg)
