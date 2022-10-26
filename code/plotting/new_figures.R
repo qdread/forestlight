@@ -307,38 +307,32 @@ ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified
   scale_y_continuous(labels = scales::percent, name = "Relative Richness", expand = c(0,0)) 
 
 
-ggplot(data = obs_richnessbydiameter %>% filter(!fg2 %in% c("all", "unclassified")),
-       aes(x = bin_midpoint, y = richness, fill = fg2)) +
-  geom_col(position = position_fill(reverse = TRUE), width = .125) +
-  scale_fill_manual(values = guild_fills_fg) +
-  theme_plant +
-  scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300), expand = c(0,0)) +
-  scale_y_continuous(labels = scales::percent, name = "Relative Richness", expand = c(0,0)) 
-
-
-
 ###################################################################################
 ################# Biomass growth heat map #####################
 ###################################################################################
 raw_prod <- do.call(rbind, map2(alltreedat, seq(1985,2010,5), function(x, y) cbind(year = y, x %>% filter(!recruit) %>% select(fg, dbh_corr, production))))
-
 raw_prod <- raw_prod %>%
   mutate(fg = if_else(!is.na(fg), paste0('fg', fg), 'unclassified'))
-str(raw_prod)
 
 hex_scale_log_colors <- scale_fill_gradientn(colours = colorRampPalette(rev(RColorBrewer::brewer.pal(9, 'RdYlBu')), bias=1)(50),
                                              trans = 'log', name = 'Individuals', breaks = c(1,10,100,1000,10000), 
                                              labels = c(1,10,100,1000,10000), limits=c(1,30000))
 
+#--error bars
+growth_range = obs_indivprod %>%
+  filter(mean_n_individuals >= 20,fg == "all") %>%
+  group_by(bin_midpoint) %>%
+  summarize(
+    min = min(mean, na.rm = T),
+    max = max(mean, na.rm = T))
+
 (p <- ggplot() +
     geom_hex(data = raw_prod %>% filter(year == 1995), aes(x = dbh_corr, y = production)) + #+
-    geom_point(data = obs_indivprod %>% filter(year == 1995, 
-                                               #mean_n_individuals >= 20,
-                                               fg == "all"),
-               aes(x = bin_midpoint, y = mean), shape = 21, size = 2.5, color = "black", fill = "gray10") +
-   # geom_line(data = pred_indivprod %>% filter(year == 1995, fg == "all", prod_model == 1),
-    #          aes(x = dbh, y = q50), color = "black") +
-    geom_smooth(data = raw_prod %>% filter(year == 1995), aes(x = dbh_corr, y = production),
+    geom_point(data = obs_indivprod %>% 
+                 filter(year == 1995, mean_n_individuals >= 20,fg == "all"),
+               aes(x = bin_midpoint, y = mean), shape = 21, size = 2.5,  color = "black", fill = "black") +
+    geom_errorbar(data = growth_range, aes(x = bin_midpoint, ymin = min, ymax = max ), color = "black", width = 0) +
+    geom_smooth(data = raw_prod %>% filter(year == 1995, dbh_corr < 156), aes(x = dbh_corr, y = production),
               color = "black", method = "lm", se = T, size = .5, alpha = 0.2) +
     hex_scale_log_colors +
     scale_x_log10(name = "Stem Diameter (cm)", breaks = c(1, 3, 10, 30, 100, 300)) + 
@@ -378,8 +372,20 @@ system2(command = "pdfcrop",
 #----------------------------------------------------------------------------------
 
 obs_dens <- obs_dens %>%
-  filter(bin_count >= 20)
-plot_dens2 <- function (year_to_plot = 1995, 
+  filter(bin_count >= 20) 
+
+#--error bars
+groups = c("fg", "bin_midpoint")
+dens_range <- obs_dens %>%
+  filter(fg != "unclassified",bin_count >= 20) %>%
+  group_by(across(groups )) %>%
+  summarize(
+    min = min(bin_value),
+    max = max(bin_value)
+  )
+dens_range
+
+plot_dens <- function(year_to_plot = 1995, 
                         fg_names = c("fg1", "fg2", "fg3", "fg4", "fg5", "all"),
                         model_fit = 1, 
                         x_limits, 
@@ -429,13 +435,15 @@ plot_dens2 <- function (year_to_plot = 1995,
     ggplot2::geom_point(data = obsdat, position = pos,
                         ggplot2::aes(x = bin_midpoint, y = bin_value, group = fg, fill = fg), 
                         size = geom_size, shape = 21, color = "black") + 
+    ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
     ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
     ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) + 
     ggplot2::scale_color_manual(values = color_names) + 
     ggplot2::scale_fill_manual(values = fill_names) + 
     theme_plant() + theme_no_x()
 }
-(p <- plot_dens2(year_to_plot = 1995,
+
+(p <- plot_dens(year_to_plot = 1995,
                  fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
                  model_fit = DENS,
                  dodge_width = 0.0,
@@ -532,8 +540,17 @@ obs_totalprod <- obs_totalprod %>%
 grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.17, y = 0.88, hjust = 0,
                                gp = gpar(col = "gray52", fontsize = 20))) 
 geom_size = 3.5
-# Modifications: added jitter, changed plotting order, geom_size, geom colors
-plot_totalprod2 <-function(year_to_plot = 1995, 
+
+prod_range <- obs_totalprod %>%
+  filter(fg != "unclassified",bin_count >= 20) %>%
+  group_by(across(groups )) %>%
+  summarize(
+    min = min(bin_value),
+    max = max(bin_value)
+  )
+prod_range
+# Modifications:  changed plotting order, geom_size, geom colors
+plot_totalprod <-function(year_to_plot = 1995, 
                            fg_names = c("fg1", "fg2", "fg3","fg4", "fg5", "all"), 
                            model_fit_density = 1, 
                            model_fit_production = 1, 
@@ -580,6 +597,7 @@ plot_totalprod2 <-function(year_to_plot = 1995,
     ggplot2::geom_point(data = obsdat, position = pos,
                         aes(x = bin_midpoint, y = bin_value, group = fg, fill = fg), 
                         size = geom_size, color = "black", shape = 21) + 
+    ggplot2::geom_errorbar(data = prod_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg), width = 0) +
     ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
     ggplot2::scale_y_log10(name = y_name, 
                            limits = y_limits, breaks = y_breaks, labels = y_labels,  position = "left") + 
@@ -593,7 +611,7 @@ plot_totalprod2 <-function(year_to_plot = 1995,
                                   linetype = "dashed", size = 0.75)
   p
 } 
-p <- plot_totalprod2(year_to_plot = 1995,
+p <- plot_totalprod(year_to_plot = 1995,
                      fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                      model_fit_density = DENS, 
                      model_fit_production = PROD,
@@ -833,7 +851,7 @@ system2(command = "pdfcrop",
 
 
 #----------------------------------------------------------------------------------
-#--------------------------  Productivity  -------------------------------------------
+#--------------------------  Productivity  Ratio -------------------------------------------
 #----------------------------------------------------------------------------------
 
 prod1995 = obs_totalprod %>%
@@ -922,8 +940,20 @@ system2(command = "pdfcrop",
 #--------------------------     Diameter Growth         -------------------------------------------
 #---------------------------------------------------------------------------------------------------
 #used modified mass growth function
-plot_prod3 <- function (year_to_plot = 1995, 
-                        fg_names = c("Fast", "Tall", "Slow",  "Short", "Medium", "All"), 
+
+
+diam_growth_range <- obs_indivdiamgrowth %>%
+  filter(!fg %in% c("unclassified", "all"), mean_n_individuals >= 20) %>%
+  group_by(across(groups)) %>%
+  summarize(
+    min = min(mean),
+    max = max(mean)
+  )
+diam_growth_range
+ggplot2::geom_errorbar(data = diam_growth_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg), width = 0) +
+
+plot_diam <- function (year_to_plot = 1995, 
+                        fg_names = c("Fast", "Tall", "Slow",  "Short", "Medium"), 
                         model_fit = 1, 
                         x_limits, 
                         x_breaks = c(1, 3, 10, 30, 100, 300), 
@@ -933,7 +963,7 @@ plot_prod3 <- function (year_to_plot = 1995,
                         fill_names = guild_fills_fg, # c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
                         color_names = guild_colors_fg, #c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
                         x_name = "Diameter (cm)", 
-                        y_name = expression(paste("Growth (kg yr"^-1, ")")),
+                        y_name = expression(paste("Diameter Growth (cm yr"^-1, ")")),
                         average = "mean", 
                         plot_errorbar = FALSE, 
                         error_min = "ci_min",
@@ -943,7 +973,7 @@ plot_prod3 <- function (year_to_plot = 1995,
                         dodge_width = 0.07, 
                         dodge_errorbar = TRUE, 
                         geom_size = 4, 
-                        obsdat = obs_indivdprod, 
+                        obsdat = obs_indivprod, 
                         preddat = fitted_indivprod, 
                         plot_abline = TRUE, 
                         abline_slope = 2, 
@@ -971,13 +1001,13 @@ plot_prod3 <- function (year_to_plot = 1995,
     dplyr::filter(dbh >=  min_obs & dbh <= max_obs) %>% 
     arrange(desc(fg))
   p <- ggplot2::ggplot() + 
-    ggplot2::geom_ribbon(data = preddat %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))), 
+    ggplot2::geom_ribbon(data = preddat %>% arrange(factor(fg, levels = c('fg5','fg4','fg3','fg2','fg1'))), 
                          ggplot2::aes(x = dbh, ymin = q025, ymax = q975, 
                                       group = fg, fill = fg), alpha = 0.4) + 
-    ggplot2::geom_line(data = preddat %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))), 
+    ggplot2::geom_line(data = preddat %>% arrange(factor(fg, levels = c('fg5','fg4','fg3','fg2','fg1'))), 
                        ggplot2::aes(x = dbh, y = q50, group = fg, color = fg))
   if (plot_errorbar) {
-    p <- p + ggplot2::geom_errorbar(data = obsdat %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))), 
+    p <- p + ggplot2::geom_errorbar(data = obsdat %>% arrange(factor(fg, levels = c('fg5','fg4','fg3','fg2','fg1'))), 
                                     ggplot2::aes_string(x = "bin_midpoint", 
                                                         ymin = error_min, 
                                                         ymax = error_max, 
@@ -989,10 +1019,11 @@ plot_prod3 <- function (year_to_plot = 1995,
   }
   p <- p + ggplot2::geom_line(data = preddat[preddat$fg == "Medium", ], 
                               ggplot2::aes(x = dbh, y = q50), color = "gray") + 
-    ggplot2::geom_point(data = obsdat %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
+    ggplot2::geom_point(data = obsdat %>% arrange(factor(fg, levels = c('fg5','fg4','fg3','fg2','fg1'))),
                         ggplot2::aes_string(x = "bin_midpoint", 
                                             y = average, group = "fg", fill = "fg"), 
                         size = geom_size, color = "black", shape = 21, position = pos) + 
+    ggplot2::geom_errorbar(data = diam_growth_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg), width = 0) +
     ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
     ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) + 
     #theme_no_x() + 
@@ -1009,7 +1040,7 @@ plot_prod3 <- function (year_to_plot = 1995,
 }
 p
 #change to stem diameter growth
-p <- plot_prod3(year_to_plot = 1995,
+p <- plot_diam(year_to_plot = 1995,
                 fg_names = c('fg1','fg2','fg3','fg4','fg5'),
                 model_fit = PROD,
                 x_limits = c(.9, 160),
@@ -1018,7 +1049,7 @@ p <- plot_prod3(year_to_plot = 1995,
                 y_breaks = c(0.03, 0.1, 0.3, 1),
                 y_labels = c(0.03, 0.1, 0.3, 1),
                 error_bar_width = 0,
-                dodge_width = 0.07,
+                dodge_width = 0.00,
                 obsdat = obs_indivdiamgrowth, #diameter growth
                 preddat = fitted_indivdiamgrowth,
                 plot_abline = FALSE,
@@ -1180,8 +1211,17 @@ diam_hinge_plotting_data <- diamhinge_pred %>%
 #--------------------------   Mass Growth  --------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-
-plot_prod2 <- 
+mass_growth_range <- obs_indivprod %>%
+  filter(!fg %in% c("unclassified", "all"), mean_n_individuals >= 20) %>%
+  group_by(across(groups )) %>%
+  summarize(
+    min = min(mean),
+    max = max(mean)
+  )
+mass_growth_range
+ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
+  
+plot_growth <- 
   function (year_to_plot = 1995, 
             fg_names = c("Fast", "Tall", "Slow",  "Short", "Medium", "All"), 
             model_fit = 1, 
@@ -1193,7 +1233,7 @@ plot_prod2 <-
             fill_names = guild_fills, # c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
             color_names = guild_colors, #c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
             x_name = "Diameter (cm)", 
-            y_name = expression(paste("Growth (kg yr"^-1, ")")),
+            y_name = expression(paste("Mass Growth (kg yr"^-1, ")")),
             average = "mean", 
             position = "left",
             plot_errorbar = FALSE, 
@@ -1254,6 +1294,7 @@ plot_prod2 <-
                           ggplot2::aes_string(x = "bin_midpoint", 
                                               y = average, group = "fg", fill = "fg"), 
                           size = geom_size, color = "black", shape = 21, position = pos) + 
+      ggplot2::geom_errorbar(data = mass_growth_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
       ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
       ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels, position = position) + 
       #theme_no_x() + 
@@ -1272,7 +1313,7 @@ plot_prod2 <-
 obs_indivprod <- obs_indivprod %>%
   filter(mean_n_individuals >= 20)
 
-p <- plot_prod2(year_to_plot = 1995,
+p <- plot_growth(year_to_plot = 1995,
                 fg_names = c('fg1','fg2','fg3','fg4','fg5'),
                 model_fit = PROD,
                 x_limits = c(0.9, 160),
@@ -1285,7 +1326,7 @@ p <- plot_prod2(year_to_plot = 1995,
                 y_labels = c( 0.01, 0.1, 1, 10, 100),
                 abline_slope = 2, 
                 abline_intercept = 10, #-1.4
-                dodge_width = 0.07)
+                dodge_width = 0.0) #0.07
 
 
 p0 <- p #+ annotation_custom(grob_text_a) 
@@ -1315,7 +1356,7 @@ fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortalit
 bin_mort <- bin_mort %>% arrange(factor(fg, levels = c('all', 'fg5','fg4', 'fg3', 'fg2','fg1')))
 fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
 
-#---  Plot mortality vs light
+#---  Plot mortality 
 obs_range_mort <- bin_mort %>% 
   arrange(factor(fg, levels = c('fg5','fg4', 'fg3', 'fg2','fg1'))) %>%
   filter(variable %in% 'dbh', lived + died >= 20) %>%
