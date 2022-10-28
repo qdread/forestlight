@@ -121,6 +121,7 @@ for (i in dir(fp, pattern = 'pred_|fitted_')) {
 load(file.path(gdrive_path, 'data/data_piecewisefits/fits_bylight_forratio.RData'))
 load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
 load(file.path(gdrive_path, 'data/data_forplotting/light_scaling_plotting_data.RData'))
+binned_data <- read_csv(file.path(gdrive_path, "data/data_binned/additional_bins_fg_year.csv"))
 
 # source the extra extraction functions that aren't in the package
 source(file.path(github_path, 'forestlight/stan/clean_workflow/model_output_extraction_functions.r'))
@@ -352,7 +353,7 @@ sum(!is.na(raw_prod$production[raw_prod$year == 1995]))
 
 #pdf("/Volumes/GoogleDrive/ForestLight/Figures/New_main/growth_hex2.pdf")
 
-pdf(file.path(gdrive_path2,'Figures/new_main/Final_figs/Fig_3/growth_hex.pdf'))
+pdf(file.path(gdrive_path,'Figures/new_main/Final_figs/Fig_3/growth_hex.pdf'))
 grid.draw(p_hex)
 dev.off()
 system2(command = "pdfcrop", 
@@ -470,7 +471,17 @@ system2(command = "pdfcrop",
 #--------------------------   Richness  -------------------------------------------
 #----------------------------------------------------------------------------------
 
+groups = c("fg", "bin_midpoint")
+rich_range <- obs_dens %>%
+  filter(fg != "unclassified",bin_count >= 20) %>%
+  group_by(across(groups )) %>%
+  summarize(
+    min = min(bin_value),
+    max = max(bin_value)
+  )
 
+
+ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
 # filter fitted sizes by binned sizes
 max_dbh_fg <- obs_richnessbydiameter  %>%
   filter(n_individuals >= 20) %>%
@@ -488,35 +499,56 @@ fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
   group_by(fg) %>%
   filter(dbh <= max_dbh, dbh >= min_dbh)
 
-
+unique(fitted_richnessbydiameter_filtered$year)
 #---- Plot Richness ------
+
 (p_rich_cm <- ggplot() + 
+   theme_plant() +
+   scale_x_continuous(name = 'Stem Diameter (cm)',
+#   scale_x_log10(name = 'Stem Diameter (cm)',
+                 
+                 limit = c(.9, 160)) + 
+  scale_y_continuous(
+   #scale_y_log10(labels = signif,
+                 #limit = c( .003, 50), 
+                 position = "left",
+                 name = expression(paste("Richness (50 ha"^-1," cm"^-1, " )"))) +
+   scale_fill_manual(values = guild_fills_all) +
+   scale_color_manual(values = guild_colors_all) +
    geom_ribbon(data = fitted_richnessbydiameter_filtered  %>% 
                  arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
-               aes(x = dbh, ymin = q025/50, ymax = q975/50,
+               aes(x = dbh, ymin = q025, ymax = q975,
                    group = fg, fill = fg), alpha = 0.4) +
    geom_line(data = fitted_richnessbydiameter_filtered  %>% 
                arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
-             aes(x = dbh, y = q50/50, group = fg, color = fg)) +
-   geom_jitter(data = obs_richnessbydiameter %>% 
+             aes(x = dbh, y = q50, group = fg, color = fg)) +
+   geom_jitter(data = binned_data %>% 
                  arrange(desc(fg)) %>%
-                 filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20) %>%
+                 filter(!fg %in% 'unclassified') %>% #n_individuals >= 20
+                 filter(year == "1995") %>%
                  arrange(desc(fg)), 
-               aes(x = bin_midpoint, y = richness_by_bin_width/50, fill = fg, color = fg),
-               shape = 21, size = 4, color = "black", width = 0.02) + #0.02
+               aes(x = bin_midpoint, y = richness_by_bin_width, fill = fg, color = fg),
+               shape = 21, size = 4, color = "black", width = 0.0) #+
+  # geom_jitter(data = obs_richnessbydiameter %>% 
+   #              arrange(desc(fg)) %>%
+   #              filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20) %>%
+    #             arrange(desc(fg)), 
+     #          aes(x = bin_midpoint, y = richness_by_bin_width, fill = fg, color = fg),
+     #          shape = 21, size = 4, color = "black", width = 0.0) + #0.02
    #geom_abline(intercept = log10(30000), slope = -2, linetype = "dashed", color = "gray72", size = 0.75) +
-   scale_x_log10(name = 'Stem Diameter (cm)',
-                 limit = c(.9, 160)) + 
-   scale_y_log10(labels = signif,
-                 limit = c( .003, 50), 
-                 position = "left",
-                 name = expression(paste("Richness (cm"^-1, " ha"^-1,")"))) +
-   scale_fill_manual(values = guild_fills_all) +
-   scale_color_manual(values = guild_colors_all) +
-   theme_plant() #+ theme_no_x()
+   
+   #theme_no_x()
  
 )
-
+ggplot() +
+  theme_plant() + 
+  geom_jitter(data = binned_data %>% 
+                arrange(desc(fg)) %>%
+                filter(!fg %in% 'unclassified') %>% #n_individuals >= 20
+                filter(year == "1995") %>%
+                arrange(desc(fg)), 
+              aes(x = bin_midpoint, y = richness_by_bin_width, fill = fg, color = fg),
+              shape = 21, size = 4, color = "black", width = 0.0)
 
 p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
@@ -603,7 +635,7 @@ plot_totalprod <-function(year_to_plot = 1995,
                            limits = y_limits, breaks = y_breaks, labels = y_labels,  position = "left") + 
     ggplot2::scale_color_manual(values = guild_colors_all) + 
     ggplot2::scale_fill_manual(values = guild_fills_all) + 
-    theme_plant() + theme_no_x() +
+    theme_plant() + #theme_no_x() +
     theme(aspect.ratio = 1)
   if (plot_abline) 
     p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
@@ -641,7 +673,7 @@ system2(command = "pdfcrop",
 ########################################################################
 
 #----------------------------------------------------------------------------------
-#--------------------------   Richness  -------------------------------------------
+#--------------------------   Richness Ratio -------------------------------------------
 #----------------------------------------------------------------------------------
 
 # Load 1995 bin data
@@ -704,7 +736,7 @@ obs_richnessbydiameter_ratio$tall_slow_ratio = obs_richnessbydiameter_ratio$rich
                   position = "right",
                   name = expression("Richness Ratio")) + 
     
-    theme_plant() #+theme_no_y() 
+    theme_plant() +theme_no_x() 
   
 )
 
@@ -876,10 +908,10 @@ prod_ratio = data.frame("bin_midpoint" = prod1995$bin_midpoint[1:15], "fast_slow
       expression(paste('Stem Diameter (cm)'))) + 
     scale_y_log10(labels = signif, breaks = c(0.03,  0.3, 3), 
                   limits=c(0.03, 4),
-                  position = "left",
-                  name = expression("Production Ratio")) + 
+                  position = "right",
+                  name = expression("Productivity Ratio")) + 
     
-    theme_plant() +theme_no_y()#+ theme_no_x() 
+    theme_plant() #+theme_no_y()#+ theme_no_x() 
 )
 
 
@@ -912,8 +944,8 @@ system2(command = "pdfcrop",
                   limits=c(0.03, 4),
                   #position = "left",
                   position = "right",
-                  name = expression("Production Ratio")) + 
-    theme_plant() + theme_no_x() #+theme_no_y()
+                  name = expression("Productivity Ratio")) + 
+    theme_plant() + theme_no_x() +theme_no_y()
 )
 
 p1 <- set_panel_size(prod_tallslow , width=unit(10.25,"cm"), height=unit(8,"cm"))
@@ -950,7 +982,6 @@ diam_growth_range <- obs_indivdiamgrowth %>%
     max = max(mean)
   )
 diam_growth_range
-ggplot2::geom_errorbar(data = diam_growth_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg), width = 0) +
 
 plot_diam <- function (year_to_plot = 1995, 
                         fg_names = c("Fast", "Tall", "Slow",  "Short", "Medium"), 
