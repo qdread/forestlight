@@ -376,10 +376,10 @@ obs_dens <- obs_dens %>%
   filter(bin_count >= 20) 
 
 #--error bars
-groups = c("fg", "bin_midpoint")
+fg_mid = c("fg", "bin_midpoint")
 dens_range <- obs_dens %>%
   filter(fg != "unclassified",bin_count >= 20) %>%
-  group_by(across(groups )) %>%
+  group_by(across(fg_mid )) %>%
   summarize(
     min = min(bin_value),
     max = max(bin_value)
@@ -471,17 +471,6 @@ system2(command = "pdfcrop",
 #--------------------------   Richness  -------------------------------------------
 #----------------------------------------------------------------------------------
 
-groups = c("fg", "bin_midpoint")
-rich_range <- obs_dens %>%
-  filter(fg != "unclassified",bin_count >= 20) %>%
-  group_by(across(groups )) %>%
-  summarize(
-    min = min(bin_value),
-    max = max(bin_value)
-  )
-
-
-ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
 # filter fitted sizes by binned sizes
 max_dbh_fg <- obs_richnessbydiameter  %>%
   filter(n_individuals >= 20) %>%
@@ -500,17 +489,25 @@ fitted_richnessbydiameter_filtered <- fitted_richnessbydiameter %>%
   filter(dbh <= max_dbh, dbh >= min_dbh)
 
 unique(fitted_richnessbydiameter_filtered$year)
+
+fg_mid = c("fg", "bin_midpoint")
+rich_range <- binned_data %>%
+  filter(fg != "unclassified", abundance >= 20) %>%
+  group_by(across(all_of(fg_mid_groups ))) %>%
+  summarize(
+    min = min(richness_by_bin_width),
+    max = max(richness_by_bin_width)
+  )
+ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
+  
 #---- Plot Richness ------
 
 (p_rich_cm <- ggplot() + 
    theme_plant() +
-   scale_x_continuous(name = 'Stem Diameter (cm)',
-#   scale_x_log10(name = 'Stem Diameter (cm)',
-                 
+  scale_x_log10(name = 'Stem Diameter (cm)',
                  limit = c(.9, 160)) + 
-  scale_y_continuous(
-   #scale_y_log10(labels = signif,
-                 #limit = c( .003, 50), 
+   scale_y_log10(labels = signif,
+                limit = c( .1, 1500), 
                  position = "left",
                  name = expression(paste("Richness (50 ha"^-1," cm"^-1, " )"))) +
    scale_fill_manual(values = guild_fills_all) +
@@ -522,34 +519,16 @@ unique(fitted_richnessbydiameter_filtered$year)
    geom_line(data = fitted_richnessbydiameter_filtered  %>% 
                arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
              aes(x = dbh, y = q50, group = fg, color = fg)) +
-   geom_jitter(data = binned_data %>% 
+   geom_point(data = binned_data %>% 
                  arrange(desc(fg)) %>%
-                 filter(!fg %in% 'unclassified') %>% #n_individuals >= 20
+                 filter(!fg %in% 'unclassified', abundance >= 20) %>% #n_individuals >= 20
                  filter(year == "1995") %>%
                  arrange(desc(fg)), 
                aes(x = bin_midpoint, y = richness_by_bin_width, fill = fg, color = fg),
-               shape = 21, size = 4, color = "black", width = 0.0) #+
-  # geom_jitter(data = obs_richnessbydiameter %>% 
-   #              arrange(desc(fg)) %>%
-   #              filter(!fg %in% 'unclassified' & richness > 0  & n_individuals >= 20) %>%
-    #             arrange(desc(fg)), 
-     #          aes(x = bin_midpoint, y = richness_by_bin_width, fill = fg, color = fg),
-     #          shape = 21, size = 4, color = "black", width = 0.0) + #0.02
-   #geom_abline(intercept = log10(30000), slope = -2, linetype = "dashed", color = "gray72", size = 0.75) +
-   
-   #theme_no_x()
+               shape = 21, size = 4, color = "black") + theme_no_x() +
+  geom_errorbar(data = rich_range %>%  arrange(desc(fg)), aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0)) 
+  
  
-)
-ggplot() +
-  theme_plant() + 
-  geom_jitter(data = binned_data %>% 
-                arrange(desc(fg)) %>%
-                filter(!fg %in% 'unclassified') %>% #n_individuals >= 20
-                filter(year == "1995") %>%
-                arrange(desc(fg)), 
-              aes(x = bin_midpoint, y = richness_by_bin_width, fill = fg, color = fg),
-              shape = 21, size = 4, color = "black", width = 0.0)
-
 p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
@@ -573,14 +552,26 @@ grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.17, y = 0.
                                gp = gpar(col = "gray52", fontsize = 20))) 
 geom_size = 3.5
 
+fg_mid = c("fg", "bin_midpoint")
+
 prod_range <- obs_totalprod %>%
   filter(fg != "unclassified",bin_count >= 20) %>%
-  group_by(across(groups )) %>%
+  group_by(across(all_of(fg_mid))) %>%
   summarize(
     min = min(bin_value),
     max = max(bin_value)
   )
-prod_range
+
+prod_range <- binned_data %>%
+  filter(fg != "unclassified", abundance >= 20) %>%
+  group_by(across(all_of(fg_mid))) %>%
+  summarize(
+    min = min(production)/42.84,
+    max = max(production)/42.84,
+  )
+
+#ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
+  
 # Modifications:  changed plotting order, geom_size, geom colors
 plot_totalprod <-function(year_to_plot = 1995, 
                            fg_names = c("fg1", "fg2", "fg3","fg4", "fg5", "all"), 
@@ -716,12 +707,31 @@ ratio_fitted_diam_density <- ratio_fitted_diam %>%
 
 obs_richnessbydiameter_ratio$tall_slow_ratio = obs_richnessbydiameter_ratio$richness_fg2/obs_richnessbydiameter_ratio$richness_fg3
 
+
+# new ratios 
+ratios <- read_csv(file.path(gdrive_path, 'data/data_binned/additional_bins_ratio_year.csv'))
+
 #------------------ Plot Richness tall slow  diameter -----------
-(rich_ratio_tallslow  <- ggplot(data = obs_richnessbydiameter_ratio %>% 
-                                  filter(n_individuals_fg3 >= 20,n_individuals_fg2 >= 20),
-                                aes(x =  bin_midpoint, y = tall_slow_ratio, fill = tall_slow_ratio)) + # exclude largest short:tall ratio
-    stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
-    geom_point(shape = 21, stroke = 0.5, 
+ratio_pionslow_range <- ratios %>%
+  filter(min_n_individuals_pioneerslow >= 20) %>%
+  group_by(bin_midpoint) %>%
+  summarize(
+    min = min(richness_ratio_pioneerslow),
+    max = max(richness_ratio_pioneerslow)
+  )
+
+(rich_ratio_tallslow  <- #ggplot(data = obs_richnessbydiameter_ratio %>% 
+                          #        filter(n_individuals_fg3 >= 20,n_individuals_fg2 >= 20),
+                           #     aes(x =  bin_midpoint, y = tall_slow_ratio, fill = tall_slow_ratio)) + # exclude largest short:tall ratio
+   ggplot() + 
+    stat_smooth(data = ratios %>% 
+                  filter(min_n_individuals_pioneerslow >= 20, year == "1995"),
+                aes(x =  bin_midpoint, y = richness_ratio_pioneerslow, fill = richness_ratio_pioneerslow),
+  method = "lm", color = "black", alpha = 0.2 ) +
+    geom_point(data = ratios %>% 
+                 filter(min_n_individuals_pioneerslow >= 20, year == "1995"),
+               aes(x =  bin_midpoint, y = richness_ratio_pioneerslow, fill = richness_ratio_pioneerslow),
+               shape = 21, stroke = 0.5, 
                size = 4, 
                #  size = 4, 
                color = "black") +
@@ -736,7 +746,9 @@ obs_richnessbydiameter_ratio$tall_slow_ratio = obs_richnessbydiameter_ratio$rich
                   position = "right",
                   name = expression("Richness Ratio")) + 
     
-    theme_plant() +theme_no_x() 
+    theme_plant() +theme_no_x()  +
+    geom_errorbar(data = ratio_pionslow_range, aes(x = bin_midpoint, ymin = min, ymax = max), width = 0, color = "black") 
+
   
 )
 
