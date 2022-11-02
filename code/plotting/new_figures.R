@@ -459,13 +459,13 @@ p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/new_main/abundance/abundance.pdf'))
+pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/Fig_4/LH_scaling/abundance.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/new_main/abundance/abundance.pdf'), 
-                    file.path(gdrive_path2,'Figures/new_main/abundance/abundance.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/LH_scaling/abundance.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/LH_scaling/abundance.pdf')) 
 )
 #----------------------------------------------------------------------------------
 #--------------------------   Richness  -------------------------------------------
@@ -493,13 +493,12 @@ unique(fitted_richnessbydiameter_filtered$year)
 fg_mid = c("fg", "bin_midpoint")
 rich_range <- binned_data %>%
   filter(fg != "unclassified", abundance >= 20) %>%
-  group_by(across(all_of(fg_mid_groups ))) %>%
+  group_by(across(all_of(fg_mid))) %>%
   summarize(
     min = min(richness_by_bin_width),
     max = max(richness_by_bin_width)
   )
-ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
-  
+
 #---- Plot Richness ------
 
 (p_rich_cm <- ggplot() + 
@@ -507,7 +506,7 @@ ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax
   scale_x_log10(name = 'Stem Diameter (cm)',
                  limit = c(.9, 160)) + 
    scale_y_log10(labels = signif,
-                limit = c( .1, 1500), 
+                 limits = c(0.007, 20000),
                  position = "left",
                  name = expression(paste("Richness (50 ha"^-1," cm"^-1, " )"))) +
    scale_fill_manual(values = guild_fills_all) +
@@ -533,13 +532,13 @@ p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/new_main/Final_figs/Fig_4/richness/Richness.pdf'))
+pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/Fig_4/LH_scaling/Richness.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/new_main/Final_figs/Fig_4/richness/Richness.pdf'), 
-                  file.path(gdrive_path2,'Figures/new_main/Final_figs/Fig_4/richness/Richness.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/LH_scaling/Richness.pdf'), 
+                  file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/LH_scaling/Richness.pdf')) 
 )
 
 #----------------------------------------------------------------------------------
@@ -562,13 +561,6 @@ prod_range <- obs_totalprod %>%
     max = max(bin_value)
   )
 
-prod_range <- binned_data %>%
-  filter(fg != "unclassified", abundance >= 20) %>%
-  group_by(across(all_of(fg_mid))) %>%
-  summarize(
-    min = min(production)/42.84,
-    max = max(production)/42.84,
-  )
 
 #ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
   
@@ -584,7 +576,7 @@ plot_totalprod <-function(year_to_plot = 1995,
                            y_labels, 
                            fill_names = guild_fills_all, # c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
                            color_names = guild_colors_all, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray"), 
-                           x_name = "Diameter (cm)", 
+                           x_name = "Stem Diameter (cm)", 
                            y_name = expression(paste("Productivity (kg cm"^-1, " ha"^-1, "  yr"^-1, ")")),
                            geom_size = 4, 
                            obsdat = obs_totalprod, 
@@ -638,6 +630,7 @@ p <- plot_totalprod(year_to_plot = 1995,
                      fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
                      model_fit_density = DENS, 
                      model_fit_production = PROD,
+                    x_name = "Stem Diameter (cm)", 
                      x_limits = c(0.9,160),
                      y_limits = c(0.3, 200),
                      y_breaks = c(0.1, 1, 10, 100),
@@ -651,329 +644,333 @@ p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/New_main/production/Total_Production.pdf'))
+pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/Fig_4/LH_scaling/Total_Production.pdf'))
 grid.draw(p1)
 dev.off()
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/production/Total_Production.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/production/Total_Production.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/LH_scaling/Total_Production.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/LH_scaling/Total_Production.pdf')) 
 )
 
 ########################################################################
 ######################   Ratios     ####################################
 ########################################################################
 
+ratios <- read_csv(file.path(gdrive_path, 'data/data_binned/additional_bins_ratio_year.csv'))
+
+#----------------------------------------------------------------------------------
+#--------------------------  Abundance Ratio -------------------------------------------
+#----------------------------------------------------------------------------------
+#---- LL pioneer vs slow abundance ------
+
+abun_ratio_pioneerslow_range <- ratios %>%
+  filter(min_n_individuals_pioneerslow >= 20) %>%
+  group_by(bin_midpoint) %>%
+  summarize(
+    min = min(abundance_ratio_pioneerslow),
+    max = max(abundance_ratio_pioneerslow))
+
+(abun_ratio_pioneerslow  <-
+    ggplot() + theme_plant() +
+    stat_smooth(data = ratios %>% 
+                  filter(min_n_individuals_pioneerslow >= 20, year == "1995"),
+                aes(x =  bin_midpoint, y = abundance_ratio_pioneerslow, fill = abundance_ratio_pioneerslow),
+                method = "lm", color = "black", alpha = 0.2 ) +
+    geom_errorbar(data = abun_ratio_pioneerslow_range, aes(x = bin_midpoint, ymin = min, ymax = max), width = 0, color = "black") +
+    geom_point(data = ratios %>% 
+                 filter(min_n_individuals_pioneerslow >= 20, year == "1995"),
+               aes(x =  bin_midpoint, y = abundance_ratio_pioneerslow, fill = abundance_ratio_pioneerslow),
+               shape = 21, stroke = 0.5, 
+               size = 4, 
+               color = "black") +
+    scale_tall_slow  +
+    scale_x_log10(limits = c(.9, 100), breaks = c(1, 10, 100), 
+                  position = "bottom", 
+                  expression(paste('Stem Diameter (cm)'))) + 
+    scale_y_log10(labels = signif, 
+                  # breaks = c(0.03, 0.1, 1, 0.3, 1, 3), 
+                  #limits = c(0.03, 6),
+                  breaks = c(0.01, 0.1, 1, 10), 
+                  limits = c(0.03, 10),
+                  position = "right",
+                  name = expression("Population Density Ratio")) + 
+    theme_no_x() 
+)
+
+
+p1 <- set_panel_size(abun_ratio_pioneerslow , width=unit(10.25,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path, 'Figures/New_main/Final_figs/Fig_4/relative_scaling/abun_ratio_pioneerslow.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/abun_ratio_pioneerslow.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/abun_ratio_pioneerslow.pdf')) 
+)
+#---- fast vs slow abundance ------
+
+
+abun_ratio_fastslow_range <- ratios %>%
+  filter(min_n_individuals_fastslow >= 20) %>%
+  group_by(bin_midpoint) %>%
+  summarize(
+    min = min(abundance_ratio_fastslow),
+    max = max(abundance_ratio_fastslow))
+
+(abun_ratio_fastslow  <-
+    ggplot() + theme_plant() +
+    stat_smooth(data = ratios %>% 
+                  filter(min_n_individuals_fastslow >= 20, year == "1995"),
+                aes(x =  bin_midpoint, y = abundance_ratio_fastslow, fill = abundance_ratio_fastslow),
+                method = "lm", color = "black", alpha = 0.2 ) +
+    geom_errorbar(data = abun_ratio_fastslow_range, aes(x = bin_midpoint, ymin = min, ymax = max), width = 0, color = "black") +
+    geom_point(data = ratios %>% 
+                 filter(min_n_individuals_fastslow >= 20, year == "1995"),
+               aes(x =  bin_midpoint, y = abundance_ratio_fastslow, fill = abundance_ratio_fastslow),
+               shape = 21, stroke = 0.5, 
+               size = 4, 
+               #  size = 4, 
+               color = "black") +
+    scale_fast_slow  +
+    scale_x_log10(limits = c(.9, 100), breaks = c(1, 10, 100), 
+                  position = "bottom", 
+                  #  position = "top", 
+                  expression(paste('Stem Diameter (cm)'))) + 
+    scale_y_log10(labels = signif, 
+                  # breaks = c(0.03, 0.1, 1, 0.3, 1, 3), 
+                  #limits = c(0.03, 6),
+                  breaks = c(0.01, 0.1, 1, 10), 
+                  limits = c(0.03, 10),
+                  position = "right",
+                  name = expression("Population Density Ratio")) +
+    theme_no_x()  + theme_no_y() 
+)
+
+
+p1 <- set_panel_size(abun_ratio_fastslow , width=unit(10.25,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path, 'Figures/New_main/Final_figs/Fig_4/relative_scaling/abun_ratio_fastslow.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/abun_ratio_fastslow.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/abun_ratio_fastslow.pdf')) 
+)
+
+
 #----------------------------------------------------------------------------------
 #--------------------------   Richness Ratio -------------------------------------------
 #----------------------------------------------------------------------------------
 
-# Load 1995 bin data
-load(file.path(gdrive_path, 'data/data_binned/bin_object_singleyear.RData'))
-
-prod_ratio_diam <- breeder_stats_bydiam_byyear %>% 
-  mutate(ID = 'Short-Tall') %>%
-  rename(production_ratio = breeder_production_ratio, 
-         density_ratio = breeder_density_ratio) %>%
-  rbind(fastslow_stats_bydiam_byyear %>% 
-          mutate(ID = 'Fast-Slow') %>%
-          rename(production_ratio = fastslow_production_ratio, 
-                 density_ratio = fastslow_density_ratio)) %>%
-  filter(year == 1995)
-
-prod_ratio_light <- breeder_stats_bylight_byyear %>% 
-  mutate(ID = 'Short-Tall') %>%
-  rename(production_ratio = breeder_production_ratio, 
-         density_ratio = breeder_density_ratio) %>%
-  rbind(fastslow_stats_bylight_byyear %>% 
-          mutate(ID = 'Fast-Slow') %>%
-          rename(production_ratio = fastslow_production_ratio, 
-                 density_ratio = fastslow_density_ratio)) %>%
-  filter(year == 1995)
-
-# Load fitted values
-ratio_fitted_diam <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/ratio_fittedvalues.csv'))
-ratio_fitted_lightarea <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/ratio_fittedvalues_lightarea.csv'))
-
-# Limited fitted lines to plotted data bins (min 20 pairs)
-ratio_fitted_lightarea_prod <- ratio_fitted_lightarea %>%
-  filter(variable == 'total production', light_area > 7, light_area < 197) %>%
-  mutate(ratio = if_else(ratio == 'fast:slow', 'Fast-Slow', 'Short-Tall'))
-
-ratio_fitted_diam_density <- ratio_fitted_diam %>%
-  filter(variable == 'density', (ratio == 'fast:slow' & dbh < 66) | 
-           (ratio == 'pioneer:breeder') & dbh < 16) %>%
-  mutate(ratio = if_else(ratio == 'fast:slow', 'Fast-Slow', 'Short-Tall'))
-
-
-obs_richnessbydiameter_ratio$tall_slow_ratio = obs_richnessbydiameter_ratio$richness_fg2/obs_richnessbydiameter_ratio$richness_fg3
-
-
-# new ratios 
-ratios <- read_csv(file.path(gdrive_path, 'data/data_binned/additional_bins_ratio_year.csv'))
-
-#------------------ Plot Richness tall slow  diameter -----------
+#------------------ Plot Richness tall slow  ~ diameter -----------
 ratio_pionslow_range <- ratios %>%
   filter(min_n_individuals_pioneerslow >= 20) %>%
   group_by(bin_midpoint) %>%
   summarize(
     min = min(richness_ratio_pioneerslow),
-    max = max(richness_ratio_pioneerslow)
-  )
+    max = max(richness_ratio_pioneerslow))
 
-(rich_ratio_tallslow  <- #ggplot(data = obs_richnessbydiameter_ratio %>% 
-                          #        filter(n_individuals_fg3 >= 20,n_individuals_fg2 >= 20),
-                           #     aes(x =  bin_midpoint, y = tall_slow_ratio, fill = tall_slow_ratio)) + # exclude largest short:tall ratio
+(rich_ratio_pioneer_slow  <- 
    ggplot() + 
     stat_smooth(data = ratios %>% 
                   filter(min_n_individuals_pioneerslow >= 20, year == "1995"),
                 aes(x =  bin_midpoint, y = richness_ratio_pioneerslow, fill = richness_ratio_pioneerslow),
-  method = "lm", color = "black", alpha = 0.2 ) +
+                method = "lm", color = "black", alpha = 0.2 ) +
+    geom_errorbar(data = ratio_pionslow_range, aes(x = bin_midpoint, ymin = min, ymax = max), width = 0, color = "black") +
     geom_point(data = ratios %>% 
                  filter(min_n_individuals_pioneerslow >= 20, year == "1995"),
                aes(x =  bin_midpoint, y = richness_ratio_pioneerslow, fill = richness_ratio_pioneerslow),
                shape = 21, stroke = 0.5, 
                size = 4, 
-               #  size = 4, 
                color = "black") +
     scale_tall_slow  +
-    scale_x_log10(limits = c(.9, 160), breaks = c(1, 10, 100), 
+    scale_x_log10(limits = c(.9, 100), breaks = c(1, 10, 100), 
                   position = "bottom", 
-                #  position = "top", 
                   expression(paste('Stem Diameter (cm)'))) + 
-    scale_y_log10(labels = signif, breaks = c( 0.1, 0.3, 1, 3, 10), 
-                  limits=c(0.3, 4),
-                  #position = "left",
+    scale_y_log10(labels = signif,
+                   breaks = c(0.03, 0.1, 1, 0.3, 1, 3), 
+                  limits = c(0.3, 4),
+                  #breaks = c(0.01, 0.1, 1, 10), 
+                  #limits = c(0.03, 10),
                   position = "right",
                   name = expression("Richness Ratio")) + 
-    
-    theme_plant() +theme_no_x()  +
-    geom_errorbar(data = ratio_pionslow_range, aes(x = bin_midpoint, ymin = min, ymax = max), width = 0, color = "black") 
-
-  
+    theme_plant() #+theme_no_x()  
 )
 
 
-p1 <- set_panel_size(rich_ratio_tallslow , width=unit(10.25,"cm"), height=unit(8,"cm"))
-#p1 <- set_panel_size(rich_ratio_tallslow , width=unit(7.6,"cm"), height=unit(7.6,"cm"))
+p1 <- set_panel_size(rich_ratio_pioneer_slow , width=unit(10.25,"cm"), height=unit(8,"cm"))
 
 grid.newpage()
 grid.draw(p1)
-pdf(file.path(gdrive_path, 'Figures/New_main/ratios/richness_ratio_diam_tallslow.pdf'))
+pdf(file.path(gdrive_path, 'Figures/New_main/Final_figs/Fig_4/relative_scaling/richness_ratio_pioneerslow.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/ratios/richness_ratio_diam_tallslow.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/ratios/richness_ratio_diam_tallslow.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/richness_ratio_pioneerslow.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/richness_ratio_pioneerslow.pdf')) 
 )
 
-#------------------ Plot Fast Slow  Richness ~ diameter -----------
+#-----------------------fast vs slow richness ---------------------
 
-(rich_ratio_fastslow  <- ggplot(data = obs_richnessbydiameter_ratio %>% 
-                                  filter(n_individuals_fg3 >= 20,n_individuals_fg2 >= 20),
-                                aes(x =  bin_midpoint, y = richness_ratio_fastslow, fill = richness_ratio_fastslow)) + # exclude largest short:tall ratio
-    stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
-    geom_point(shape = 21, stroke = 0.5, 
+rich_ratio_fastslow_range <- ratios %>%
+  filter(min_n_individuals_fastslow >= 20) %>%
+  group_by(bin_midpoint) %>%
+  summarize(
+    min = min(richness_ratio_fastslow),
+    max = max(richness_ratio_fastslow))
+
+(rich_ratio_fastslow  <-
+    ggplot() + 
+    stat_smooth(data = ratios %>% 
+                  filter(min_n_individuals_fastslow >= 20, year == "1995"),
+                aes(x =  bin_midpoint, y = richness_ratio_fastslow, fill = richness_ratio_fastslow),
+                method = "lm", color = "black", alpha = 0.2 ) +
+    geom_errorbar(data = rich_ratio_fastslow_range, aes(x = bin_midpoint, ymin = min, ymax = max), width = 0, color = "black")  +
+    geom_point(data = ratios %>% 
+                 filter(min_n_individuals_fastslow >= 20, year == "1995"),
+               aes(x =  bin_midpoint, y = richness_ratio_fastslow, fill = richness_ratio_fastslow),
+               shape = 21, stroke = 0.5, 
                size = 4, 
-               #  size = 4, 
                color = "black") +
-    scale_fast_slow3  +
-    scale_x_log10(limits = c(.9, 160), breaks = c(1, 3, 10, 30, 100), 
-                  #position = "bottom", 
-                  position = "top", 
+    scale_fast_slow  +
+    scale_x_log10(limits = c(.9, 100), breaks = c(1, 10, 100), 
+                  position = "bottom", 
                   expression(paste('Stem Diameter (cm)'))) + 
-    scale_y_log10(labels = signif, breaks = c( 0.1, 0.3, 1, 3, 10), 
-                  limits=c(0.3, 4),
-                  #position = "left",
-                  position = "left",
+    scale_y_log10(labels = signif, 
+                  # breaks = c(0.03, 0.1, 1, 0.3, 1, 3), 
+                  #limits = c(0.03, 6),
+                  breaks = c(0.01, 0.1, 1, 10), 
+                  limits = c(0.03, 10),
+                  position = "right",
                   name = expression("Richness Ratio")) + 
-    
-    theme_plant() + theme_no_x() +theme_no_y()
-  
+    theme_plant() +theme_no_x()  + theme_no_y() 
 )
 
 
-p1 <- set_panel_size(rich_ratio_fastslow, width=unit(10.25,"cm"), height=unit(8,"cm"))
-#p1 <- set_panel_size(rich_ratio_fastslow  , width=unit(8,"cm"), height=unit(8,"cm"))
+p1 <- set_panel_size(rich_ratio_fastslow , width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path, '/Figures/New_main/ratios/richness_ratio_diam_fastslow.pdf'))
+pdf(file.path(gdrive_path, 'Figures/New_main/Final_figs/Fig_4/relative_scaling/richness_ratio_fastslow.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/ratios/richness_ratio_diam_fastslow.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/ratios/richness_ratio_diam_fastslow.pdf')) 
-)
-
-#----------------------------------------------------------------------------------
-#--------------------------  Abundance Ratio -------------------------------------------
-#----------------------------------------------------------------------------------
-
-obs_richnessbydiameter_ratio$tall_slow_abun_ratio = obs_richnessbydiameter_ratio$n_individuals_fg2/obs_richnessbydiameter_ratio$n_individuals_fg3
-obs_richnessbydiameter_ratio$fast_slow_abun_ratio = obs_richnessbydiameter_ratio$n_individuals_fg1/obs_richnessbydiameter_ratio$n_individuals_fg3
-
-#------------------------ Abundance tall slow ----------------
-(abun_ratio_tallslow  <- ggplot(data = obs_richnessbydiameter_ratio %>% 
-                                  filter(n_individuals_fg3 >= 20,n_individuals_fg2 >= 20),
-                                aes(x =  bin_midpoint, y = tall_slow_abun_ratio, fill = tall_slow_abun_ratio)) + # exclude largest short:tall ratio
-   #geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
-   stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
-   geom_point(shape = 21, stroke = 0.5, 
-              size = 4, 
-              color = "black") +
-   scale_tall_slow  +
-   scale_x_log10(limits = c(.9, 160), breaks = c(1, 10,  100), 
-                 position = "bottom", 
-                 expression(paste('Stem Diameter (cm)'))) + 
-   scale_y_log10(labels = signif, 
-                 breaks = c(0.03, 0.1, 1, 0.3, 1, 3), 
-                 limits=c(0.03, 4),
-                 position = "right",
-                 name = expression("Abundance Ratio")) + 
-   theme_plant() + theme_no_x()
- 
-)
-
-p1 <- set_panel_size(abun_ratio_tallslow , width=unit(10.25,"cm"), height=unit(8,"cm"))
-#p1 <- set_panel_size(abun_ratio_tallslow , width=unit(8,"cm"), height=unit(8,"cm"))
-
-grid.newpage()
-grid.draw(p1)
-pdf(file.path(gdrive_path, 'Figures/New_main/ratios/abun_ratio_diam_tall_slow_right.pdf'))
-#pdf(file.path(gdrive_path, '/Figures/New_main/ratios/abun_ratio_diam_tall_slow_square.pdf'))
-grid.draw(p1)
-dev.off()
-
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/ratios/abun_ratio_diam_tall_slow_right.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/ratios/abun_ratio_diam_tall_slow_right.pdf')) 
-)
-
-#------------------------ Abundance Fast slow ----------------
-
-(abun_ratio_fastslow  <- ggplot(data = obs_richnessbydiameter_ratio %>% 
-                                  filter(n_individuals_fg3 >= 20, n_individuals_fg1 >= 20),
-                                aes(x =  bin_midpoint, y = fast_slow_abun_ratio, fill = fast_slow_abun_ratio)) + # exclude largest short:tall ratio
-    stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
-    geom_point(shape = 21, stroke = 0.5, 
-               size = 4, 
-               #  size = 4.5, 
-               color = "black") +
-    scale_fast_slow3  +
-    scale_x_log10(limits = c(.9, 160), breaks = c(1, 10,  100), 
-                  #position = "bottom", 
-                  position = "top", 
-                  expression(paste('Stem Diameter (cm)'))) + 
-    scale_y_log10(labels = signif,  breaks = c( 0.03, 0.3, 3), 
-                  limits=c(0.03, 4),
-                  position = "left",
-                  #position = "right",
-                  name = expression("Abundance Ratio")) + 
-    
-    theme_plant() + theme_no_x() +theme_no_y()
-  
-)
-
-
-p1 <- set_panel_size(abun_ratio_fastslow, width=unit(10.25,"cm"), height=unit(8,"cm"))
-#p1 <- set_panel_size(abun_ratio_fastslow, width=unit(8,"cm"), height=unit(8,"cm"))
-grid.newpage()
-grid.draw(p1)
-
-
-pdf(file.path(gdrive_path, '/Figures/New_main/ratios/abun_ratio_diam_fast_slow.pdf'))
-#pdf(file.path(gdrive_path, '/Figures/New_main/ratios/abun_ratio_diam_fast_slow_square.pdf'))
-grid.draw(p1)
-dev.off()
-
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/ratios/abun_ratio_diam_fast_slow.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/ratios/abun_ratio_diam_fast_slow.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/richness_ratio_fastslow.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/richness_ratio_fastslow.pdf')) 
 )
 
 
 #----------------------------------------------------------------------------------
 #--------------------------  Productivity  Ratio -------------------------------------------
 #----------------------------------------------------------------------------------
-
-prod1995 = obs_totalprod %>%
-  filter(year == 1995, bin_count >= 20) #%>%
-#mutate(fast_slow_prod = NA, tall_slow_prod = NA)
-fast_slow_prod = prod1995$bin_value[prod1995$fg == "fg1"]/prod1995$bin_value[prod1995$fg == "fg3"]
-tall_slow_prod = prod1995$bin_value[prod1995$fg == "fg2"][1:15]/prod1995$bin_value[prod1995$fg == "fg3"]
-prod_ratio = data.frame("bin_midpoint" = prod1995$bin_midpoint[1:15], "fast_slow_prod" = fast_slow_prod, "tall_slow_prod" = tall_slow_prod)   
-
-
-
-(prod_fastslow  <- ggplot(data = prod_ratio, 
-                          aes(x =  bin_midpoint, y = fast_slow_prod , fill = fast_slow_prod )) + # exclude largest short:tall ratio
-    stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
-    geom_point(shape = 21, stroke = 0.5, 
+#---- LL pioneer vs slow abundance ------
+prod_ratio_pioneerslow_range <- ratios %>%
+  filter(min_n_individuals_pioneerslow >= 20) %>%
+  group_by(bin_midpoint) %>%
+  summarize(
+    min = min(production_ratio_pioneerslow),
+    max = max(production_ratio_pioneerslow)
+  )
+(prod_ratio_pioneerslow  <-
+    ggplot() + theme_plant() +
+    stat_smooth(data = ratios %>% 
+                  filter(min_n_individuals_pioneerslow >= 20, year == "1995"),
+                aes(x =  bin_midpoint, y = production_ratio_pioneerslow, fill = production_ratio_pioneerslow),
+                method = "lm", color = "black", alpha = 0.2 ) +
+    geom_errorbar(data = prod_ratio_pioneerslow_range, aes(x = bin_midpoint, ymin = min, ymax = max), width = 0, color = "black")  +
+    geom_point(data = ratios %>% 
+                 filter(min_n_individuals_pioneerslow >= 20, year == "1995"),
+               aes(x =  bin_midpoint, y = production_ratio_pioneerslow, fill = production_ratio_pioneerslow),
+               shape = 21, stroke = 0.5, 
                size = 4, 
-               color = "black") +
-    scale_fast_slow3  +
-    scale_x_log10(
-      limits = c(.9, 160),
-      position = "bottom", 
-      expression(paste('Stem Diameter (cm)'))) + 
-    scale_y_log10(labels = signif, breaks = c(0.03,  0.3, 3), 
-                  limits=c(0.03, 4),
-                  position = "right",
-                  name = expression("Productivity Ratio")) + 
-    
-    theme_plant() #+theme_no_y()#+ theme_no_x() 
-)
-
-
-p1 <- set_panel_size(prod_fastslow  , width=unit(10.25,"cm"), height=unit(8,"cm"))
-grid.newpage()
-grid.draw(p1)
-#pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_fastslow_square.pdf'))
-pdf(file.path(gdrive_path, 'Figures/New_main/ratios/production_ratio_diam_fastslow.pdf'))
-grid.draw(p1)
-dev.off()
-system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/ratios/production_ratio_diam_fastslow.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/ratios/production_ratio_diam_fastslow.pdf')) 
-)
-
-#---------- productivity Tall vs Slow --------------
-(prod_tallslow <- ggplot(data = prod_ratio, 
-                         aes(x =  bin_midpoint, y = tall_slow_prod , fill = tall_slow_prod )) + # exclude largest short:tall ratio
-    stat_smooth(method = "lm", color = "black", alpha = 0.2 ) +
-    geom_point(shape = 21, stroke = 0.5, 
-               size = 4, 
-               #  size = 4, 
                color = "black") +
     scale_tall_slow  +
-    scale_x_log10(#limits = c(1, 100), breaks = c(1, 3, 10, 30, 100), 
-      limits = c(.9, 160),
-      #position = NULL, 
-      expression(paste('Stem Diameter (cm)'))) + 
-    scale_y_log10(labels = signif, breaks = c( 0.03, 0.1, 0.3, 1, 3, 10), 
-                  limits=c(0.03, 4),
-                  #position = "left",
+    scale_x_log10(limits = c(.9, 100), breaks = c(1, 10, 100), 
+                  position = "bottom", 
+                  expression(paste('Stem Diameter (cm)'))) + 
+    scale_y_log10(labels = signif, 
+                  # breaks = c(0.03, 0.1, 1, 0.3, 1, 3), 
+                  #limits = c(0.03, 6),
+                  breaks = c(0.01, 0.1, 1, 10), 
+                  limits = c(0.03, 10),
                   position = "right",
-                  name = expression("Productivity Ratio")) + 
-    theme_plant() + theme_no_x() +theme_no_y()
+                  name = expression("Productivity Ratio")) 
+  
 )
 
-p1 <- set_panel_size(prod_tallslow , width=unit(10.25,"cm"), height=unit(8,"cm"))
+
+p1 <- set_panel_size(prod_ratio_pioneerslow , width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-#pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_tallslow_square.pdf'))
-#pdf(file.path(gdrive_path, '/Figures/New_main/ratios/production_ratio_diam_tallslow.pdf'))
-pdf(file.path(gdrive_path, 'Figures/New_main/ratios/production_ratio_diam_tallslow_right.pdf'))
+pdf(file.path(gdrive_path, 'Figures/New_main/Final_figs/Fig_4/relative_scaling/prod_ratio_pioneerslow.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/ratios/production_ratio_diam_tallslow_right.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/ratios/production_ratio_diam_tallslow_right.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/prod_ratio_pioneerslow.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/prod_ratio_pioneerslow.pdf')) 
 )
+
+
+#---- LL pioneer vs slow abundance ------
+prod_ratio_fastslow_range <- ratios %>%
+  filter(min_n_individuals_fastslow >= 20) %>%
+  group_by(bin_midpoint) %>%
+  summarize(
+    min = min(production_ratio_fastslow),
+    max = max(production_ratio_fastslow)
+  )
+
+(prod_ratio_fastslow  <-
+    ggplot() + theme_plant() +
+    stat_smooth(data = ratios %>% 
+                  filter(min_n_individuals_fastslow >= 20, year == "1995"),
+                aes(x =  bin_midpoint, y = production_ratio_fastslow, fill = production_ratio_fastslow),
+                method = "lm", color = "black", alpha = 0.2 ) +
+    geom_errorbar(data = prod_ratio_fastslow_range, aes(x = bin_midpoint, ymin = min, ymax = max), width = 0, color = "black")  +
+    geom_point(data = ratios %>% 
+                 filter(min_n_individuals_fastslow >= 20, year == "1995"),
+               aes(x =  bin_midpoint, y = production_ratio_fastslow, fill = production_ratio_fastslow),
+               shape = 21, stroke = 0.5, 
+               size = 4, 
+               color = "black") +
+    scale_fast_slow  +
+    scale_x_log10(limits = c(.9, 100), breaks = c(1, 10, 100), 
+                  position = "bottom", 
+                  expression(paste('Stem Diameter (cm)'))) + 
+    scale_y_log10(labels = signif, 
+                  # breaks = c(0.03, 0.1, 1, 0.3, 1, 3), 
+                  #limits = c(0.03, 6),
+                  breaks = c(0.01, 0.1, 1, 10), 
+                  limits = c(0.03, 10),
+                  position = "right",
+                  name = expression("Productivity Ratio")) + 
+    theme_no_x() + theme_no_y() 
+)
+
+p1 <- set_panel_size(prod_ratio_fastslow , width=unit(10.25,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path, 'Figures/New_main/Final_figs/Fig_4/relative_scaling/prod_ratio_fastslow.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/prod_ratio_fastslow.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/prod_ratio_fastslow.pdf')) 
+)
+
+
 
 ######################################################################################################
 #########################         Mechanisms             ############################################
@@ -984,16 +981,17 @@ system2(command = "pdfcrop",
 #--------------------------     Diameter Growth         -------------------------------------------
 #---------------------------------------------------------------------------------------------------
 #used modified mass growth function
-
-
+fg_mid = c("fg", "bin_midpoint")
 diam_growth_range <- obs_indivdiamgrowth %>%
   filter(!fg %in% c("unclassified", "all"), mean_n_individuals >= 20) %>%
-  group_by(across(groups)) %>%
+  group_by(across(fg_mid)) %>%
   summarize(
     min = min(mean),
     max = max(mean)
   )
 diam_growth_range
+
+fitted_diam_growth <- read_csv(file.path(gdrive_path, "data/data_forplotting/fitted_diamgrowthbydiameter.csv"))
 
 plot_diam <- function (year_to_plot = 1995, 
                         fg_names = c("Fast", "Tall", "Slow",  "Short", "Medium"), 
@@ -1017,7 +1015,7 @@ plot_diam <- function (year_to_plot = 1995,
                         dodge_errorbar = TRUE, 
                         geom_size = 4, 
                         obsdat = obs_indivprod, 
-                        preddat = fitted_indivprod, 
+                        preddat = fitted_diam_growth, 
                         plot_abline = TRUE, 
                         abline_slope = 2, 
                         abline_intercept = -1.25) {
@@ -1044,10 +1042,10 @@ plot_diam <- function (year_to_plot = 1995,
     dplyr::filter(dbh >=  min_obs & dbh <= max_obs) %>% 
     arrange(desc(fg))
   p <- ggplot2::ggplot() + 
-    ggplot2::geom_ribbon(data = preddat %>% arrange(factor(fg, levels = c('fg5','fg4','fg3','fg2','fg1'))), 
+    ggplot2::geom_ribbon(data = fitted_diam_growth  %>% arrange(factor(fg, levels = c('fg5','fg4','fg3','fg2','fg1'))), 
                          ggplot2::aes(x = dbh, ymin = q025, ymax = q975, 
                                       group = fg, fill = fg), alpha = 0.4) + 
-    ggplot2::geom_line(data = preddat %>% arrange(factor(fg, levels = c('fg5','fg4','fg3','fg2','fg1'))), 
+    ggplot2::geom_line(data = fitted_diam_growth  %>% arrange(factor(fg, levels = c('fg5','fg4','fg3','fg2','fg1'))), 
                        ggplot2::aes(x = dbh, y = q50, group = fg, color = fg))
   if (plot_errorbar) {
     p <- p + ggplot2::geom_errorbar(data = obsdat %>% arrange(factor(fg, levels = c('fg5','fg4','fg3','fg2','fg1'))), 
@@ -1060,7 +1058,7 @@ plot_diam <- function (year_to_plot = 1995,
                                     position = pos, 
                                     size = error_bar_thickness)
   }
-  p <- p + ggplot2::geom_line(data = preddat[preddat$fg == "Medium", ], 
+  p <- p + ggplot2::geom_line(data = fitted_diam_growth[fitted_diam_growth$fg == "Medium", ], 
                               ggplot2::aes(x = dbh, y = q50), color = "gray") + 
     ggplot2::geom_point(data = obsdat %>% arrange(factor(fg, levels = c('fg5','fg4','fg3','fg2','fg1'))),
                         ggplot2::aes_string(x = "bin_midpoint", 
@@ -1108,147 +1106,16 @@ p
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p2)
-pdf(file.path(gdrive_path,'Figures/New_main/growth_diam/Diam_growth_x.pdf'))
+pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/Fig_5/diam_growth.pdf'))
 grid.draw(p2)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/growth_diam/Diam_growth_x.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/growth_diam/Diam_growth_x.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/diam_growth.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/diam_growth.pdf')) 
 )
 
-##################################################
-# new quentin piecewise
-# Script for additional mortality versus diameter fit
-# Hinged piecewise functional form
-# Each nonlinear parameter (except hinge smoothness parameter) has functional group as fixed effect
-# 21 Sep 2022
 
-
-# Setup -------------------------------------------------------------------
-
-library(dplyr)
-library(readr)
-library(brms)
-library(tidybayes)
-library(ggplot2)
-library(tidyr)
-library(forestscaling)
-library(purrr)
-
-options(mc.cores = 4, brms.backend = 'cmdstanr', brms.file_refit = 'on_change')
-
-# Load data
-load('data/rawdataobj1995.RData')
-
-diam_data <- alltreedat[[3]] %>%
-  filter(!is.na(fg), !recruit) %>%
-  select(fg, dbh_corr, diam_growth_rate) %>%
-  mutate(fg = paste0('fg', fg))
-
-# Fit model ---------------------------------------------------------------
-
-diam_hinge_fixef_fit <- brm(
-  bf(
-    log(diam_growth_rate) ~ beta0 + beta1low * (log(dbh_corr) - log(x0)) + (beta1high - beta1low) * delta * log(1 + exp((log(dbh_corr) - log(x0)) / delta)),
-    beta0 ~ 0 + fg,
-    beta1low ~ 0 + fg,
-    beta1high ~ 0 + fg,
-    x0 ~ 0 + fg,
-    delta ~ 1,
-    nl = TRUE
-  ),
-  data = diam_data, family = gaussian(link = 'identity'),
-  prior = c(
-    prior(normal(0, 2), nlpar = beta0),
-    prior(lognormal(1, 1), nlpar = beta1low, lb = 0),
-    prior(lognormal(1, 1), nlpar = beta1high, lb = 0),
-    prior(lognormal(1, 1), nlpar = x0, lb = 0),
-    prior(exponential(10), nlpar = delta, lb = 0)
-  ),
-  chains = 4, iter = 3000, warmup = 2000, seed = 27603,
-  file = '~/temp/forestlight/diam_hinge_fixef_brmfit'
-)
-
-# Postprocessing and plotting  -------------------------------------
-
-# Set number of bins
-numbins <- 20
-
-# Remove trees not belonging to any functional group
-alltreedat_classified <- map(alltreedat, ~ filter(., !is.na(fg)))
-
-# Bin classified trees. (log binning of density)
-allyeardbh_classified <- map(alltreedat_classified[-1], ~ pull(., dbh_corr)) %>% unlist
-dbhbin_allclassified <- logbin(x = allyeardbh_classified, y = NULL, n = numbins)
-bin_edges <- c(dbhbin_allclassified$bin_min,dbhbin_allclassified$bin_max[numbins])
-
-qprobs <- c(0.025, 0.25, 0.5, 0.75, 0.975)
-diam_bins <- diam_data %>%
-  mutate(dbh_bin = cut(dbh_corr, breaks = bin_edges, include.lowest = TRUE)) %>%
-  group_by(fg, dbh_bin) %>%
-  summarize(p = qprobs, q = quantile(diam_growth_rate, probs = qprobs), n = n()) %>%
-  pivot_wider(names_from = p, values_from = q) %>%
-  setNames(c('fg', 'dbh_bin', 'n', 'q025', 'q25', 'median', 'q75', 'q975')) %>%
-  mutate(bin_midpoint = dbhbin_allclassified$bin_midpoint[as.numeric(dbh_bin)])
-
-
-# Prediction grid: dbh x fg
-# Limit ranges to the observed data points and bins with > 20 individuals
-diam_max <- diam_bins %>%
-  filter(n >= 20) %>%
-  group_by(fg) %>%
-  filter(bin_midpoint == max(bin_midpoint))
-
-pred_dat <- diam_max %>%
-  group_by(fg) %>%
-  group_modify(~ data.frame(dbh_corr = exp(seq(log(1), log(.$bin_midpoint), length.out = 101))))
-
-# Get expected values of posterior means (epred) for each combination of diameter and functional group
-diamhinge_pred <- pred_dat %>%
-  add_epred_draws(diam_hinge_fixef_fit) %>%
-  mutate(.epred = exp(.epred))
-
-### Quick diag. plot
-ggplot(diam_bins %>% filter(n >= 20), aes(x=bin_midpoint, y = median)) +
-  stat_lineribbon(aes(y = .epred, x = dbh_corr), data = diamhinge_pred, size = 0.5) +
-  geom_pointrange(aes(ymin = q25, ymax = q75), color = 'gray40') +
-  facet_wrap(~ fg) + scale_x_log10(name = 'diameter (cm)') + scale_y_log10(name = 'diameter growth (cm/y)') +
-  scale_fill_brewer(palette = 'Blues') +
-  theme_bw() +
-  theme(legend.position = c(0.8, 0.2), strip.background = element_blank())
-
-
-# Generate parameter tables -----------------------------------------------
-
-diam_hinge_params <- diam_hinge_fixef_fit %>%
-  gather_draws(`b_.*`, regex = TRUE) %>%
-  separate(.variable, into = c('b', 'parameter', 'fg')) %>%
-  select(-b) %>%
-  mutate(fg = as.integer(substr(fg, 5, 5))) 
-
-diam_hinge_quant <- diam_hinge_params %>%
-  group_by(parameter, fg) %>%
-  median_qi(.width = c(0.5, 0.9, 0.95)) %>%
-  pivot_wider(id_cols = c(parameter, fg, .value), names_from = .width, values_from = c(.lower, .upper)) %>%
-  select(fg, parameter, .value, .lower_0.95, .lower_0.9, .lower_0.5, .upper_0.5, .upper_0.9, .upper_0.95) %>%
-  setNames(c('fg', 'parameter', 'median', 'q025', 'q05', 'q25', 'q75', 'q95', 'q975')) %>%
-  mutate(parameter = factor(parameter, levels = c('beta0', 'beta1low', 'beta1high', 'x0', 'delta'))) %>%
-  arrange(parameter, fg) %>%
-  mutate(fg = c(rep(c('fast', 'large pioneer', 'slow', 'small breeder', 'medium'), 4), '(none)'),
-         parameter = c(rep(c('beta0 (intercept)', 'beta1low (slope at small size)', 'beta1high (slope at large size)', 'x0 (cutoff between small and large sizes)'), each = 5), 'delta (smoothing parameter for hinge)'))
-
-# Generate plotting data --------------------------------------------------
-
-diam_hinge_plotting_data <- diamhinge_pred %>%
-  group_by(fg, dbh_corr) %>%
-  median_qi(.epred, .width = c(0.5, 0.9, 0.95)) %>%
-  pivot_wider(id_cols = c(fg, dbh_corr, .epred), names_from = .width, values_from = c(.lower, .upper)) %>%
-  select(fg, dbh_corr, .lower_0.95, .lower_0.9, .lower_0.5, .epred, .upper_0.5, .upper_0.9, .upper_0.95) %>%
-  setNames(c('fg', 'dbh', 'q025', 'q05', 'q25', 'q50', 'q75', 'q95', 'q975')) 
-
-#write_csv(diam_hinge_quant, 'data/clean_summary_tables/clean_diamgrowthbydiameter_parameters.csv')
-#write_csv(diam_hinge_plotting_data, 'data/data_forplotting/fitted_diamgrowthbydiameter.csv')
 
 #---------------------------------------------------------------------------------------------------
 #--------------------------   Mass Growth  --------------------------------------------------------
@@ -1256,13 +1123,12 @@ diam_hinge_plotting_data <- diamhinge_pred %>%
 
 mass_growth_range <- obs_indivprod %>%
   filter(!fg %in% c("unclassified", "all"), mean_n_individuals >= 20) %>%
-  group_by(across(groups )) %>%
+  group_by(across(fg_mid )) %>%
   summarize(
     min = min(mean),
     max = max(mean)
   )
 mass_growth_range
-ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
   
 plot_growth <- 
   function (year_to_plot = 1995, 
@@ -1273,8 +1139,8 @@ plot_growth <-
             y_limits, 
             y_labels, 
             y_breaks, 
-            fill_names = guild_fills, # c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
-            color_names = guild_colors, #c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
+            fill_names = guild_fills_fg, # c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
+            color_names = guild_colors_fg, #c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
             x_name = "Diameter (cm)", 
             y_name = expression(paste("Mass Growth (kg yr"^-1, ")")),
             average = "mean", 
@@ -1359,8 +1225,8 @@ obs_indivprod <- obs_indivprod %>%
 p <- plot_growth(year_to_plot = 1995,
                 fg_names = c('fg1','fg2','fg3','fg4','fg5'),
                 model_fit = PROD,
-                x_limits = c(0.9, 160),
-                y_limits = c(0.003, 160),
+                x_limits = c(0.9, 185),
+                y_limits = c(0.003, 200),
                 y_breaks = c(0.01, 0.1, 1, 10, 100),
                 plot_errorbar = F,
                 error_min = 'q25',
@@ -1377,12 +1243,12 @@ p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/New_main/growth_mass/mass_growth.pdf'))
+pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/Fig_5/mass_growth.pdf'))
 grid.draw(p1)
 dev.off()
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/New_main/growth_mass/mass_growth.pdf'), 
-                  file.path(gdrive_path2,'Figures/New_main/growth_mass/mass_growth.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/mass_growth.pdf'), 
+                  file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/mass_growth.pdf')) 
 )
 
 
@@ -1390,17 +1256,23 @@ system2(command = "pdfcrop",
 #--------------------------   Mortalty   --------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
+binned_data = read_csv(file.path(gdrive_path, 'data/data_binned/additional_bins_fg_year.csv'))
 
-bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalitybins.csv')) # Load binned data
-mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv')) # Load raw data
-fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
-#growth_diam <-  read_csv(file.path(gdrive_path, 'data/clean_summary_tables/clean_parameters_individualdiametergrowth.csv')) 
+fg_mid = c("fg", "bin_midpoint")
+mortality_range <- binned_data %>%
+  filter(!fg %in% c("unclassified", "all"), abundance >= 20) %>%
+  group_by(across(fg_mid)) %>%
+  summarize(
+    min = min(mortality),
+    max = max(mortality))
 
-bin_mort <- bin_mort %>% arrange(factor(fg, levels = c('all', 'fg5','fg4', 'fg3', 'fg2','fg1')))
-fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
+mortality_range
+
+fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/fitted_mortalitybydiameter.csv')) # Load fitted values
+
 
 #---  Plot mortality 
-obs_range_mort <- bin_mort %>% 
+obs_range_mort <- binned_data %>% 
   arrange(factor(fg, levels = c('fg5','fg4', 'fg3', 'fg2','fg1'))) %>%
   filter(variable %in% 'dbh', lived + died >= 20) %>%
   group_by(fg) %>%
@@ -1409,43 +1281,33 @@ obs_range_mort <- bin_mort %>%
 fitted_mort_trunc <- fitted_mort %>%
   arrange(factor(fg, levels = c('fg5','fg4', 'fg3', 'fg2','fg1'))) %>%
   left_join(obs_range_mort) %>%
-  left_join(guild_lookup) #%>%
-#filter(dbh >= min_obs & dbh <= max_obs)
+  left_join(guild_lookup) %>%
+filter(dbh >= min_obs & dbh <= max_obs)
 unique(fitted_mort_trunc$fg)
 
-(p <- ggplot() +#data = fitted_mort_trunc %>% mutate(fg = factor(fg, labels = fg_labels))) +
-    #geom_ribbon(aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
-    #geom_line(aes(x = dbh, y = q50, group = fg, color = fg)) +
-    
-     stat_smooth(span = 2, data = bin_mort %>%  # to single out gray and make CI darker
-                filter(variable == 'dbh', fg == "fg5", 
-                     (lived+died) >= 20),
-            aes(x = bin_midpoint, y = mortality, se = T),
-               color = "gray", fill = "gray", alpha = 0.2) +
-    stat_smooth(span = 2, data = bin_mort %>% 
-                  filter(variable == 'dbh', !fg %in% c('all','unclassified'), 
-                         (lived+died) >= 20)  %>% 
-                  mutate(fg = factor(fg, labels = fg_labels)),
-                aes(x = bin_midpoint, y = mortality, color = fg, fill = fg), alpha = 0.25) +
-  
+(p <- ggplot() +
+    theme_plant() + 
+    scale_color_manual(values = guild_colors_fg) +
+    scale_fill_manual(values = guild_fills_fg) +
     scale_y_continuous(trans = "logit", position = "right", 
                        breaks = c(0.03, 0.1, 0.3, 0.6), 
                        labels =  c(0.03, 0.1, 0.3, 0.6), 
-                       limits = c(0.02, 0.8),
+                       #limits = c(0.02, 0.8),
                        name = expression(paste("Mortality (5 yr"^-1,")"))) +
-    geom_point(data = bin_mort %>% 
-                 filter(variable == 'dbh', !fg %in% c('all','unclassified'), 
-                        (lived+died) >= 20)  %>% 
+    scale_x_log10(name = parse(text = 'Stem~Diameter~(cm)'), 
+                   breaks = c(3, 30, 300), 
+                  #limits = c(.9, 160)
+                  ) +
+    geom_point(data = binned_data %>% 
+                 filter(!fg %in% c( "all", "unclassified")) %>%
+                 filter(abundance >= 20, year == 1995) %>%
                  mutate(fg = factor(fg, labels = fg_labels)),
                aes(x = bin_midpoint, y = mortality, fill = fg),
                shape = 21, size = 4) +
-    scale_x_log10(name = parse(text = 'Stem~Diameter~(cm)'), 
-                  # breaks = c(3, 30, 300), 
-                  limits = c(.9, 160)
-    ) +
-    scale_color_manual(values = guild_colors) +
-    scale_fill_manual(values = guild_fills) +
-    theme_plant() )#+ theme_no_x())
+    geom_ribbon(data = fitted_mort_trunc, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
+    geom_line(data = fitted_mort_trunc, aes(x = dbh, y = q50, group = fg, color = fg, fill = fg)) +
+    geom_errorbar(data = mortality_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) 
+     )#+ theme_no_x())
 
 
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
@@ -1461,6 +1323,27 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path2,'Figures/New_main/mortality/mortality.pdf')) 
 )
 
+stat_smooth(span = 2, data = bin_mort %>%  # to single out gray and make CI darker
+              filter(variable == 'dbh', fg == "fg5", 
+                     (lived+died) >= 20),
+            aes(x = bin_midpoint, y = mortality, se = T),
+            color = "gray", fill = "gray", alpha = 0.2) +
+  stat_smooth(span = 2, data = bin_mort %>% 
+                filter(variable == 'dbh', !fg %in% c('all','unclassified'), 
+                       (lived+died) >= 20)  %>% 
+                mutate(fg = factor(fg, labels = fg_labels)),
+              aes(x = bin_midpoint, y = mortality, color = fg, fill = fg), alpha = 0.25) 
+  
+  #growth_diam <-  read_csv(file.path(gdrive_path, 'data/clean_summary_tables/clean_parameters_individualdiametergrowth.csv')) 
+  
+  #fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
+  
+  
+  #bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalitybins.csv')) # Load binned data
+  #bin_mort <- bin_mort %>% arrange(factor(fg, levels = c('all', 'fg5','fg4', 'fg3', 'fg2','fg1')))
+  
+  #mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv')) # Load raw data
+#fitted_mort_old <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
 
 #---------------------------------------------------------------------------------------------------
 #--------------------------   Richness ~ Abundance   --------------------------------------------------------
