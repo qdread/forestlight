@@ -1333,7 +1333,8 @@ stat_smooth(span = 2, data = bin_mort %>%  # to single out gray and make CI dark
                        (lived+died) >= 20)  %>% 
                 mutate(fg = factor(fg, labels = fg_labels)),
               aes(x = bin_midpoint, y = mortality, color = fg, fill = fg), alpha = 0.25) 
-  
+#old stuff  
+
   #growth_diam <-  read_csv(file.path(gdrive_path, 'data/clean_summary_tables/clean_parameters_individualdiametergrowth.csv')) 
   
   #fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
