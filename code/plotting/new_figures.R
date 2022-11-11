@@ -329,7 +329,7 @@ plot_dens <- function(year_to_plot = 1995,
                         plot_abline = TRUE, 
                         abline_slope = -2, 
                         abline_intercept = -10,
-                        dodge_width = 0.07) 
+                        dodge_width = 0.03) 
 {
   pos <-  ggplot2::position_dodge(width = dodge_width)
   obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == year_to_plot, bin_count >= 20) %>% 
@@ -358,10 +358,11 @@ plot_dens <- function(year_to_plot = 1995,
                          ggplot2::aes(x = dbh, y = q50, group = fg, color = fg)) + 
     ggplot2::geom_line(data = preddat[preddat$fg == "fg5", ], 
                        ggplot2::aes(x = dbh, y = q50), color = "gray") + 
-    ggplot2::geom_point(data = obsdat, position = pos,
+    ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0, position = pos) +
+    ggplot2::geom_point(data = obsdat, #position = pos,
                         ggplot2::aes(x = bin_midpoint, y = bin_value, group = fg, fill = fg), 
                         size = geom_size, shape = 21, color = "black") + 
-    ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
+   # ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0, position = pos) +
     ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
     ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) + 
     ggplot2::scale_color_manual(values = color_names) + 
@@ -372,7 +373,7 @@ plot_dens <- function(year_to_plot = 1995,
 (p <- plot_dens(year_to_plot = 1995,
                  fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
                  model_fit = DENS,
-                 dodge_width = 0.0,
+                 dodge_width = 0.03,
                  x_limits = c(.9, 160),
                  y_limits = c(0.007, 20000),
                  x_breaks = c(1, 10, 100),
@@ -392,6 +393,90 @@ dev.off()
 system2(command = "pdfcrop", 
         args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/LH_scaling/abundance.pdf'), 
                     file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/LH_scaling/abundance.pdf')) 
+)
+
+#------------------ supplemental abundance range -------------
+plot_dens <- function(year_to_plot = 1995, 
+                      fg_names = c("fg1", "fg2", "fg3", "fg4", "fg5", "all"),
+                      model_fit = 1, 
+                      x_limits, 
+                      x_breaks = c(1, 3, 10, 30, 100, 300),
+                      y_limits, 
+                      y_breaks, 
+                      y_labels, 
+                      fill_names = guild_fills_all, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
+                      color_names = guild_colors_all, #c("black","#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),  
+                      x_name = "Stem Diameter (cm)",
+                      y_name = expression(paste("Density (n ha"^-1, "cm"^-1, ")")), 
+                      geom_size = 4, 
+                      obsdat = obs_dens, 
+                      preddat = pred_dens, 
+                      plot_abline = TRUE, 
+                      abline_slope = -2, 
+                      abline_intercept = -10,
+                      dodge_width = 0.07) 
+{
+  pos <-  ggplot2::position_dodge(width = dodge_width)
+  obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == year_to_plot, bin_count >= 20) %>% 
+    dplyr::filter(bin_value > 0) %>% 
+    arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1')))
+  obs_limits <- obsdat %>% dplyr::group_by(fg) %>% 
+    dplyr::summarize(min_obs = min(bin_midpoint), 
+                     max_obs = max(bin_midpoint))
+  preddat <- preddat %>% dplyr::left_join(obs_limits) %>% 
+    dplyr::filter(dens_model %in% model_fit, fg %in% fg_names, 
+                  year == year_to_plot) %>% 
+    dplyr::filter_at(dplyr::vars(dplyr::starts_with("q")), 
+                     dplyr::all_vars(. > min(y_limits))) %>% 
+    dplyr::filter(dbh >=  min_obs & dbh <= max_obs) %>%  
+    arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1')))
+  p <- ggplot2::ggplot() + 
+    ggplot2::geom_ribbon(data = preddat, 
+                         ggplot2::aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), 
+                         alpha = 0)
+  if (plot_abline) {
+    p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
+                                  slope = abline_slope, color = "gray72", linetype = "dashed", 
+                                  size = 0.75)
+  }
+  p + ggplot2::geom_line(data = preddat, 
+                         ggplot2::aes(x = dbh, y = q50, group = fg, color = fg), size = 0.2) + 
+    ggplot2::geom_line(data = preddat[preddat$fg == "fg5", ], 
+                       ggplot2::aes(x = dbh, y = q50), color = "gray", size = 0.2) + 
+    ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), size = .75, width = 0, position = pos) +
+    #ggplot2::geom_point(data = obsdat, position = pos,
+     #                   ggplot2::aes(x = bin_midpoint, y = bin_value, group = fg, fill = fg), 
+      #                  size = geom_size, shape = 21, color = "black") + 
+    ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
+    ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) + 
+    ggplot2::scale_color_manual(values = color_names) + 
+    ggplot2::scale_fill_manual(values = fill_names) + 
+    theme_plant() + theme_no_x()
+}
+
+(p <- plot_dens(year_to_plot = 1995,
+                fg_names = c('fg1','fg2','fg3','fg4','fg5','all'),
+                model_fit = DENS,
+                dodge_width = 0.05,
+                x_limits = c(.9, 160),
+                y_limits = c(0.007, 20000),
+                x_breaks = c(1, 10, 100),
+                y_labels = c(0.001, 0.1, 10,1000),
+                y_breaks = c(0.001, 0.1,  10, 1000)))
+#p <- p +annotation_custom(grob_text_b)
+
+
+p1 <- set_panel_size(p, width = unit(10.25, "cm"), height = unit(8, "cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/supplemental/fig_4_sup/abundance.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/fig_4_sup/abundance.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/fig_4_sup/abundance.pdf')) 
 )
 #----------------------------------------------------------------------------------
 #--------------------------   Richness  -------------------------------------------
@@ -425,9 +510,43 @@ rich_range <- binned_data %>%
     max = max(richness_by_bin_width)
   )
 
+rich_range2 <- binned_data %>%
+  filter(fg != "unclassified", abundance >= 20) %>%
+  group_by(across(all_of(fg_mid))) %>%
+  summarize(
+    min = min(richness),
+    max = max(richness)
+  )
 #---- Plot Richness ------
 
-(p_rich_cm <- ggplot() + 
+(p <- ggplot() + 
+   theme_plant() +
+   scale_x_log10(name = 'Stem Diameter (cm)',
+                 limit = c(.9, 160)) + 
+   scale_y_log10(labels = signif,
+                 limits = c(0.007, 20000),
+                 position = "left",
+                 name = expression(paste("Richness (cm"^-1, ")"))) + #name = expression(paste("Richness (50 ha"^-1," cm"^-1, " )"))) +
+   scale_fill_manual(values = guild_fills_all) +
+   scale_color_manual(values = guild_colors_all) +
+   geom_ribbon(data = fitted_richnessbydiameter_filtered  %>% 
+                 arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
+               aes(x = dbh, ymin = q025, ymax = q975,
+                   group = fg, fill = fg), alpha = 0.4) +
+   geom_line(data = fitted_richnessbydiameter_filtered  %>% 
+               arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
+             aes(x = dbh, y = q50, group = fg, color = fg)) +
+   geom_errorbar(data = rich_range2 %>%  arrange(desc(fg)), aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
+   geom_point(data = binned_data %>% 
+                arrange(desc(fg)) %>%
+                filter(!fg %in% 'unclassified', abundance >= 20) %>% #n_individuals >= 20
+                filter(year == "1995") %>%
+                arrange(desc(fg)), 
+              aes(x = bin_midpoint, y = richness, fill = fg, color = fg),
+              shape = 21, size = 4, color = "black") + theme_no_x() 
+)
+
+(p <- ggplot() + 
    theme_plant() +
   scale_x_log10(name = 'Stem Diameter (cm)',
                  limit = c(.9, 160)) + 
@@ -444,17 +563,17 @@ rich_range <- binned_data %>%
    geom_line(data = fitted_richnessbydiameter_filtered  %>% 
                arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
              aes(x = dbh, y = q50, group = fg, color = fg)) +
+   geom_errorbar(data = rich_range %>%  arrange(desc(fg)), aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
    geom_point(data = binned_data %>% 
                  arrange(desc(fg)) %>%
                  filter(!fg %in% 'unclassified', abundance >= 20) %>% #n_individuals >= 20
                  filter(year == "1995") %>%
                  arrange(desc(fg)), 
                aes(x = bin_midpoint, y = richness_by_bin_width, fill = fg, color = fg),
-               shape = 21, size = 4, color = "black") + theme_no_x() +
-  geom_errorbar(data = rich_range %>%  arrange(desc(fg)), aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0)) 
+               shape = 21, size = 4, color = "black") + theme_no_x() 
+ )
   
- 
-p1 <- set_panel_size(p_rich_cm, width=unit(10.25,"cm"), height=unit(8,"cm"))
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
@@ -467,15 +586,46 @@ system2(command = "pdfcrop",
                   file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/LH_scaling/Richness.pdf')) 
 )
 
+
+#---------- supplemental - no points ------------
+(p <- ggplot() + 
+    theme_plant() +
+    scale_x_log10(name = 'Stem Diameter (cm)',
+                  limit = c(.9, 160)) + 
+    scale_y_log10(labels = signif,
+                  limits = c(0.007, 20000),
+                  position = "left",
+                  name = expression(paste("Richness (cm"^-1, ")"))) + #name = expression(paste("Richness (50 ha"^-1," cm"^-1, " )"))) +
+    scale_fill_manual(values = guild_fills_all) +
+    scale_color_manual(values = guild_colors_all) +
+    geom_line(data = fitted_richnessbydiameter_filtered  %>% 
+                arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
+              aes(x = dbh, y = q50, group = fg, color = fg), size = 0.2) +
+    geom_errorbar(data = rich_range %>%  arrange(desc(fg)), aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), size = 1, width = 0) +
+     theme_no_x() 
+)
+
+
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+
+pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/supplemental/fig_4_sup/richness.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/fig_4_sup/richness.pdf'), 
+                  file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/fig_4_sup/richness.pdf')) 
+)
+
 #----------------------------------------------------------------------------------
 #--------------------------   Productivity  ---------------------------------------
 #----------------------------------------------------------------------------------
 
 obs_totalprod <- obs_totalprod %>%
   filter(bin_count >= 20)
-grob_text <- grobTree(textGrob("Energy Equivalence: Slope = 0", x = 0.17, y = 0.88, hjust = 0,
-                               gp = gpar(col = "gray52", fontsize = 20))) 
-geom_size = 3.5
 
 fg_mid = c("fg", "bin_midpoint")
 
@@ -509,7 +659,7 @@ plot_totalprod <-function(year_to_plot = 1995,
                            preddat = fitted_totalprod, 
                            plot_abline = TRUE, 
                            abline_slope = 0, 
-                           dodge_width = 0.0,
+                           dodge_width = 0.03,
                            abline_intercept = 20) 
 {
   pos <-  ggplot2::position_dodge(width = dodge_width)
@@ -535,10 +685,10 @@ plot_totalprod <-function(year_to_plot = 1995,
                              group = fg, fill = fg), alpha = 0.4, show.legend = F) + 
     ggplot2::geom_line(data = preddat, show.legend = F,
                        aes(x = dbh, y = q50, group = fg, color = fg)) + 
-    ggplot2::geom_point(data = obsdat, position = pos,
+    ggplot2::geom_errorbar(position = pos, data = prod_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg), width = 0, dodge_width = 0.5) +
+    ggplot2::geom_point(data = obsdat, #position = pos,
                         aes(x = bin_midpoint, y = bin_value, group = fg, fill = fg), 
                         size = geom_size, color = "black", shape = 21) + 
-    ggplot2::geom_errorbar(position = position_dodge(width = 0.0), data = prod_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg), width = 0, dodge_width = 0.5) +
     ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
     ggplot2::scale_y_log10(name = y_name, 
                            limits = y_limits, breaks = y_breaks, labels = y_labels,  position = "left") + 
@@ -561,7 +711,7 @@ p <- plot_totalprod(year_to_plot = 1995,
                      y_limits = c(0.3, 200),
                      y_breaks = c(0.1, 1, 10, 100),
                      y_labels = c(0.1, 1, 10, 100),
-                     dodge_width = 0.0,
+                     dodge_width = 0.03,
                      preddat = fitted_totalprod)
 
 
@@ -578,8 +728,97 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/LH_scaling/Total_Production.pdf')) 
 )
 
+
+
+#--------------supplemental just ranges ---------
+plot_totalprod <-function(year_to_plot = 1995, 
+                          fg_names = c("fg1", "fg2", "fg3","fg4", "fg5", "all"), 
+                          model_fit_density = 1, 
+                          model_fit_production = 1, 
+                          x_limits, 
+                          x_breaks = c(1, 3, 10, 30, 100, 300), 
+                          y_limits = c(0.03, 100), 
+                          y_breaks = c(0.01, 0.1, 1, 10, 100, 1000), 
+                          y_labels, 
+                          fill_names = guild_fills_all, # c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
+                          color_names = guild_colors_all, #c("black", "#BFE046", "#267038", "#27408b", "#87Cefa", "gray"), 
+                          x_name = "Stem Diameter (cm)", 
+                          y_name = expression(paste("Productivity (kg cm"^-1, " ha"^-1, "  yr"^-1, ")")),
+                          geom_size = 4, 
+                          obsdat = obs_totalprod, 
+                          preddat = fitted_totalprod, 
+                          plot_abline = TRUE, 
+                          abline_slope = 0, 
+                          dodge_width = 0.03,
+                          abline_intercept = 20) 
+{
+  pos <-  ggplot2::position_dodge(width = dodge_width)
+  obsdat <- obsdat %>% 
+    dplyr::filter(fg %in% fg_names, year == year_to_plot, bin_count >= 20) %>% 
+    dplyr::filter(bin_value > 0) %>% 
+    arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1')))
+  obs_limits <- obsdat %>% dplyr::group_by(fg) %>% 
+    dplyr::summarize(min_obs = min(bin_midpoint), 
+                     max_obs = max(bin_midpoint)) 
+  preddat <- preddat %>% dplyr::left_join(obs_limits) %>% 
+    dplyr::filter(dens_model %in% model_fit_density, 
+                  prod_model %in% model_fit_production, 
+                  fg %in% fg_names, year == year_to_plot) %>% 
+    arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))) %>% 
+    dplyr::filter_at(dplyr::vars(dplyr::starts_with("q")), 
+                     dplyr::all_vars(. > min(y_limits))) %>% 
+    dplyr::filter(dbh >=  min_obs & dbh <= max_obs)
+  
+  p <- ggplot2::ggplot() + 
+    ggplot2::geom_ribbon(data = preddat, 
+                         aes(x = dbh, ymin = q025, ymax = q975, 
+                             group = fg, fill = fg), alpha = 0, show.legend = F) + 
+    ggplot2::geom_line(data = preddat, show.legend = F,
+                       aes(x = dbh, y = q50, group = fg, color = fg), size = 0.5) + 
+    ggplot2::geom_errorbar(position = position_dodge(width = dodge_width), data = prod_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg), width = 0) +
+    #ggplot2::geom_point(data = obsdat, position = pos,
+     #                   aes(x = bin_midpoint, y = bin_value, group = fg, fill = fg), 
+      #                  size = geom_size, color = "black", shape = 21) + 
+    ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
+    ggplot2::scale_y_log10(name = y_name, 
+                           limits = y_limits, breaks = y_breaks, labels = y_labels,  position = "left") + 
+    ggplot2::scale_color_manual(values = guild_colors_all) + 
+    ggplot2::scale_fill_manual(values = guild_fills_all) + 
+    theme_plant() + #theme_no_x() +
+    theme(aspect.ratio = 1)
+  if (plot_abline) 
+    p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
+                                  slope = abline_slope, color = "gray72", 
+                                  linetype = "dashed", size = 0.75)
+  p
+} 
+p <- plot_totalprod(year_to_plot = 1995,
+                    fg_names = c('fg1','fg2','fg3', 'fg4', 'fg5', 'all'),
+                    model_fit_density = DENS, 
+                    model_fit_production = PROD,
+                    x_name = "Stem Diameter (cm)", 
+                    x_limits = c(0.9,160),
+                    y_limits = c(0.3, 200),
+                    y_breaks = c(0.1, 1, 10, 100),
+                    y_labels = c(0.1, 1, 10, 100),
+                    dodge_width = 0.03,
+                    preddat = fitted_totalprod)
+
+
+#p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/supplemental/fig_4_sup/productivity.pdf'))
+grid.draw(p1)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/fig_4_sup/productivity.pdf'), 
+                    file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/fig_4_sup/productivity.pdf')) 
+)
 ########################################################################
-######################   Fig 4 Ratios     ####################################
+######################   Fig 4 B,D,E: Ratios     ####################################
 ########################################################################
 
 ratios <- read_csv(file.path(gdrive_path, 'data/data_binned/additional_bins_ratio_year.csv'))
@@ -801,14 +1040,14 @@ plot_diam <- function (year_to_plot = 1995,
                         fill_names = guild_fills_fg, # c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray87"), 
                         color_names = guild_colors_fg, #c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray"),
                         x_name = "Diameter (cm)", 
-                        y_name = expression(paste("Diameter Growth (cm yr"^-1, ")")),
+                        y_name = expression(paste("Diameter Growth (cm yr"^-1,")")),
                         average = "mean", 
                         plot_errorbar = FALSE, 
                         error_min = "ci_min",
                         error_max = "ci_max", 
                         error_bar_width = 0.1,
                         error_bar_thickness = 0.5, 
-                        dodge_width = 0.07, 
+                        dodge_width = 0.03, 
                         dodge_errorbar = TRUE, 
                         geom_size = 4, 
                         obsdat = obs_indivprod, 
@@ -857,11 +1096,11 @@ plot_diam <- function (year_to_plot = 1995,
   }
   p <- p + ggplot2::geom_line(data = fitted_diam_growth[fitted_diam_growth$fg == "Medium", ], 
                               ggplot2::aes(x = dbh, y = q50), color = "gray") + 
+    ggplot2::geom_errorbar(data = diam_growth_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg), width = 0, position = pos) +
     ggplot2::geom_point(data = obsdat %>% arrange(factor(fg, levels = c('fg5','fg4','fg3','fg2','fg1'))),
                         ggplot2::aes_string(x = "bin_midpoint", 
                                             y = average, group = "fg", fill = "fg"), 
                         size = geom_size, color = "black", shape = 21, position = pos) + 
-    ggplot2::geom_errorbar(data = diam_growth_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg), width = 0) +
     ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
     ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) + 
     #theme_no_x() + 
@@ -887,7 +1126,7 @@ p <- plot_diam(year_to_plot = 1995,
                 y_breaks = c(0.03, 0.1, 0.3, 1),
                 y_labels = c(0.03, 0.1, 0.3, 1),
                 error_bar_width = 0,
-                dodge_width = 0.00,
+                dodge_width = 0.03,
                 obsdat = obs_indivdiamgrowth, #diameter growth
                 preddat = fitted_indivdiamgrowth,
                 plot_abline = FALSE,
@@ -903,6 +1142,7 @@ p
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p2)
+
 pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/Fig_5/diam_growth.pdf'))
 grid.draw(p2)
 dev.off()
@@ -912,7 +1152,8 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/diam_growth.pdf')) 
 )
 
-
+lm_diam_g <- lm(log(production/abundance) ~ log(bin_midpoint) + fg, data =  binned_data)
+summary(lm_diam_g)
 
 #---------------------------------------------------------------------------------------------------
 #--------------------------   Mass Growth  --------------------------------------------------------
@@ -947,7 +1188,7 @@ plot_growth <-
             error_max = "ci_max", 
             error_bar_width = 0.1,
             error_bar_thickness = 0.5, 
-            dodge_width = 0.07, 
+            dodge_width = 0.03, 
             dodge_errorbar = TRUE, 
             geom_size = 4, 
             obsdat = obs_indivprod, 
@@ -996,11 +1237,11 @@ plot_growth <-
     }
     p <- p + ggplot2::geom_line(data = preddat[preddat$fg == "Medium", ], 
                                 ggplot2::aes(x = dbh, y = q50), color = "gray") + 
+      ggplot2::geom_errorbar(data = mass_growth_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), position = pos, width = 0) +
       ggplot2::geom_point(data = obsdat %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
                           ggplot2::aes_string(x = "bin_midpoint", 
                                               y = average, group = "fg", fill = "fg"), 
-                          size = geom_size, color = "black", shape = 21, position = pos) + 
-      ggplot2::geom_errorbar(data = mass_growth_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) +
+                          size = geom_size, color = "black", shape = 21) + # position = pos
       ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
       ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels, position = position) + 
       #theme_no_x() + 
@@ -1022,8 +1263,10 @@ obs_indivprod <- obs_indivprod %>%
 p <- plot_growth(year_to_plot = 1995,
                 fg_names = c('fg1','fg2','fg3','fg4','fg5'),
                 model_fit = PROD,
-                x_limits = c(0.9, 185),
-                y_limits = c(0.003, 200),
+                #x_limits = c(0.9, 185),
+                x_limits = c(10, 80),
+                #y_limits = c(0.003, 200),
+                y_limits = c(1, 30),
                 y_breaks = c(0.01, 0.1, 1, 10, 100),
                 plot_errorbar = F,
                 error_min = 'q25',
@@ -1032,11 +1275,10 @@ p <- plot_growth(year_to_plot = 1995,
                 y_labels = c( 0.01, 0.1, 1, 10, 100),
                 abline_slope = 2, 
                 abline_intercept = 10, #-1.4
-                dodge_width = 0.0) #0.07
+                dodge_width = 0.03) #0.07
 
 
-p0 <- p #+ annotation_custom(grob_text_a) 
-p1 <- set_panel_size(p0, width=unit(10.25,"cm"), height=unit(8,"cm"))
+p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
@@ -1052,97 +1294,112 @@ system2(command = "pdfcrop",
 #---------------------------------------------------------------------------------------------------
 #--------------------------   Mortalty   --------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
+# Diagnostic plot to test mortality fit
 
+# Read pre-created mortality bins for plotting to compare to fitted values
 binned_data = read_csv(file.path(gdrive_path, 'data/data_binned/additional_bins_fg_year.csv'))
+binned_data$mortality_by_bin_width <- binned_data$mortality/(binned_data$bin_max - binned_data$bin_min)
+fitted_values <- read_csv(file.path(gdrive_path, 'data/data_forplotting/fitted_mortalitybydiameter.csv'))
 
-fg_mid = c("fg", "bin_midpoint")
-mortality_range <- binned_data %>%
-  filter(!fg %in% c("unclassified", "all"), abundance >= 20) %>%
-  group_by(across(fg_mid)) %>%
-  summarize(
-    min = min(mortality),
-    max = max(mortality))
-
-mortality_range
-
-fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/fitted_mortalitybydiameter.csv')) # Load fitted values
+# Filter the binned data to only have error bars for the years where we have a 1995 data point.
+binned_data2 <- binned_data %>%
+  filter(abundance > 20) %>%
+  group_by(fg, bin) %>%
+  mutate(has1995 = 1995 %in% year) %>%
+  ungroup %>%
+  filter(has1995) 
 
 
-#---  Plot mortality 
-obs_range_mort <- binned_data %>% 
-  arrange(factor(fg, levels = c('fg5','fg4', 'fg3', 'fg2','fg1'))) %>%
-  filter(variable %in% 'dbh', lived + died >= 20) %>%
-  group_by(fg) %>%
-  dplyr::summarize(min_obs = min(bin_midpoint), max_obs = max(bin_midpoint))
-
-fitted_mort_trunc <- fitted_mort %>%
-  arrange(factor(fg, levels = c('fg5','fg4', 'fg3', 'fg2','fg1'))) %>%
-  left_join(obs_range_mort) %>%
-  left_join(guild_lookup) %>%
-filter(dbh >= min_obs & dbh <= max_obs)
-unique(fitted_mort_trunc$fg)
-
-(p <- ggplot() +
-    theme_plant() + 
-    scale_color_manual(values = guild_colors_fg) +
-    scale_fill_manual(values = guild_fills_fg) +
-    scale_y_continuous(trans = "logit", position = "right", 
-                       breaks = c(0.03, 0.1, 0.3, 0.6), 
-                       labels =  c(0.03, 0.1, 0.3, 0.6), 
-                       #limits = c(0.02, 0.8),
-                       name = expression(paste("Mortality (5 yr"^-1,")"))) +
-    scale_x_log10(name = parse(text = 'Stem~Diameter~(cm)'), 
-                   breaks = c(3, 30, 300), 
-                  #limits = c(.9, 160)
-                  ) +
-    geom_point(data = binned_data %>% 
-                 filter(!fg %in% c( "all", "unclassified")) %>%
-                 filter(abundance >= 20, year == 1995) %>%
-                 mutate(fg = factor(fg, labels = fg_labels)),
-               aes(x = bin_midpoint, y = mortality, fill = fg),
-               shape = 21, size = 4) +
-    geom_ribbon(data = fitted_mort_trunc, aes(x = dbh, ymin = q025, ymax = q975, group = fg, fill = fg), alpha = 0.4) +
-    geom_line(data = fitted_mort_trunc, aes(x = dbh, y = q50, group = fg, color = fg, fill = fg)) +
-    geom_errorbar(data = mortality_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), width = 0) 
-     )#+ theme_no_x())
-
+mass_growth_range
+(p<- ggplot(binned_data2 %>% filter(fg %in% paste0('fg', 1:5), abundance > 20), aes(x=bin_midpoint, y=mortality, color = fg, fill = fg)) +
+  theme_plant() + 
+  scale_color_manual(values = guild_colors_fg) +
+  scale_fill_manual(values = guild_fills_fg) +
+  scale_y_continuous(trans = "logit", position = "right", 
+                     breaks = c(0.01, 0.03, 0.1,  0.3), 
+                     #labels =  c(0.03, 0.1, 0.3, 0.6), 
+                     limits = c(0.008, 0.3),
+                     name = expression(paste("Mortality (yr"^-1,")"))) +
+  scale_x_log10(name = parse(text = 'Stem~Diameter~(cm)'), 
+                breaks = c(1, 10, 100), 
+                limits = c(.9, 160)) +
+  stat_summary(geom = 'errorbar', fun.max = max, fun.min = min, position = position_dodge(width=.03), width=0) +
+  geom_line(data = fitted_values, aes(x = dbh, y = q50, group = fg, color = fg)) +
+    geom_point(aes(y = mortality, fill = fg), data = binned_data %>% filter(fg %in% paste0('fg', 1:5), abundance > 20, year == 1995), 
+               position = position_dodge(width=.03), color = "black", shape = 21, size = 4) 
+)
 
 p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p2)  #notice that LLP and Slow show steep slow of mortality with light!
-pdf(file.path(gdrive_path,'Figures/New_main/mortality/mortality.pdf'))
+
+
+pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/Fig_5/mortality.pdf'))
 grid.newpage()
 grid.draw(p2)  
 dev.off()
-
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/mortality/mortality.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/mortality/mortality.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/mortality.pdf'), 
+                  file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/mortality.pdf')) 
 )
 
-stat_smooth(span = 2, data = bin_mort %>%  # to single out gray and make CI darker
-              filter(variable == 'dbh', fg == "fg5", 
-                     (lived+died) >= 20),
-            aes(x = bin_midpoint, y = mortality, se = T),
-            color = "gray", fill = "gray", alpha = 0.2) +
-  stat_smooth(span = 2, data = bin_mort %>% 
-                filter(variable == 'dbh', !fg %in% c('all','unclassified'), 
-                       (lived+died) >= 20)  %>% 
-                mutate(fg = factor(fg, labels = fg_labels)),
-              aes(x = bin_midpoint, y = mortality, color = fg, fill = fg), alpha = 0.25) 
-#old stuff  
 
-  #growth_diam <-  read_csv(file.path(gdrive_path, 'data/clean_summary_tables/clean_parameters_individualdiametergrowth.csv')) 
-  
-  #fitted_mort <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
-  
-  
-  #bin_mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalitybins.csv')) # Load binned data
-  #bin_mort <- bin_mort %>% arrange(factor(fg, levels = c('all', 'fg5','fg4', 'fg3', 'fg2','fg1')))
-  
-  #mort <- read_csv(file.path(gdrive_path, 'data/data_forplotting/obs_mortalityindividuals.csv')) # Load raw data
-#fitted_mort_old <- read_csv(file.path(gdrive_path, 'data/data_piecewisefits/mortality_ci_by_fg.csv')) # Load fitted values
+mortality_by_bin_width 
+mortality_range <- binned_data2 %>%
+  filter(!fg %in% c("unclassified", "all"), abundance >= 20) %>%
+  group_by(across(fg_mid )) %>%
+  summarize(
+    min = min(mortality_by_bin_width),
+    max = max(mortality_by_bin_width)
+  )
+(p<- ggplot() +
+    theme_plant() + 
+    scale_color_manual(values = guild_colors_fg) +
+    scale_fill_manual(values = guild_fills_fg) +
+    scale_y_continuous(trans = "log10", position = "right", 
+                       breaks = c(0.0001, 0.001, 0.01, 0.1, 1), 
+                       labels =  c("0.0001", 0.001, .01, 0.1, 1), 
+                       limits = c(0.0001, 2),
+                       name = expression(paste("Mortality (yr"^-1," cm"^-1,")"))) +
+    scale_x_log10(name = parse(text = 'Stem~Diameter~(cm)'), 
+                  breaks = c(1, 10, 100), 
+                  limits = c(.9, 160)) +
+    geom_errorbar(data = mortality_range, position = position_dodge(width = 0.07),
+                  aes(x = bin_midpoint, ymin = min, ymax = max, color = fg, width = 0)) +
+    stat_smooth(method = "lm", binned_data %>% filter(fg %in% paste0('fg', 1:5), abundance > 20, year == 1995), 
+                mapping = aes(x=bin_midpoint, y=mortality_by_bin_width, color = fg, fill = fg), size = 0.5, alpha =0.2) +
+                #position = position_dodge(width=.03), 
+    #geom_ribbon(data = fitted_values, aes(x = dbh, y = q50, ymin = q025, ymax = q975),  alpha = 0.4, color = NA) +
+    #geom_line(data = fitted_values, aes(x = dbh, y = q50, group = fg, color = fg)) +
+    geom_point(binned_data %>% filter(fg %in% paste0('fg', 1:5), abundance > 20, year == 1995), 
+               mapping = aes(x=bin_midpoint, y=mortality_by_bin_width, fill = fg),
+               #position = position_dodge(width=.03), 
+               color = "black", shape = 21, size = 4) 
+)
+p2 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p2)  #notice that LLP and Slow show steep slow of mortality with light!
 
+pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/Fig_5/mortality_per_bin.pdf'))
+grid.newpage()
+grid.draw(p2)  
+dev.off()
+system2(command = "pdfcrop", 
+        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/mortality_per_bin.pdf'), 
+                  file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/mortality_per_bin.pdf')) 
+)
+
+
+range(binned_data$mortality_by_bin_width, na.rm = T)
+binned_data$mortality_by_bin_width[is.infinite(binned_data$mortality_by_bin_width)] <- NA
+binned_data$mortality_by_bin_width[is.nan(binned_data$mortality_by_bin_width)] <- NA
+binned_data$logit_mortality_by_bin_width <- logit(binned_data$mortality_by_bin_width)
+binned_data$logit_mortality_by_bin_width[is.infinite(binned_data$logit_mortality_by_bin_width)] <- NA
+log(binned_data$mortality_by_bin_width)
+lm_mort <- lm(logit_mortality_by_bin_width ~ log(bin_midpoint) + fg, data =  binned_data)
+lm_mort <- lm(log_mortality_by_bin_width ~ log(bin_midpoint) + fg, data =  binned_data)
+
+summary(lm_mort)
 #---------------------------------------------------------------------------------------------------
 #--------------------------   Richness ~ Abundance   --------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
@@ -1150,12 +1407,12 @@ stat_smooth(span = 2, data = bin_mort %>%  # to single out gray and make CI dark
 #------------- Richness vs abundance
 
 max_size_fg <- obs_richnessbydiameter %>%
-  filter(n_individuals > 0) %>%
+  filter(n_individuals > 20) %>%
   group_by(fg) %>%
   dplyr::summarize(max_size = max(abundance_by_bin_width)) 
 
 min_size_fg <- obs_richnessbydiameter %>%
-  filter(n_individuals > 0) %>%
+  filter(n_individuals > 20) %>%
   group_by(fg) %>%
   dplyr::summarize(min_size = min(abundance_by_bin_width)) 
 
@@ -1168,17 +1425,19 @@ fitted_richnessvsabundance_filt <- fitted_richnessvsabundance %>%
 
 
 # per ha
-plot_area = 50
+#plot_area = 50
 (rich_abun <- ggplot() + 
     theme_plant() +
     scale_x_log10(name = expression(paste("Abundance (cm"^-1,")")), 
-                  breaks = c(0.01,  1,  100, 10000), limit = c(0.01, 200000), labels = signif) + 
-    scale_y_log10(labels = signif, limit = c(0.01, 300),
+                  breaks = c(1,  100, 10000), 
+                  labels= c(1, 100, "10,000"), 
+                  limit = c(1, 80000)) + 
+    scale_y_log10(labels = signif, limit = c(0.3, 300),
                   position = "right", name = expression(paste("Richness (cm"^-1,")"))) +
     scale_fill_manual(values = guild_fills_fg) +
     scale_color_manual(values = guild_colors_fg) +
     geom_jitter(data = obs_richnessbydiameter %>%   arrange(desc(fg)) %>% 
-                  filter(n_individuals > 0) %>% filter(!fg %in% c('unclassified', 'all')),  #  & n_individuals >= 20
+                  filter(n_individuals > 20) %>% filter(!fg %in% c('unclassified', 'all')),  #  & n_individuals >= 20
                 aes(x = abundance_by_bin_width, y = richness_by_bin_width,
                     fill = fg, color = fg),
                 shape = 21, size = 4, color = "black", width = 0)  +
@@ -1188,7 +1447,8 @@ plot_area = 50
                 aes(x = abundance_by_bin_width, ymin = q025, ymax = q975, fill = fg, color = NA), alpha = 0.2, col = NA) + 
     geom_line(data = fitted_richnessvsabundance_filt %>% 
                 filter(!fg %in% c('unclassified', 'all')) %>%  arrange(desc(fg)),
-              aes(x = abundance_by_bin_width, y = q50, color = fg), size = 0.5) )
+              aes(x = abundance_by_bin_width, y = q50, color = fg), size = 0.5)
+  )
 
 p1 <- set_panel_size(rich_abun, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
@@ -1296,7 +1556,7 @@ system2(command = "pdfcrop",
     theme_plant() +
     scale_x_log10(name = expression(paste("Abundance (cm"^-1,")")), 
                   breaks = c(0.01,  1,  100, 10000), limit = c(0.01, 200000), labels = signif) + 
-    scale_y_log10(labels = signif, limit = c(0.01, 300),
+    scale_y_log10(labels = signif, #limit = c(0.01, 300),
                   position = "right", name = expression(paste("Richness (cm"^-1,")"))) +
     scale_fill_manual(values = guild_fills_fg) +
     scale_color_manual(values = guild_colors_fg) +
@@ -1317,3 +1577,42 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/supp_rich_abun/rich_abun_2010.pdf')) 
 )
 
+
+# - not by bin width
+range()
+(rich_abun_1990_plot <- ggplot(data = binned_data %>% arrange(desc(fg)) %>% 
+                            filter(abundance >= 1, year == 1990) %>% filter(!fg %in% c('unclassified', 'all')),  #  & n_individuals >= 20
+                          aes(x = abundance, y = richness,
+                              fill = fg, color = fg)) + 
+    theme_plant() +
+    scale_x_log10(name = expression(paste("Abundance")), 
+                  limit = c(1, 200000), 
+                  labels = signif) + 
+    scale_y_log10(labels = signif, limit = c(1, 250),
+                  position = "right", name = expression(paste("Richness"))) +
+    scale_fill_manual(values = guild_fills_fg) +
+    scale_color_manual(values = guild_colors_fg) +
+    geom_point(shape = 21, size = 4, color = "black")  +
+    theme(axis.title.y = element_text(vjust = -3)) + 
+    stat_smooth(size = 0.5, alpha = 0.2, method = "loess"))
+
+p1 <- set_panel_size(rich_abun_1990, width=unit(10.25,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+(rich_abun_1990_plot <- 
+    ggplot(data = binned_data %>% arrange(desc(fg)) %>% 
+                                 filter(abundance >= 1, year == 1990) %>% filter(!fg %in% c('unclassified', 'all')),  #  & n_individuals >= 20
+                               aes(x = abundance, y = richness,
+                                   fill = fg, color = fg)) + 
+    theme_plant() +
+    scale_x_log10(name = expression(paste("Abundance")), 
+                  limit = c(1, 200000), 
+                  labels = signif) + 
+    scale_y_log10(labels = signif, limit = c(1, 100),
+                  position = "right", name = expression(paste("Richness"))) +
+    scale_fill_manual(values = guild_fills_fg) +
+    scale_color_manual(values = guild_colors_fg) +
+    geom_point(shape = 21, size = 4, color = "black")  +
+    theme(axis.title.y = element_text(vjust = -3)) + 
+    stat_smooth(size = 0.5, alpha = 0.2, method = "loess"))
