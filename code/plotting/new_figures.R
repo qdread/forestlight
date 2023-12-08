@@ -9,9 +9,11 @@
 DENS = 3
 PROD = 1
 
+# size of plot = 42.84 hectares
+
 # Set path to data on google drive
 #devtools::install_github('qdread/forestscaling')
-gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/My Drive/ForestLight'))
+gdrive_path <- ifelse(Sys.info()['user'] == 'qread', '~/google_drive/ForestLight/', file.path('/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/.shortcut-targets-by-id/0Bzy2GmZ-I6IcT0JmNk96Sl9iMVU/ForestLight'))
 github_path <- ifelse(Sys.info()['user'] == 'qread', '~/Documents/GitHub/MSU_repos', file.path('/Users/jgradym/Documents/GitHub/'))
 
 gdrive_path2 <- file.path('/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/My\\ Drive/ForestLight')
@@ -62,8 +64,8 @@ scale_tall_slow <- scale_fill_gradientn(colours = tall_slow_fill, trans = 'log')
 scale_fast_slow <- scale_fill_gradientn(colours = fast_slow_fill,trans = 'log')#,# name = 
 
 # To add back the legend
-theme_plant2 <- theme_plant() + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
-theme_plant <- theme_plant() + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"), legend.position = "right", legend.text = element_text(size = 14 ), legend.key = element_blank())
+theme_plant2 <- forestscaling::theme_plant() + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+theme_plant <- forestscaling::theme_plant() + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"), legend.position = "right", legend.text = element_text(size = 14 ), legend.key = element_blank())
 
 
 #---------------------------- Data ---------------------------- 
@@ -113,11 +115,11 @@ guild_lookup <- data.frame(fg = c('fg1','fg2','fg3','fg4','fg5','all','unclassif
 ####--------- Fig 1A PCA Plot -----------------------
 guild_fills_fg2 = c("1" = "#BFE046", "2" =  "#267038", "3" = "#27408b", "4" = "#87Cefa", "5" = "gray93")
 geom_size = 3
-#geom_size = 4
+geom_size = 4
 unique(fgbci$fg5)
 Fig_3a <- ggplot(fgbci, aes(x = PC_slow_to_fast, y = PC_breeder_to_pioneer, fill = as.factor(fg5))) +
   # geom_point(shape = 24, size = geom_size, color = "black") + 
-  geom_point(shape = 24, size = geom_size, stroke = 0.3, color = "black") + 
+  geom_point(shape = 21, size = geom_size, stroke = 0.3, color = "black") + 
   labs(x = 'Survivorship–Growth Tradeoff', y = 'Stature—Recruitment Tradeoff') +
   #theme_plant() + 
   theme_plant_small() + theme(aspect.ratio = 0.75) +
@@ -133,9 +135,15 @@ p2 <- set_panel_size(Fig_3a , width=unit(10.25,"cm"), height=unit(8,"cm"))
 
 grid.newpage()
 grid.draw(p2)
-#pdf(file.path(gdrive_path, 'Figures/New_main/life_history/life_history.pdf'))
-#grid.draw(p2)
-#dev.off()
+pdf("~/Downloads/pca.pdf")
+grid.draw(p2)
+dev.off()
+pdf(file.path(gdrive_path, 'Figures/New_main/life_history/life_history.pdf'))
+grid.draw(p2)
+dev.off()
+system2(command = "pdfcrop", 
+        args    = c("~/Downloads/pca.pdf", "~/Downloads/pca.pdf") 
+)
 
 system2(command = "pdfcrop", 
         args    = c(file.path(gdrive_path2,'Figures/New_main/life_history/life_history.pdf'), 
@@ -416,7 +424,7 @@ plot_dens <- function(year_to_plot = 1995,
                       plot_abline = TRUE, 
                       abline_slope = -2, 
                       abline_intercept = -10,
-                      dodge_width = 0.07) 
+                      dodge_width = 0.05) 
 {
   pos <-  ggplot2::position_dodge(width = dodge_width)
   obsdat <- obsdat %>% dplyr::filter(fg %in% fg_names, year == year_to_plot, bin_count >= 20) %>% 
@@ -445,7 +453,7 @@ plot_dens <- function(year_to_plot = 1995,
                          ggplot2::aes(x = dbh, y = q50, group = fg, color = fg), size = 0.2) + 
     ggplot2::geom_line(data = preddat[preddat$fg == "fg5", ], 
                        ggplot2::aes(x = dbh, y = q50), color = "gray", size = 0.2) + 
-    ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), size = .75, width = 0, position = pos) +
+    ggplot2::geom_errorbar(data = dens_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), size = .5, width = 0, position = pos) +
     #ggplot2::geom_point(data = obsdat, position = pos,
      #                   ggplot2::aes(x = bin_midpoint, y = bin_value, group = fg, fill = fg), 
       #                  size = geom_size, shape = 21, color = "black") + 
@@ -472,13 +480,13 @@ p1 <- set_panel_size(p, width = unit(10.25, "cm"), height = unit(8, "cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/supplemental/fig_4_sup/abundance.pdf'))
+pdf(file.path(gdrive_path,'Figures/Final_figs/supplemental/fig_4_sup/abundance.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/fig_4_sup/abundance.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/fig_4_sup/abundance.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Final_figs/supplemental/fig_4_sup/abundance.pdf'), 
+                    file.path(gdrive_path2,'Figures/Final_figs/supplemental/fig_4_sup/abundance.pdf')) 
 )
 #----------------------------------------------------------------------------------
 #--------------------------   Richness  -------------------------------------------
@@ -603,7 +611,7 @@ system2(command = "pdfcrop",
     geom_line(data = fitted_richnessbydiameter_filtered  %>% 
                 arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
               aes(x = dbh, y = q50, group = fg, color = fg), size = 0.2) +
-    geom_errorbar(data = rich_range %>%  arrange(desc(fg)), aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), size = 1, width = 0) +
+    geom_errorbar(data = rich_range %>%  arrange(desc(fg)), aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), size = .5, width = 0) +
      theme_no_x() 
 )
 
@@ -613,13 +621,13 @@ grid.newpage()
 grid.draw(p1)
 
 
-pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/supplemental/fig_4_sup/richness.pdf'))
+pdf(file.path(gdrive_path,'Figures/Final_figs/supplemental/fig_4_sup/richness.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/fig_4_sup/richness.pdf'), 
-                  file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/fig_4_sup/richness.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/Final_figs/supplemental/fig_4_sup/richness.pdf'), 
+                  file.path(gdrive_path2,'Figures/Final_figs/supplemental/fig_4_sup/richness.pdf')) 
 )
 
 #----------------------------------------------------------------------------------
@@ -665,9 +673,7 @@ plot_totalprod <-function(year_to_plot = 1995,
                            abline_intercept = 20) 
 {
   pos <-  ggplot2::position_dodge(width = dodge_width)
-  obsdat <- obsdat %>% 
-    dplyr::filter(fg %in% fg_names, year == year_to_plot, bin_count >= 20) %>% 
-    dplyr::filter(bin_value > 0) %>% 
+  dplyr::filter(bin_value > 0) %>% 
     arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1')))
   obs_limits <- obsdat %>% dplyr::group_by(fg) %>% 
     dplyr::summarize(min_obs = min(bin_midpoint), 
@@ -717,7 +723,6 @@ p <- plot_totalprod(year_to_plot = 1995,
                      preddat = fitted_totalprod)
 
 
-#p1 <- set_panel_size(p, width=unit(14.3,"cm"), height=unit(14.3,"cm"))
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
@@ -820,7 +825,7 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/fig_4_sup/productivity.pdf')) 
 )
 ########################################################################
-######################   Fig 4 B,D,E: Ratios     ####################################
+######################   Fig 2 B,D,E: Ratios     ####################################
 ########################################################################
 
 ratios <- read_csv(file.path(gdrive_path, 'data/data_binned/additional_bins_ratio_year.csv'))
@@ -928,7 +933,7 @@ rich_ratio_fastslow_range <- ratios %>%
     geom_point(data = ratios %>% filter(min_n_individuals_fastslow >= 20, year == "1995"),
                aes(x =  bin_midpoint, y = richness_ratio_fastslow, fill = richness_ratio_fastslow),
                shape = 21, stroke = 0.5, size = 4, color = "black") +
-    scale_fast_slow + theme_no_x
+    scale_fast_slow + theme_no_x()
 )
 
 p1 <- set_panel_size(rich_ratio, width=unit(10.25,"cm"), height=unit(8,"cm"))
@@ -962,9 +967,11 @@ prod_ratio_fastslow_range <- ratios %>%
   summarize(
     min = min(production_ratio_fastslow),
     max = max(production_ratio_fastslow))
-
+prod_data = ratios %>%  filter(min_n_individuals_pioneerslow >= 20, min_n_individuals_fastslow >= 20, year == "1995")
+prod_max = max(prod_data$bin_midpoint)
 (prod_ratio  <-
     ggplot() + theme_plant() +
+    scale_tall_slow  +
     scale_x_log10(limits = c(.9, 100), breaks = c(1, 10, 100), 
                   position = "bottom", 
                   expression(paste('Stem Diameter (cm)'))) + 
@@ -974,12 +981,12 @@ prod_ratio_fastslow_range <- ratios %>%
     stat_smooth(data = ratios %>%  filter(min_n_individuals_pioneerslow >= 20, year == "1995"),
                 aes(x =  bin_midpoint, y = production_ratio_pioneerslow, fill = production_ratio_pioneerslow),
                 method = "lm", color = "black", alpha = 0.2 ) +
-    geom_errorbar(data = prod_ratio_pioneerslow_range, aes(x = bin_midpoint, ymin = min, ymax = max), width = 0, color = "black")  +
+    geom_errorbar(data = prod_ratio_pioneerslow_range %>% filter(bin_midpoint <= prod_max), aes(x = bin_midpoint , ymin = min, ymax = max), width = 0, color = "black")  +
     geom_point(data = ratios %>% filter(min_n_individuals_pioneerslow >= 20, year == "1995"),
                aes(x =  bin_midpoint, y = production_ratio_pioneerslow, fill = production_ratio_pioneerslow),
                shape = 21, stroke = 0.5, size = 4, color = "black") +
-    scale_tall_slow  +
     new_scale_fill() +
+    scale_fast_slow +
     stat_smooth(data = ratios %>% 
                   filter(min_n_individuals_fastslow >= 20, year == "1995"),
                 aes(x =  bin_midpoint, y = production_ratio_fastslow, fill = production_ratio_fastslow),
@@ -990,8 +997,7 @@ prod_ratio_fastslow_range <- ratios %>%
                aes(x =  bin_midpoint, y = production_ratio_fastslow, fill = production_ratio_fastslow),
                shape = 21, stroke = 0.5, 
                size = 4, 
-               color = "black") +
-    scale_fast_slow 
+               color = "black") 
 )
 
 
@@ -999,19 +1005,19 @@ p1 <- set_panel_size(prod_ratio, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path, 'Figures/New_main/Final_figs/Fig_4/relative_scaling/prod_ratio.pdf'))
+pdf(file.path(gdrive_path, '/JournalEcology/Revision/Figures/Fig_2/prod_ratio.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/prod_ratio.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_4/relative_scaling/prod_ratio.pdf')) 
+        args    = c(file.path(gdrive_path,'/JournalEcology/Revision/Figures/Fig_2/prod_ratio.pdf'), 
+                    file.path(gdrive_path,'/JournalEcology/Revision/Figures/Fig_2/prod_ratio.pdf')) 
 )
 
 
 
 ######################################################################################################
-#########################         Mechanisms             ############################################
+#########################        Figure 4            ############################################
 ######################################################################################################
 
 
@@ -1105,11 +1111,11 @@ plot_diam <- function (year_to_plot = 1995,
      #                   size = geom_size, color = "black", shape = 21, position = pos) + 
     ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
     ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels) + 
-    #theme_no_x() + 
+    theme_no_x() + 
     ggplot2::theme(rect = ggplot2::element_rect(fill = "transparent")) + 
     ggplot2::scale_color_manual(values = color_names) + 
     ggplot2::scale_fill_manual(values = fill_names) + 
-    theme_plant() +#+ theme_no_x() +
+    theme_plant() +
     if (plot_abline) {
       p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
                                     slope = abline_slope, color = "gray72", linetype = "dashed", 
@@ -1154,13 +1160,13 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/diam_growth.pdf')) 
 )
 
-pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/supplemental/Fig_5_supp/diam_growth.pdf'))
+pdf(file.path(gdrive_path,'Figures/Final_figs/supplemental/Fig_5_supp/diam_growth.pdf'))
 grid.draw(p2)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/Fig_5_supp/diam_growth.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/Fig_5_supp/diam_growth.pdf')) 
+        args    = c(file.path(gdrive_path2,'Figures/Final_figs/supplemental/Fig_5_supp/diam_growth.pdf'), 
+                    file.path(gdrive_path2,'Figures/Final_figs/supplemental/Fig_5_supp/diam_growth.pdf')) 
 )
 
 lm_diam_g <- lm(log(production/abundance) ~ log(bin_midpoint) + fg, data =  binned_data)
@@ -1196,7 +1202,7 @@ plot_growth <-
             x_name = "Stem Diameter (cm)", 
             y_name = expression(paste("Mass Growth (kg yr"^-1, ")")),
             average = "mean", 
-            position = "left",
+            position = "right",
             plot_errorbar = FALSE, 
             error_min = "ci_min",
             error_max = "ci_max", 
@@ -1233,9 +1239,9 @@ plot_growth <-
       dplyr::filter(dbh >=  min_obs & dbh <= max_obs) %>% 
       arrange(desc(fg))
     p <- ggplot2::ggplot() + 
-      #ggplot2::geom_ribbon(data = preddat %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))), 
-       #                    ggplot2::aes(x = dbh, ymin = q025, ymax = q975, 
-        #                                group = fg, fill = fg), alpha = 0.4) + 
+      ggplot2::geom_ribbon(data = preddat %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))), #add hashtag to get supplemental plot 
+                           ggplot2::aes(x = dbh, ymin = q025, ymax = q975, 
+                                        group = fg, fill = fg), alpha = 0.4) + 
       ggplot2::geom_line(data = preddat %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))), 
                          ggplot2::aes(x = dbh, y = q50, group = fg, color = fg))
     if (plot_errorbar) {
@@ -1252,16 +1258,17 @@ plot_growth <-
     p <- p + ggplot2::geom_line(data = preddat[preddat$fg == "Medium", ], 
                                 ggplot2::aes(x = dbh, y = q50), color = "gray") + 
       ggplot2::geom_errorbar(data = mass_growth_range, aes(x = bin_midpoint, ymin = min, ymax = max, color = fg ), position = pos, width = 0) +
-     # ggplot2::geom_point(data = obsdat %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))),
-      #                    ggplot2::aes_string(x = "bin_midpoint", 
-       #                                       y = average, group = "fg", fill = "fg"), 
-        #                  size = geom_size, color = "black", shape = 21) + # position = pos
+      ggplot2::geom_point(data = obsdat %>% arrange(factor(fg, levels = c('all', 'fg5','fg4','fg3','fg2','fg1'))), #add hashtag to get supplemental plot 
+                          ggplot2::aes_string(x = "bin_midpoint", 
+                                              y = average, group = "fg", fill = "fg"), 
+                         size = geom_size, color = "black", shape = 21) + # position = pos
       ggplot2::scale_x_log10(name = x_name, limits = x_limits, breaks = x_breaks) + 
       ggplot2::scale_y_log10(name = y_name, limits = y_limits, breaks = y_breaks, labels = y_labels, position = position) + 
       #theme_no_x() + 
       ggplot2::theme(rect = ggplot2::element_rect(fill = "transparent")) + 
       ggplot2::scale_color_manual(values = color_names) + 
       ggplot2::scale_fill_manual(values = fill_names) + 
+      #theme_no_x() +
       theme_plant() #+ theme_no_x()
     if (plot_abline) {
       p <- p + ggplot2::geom_abline(intercept = abline_intercept, 
@@ -1274,7 +1281,7 @@ plot_growth <-
 obs_indivprod <- obs_indivprod %>%
   filter(mean_n_individuals >= 20)
 
-p <- plot_growth(year_to_plot = 1995,
+(p <- plot_growth(year_to_plot = 1995,
                 fg_names = c('fg1','fg2','fg3','fg4','fg5'),
                 model_fit = PROD,
                 x_limits = c(0.9, 185),
@@ -1289,27 +1296,27 @@ p <- plot_growth(year_to_plot = 1995,
                 y_labels = c( 0.01, 0.1, 1, 10, 100),
                 abline_slope = 2, 
                 abline_intercept = 10, #-1.4
-                dodge_width = 0.05) #0.03
+                dodge_width = 0.05)) #0.03)
 
 
 p1 <- set_panel_size(p, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/Fig_5/mass_growth.pdf'))
+pdf(file.path(gdrive_path,'JournalEcology/Revision/Figures/Fig_4/mass_growth.pdf'))
 grid.draw(p1)
 dev.off()
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/mass_growth.pdf'), 
-                  file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/mass_growth.pdf')) 
+        args  = c(file.path(gdrive_path,'JournalEcology/Revision/Figures/Fig_4/mass_growth.pdf'), 
+                  file.path(gdrive_path2,'JournalEcology/Revision/Figures/Fig_4/mass_growth')) 
 )
 
-pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/supplemental/Fig_5_supp/mass_growth.pdf'))
+pdf(file.path(gdrive_path,'Figures/Final_figs/supplemental/Fig_5_supp/mass_growth.pdf'))
 grid.draw(p1)
 dev.off()
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/mass_growth.pdf'), 
-                  file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/mass_growth.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/Final_figs/supplemental/Fig_5_supp/mass_growth.pdf'), 
+                  file.path(gdrive_path2,'Figures/Final_figs/supplemental/Fig_5_supp/mass_growth.pdf')) 
 )
 
 
@@ -1332,12 +1339,12 @@ binned_data2 <- binned_data %>%
   filter(has1995) 
 
 
-mass_growth_range
 (p<- ggplot(binned_data2 %>% filter(fg %in% paste0('fg', 1:5), abundance > 20), aes(x=bin_midpoint, y=mortality, color = fg, fill = fg)) +
   theme_plant() + 
   scale_color_manual(values = guild_colors_fg) +
   scale_fill_manual(values = guild_fills_fg) +
-  scale_y_continuous(trans = "logit", position = "right", 
+  scale_y_continuous(trans = "logit", 
+                     #position = "right", 
                      breaks = c(0.01, 0.03, 0.1,  0.3), 
                      #labels =  c(0.03, 0.1, 0.3, 0.6), 
                      limits = c(0.008, 0.3),
@@ -1367,14 +1374,14 @@ system2(command = "pdfcrop",
                   file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/mortality.pdf')) 
 )
 
-pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/supplemental/Fig_5_supp/mortality.pdf'))
+pdf(file.path(gdrive_path,'Figures/Final_figs/supplemental/Fig_5_supp/mortality.pdf'))
 grid.newpage()
 grid.draw(p2)  
 dev.off()
 
 system2(command = "pdfcrop", 
-        args  = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/Fig_5_supp/mortality.pdf'), 
-                  file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/Fig_5_supp/mortality.pdf')) 
+        args  = c(file.path(gdrive_path2,'Figures/Final_figs/supplemental/Fig_5_supp/mortality.pdf'), 
+                  file.path(gdrive_path2,'Figures/Final_figs/supplemental/Fig_5_supp/mortality.pdf')) 
 )
 
 
@@ -1412,7 +1419,7 @@ fitted_richnessvsabundance_filt <- fitted_richnessvsabundance %>%
                   labels= c(1, 100, "10,000"), 
                   limit = c(1, 80000)) + 
     scale_y_log10(labels = signif, limit = c(0.3, 300),
-                  position = "right", name = expression(paste("Richness (cm"^-1,")"))) +
+                  position = "left", name = NULL) + #expression(paste("Richness (cm"^-1,")"))) +
     scale_fill_manual(values = guild_fills_fg) +
     scale_color_manual(values = guild_colors_fg) +
     geom_jitter(data = obs_richnessbydiameter %>%   arrange(desc(fg)) %>% 
@@ -1433,13 +1440,13 @@ p1 <- set_panel_size(rich_abun, width=unit(10.25,"cm"), height=unit(8,"cm"))
 grid.newpage()
 grid.draw(p1)
 
-pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/Fig_5/rich_abun.pdf'))
+pdf(file.path(gdrive_path,'JournalEcology/Revision/Figures/Fig_4/rich_abun.pdf'))
 grid.draw(p1)
 dev.off()
 
 system2(command = "pdfcrop", 
-        args    = c(file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/rich_abun.pdf'), 
-                    file.path(gdrive_path2,'Figures/New_main/Final_figs/Fig_5/rich_abun.pdf')) 
+        args    = c(file.path(gdrive_path,'JournalEcology/Revision/Figures/Fig_4/rich_abun.pdf'), 
+                    file.path(gdrive_path,'JournalEcology/Revision/Figures/Fig_4/rich_abun.pdf')) 
 )
 
 #------------ other years---------
@@ -1499,3 +1506,236 @@ system2(command = "pdfcrop",
                     file.path(gdrive_path2,'Figures/New_main/Final_figs/supplemental/supp_rich_abun/rich_abun_2005.pdf')) 
 )
 
+###########################################################################################
+########################         Mean PCA ~ Stem Diameter           #######################
+###########################################################################################
+# Mean PCA ~ size
+# Load 1995 bin data
+guild_colors <- c("#BFE046", "#267038", "#27408b", "#87Cefa", "gray")
+fast_slow_fill <- c("#27408b", "#BFE046" )
+fast_slow_fill2 <- c("#27408b", "#939E6C" ) #  #A4B662
+fast_slow_fill3 <- c("#27408b", "#AABF5D" ) #  AABF5D
+
+short_tall_fill <- c("#87Cefa", "#267038")  
+short_tall_fill2 <- c("#65A8AA", "#267038")  #599B8F
+short_tall_fill3 <- c("#68ABB0", "267038")  #74B8CC; 9FAF65
+
+tall_slow_fill <- c("#27408b", "#267038")  #74B8CC; 9FAF65
+
+scale_fast_slow <- scale_fill_gradientn(colours = fast_slow_fill,
+                                        trans = 'log')#,# name = 
+scale_fast_slow2 <- scale_fill_gradientn(colours = fast_slow_fill2,
+                                         trans = 'log')#,# name = 
+scale_fast_slow3 <- scale_fill_gradientn(colours = fast_slow_fill3,
+                                         trans = 'log')#,# name = 
+
+scale_short_tall <- scale_fill_gradientn(colours = short_tall_fill,
+                                         trans = 'log')#,# name = 
+scale_short_tall2<- scale_fill_gradientn(colours = short_tall_fill2,
+                                         trans = 'log')#,# name = 
+scale_short_tall3<- scale_fill_gradientn(colours = short_tall_fill3,
+                                         trans = 'log')#,# name = 
+
+scale_tall_slow <- scale_fill_gradientn(colours = tall_slow_fill,
+                                        trans = 'log')#,# name = 
+
+breederscore_bin_bydiam_byyear = read_csv('/Users/jgradym/Desktop/Google Drive/ForestLight/data/data_binned/breederscore_bin_bydiam_byyear.csv')
+fastslowscore_bin_bydiam_byyear = read_csv('/Users/jgradym/Desktop/Google Drive/ForestLight/data/data_binned/fastslowscore_bin_bydiam_byyear.csv')
+str(fast_slow_score)
+
+#-----
+n_indiv = obs_totalprod %>% filter(fg == "all") %>%
+  select(bin_midpoint, bin_count) %>%
+  rename(n_individuals = bin_count)
+
+fastslowscore_bin_bydiam = fastslowscore_bin_bydiam  %>% 
+  left_join(n_indiv, by = "bin_midpoint")
+
+breederscore_bin_bydiam_byyear   = breederscore_bin_bydiam_byyear %>% 
+  left_join(n_indiv, by = "bin_midpoint")
+#-----
+#---Fig S14B:  PCA by Diameter
+
+fastslowscore_bin_bydiam <- fastslowscore_bin_bydiam_byyear %>%
+  left_join(fastslow_stats_bydiam_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
+  mutate(ID = "Fast-Slow")
+
+breederscore_bin_bydiam <- breederscore_bin_bydiam_byyear %>%
+  left_join(breeder_stats_bydiam_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
+  mutate(ID = 'Short-Tall')
+
+score_bin_bydiam <- rbind(fastslowscore_bin_bydiam, breederscore_bin_bydiam)
+
+
+grob_a <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
+                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
+grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
+                            gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
+
+PCA_diam_fs <- score_bin_bydiam  %>%
+  filter(year == 1995, n_individuals >= 20, ID == "Fast-Slow") %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+  #geom_errorbar(width = error_bar_width) + 
+  theme_plant() +
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black",
+             aes(fill = mean)) +
+  scale_fast_slow +
+  scale_x_log10(name = 'Stem Diameter (cm)', limits = c(.8,100)) +
+  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score') #+ theme_plant_small()
+PCA_diam_fs
+
+id_mid = c("ID", "bin_midpoint")
+
+pca_range <- score_bin_bydiam  %>% filter( n_individuals >= 20) %>%
+  group_by(across(id_mid)) %>%
+  summarize(
+    min = min(mean),
+    max = max(mean)
+  )
+ 
+(pca_score_ci = 
+  ggplot() + 
+  theme_plant() +
+  geom_line(data = score_bin_bydiam %>% filter(year == 1995, n_individuals >= 20), aes(x = bin_midpoint, y = mean,  color = ID)) +
+  geom_point(data = score_bin_bydiam %>% filter(year == 1995, n_individuals >= 20), aes(x = bin_midpoint, y = mean,fill = ID),
+             shape = 21, size = 4,  stroke = .5,  color = "black") +
+  geom_errorbar(data = score_bin_bydiam %>% filter(year == 1995, n_individuals >= 20), aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max), width = 0, color = "forestgreen") +
+  #geom_errorbar(data = pca_range, aes(x = bin_midpoint, ymin = min, ymax = max), width = 0, color = "blue") +    
+  scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey")) +
+  scale_color_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey50")) +
+  scale_x_log10(limits = c(1, 100), breaks = c(1, 10, 100), 
+                name =NULL) + 
+  scale_y_continuous(name = expression("PCA Score")) + theme_no_x() +
+  theme_plant() )
+
+
+p1 <- set_panel_size(pca_score_ci, width=unit(11,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/supplemental/pca_score/pca_score_ci.pdf'))
+pdf('/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/.shortcut-targets-by-id/0Bzy2GmZ-I6IcT0JmNk96Sl9iMVU/ForestLight/Figures/Final_figs/supplemental/pca_score/pca_score_ci.pdf')
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c('/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/.shortcut-targets-by-id/0Bzy2GmZ-I6IcT0JmNk96Sl9iMVU/ForestLight/Figures/Final_figs/supplemental/pca_score/pca_score_ci.pdf', 
+                   '/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/.shortcut-targets-by-id/0Bzy2GmZ-I6IcT0JmNk96Sl9iMVU/ForestLight/Figures/Final_figs/supplemental/pca_score/pca_score_ci.pdf') 
+)
+
+
+(pca_score_range = 
+    ggplot() + 
+    theme_plant() +
+    geom_line(data = score_bin_bydiam %>% filter(year == 1995, n_individuals >= 20), aes(x = bin_midpoint, y = mean,  color = ID)) +
+    geom_point(data = score_bin_bydiam %>% filter(year == 1995, n_individuals >= 20), aes(x = bin_midpoint, y = mean,fill = ID),
+               shape = 21, size = 4,  stroke = .5,  color = "black") +
+    #geom_errorbar(data = score_bin_bydiam %>% filter(year == 1995, n_individuals >= 20), aes(x = bin_midpoint, ymin = ci_min, ymax = ci_max), width = 0, color = "forestgreen") +
+    geom_errorbar(data = pca_range, aes(x = bin_midpoint, ymin = min, ymax = max), width = 0, color = "dodgerblue") +    
+    scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey")) +
+    scale_color_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey50")) +
+    scale_x_log10(limits = c(1, 100), breaks = c(1, 10, 100), 
+                  name = expression(paste('Diameter (cm)'))) + 
+    scale_y_continuous(name = expression("PCA Score")) + 
+    theme_plant() )
+
+
+p1 <- set_panel_size(pca_score_range, width=unit(11,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/New_main/Final_figs/supplemental/pca_score/pca_score_range.pdf'))
+pdf('/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/.shortcut-targets-by-id/0Bzy2GmZ-I6IcT0JmNk96Sl9iMVU/ForestLight/Figures/Final_figs/supplemental/pca_score/pca_score_range.pdf')
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c('/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/.shortcut-targets-by-id/0Bzy2GmZ-I6IcT0JmNk96Sl9iMVU/ForestLight/Figures/Final_figs/supplemental/pca_score/pca_score_range.pdf', 
+                    '/Users/jgradym/Library/CloudStorage/GoogleDrive-jgradym@gmail.com/.shortcut-targets-by-id/0Bzy2GmZ-I6IcT0JmNk96Sl9iMVU/ForestLight/Figures/Final_figs/supplemental/pca_score/pca_score_range.pdf') 
+)
+
+
+
+
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_fs_diam.pdf'), 
+                    file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_fs_diam.pdf')) 
+)
+
+
+PCA_diam_fs <- score_bin_bydiam  %>%
+  filter(year == 1995, n_individuals >= 20, ID == "Fast-Slow") %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+  geom_errorbar(width = error_bar_width) + theme_plant() +
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black", aes(fill = mean)) +
+  scale_fast_slow2 +
+  scale_x_log10(name = 'Stem Diameter (cm)', limits = c(.8,100)) +
+  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score') #+ theme_plant_small()
+PCA_diam_fs
+p1 <- set_panel_size(PCA_diam_fs, width=unit(11,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/PCA_fs_diam.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_fs_diam.pdf'), 
+                    file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_fs_diam.pdf')) 
+)
+
+
+PCA_diam_st <- score_bin_bydiam  %>%
+  filter(year == 1995, n_individuals >= 20, ID == "Short-Tall") %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+  geom_errorbar(width = error_bar_width) + theme_plant() +
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black", aes(fill = mean)) +
+  scale_short_tall2 +
+  scale_x_log10(name = 'Stem Diameter (cm)', limits = c(.8,100)) +
+  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score') #+ theme_plant_small()
+PCA_diam_st
+
+p1 <- set_panel_size(PCA_diam_st, width=unit(11,"cm"), height=unit(8,"cm"))
+grid.newpage()
+grid.draw(p1)
+
+pdf(file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/PCA_st_diam.pdf'))
+grid.draw(p1)
+dev.off()
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_st_diam.pdf'), 
+                    file.path(gdrive_path2,'Figures/Supplementals/Ratios_PCA/PCA_st_diam.pdf')) 
+)
+PCA_diam <- score_bin_bydiam %>%
+  filter(year == 1995, n_individuals >= 20) %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max, fill = ID)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed")+
+  geom_errorbar(width = error_bar_width) +theme_plant_small() +
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black")+
+  scale_fill_manual(values = c("Short-Tall" = "black", "Fast-Slow" = "grey"))+
+  scale_x_log10(name = 'Diameter (cm)', limits = c(.8,100)) + 
+  annotation_custom(grob_b) +
+  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = "PCA Score") #+
+
+PCA_diam
+
+# -- combine
+g_light  <- ggplotGrob(PCA_light)
+g_diam <- ggplotGrob(PCA_diam)
+gPCA <- rbind(g_light, g_diam, size = "first")
+gPCA$widths <- unit.pmax(g_light$widths,g_diam $widths)
+grid.newpage()
+grid.draw(gPCA)
+
+ggsave(gPCA, height = 8, width = 11, filename = file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/PCA.pdf'))
+
+system2(command = "pdfcrop", 
+        args    = c(file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/PCA.pdf'), 
+                    file.path(gdrive_path,'Figures/Supplementals/Ratios_PCA/PCA.pdf')) 
+)
