@@ -56,7 +56,7 @@ guild_lookup
 year_to_plot = 1995
 geom_size <- 4
 
-guide <- guides(fill = guide_legend(title = NULL), override.aes = list(fill = NA), color = F)
+guide <- guides(fill = guide_legend(title = NULL), override.aes = list(fill = NA), color = "none")
 guide2 <- guides(color = guide_legend(title = NULL))
 
 
