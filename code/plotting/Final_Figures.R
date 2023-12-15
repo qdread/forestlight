@@ -565,20 +565,43 @@ grob_a <- grobTree(textGrob("a", x = 0.04, y = 0.93,  hjust = 0,
                             gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
 grob_b <- grobTree(textGrob("b", x = 0.04, y = 0.93,  hjust = 0,
                             gp = gpar(col = "black", fontsize = 25, fontface = "bold"))) 
+fastslowscore_bin_bydiam <- fastslowscore_bin_bydiam_byyear %>%
+  left_join(fastslow_stats_bydiam_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
+  mutate(ID = "Fast-Slow")
+
+breederscore_bin_bydiam <- breederscore_bin_bydiam_byyear %>%
+  left_join(breeder_stats_bydiam_byyear %>% select(year, bin_midpoint, n_individuals)) %>%
+  mutate(ID = 'Short-Tall')
+
+score_bin_bydiam <- rbind(fastslowscore_bin_bydiam, breederscore_bin_bydiam)
+
 
 PCA_diam_fs <- score_bin_bydiam  %>%
   filter(year == 1995, n_individuals >= 20, ID == "Fast-Slow") %>%
   ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
   geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
-  #geom_errorbar(width = error_bar_width) + 
   theme_plant() +
+  geom_errorbar() + 
   geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black",
              aes(fill = mean)) +
-  scale_fast_slow +
-  scale_x_log10(name = 'Stem Diameter (cm)', limits = c(.8,100)) +
-  scale_y_continuous(limits=c(-1.5,1.25),breaks=c(-1,0,1),name = 'PCA Score') #+ theme_plant_small()
+  scale_fast_slow2 +
+  scale_y_continuous(limits = c(-1.5, 1.25),breaks = c(-1,0,1), name = 'PCA Score') +
+  scale_x_log10(name = 'Stem Diameter (cm)', limits = c(.8, 100)) 
 PCA_diam_fs
 
+
+PCA_diam_st <-  score_bin_bydiam  %>%
+  filter(year == 1995, n_individuals >= 20, ID == "Short-Tall") %>%
+  ggplot(aes(x = bin_midpoint, y = mean, ymin = ci_min, ymax = ci_max)) +
+  geom_abline(slope = 0, intercept = 0, linetype = "dashed") +
+  theme_plant() +
+  geom_errorbar() + 
+  geom_point(shape = 21, size = 4.5,  stroke = .5,  color = "black",
+             aes(fill = mean)) +
+  scale_tall_slow2 +
+  scale_x_log10(name = 'Stem Diameter (cm)', limits = c(.8,100)) +
+  scale_y_continuous(limits = c(-1.5, 1.25),breaks = c(-1,0,1), name = 'PCA Score') +
+  PCA_diam_st
 id_mid = c("ID", "bin_midpoint")
 
 pca_range <- score_bin_bydiam  %>% filter( n_individuals >= 20) %>%
